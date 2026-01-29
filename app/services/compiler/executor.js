@@ -221,9 +221,14 @@ async function compile({ filePath, content, flags, useLLD }) {
         });
 
         compiler.on('error', (err) => {
+            let errorMessage = err.message;
+            if (err.code === 'ENOENT') {
+                errorMessage = `Compiler not found: ${compilerExe}\n\nPlease ensure the bundled compiler is available or install MinGW/TDM-GCC.`;
+                console.error(`[Compile] ENOENT - Compiler not found at: ${compilerExe}`);
+            }
             resolve({
                 success: false,
-                error: err.message,
+                error: errorMessage,
                 outputPath: null
             });
         });

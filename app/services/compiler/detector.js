@@ -21,38 +21,46 @@ let compilerInfo = {
     hasLLD: false
 };
 
+function getPortableDir() {
+    return process.env.PORTABLE_EXECUTABLE_DIR || null;
+}
+
 function getBasePath() {
-    // When packaged, __dirname points to app.asar, but unpacked files are in app.asar.unpacked
     if (__dirname.includes('app.asar')) {
         return __dirname.replace('app.asar', 'app.asar.unpacked');
     }
-    // In development, go up to root from app/services/compiler
     return path.join(__dirname, '..', '..', '..');
 }
 
 function getResourcesPath() {
     if (app.isPackaged) {
-        return path.join(process.resourcesPath);
+        return process.resourcesPath;
     }
     return getBasePath();
 }
 
-const basePath = getBasePath();
-const resourcesPath = getResourcesPath();
+function getBundledCompilerPaths() {
+    const paths = [];
+    const portableDir = getPortableDir();
 
-/**
- * Bundled MinGW paths (inside app folder - HIGHEST PRIORITY)
- */
-const BUNDLED_MINGW_PATHS = [
-    // Check extraResources location first (for packaged app)
-    path.join(resourcesPath, 'Sameko-GCC', 'bin', 'g++.exe'),
-    // Then check app folder (for development)
-    path.join(basePath, 'Sameko-GCC', 'bin', 'g++.exe'),
-    path.join(basePath, 'mingw64', 'bin', 'g++.exe'),
-    path.join(basePath, 'mingw32', 'bin', 'g++.exe'),
-    path.join(basePath, 'MinGW', 'bin', 'g++.exe'),
-    path.join(basePath, 'compiler', 'bin', 'g++.exe'),
-];
+    if (app.isPackaged) {
+        paths.push(path.join(process.resourcesPath, 'Sameko-GCC', 'bin', 'g++.exe'));
+    }
+
+    if (portableDir) {
+        paths.push(path.join(portableDir, 'Sameko-GCC', 'bin', 'g++.exe'));
+        paths.push(path.join(portableDir, 'resources', 'Sameko-GCC', 'bin', 'g++.exe'));
+    }
+
+    const basePath = getBasePath();
+    paths.push(path.join(basePath, 'Sameko-GCC', 'bin', 'g++.exe'));
+    paths.push(path.join(basePath, 'mingw64', 'bin', 'g++.exe'));
+    paths.push(path.join(basePath, 'mingw32', 'bin', 'g++.exe'));
+    paths.push(path.join(basePath, 'MinGW', 'bin', 'g++.exe'));
+    paths.push(path.join(basePath, 'compiler', 'bin', 'g++.exe'));
+
+    return paths;
+}
 
 /**
  * System-installed compiler paths (fallback)
@@ -69,24 +77,32 @@ const SYSTEM_COMPILER_PATHS = [
 ];
 
 function detectCompiler() {
-    // PRIORITY 1: Check bundled MinGW in app folder (no installation needed!)
-    for (const compilerPath of BUNDLED_MINGW_PATHS) {
-        if (fs.existsSync(compilerPath)) {
+    const bundledPaths = getBundledCompilerPaths();
+    const portableDir = getPortableDir();
+
+    console.log('[Compiler] Detection started');
+    console.log(`[Compiler] isPackaged: ${app.isPackaged}`);
+    console.log(`[Compiler] resourcesPath: ${process.resourcesPath}`);
+    console.log(`[Compiler] portableDir: ${portableDir || 'N/A'}`);
+
+    for (const compilerPath of bundledPaths) {
+        const exists = fs.existsSync(compilerPath);
+        console.log(`[Compiler] Checking: ${compilerPath} -> ${exists ? 'FOUND' : 'not found'}`);
+
+        if (exists) {
             detectedCompiler = compilerPath;
             compilerInfo.name = 'Bundled MinGW';
             compilerInfo.path = compilerPath;
             compilerInfo.bundled = true;
 
-            // Pre-detect LLD for faster builds
             const binDir = path.dirname(compilerPath);
             compilerInfo.hasLLD = fs.existsSync(path.join(binDir, 'ld.lld.exe'));
 
-            console.log(`[Compiler] Found bundled MinGW: ${compilerPath} (LLD: ${compilerInfo.hasLLD})`);
+            console.log(`[Compiler] Selected bundled: ${compilerPath} (LLD: ${compilerInfo.hasLLD})`);
             return compilerPath;
         }
     }
 
-    // PRIORITY 2: Check system-installed compilers
     for (const compilerPath of SYSTEM_COMPILER_PATHS) {
         if (fs.existsSync(compilerPath)) {
             detectedCompiler = compilerPath;
@@ -105,21 +121,19 @@ function detectCompiler() {
             compilerInfo.path = compilerPath;
             compilerInfo.bundled = false;
 
-            // Pre-detect LLD for faster builds
             const binDir = path.dirname(compilerPath);
             compilerInfo.hasLLD = fs.existsSync(path.join(binDir, 'ld.lld.exe'));
 
-            console.log(`[Compiler] Found system compiler: ${compilerPath} (LLD: ${compilerInfo.hasLLD})`);
+            console.log(`[Compiler] Selected system: ${compilerPath} (LLD: ${compilerInfo.hasLLD})`);
             return compilerPath;
         }
     }
 
-    // PRIORITY 3: Fallback to PATH
     detectedCompiler = 'g++';
     compilerInfo.name = 'System GCC';
     compilerInfo.path = 'g++ (from PATH)';
     compilerInfo.bundled = false;
-    console.log('[Compiler] Using g++ from PATH');
+    console.log('[Compiler] Fallback to g++ from PATH');
     return 'g++';
 }
 

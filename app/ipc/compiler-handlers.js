@@ -62,7 +62,11 @@ function registerHandlers() {
         return compiler.getCompilerInfo();
     });
 
-
+    // Get compiler status (for startup check)
+    ipcMain.handle('get-compiler-status', async () => {
+        const { getCompilerStatus } = require('../core/app-lifecycle');
+        return getCompilerStatus();
+    });
 }
 
 module.exports = {

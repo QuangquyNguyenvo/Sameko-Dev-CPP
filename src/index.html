@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -111,6 +111,14 @@
                 </button>
 
                 <span class="sep"></span>
+
+                <!-- Update Download Progress (hidden by default) -->
+                <div class="header-update-progress" id="header-update-progress" style="display: none;">
+                    <div class="header-progress-bar">
+                        <div class="header-progress-fill" id="header-progress-fill"></div>
+                    </div>
+                    <span class="header-progress-text" id="header-progress-text">0%</span>
+                </div>
 
                 <!-- Restart to Update button (hidden by default) -->
                 <button class="action-btn update-ready" id="btn-restart-update" title="Install the pending update"

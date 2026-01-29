@@ -145,6 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initTabDrag();
     initCompetitiveCompanion();
     detectPortableVersion();
+    validateCompilerOnStartup();
     updateUI();
 
     let resizeRequestId = null;
@@ -5463,6 +5464,48 @@ function detectPortableVersion() {
         });
 }
 
+// Validate compiler status on startup
+function validateCompilerOnStartup() {
+    if (!window.electronAPI?.getCompilerStatus) return;
+
+    window.electronAPI.getCompilerStatus().then(status => {
+        console.log('[Compiler] Status:', status);
+
+        if (status.fallback) {
+            // Compiler not bundled, using PATH fallback
+            setStatus('Using system compiler (fallback)', 'warning', 5000);
+
+            // Show toast or notification
+            showToast('Bundled compiler not found. Using system g++ from PATH.', 'warning');
+        } else if (status.found === false && status.error) {
+            // No compiler found at all!
+            setStatus('Compiler NOT found!', 'error', 10000);
+
+            // Show critical error modal
+            const message = `
+                <div style="padding: 10px;">
+                    <h3 style="color: var(--error); margin-bottom: 10px;">Compiler Not Found</h3>
+                    <p>The C++ compiler (g++) could not be found.</p>
+                    <p style="opacity: 0.8; font-size: 12px; margin-top: 5px;">
+                        Method: ${status.error}<br>
+                        This will prevent you from compiling code.
+                    </p>
+                    <p style="margin-top: 10px;">Please reinstall the application or install MinGW manually.</p>
+                </div>
+            `;
+            // For now, we'll just log it clearly and maybe use the toast, 
+            // as we don't have a generic modal function exposed yet (except About/Settings).
+            // But we can reuse the "Update" overlay style or similar in future if needed.
+            showToast('CRITICAL: C++ Compiler (g++) not found!', 'error', 8000);
+        } else if (status.found) {
+            console.log(`[Compiler] OK: ${status.path}`);
+        }
+    }).catch(err => {
+        console.error('[Compiler] Validation check failed:', err);
+    });
+}
+
+
 function handleUpdateStatus(data) {
     // Add null/undefined checks for data safety
     if (!data) {
@@ -5552,13 +5595,36 @@ function handleUpdateStatus(data) {
                 progressFill.style.width = '0%';
                 progressText.textContent = 'Downloading: 0%';
             }
+
+            // Show header progress bar
+            const headerProgressStart = document.getElementById('header-update-progress');
+            if (headerProgressStart) {
+                headerProgressStart.style.display = 'flex';
+                const fillStart = document.getElementById('header-progress-fill');
+                const textStart = document.getElementById('header-progress-text');
+                if (fillStart) fillStart.style.width = '0%';
+                if (textStart) textStart.textContent = '0%';
+            }
             break;
 
         case 'download-progress':
             console.log('[Update] Download progress:', updateData?.percent + '%');
 
-            if (progressFill) progressFill.style.width = (updateData?.percent || 0) + '%';
-            if (progressText) progressText.textContent = `Downloading: ${updateData?.percent || 0}%`;
+            const percent = updateData?.percent || 0;
+
+            // Update overlay progress
+            if (progressFill) progressFill.style.width = percent + '%';
+            if (progressText) progressText.textContent = `Downloading: ${percent}%`;
+
+            // Update header progress bar
+            const headerProgress = document.getElementById('header-update-progress');
+            if (headerProgress) {
+                headerProgress.style.display = 'flex';
+                const headerFill = document.getElementById('header-progress-fill');
+                const headerText = document.getElementById('header-progress-text');
+                if (headerFill) headerFill.style.width = percent + '%';
+                if (headerText) headerText.textContent = percent + '%';
+            }
             break;
 
         case 'update-downloaded':
@@ -5568,6 +5634,17 @@ function handleUpdateStatus(data) {
             // Hide overlay and progress
             if (overlay) overlay.style.display = 'none';
             if (progress) progress.style.display = 'none';
+
+            // Hide header progress bar
+            const headerProgressDone = document.getElementById('header-update-progress');
+            if (headerProgressDone) headerProgressDone.style.display = 'none';
+
+            // Hide badges (since we now show the big Restart button)
+            const badgesToHide = ['badge-settings-main', 'badge-settings-tab', 'badge-update-btn'];
+            badgesToHide.forEach(id => {
+                const badge = document.getElementById(id);
+                if (badge) badge.style.display = 'none';
+            });
 
             // Show "Restart to Update" button in header (installer only)
             const headerRestartBtn = document.getElementById('btn-restart-update');
@@ -5816,3 +5893,4 @@ window.addEventListener('themeCustomizerSave', (e) => {
     // e.detail.theme contains the full theme data (meta, colors, editor, terminal)
     // e.detail.timestamp contains the save timestamp
 });
+

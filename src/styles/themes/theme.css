@@ -3813,6 +3813,55 @@ body.split-active .editor-pane {
     text-align: center;
 }
 
+/* ===== HEADER UPDATE PROGRESS ===== */
+.header-update-progress {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px;
+    background: var(--bg-ocean-light);
+    /* Matching the light blue theme */
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    /* Pillow shape like other buttons */
+    margin-right: 8px;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+    /* Slight inset for depth */
+}
+
+.header-progress-bar {
+    width: 120px;
+    height: 8px;
+    background: rgba(0, 0, 0, 0.08);
+    /* Softer background */
+    border-radius: 10px;
+    /* Fully rounded caps */
+    overflow: hidden;
+}
+
+.header-progress-fill {
+    height: 100%;
+    /* Use the main accent color or a nice gradient matching the theme */
+    background: linear-gradient(90deg, var(--bg-ocean-deep), var(--accent-hover));
+    border-radius: 10px;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Smooth easing */
+    width: 0%;
+    box-shadow: 0 0 8px rgba(136, 201, 234, 0.4);
+    /* Glow effect */
+}
+
+.header-progress-text {
+    font-family: 'Fredoka', sans-serif;
+    /* Use app font */
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--bg-ocean-dark);
+    /* Theme text color */
+    min-width: 40px;
+    text-align: right;
+}
+
 .update-footer {
     padding: 16px 20px;
     background: rgba(0, 0, 0, 0.03);

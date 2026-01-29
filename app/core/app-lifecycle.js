@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 
 let tsParser = null;
+let compilerStatus = { found: false, path: null, error: null };
 
 function initTreeSitter() {
     try {
@@ -37,9 +38,46 @@ function ensureDirectories() {
     }
 }
 
+function validateCompiler() {
+    try {
+        const { getDetectedCompiler, getCompilerInfo } = require('../services/compiler/detector');
+        const compiler = getDetectedCompiler();
+        const info = getCompilerInfo();
+
+        if (compiler && compiler !== 'g++' && fs.existsSync(compiler)) {
+            compilerStatus = { found: true, path: compiler, info };
+            console.log(`[Startup] Compiler OK: ${compiler}`);
+        } else if (compiler === 'g++') {
+            compilerStatus = {
+                found: false,
+                path: null,
+                error: 'Compiler not found. Using system PATH fallback.',
+                fallback: true
+            };
+            console.warn('[Startup] Compiler not bundled, using PATH fallback');
+        } else {
+            compilerStatus = {
+                found: false,
+                path: null,
+                error: `Compiler not found at: ${compiler}`
+            };
+            console.error('[Startup] Compiler NOT found!');
+        }
+    } catch (e) {
+        compilerStatus = { found: false, path: null, error: e.message };
+        console.error('[Startup] Compiler check failed:', e.message);
+    }
+    return compilerStatus;
+}
+
+function getCompilerStatus() {
+    return compilerStatus;
+}
+
 async function initializeApp() {
     initTreeSitter();
     ensureDirectories();
+    validateCompiler();
 }
 
 function cleanupBeforeQuit() {
@@ -80,4 +118,5 @@ module.exports = {
     cleanupBeforeQuit,
     setupAppEvents,
     getTreeSitterParser,
+    getCompilerStatus,
 };
