@@ -31,6 +31,9 @@ class AutoUpdateService {
         // Do NOT install silently on quit - require explicit restart
         autoUpdater.autoInstallOnAppQuit = false;
 
+        // Disable code signature verification for unsigned/self-signed builds
+        autoUpdater.verifyUpdateCodeSignature = false;
+
         this.setupEventHandlers();
     }
 

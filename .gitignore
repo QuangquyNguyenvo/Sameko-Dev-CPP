@@ -12,7 +12,7 @@ release_build/
 *.gch
 
 # ===== Bundled Tools =====
-# Sameko-GCC/
+Sameko-GCC/
 llvm-mingw-*/
 mingw64/
 TDM-GCC-64/
