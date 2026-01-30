@@ -64,9 +64,7 @@
         "build:mac": "electron-builder --mac",
         "build:linux": "electron-builder --linux",
         "clean:dist": "powershell -Command \"Remove-Item -Recurse -Force release_build -ErrorAction SilentlyContinue\"",
-        "rebuild:win": "npm run clean:dist && npm run build:win",
-        "release": "powershell -ExecutionPolicy Bypass -File ./build-local.ps1",
-        "release:open": "powershell -ExecutionPolicy Bypass -File ./build-local.ps1 -OpenFolder"
+        "rebuild:win": "npm run clean:dist && npm run build:win"
     },
     "dependencies": {
         "electron-log": "^5.4.3",
@@ -133,22 +131,21 @@
                     ]
                 }
             ],
-            "icon": "src/assets/icon.ico"
+            "icon": "src/assets/icon.ico",
+            "publisherName": "Sameko Project"
         },
         "nsis": {
-            "artifactName": "sameko-dev-cpp-setup-${version}.${ext}",
+            "artifactName": "${productName}-Setup-${version}.${ext}",
             "oneClick": false,
             "allowToChangeInstallationDirectory": true,
             "createDesktopShortcut": true,
             "createStartMenuShortcut": true,
             "shortcutName": "Sameko Dev C++",
             "perMachine": false,
-            "allowElevation": true,
-            "deleteAppDataOnUninstall": false
+            "allowElevation": true
         },
         "portable": {
-            "artifactName": "sameko-dev-cpp-${version}-portable.${ext}",
-            "unpackDirName": "Sameko Dev C++ Portable"
+            "artifactName": "${productName}-${version}-Portable.${ext}"
         },
         "mac": {
             "target": "dmg",

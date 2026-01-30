@@ -44,7 +44,8 @@
         "terminalBg": "#251a26",
         "settingsLabelColor": "#8b5f65",
         "settingsSectionColor": "#ff9aaf",
-        "buttonTextOnAccent": "#ffffff"
+        "buttonTextOnAccent": "#ffffff",
+        "bgPanel-expected": "rgba(255, 245, 248, 0.4)"
     },
     "editor": {
         "base": "vs-dark",

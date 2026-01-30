@@ -128,6 +128,7 @@
     --success-hover: #45a045;
     --error: #ffb3b3;
     --error-dark: #e06060;
+    --danger: #d84860;
     --warning: #fff9c4;
 
     --border: #ffcad4;
@@ -149,7 +150,7 @@
     /* Panel Variants - Inherit from base unless overridden */
     --bg-panel-problems: var(--bg-panel);
     --bg-panel-input: var(--bg-panel);
-    --bg-panel-expected: var(--bg-panel);
+    --bg-panel-expected: var(--editor-bg);
 
     --bg-input: #fffafa;
     --bg-button: #fff0f5;
@@ -1689,7 +1690,8 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
 [data-theme="kawaii-dark"] .diff-actual,
 [data-theme="dracula"] .diff-actual,
 [data-theme="monokai"] .diff-actual,
-[data-theme="nord"] .diff-actual {
+[data-theme="nord"] .diff-actual,
+[data-theme="sakura"] .diff-actual {
     color: var(--error);
     background: rgba(255, 85, 85, 0.15);
 }
@@ -1698,7 +1700,8 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
 [data-theme="kawaii-dark"] .char-correct,
 [data-theme="dracula"] .char-correct,
 [data-theme="monokai"] .char-correct,
-[data-theme="nord"] .char-correct {
+[data-theme="nord"] .char-correct,
+[data-theme="sakura"] .char-correct {
     background: rgba(80, 250, 123, 0.3);
     color: var(--success);
 }
@@ -1706,7 +1709,8 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
 [data-theme="kawaii-dark"] .char-incorrect,
 [data-theme="dracula"] .char-incorrect,
 [data-theme="monokai"] .char-incorrect,
-[data-theme="nord"] .char-incorrect {
+[data-theme="nord"] .char-incorrect,
+[data-theme="sakura"] .char-incorrect {
     background: rgba(255, 85, 85, 0.35);
     color: var(--error);
 }
@@ -1715,7 +1719,8 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
 [data-theme="kawaii-dark"] .line-correct,
 [data-theme="dracula"] .line-correct,
 [data-theme="monokai"] .line-correct,
-[data-theme="nord"] .line-correct {
+[data-theme="nord"] .line-correct,
+[data-theme="sakura"] .line-correct {
     background: rgba(80, 250, 123, 0.25);
     color: var(--success);
 }
@@ -1723,7 +1728,8 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
 [data-theme="kawaii-dark"] .line-incorrect,
 [data-theme="dracula"] .line-incorrect,
 [data-theme="monokai"] .line-incorrect,
-[data-theme="nord"] .line-incorrect {
+[data-theme="nord"] .line-incorrect,
+[data-theme="sakura"] .line-incorrect {
     background: rgba(255, 85, 85, 0.3);
     color: var(--error);
 }
@@ -2013,8 +2019,28 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     border: 2px solid var(--border);
 }
 
+/* Sakura Expected Panel - Use correct background variable */
+[data-theme="sakura"] .io-panel.io-panel-expected {
+    background: var(--editor-bg) !important;
+    color: var(--terminal-text);
+}
+
+[data-theme="sakura"] .io-panel.io-panel-expected .diff-display {
+    background: transparent;
+    color: var(--terminal-text);
+}
+
 [data-theme="sakura"] .io-section {
     border-color: var(--border);
+}
+
+/* Custom Diff Overrides for Sakura */
+[data-theme="sakura"] .diff-line.match-compact {
+    background: rgba(163, 217, 165, 0.25) !important;
+}
+
+[data-theme="sakura"] .diff-line.mismatch-compact {
+    background: rgba(255, 120, 150, 0.25) !important;
 }
 
 [data-theme="sakura"] .panel-head {

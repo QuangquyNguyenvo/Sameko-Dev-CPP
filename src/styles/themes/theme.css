@@ -4482,8 +4482,130 @@ body.split-active .editor-pane {
 }
 
 /* Temporarily hide Explorer toggle due to bugs */
+/* Temporarily hide Explorer toggle due to bugs */
 .toggle-btn.explorer-toggle {
     display: none !important;
+}
+
+/* ===== COMPACT DIFF VISUALIZATION ===== */
+.diff-line {
+    padding: 2px 4px;
+    /* Reduced padding */
+    border-radius: 4px;
+    margin-bottom: 0px;
+    /* Reduced margin */
+    font-family: 'JetBrains Mono', monospace;
+    /* Match editor font */
+    font-size: 13px;
+    /* Ensure same size as input/editor */
+    line-height: normal;
+    /* Force normal line height */
+    white-space: pre;
+    /* Use pre to exact match input spacing */
+    overflow-x: auto;
+    /* Allow Scroll */
+}
+
+/* Match case: Green text + subtle background */
+.diff-line.match-compact {
+    color: var(--success);
+    /* Make text green as requested */
+    background: rgba(46, 204, 113, 0.05);
+    /* Very subtle green bg */
+    border-left: 2px solid var(--success);
+    /* Green border indicator */
+    padding-left: 8px;
+    font-weight: 600;
+    /* Make it pop a bit more */
+}
+
+/* Mismatch case */
+.diff-line.mismatch-compact {
+    background: rgba(231, 76, 60, 0.15);
+    /* Increased opacity for better visibility */
+    border-left: 2px solid var(--danger);
+    padding-left: 6px;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: baseline;
+    gap: 8px;
+}
+
+/* The wrong value (Actual) -> Strikethrough + Red */
+.diff-wrong {
+    text-decoration: line-through;
+    color: var(--danger);
+    opacity: 0.8;
+}
+
+/* The arrow */
+.diff-arrow {
+    color: var(--text-muted);
+    font-weight: bold;
+    user-select: none;
+}
+
+/* The correct values (Expected) -> Green */
+.diff-right {
+    color: var(--success);
+    font-weight: 700;
+}
+
+/* Fix text color in diff view for better visibility on dark backgrounds */
+#expected-diff {
+    color: var(--text-primary);
+    background: transparent;
+}
+
+/* Extra lines (Trailing junk) -> Red */
+.diff-extra {
+    color: var(--danger);
+    font-style: italic;
+    font-weight: 600;
+    opacity: 1;
+}
+
+/* Missing lines -> Orange/Warning color for better visibility */
+.diff-missing {
+    color: var(--warning, #8f8157);
+    font-style: italic;
+    font-weight: 600;
+    opacity: 1;
+}
+
+.diff-actual .diff-label {
+    color: var(--danger);
+}
+
+.diff-actual.missing {
+    color: var(--warning, #ffc107);
+    font-weight: 600;
+    opacity: 1;
+}
+
+/* Dark theme adjustments for diff colors - Better visibility on dark backgrounds */
+[data-theme*="dark"] .diff-extra,
+[data-theme="dracula"] .diff-extra,
+[data-theme="nord"] .diff-extra,
+[data-theme="monokai"] .diff-extra {
+    color: #ff6b6b;
+    /* Brighter red for dark themes */
+}
+
+[data-theme*="dark"] .diff-missing,
+[data-theme="dracula"] .diff-missing,
+[data-theme="nord"] .diff-missing,
+[data-theme="monokai"] .diff-missing {
+    color: #ffd93d;
+    /* Brighter yellow/orange for dark themes */
+}
+
+[data-theme*="dark"] .diff-actual.missing,
+[data-theme="dracula"] .diff-actual.missing,
+[data-theme="nord"] .diff-actual.missing,
+[data-theme="monokai"] .diff-actual.missing {
+    color: #ffd93d;
+    /* Brighter yellow/orange for dark themes */
 }
 
 /* Dark theme adjustments for explorer */

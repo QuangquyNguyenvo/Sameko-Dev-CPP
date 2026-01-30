@@ -1741,6 +1741,7 @@ function saveSettingsAndClose() {
 
     applySettings();
     saveSettings();
+    updateShortcutMap(); // Apply new shortcuts immediately
     closeSettings();
     log('Settings saved', 'success');
 }
@@ -2241,55 +2242,121 @@ function applyBackgroundSettings() {
 // ============================================================================
 // KEYBOARD SHORTCUTS
 // ============================================================================
+// ============================================================================
+// KEYBOARD SHORTCUTS
+// ============================================================================
+
+let currentShortcutMap = new Map();
+let ctrlKTimer = null;
+let ctrlKPressed = false;
+
+// Action dispatcher
+const ACTION_HANDLERS = {
+    'compile': () => compileOnly(),
+    'buildRun': () => buildRun(),
+    'run': () => run(),
+    'stop': () => stop(),
+    'save': () => save(),
+    'newFile': () => newFile(),
+    'openFile': () => openFile(),
+    'closeTab': () => { if (App.activeTabId) closeTab(App.activeTabId); },
+    'toggleProblems': () => toggleProblems(),
+    'settings': () => openSettings(),
+    'toggleSplit': () => toggleSplit(),
+    'formatCode': () => formatCode()
+};
+
+function normalizeKeyCombo(e) {
+    const parts = [];
+    if (e.ctrlKey) parts.push('Ctrl');
+    if (e.shiftKey) parts.push('Shift');
+    if (e.altKey) parts.push('Alt');
+
+    let key = e.key;
+    if (key === ' ') key = 'Space';
+    else if (key.length === 1) key = key.toUpperCase();
+    else if (key.startsWith('Arrow')) key = key.replace('Arrow', '');
+    else if (key === 'Control' || key === 'Shift' || key === 'Alt' || key === 'Meta') return null; // Ignore modifiers alone
+
+    parts.push(key);
+    return parts.join('+');
+}
+
+function updateShortcutMap() {
+    currentShortcutMap.clear();
+    const bindings = App.settings.keybindings || DEFAULT_SETTINGS.keybindings;
+
+    // Reverse map: "Ctrl+S" -> "save"
+    for (const [action, combo] of Object.entries(bindings)) {
+        if (combo) {
+            // Normalize the combo string from settings if needed, 
+            // but assuming they match the format produced by captureKeybinding, we just use it.
+            // We might want to ensure case-insensitivity or standardized order if settings data is messy.
+            // For now, trust the settings format (Ctrl+Shift+F etc).
+            currentShortcutMap.set(combo, action);
+        }
+    }
+    console.log('[Shortcuts] Updated map:', currentShortcutMap);
+}
+
 function initShortcuts() {
-    let ctrlKPressed = false;
-    let ctrlKTimer = null;
+    updateShortcutMap();
 
     document.addEventListener('keydown', e => {
-        // Ctrl+K chord handling (VS Code style)
-        if (e.ctrlKey && e.key.toLowerCase() === 'k' && !e.shiftKey && !e.altKey) {
-            e.preventDefault();
-            ctrlKPressed = true;
-            // Reset after 2 seconds
-            clearTimeout(ctrlKTimer);
-            ctrlKTimer = setTimeout(() => { ctrlKPressed = false; }, 2000);
+        // PERFORMANCE: Early exit for uninteresting keys to prevent "freeze"
+        // If it's a regular key typing in an input/editor, and NO modifiers are pressed, 
+        // strictly ignore it (unless we have single-key shortcuts like F-keys).
+        // BUT: F1-F12 are often single keys. 
+        const isModifier = e.ctrlKey || e.altKey || e.shiftKey || e.metaKey;
+        const isFunctionKey = e.key.startsWith('F');
+        const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable;
+
+        // If user is typing in editor (isInput) and NOT pressing modifiers/Function keys,
+        // let it pass immediately.
+        if (isInput && !isModifier && !isFunctionKey) {
             return;
         }
 
-        // Temporarily disabled: Ctrl+K, O (Open Folder via Explorer)
-        // if (ctrlKPressed && e.key.toLowerCase() === 'o') {
-        //     e.preventDefault();
-        //     ctrlKPressed = false;
-        //     if (typeof FileExplorer !== 'undefined') {
-        //         FileExplorer.openFolderDialog();
-        //     }
-        //     return;
-        // }
+        // Ctrl+K chord handling (VS Code style) - ONLY if Ctrl+K is NOT customized
+        // If user mapped Ctrl+K to something else, this logic might conflict.
+        // But for now, preserve existing behavior with safety checks.
+        if (e.ctrlKey && e.key.toLowerCase() === 'k' && !e.shiftKey && !e.altKey) {
+            // Check if Ctrl+K is assigned to an action? 
+            // If not, treat as chord starter.
+            const kAction = currentShortcutMap.get('Ctrl+K');
+            if (!kAction) {
+                e.preventDefault();
+                ctrlKPressed = true;
+                clearTimeout(ctrlKTimer);
+                ctrlKTimer = setTimeout(() => { ctrlKPressed = false; }, 2000);
+                return;
+            }
+        }
 
         // Reset chord if other key pressed
         if (ctrlKPressed && e.key !== 'Control') {
             ctrlKPressed = false;
+            // Here we could handle Chord actions (Ctrl+K, Ctrl+O) if we implemented them.
+            // For now, just reset and fall through to normal check.
         }
 
-        if (e.ctrlKey && e.key === 's') { e.preventDefault(); save(); }
-        if (e.ctrlKey && e.key === 'o' && !ctrlKPressed) { e.preventDefault(); openFile(); }
-        if (e.ctrlKey && e.key === 'n') { e.preventDefault(); newFile(); }
-        if (e.ctrlKey && e.key === 'w') { e.preventDefault(); if (App.activeTabId) closeTab(App.activeTabId); }
-        if (e.ctrlKey && e.key === 'j') { e.preventDefault(); toggleProblems(); }
-        if (e.ctrlKey && e.key === ',') { e.preventDefault(); openSettings(); }
-        // Temporarily disabled: Ctrl+E (toggle Explorer)
-        // if (e.ctrlKey && e.key.toLowerCase() === 'e' && !e.shiftKey) {
-        //     e.preventDefault();
-        //     if (typeof FileExplorer !== 'undefined') FileExplorer.toggle();
-        // }
-        if (e.ctrlKey && !e.shiftKey && e.key === '\\') { e.preventDefault(); toggleSplit(); }
-        if (e.ctrlKey && e.shiftKey && e.key === '|') { e.preventDefault(); swapSplitEditors(); }
-        if (e.key === 'F11') { e.preventDefault(); buildRun(); }
-        if (e.key === 'F10') { e.preventDefault(); run(); }
-        if (e.key === 'F5' && e.shiftKey) { e.preventDefault(); stop(); }
-        if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') { e.preventDefault(); formatCode(); }
-        if (e.key === 'Escape') closeSettings();
+        const combo = normalizeKeyCombo(e);
+        if (!combo) return;
+
+        const actionName = currentShortcutMap.get(combo);
+        if (actionName && ACTION_HANDLERS[actionName]) {
+            e.preventDefault(); // Stop default browser action (e.g. Ctrl+P, Ctrl+S)
+            ACTION_HANDLERS[actionName]();
+            return;
+        }
+
+        // Handling for Escape (hardcoded for settings close)
+        if (e.key === 'Escape') {
+            closeSettings();
+        }
     });
+
+    // Also update map when settings change (in initSettings or wherever)
 }
 
 // ============================================================================
@@ -3131,6 +3198,7 @@ function createDockedIOView(container) {
                 <div class="docked-io-panel">
                     <div class="docked-io-header">EXPECTED</div>
                     <textarea class="docked-io-textarea" id="docked-expected" placeholder="Kết quả mong đợi..."></textarea>
+                    <div class="docked-io-textarea" id="docked-expected-diff" style="display: none; overflow: auto; cursor: text;"></div>
                 </div>
             </div>
         `;
@@ -3167,6 +3235,9 @@ function createDockedIOView(container) {
         document.getElementById('docked-btn-prev-test')?.addEventListener('click', prevTestCase);
         document.getElementById('docked-btn-next-test')?.addEventListener('click', nextTestCase);
         document.getElementById('docked-btn-delete-test')?.addEventListener('click', deleteTestCase);
+
+        // Bind docked diff click to switch to edit
+        document.getElementById('docked-expected-diff')?.addEventListener('click', switchToExpectedEdit);
     }
     return dockedIOView;
 }
@@ -3200,12 +3271,18 @@ function syncIOContent() {
     const originalExpected = document.getElementById('expected-area');
     const dockedInput = document.getElementById('docked-input');
     const dockedExpected = document.getElementById('docked-expected');
+    const dockedDiffDisplay = document.getElementById('docked-expected-diff');
 
     if (originalInput && dockedInput) {
         dockedInput.value = originalInput.value;
     }
     if (originalExpected && dockedExpected) {
         dockedExpected.value = originalExpected.value;
+    }
+
+    // If docked diff is visible, refresh comparison so it stays consistent with latest expected/actual
+    if (dockedDiffDisplay && dockedDiffDisplay.style.display !== 'none') {
+        compareOutput();
     }
 }
 
@@ -4064,33 +4141,20 @@ function parseAnsiToHtml(text) {
 
         for (const code of codes) {
             if (code === 0) {
-
                 currentFg = null;
                 currentBg = null;
                 isBold = false;
                 isUnderline = false;
-            } else if (code === 1) {
-                isBold = true;
-            } else if (code === 4) {
-                isUnderline = true;
-            } else if (code === 22) {
-                isBold = false;
-            } else if (code === 24) {
-                isUnderline = false;
-            } else if (code >= 30 && code <= 37) {
-                const colors = getTerminalColorScheme();
-                currentFg = colors[code];
-            } else if (code >= 90 && code <= 97) {
-                const colors = getTerminalColorScheme();
-                currentFg = colors[code];
-            } else if (code >= 40 && code <= 47) {
-                const colors = getTerminalColorScheme();
-                currentBg = colors[code];
-            } else if (code === 39) {
-
-            } else if (code === 49) {
-
             }
+            else if (code === 1) isBold = true;
+            else if (code === 4) isUnderline = true;
+            else if (code === 22) isBold = false;
+            else if (code === 24) isUnderline = false;
+            else if (code >= 30 && code <= 37) currentFg = getTerminalColorScheme()[code];
+            else if (code >= 90 && code <= 97) currentFg = getTerminalColorScheme()[code];
+            else if (code >= 40 && code <= 47) currentBg = getTerminalColorScheme()[code];
+            else if (code === 39) { /* Default FG */ }
+            else if (code === 49) { /* Default BG */ }
         }
 
         lastIndex = ansiRegex.lastIndex;
@@ -4224,45 +4288,68 @@ function compareOutput() {
 
 
     let startIdx = 0;
-    if (actualLines.length > expectedLines.length) {
 
-        for (let i = actualLines.length - expectedLines.length; i >= 0; i--) {
-            let match = true;
-            for (let j = 0; j < expectedLines.length; j++) {
-                if (actualLines[i + j] !== expectedLines[j]) {
-                    match = false;
-                    break;
-                }
-            }
-            if (match) {
-                startIdx = i;
-                break;
-            }
-        }
-
-        if (startIdx === 0 && actualLines.length > expectedLines.length) {
-            startIdx = actualLines.length - expectedLines.length;
-        }
-    }
+    // Heuristic disabled: searching for an expected subsequence inside actual output caused incorrect shifts and hidden mismatches. Keep direct line-by-line comparison.
 
 
     let html = '';
-    for (let i = 0; i < expectedLines.length; i++) {
-        const expLine = expectedLines[i];
-        const actLine = actualLines[startIdx + i] || '';
-        const isMatch = expLine === actLine;
 
-        if (isMatch) {
-            html += `<span class="diff-token correct">${escapeHtml(expLine)}</span><br>`;
+    // Inline Compact Diff Visualization
+    // Focus on minimal space usage
+
+    const maxLen = Math.max(expectedLines.length, actualLines.length - startIdx);
+
+    for (let i = 0; i < maxLen; i++) {
+        const expLine = i < expectedLines.length ? expectedLines[i] : null;
+        let actLine = null;
+
+        // Correctly calculate index in actualLines
+        // If we have output "A\nB\nC" and start matching at line 0, actualIndex is 0+0, 0+1, 0+2
+        // We need to be careful not to access out of bounds
+        const actualIndex = startIdx + i;
+
+        if (actualIndex < actualLines.length) {
+            actLine = actualLines[actualIndex];
+        }
+
+        // Logic check
+        if (expLine !== null && actLine !== null && expLine === actLine) {
+            // MATCH
+            html += `<div class="diff-line match-compact">${escapeHtml(expLine)}</div>`;
         } else {
-            html += `<span class="diff-token incorrect">${escapeHtml(expLine)}</span><br>`;
+            // MISMATCH
+            html += `<div class="diff-line mismatch-compact">`;
+
+            if (actLine !== null && expLine !== null) {
+                // Wrong value
+                html += `<span class="diff-wrong" title="Actual">${escapeHtml(actLine)}</span> 
+                         <span class="diff-arrow">→</span> 
+                         <span class="diff-right" title="Expected">${escapeHtml(expLine)}</span>`;
+            } else if (actLine !== null && expLine === null) {
+                // Extra value (Trailing junk)
+                html += `<span class="diff-extra" title="Extra output">[Extra] ${escapeHtml(actLine)}</span>`;
+            } else if (actLine === null && expLine !== null) {
+                // Missing value (Expected has line but Actual ended)
+                html += `<span class="diff-missing" title="Missing output">Missing: ${escapeHtml(expLine)}</span>`;
+            }
+
+            html += `</div>`;
         }
     }
 
+    const dockedDiffDisplay = document.getElementById('docked-expected-diff');
+    const dockedTextarea = document.getElementById('docked-expected');
 
     diffDisplay.innerHTML = html;
     diffDisplay.style.display = 'block';
     textarea.style.display = 'none';
+
+    // Update Docked View if exists
+    if (dockedDiffDisplay && dockedTextarea) {
+        dockedDiffDisplay.innerHTML = html;
+        dockedDiffDisplay.style.display = 'block';
+        dockedTextarea.style.display = 'none';
+    }
 }
 
 function escapeHtml(text) {
@@ -4274,9 +4361,26 @@ function escapeHtml(text) {
 function switchToExpectedEdit() {
     const textarea = document.getElementById('expected-area');
     const diffDisplay = document.getElementById('expected-diff');
-    textarea.style.display = 'block';
-    diffDisplay.style.display = 'none';
-    textarea.focus();
+
+    if (textarea && diffDisplay) {
+        textarea.style.display = 'block';
+        diffDisplay.style.display = 'none';
+        textarea.focus();
+    }
+
+    // Also switch Docked View
+    const dockedTextarea = document.getElementById('docked-expected');
+    const dockedDiffDisplay = document.getElementById('docked-expected-diff');
+
+    if (dockedTextarea && dockedDiffDisplay) {
+        dockedTextarea.style.display = 'block';
+        dockedDiffDisplay.style.display = 'none';
+        // If docked panel is visible, focus it
+        if (document.getElementById('problems-panel')?.style.display !== 'none' &&
+            DockingState.ioDocked) {
+            dockedTextarea.focus();
+        }
+    }
 }
 
 // ============================================================================
@@ -5055,8 +5159,11 @@ function renderTestResults() {
             details = inputPreview ? `In: ${inputPreview}...` : 'Empty input';
         }
 
+        const isAC = result && result.status === 'AC';
+        const itemClass = isAC ? 'test-result-item item-ac' : 'test-result-item';
+
         html += `
-                <div class="test-result-item" data-index="${idx}">
+                <div class="${itemClass}" data-index="${idx}">
                     <span class="test-result-status ${statusClass}">${status}</span>
                     <div class="test-result-info">
                         <span class="test-result-title">Test Case ${idx + 1}</span>
