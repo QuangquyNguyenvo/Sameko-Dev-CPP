@@ -2302,7 +2302,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     background: var(--bg-input);
     color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: border-color 0.2s, background 0.2s, color 0.2s, transform 0.2s, box-shadow 0.2s;
     white-space: nowrap;
     box-shadow: 2px 2px 0 var(--shadow-card);
 }
@@ -2352,7 +2352,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
     z-index: 1;
 }
 
@@ -2392,7 +2392,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     background: var(--bg-panel);
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
     user-select: none;
 }
 
@@ -2533,7 +2533,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: background 0.2s, color 0.2s;
 }
 
 .fullscreen-popup-close:hover {
@@ -2590,7 +2590,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     border: 2px solid var(--border);
     border-radius: 10px;
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .mp-card:hover {
@@ -2675,7 +2675,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     color: var(--text-primary);
     border-radius: 5px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2780,7 +2780,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     cursor: pointer;
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
-    transition: all 0.2s;
+    transition: color 0.2s, border-bottom-color 0.2s;
 }
 
 .customizer-tab:hover {
@@ -2860,7 +2860,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     border-radius: 6px;
     border: 1px solid var(--border);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: border-color 0.2s;
 }
 
 .color-row:hover {
@@ -2990,7 +2990,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
 .preview-ui [data-color-key] {
     cursor: pointer;
     position: relative;
-    transition: all 0.15s;
+    transition: outline 0.15s, outline-offset 0.15s;
 }
 
 .preview-ui [data-color-key]:hover {
@@ -3265,7 +3265,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: background 0.2s, color 0.2s;
 }
 
 .tc-close:hover {
@@ -3356,7 +3356,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     overflow: hidden;
     background: var(--bg-panel);
     position: relative;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1), border 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     min-width: 400px;
 }
 
@@ -3384,7 +3384,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     align-items: center;
     justify-content: center;
     color: var(--text-secondary);
-    transition: all 0.3s ease;
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
     z-index: 10;
 }
 
@@ -3520,7 +3520,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     background: var(--bg-panel);
     border-radius: 6px;
     border: 1px solid transparent;
-    transition: all 0.2s;
+    transition: border-color 0.2s, background-color 0.2s, transform 0.2s;
 }
 
 .tc-color-row:hover {
@@ -3558,7 +3558,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     border: 3px solid var(--border);
     flex-shrink: 0;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
@@ -3619,7 +3619,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     display: none;
     opacity: 0;
     transform: scale(0.9) translateY(-10px);
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tc-color-picker-popup.visible {
@@ -3652,7 +3652,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     align-items: center;
     justify-content: center;
     border-radius: 4px;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s;
 }
 
 .tc-color-picker-close:hover {
@@ -3728,7 +3728,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     border: 1px solid var(--border);
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -3792,7 +3792,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
 .tc-clickable {
     cursor: pointer;
     position: relative;
-    transition: all 0.2s ease;
+    transition: outline 0.2s ease, outline-offset 0.2s ease, background-color 0.2s ease;
     border-radius: 6px;
 }
 
@@ -3867,7 +3867,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     border-radius: 8px 8px 0 0;
     border: 1px solid transparent;
     border-bottom: none;
-    transition: all 0.2s;
+    transition: border-color 0.2s;
 }
 
 .tc-ide-tab.active {
@@ -3889,7 +3889,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     display: flex;
     align-items: center;
     gap: 4px;
-    transition: all 0.2s;
+    transition: transform 0.2s, box-shadow 0.2s;
     font-weight: 500;
 }
 
@@ -4131,7 +4131,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
+    transition: background 0.2s, color 0.2s;
 }
 
 .tc-close:hover {
@@ -4179,7 +4179,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     border: 2px solid var(--border);
     border-radius: 12px;
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .mp-card:hover {
@@ -4221,7 +4221,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     color: var(--text-primary);
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -4291,7 +4291,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     border-radius: 10px;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .theme-carousel-card:hover {
@@ -4355,7 +4355,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     background-size: cover;
     background-position: center;
     position: relative;
-    transition: all 0.3s ease;
+    transition: background-position 0.3s ease;
 }
 
 /* Background edit mode */
@@ -4510,7 +4510,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: background 0.15s, border-color 0.15s;
 }
 
 .tc-upload-btn:hover {
@@ -4526,7 +4526,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     color: var(--text-secondary);
     font-size: 12px;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .tc-reset-btn:hover {
@@ -4644,7 +4644,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     border-radius: 4px;
     border: 1px solid var(--border);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: background 0.15s, color 0.15s;
 }
 
 .btn-sm.btn-secondary {
@@ -4684,7 +4684,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     border: 2px solid var(--border);
     border-radius: 10px;
     overflow: hidden;
-    transition: all 0.2s;
+    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
 }
 
 .mp-card:hover {
@@ -4765,7 +4765,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     background: var(--bg-button);
     color: var(--text-primary);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: background 0.15s;
 }
 
 .mp-btn:hover {
@@ -4838,7 +4838,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     border-radius: 10px;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     display: flex;
     flex-direction: column;
 }
@@ -4952,7 +4952,7 @@ body[data-theme="sakura"] .tc-footer .tc-btn.primary {
     cursor: pointer;
     font-size: 12px;
     font-weight: 600;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s;
     display: flex;
     align-items: center;
     gap: 6px;

@@ -229,7 +229,7 @@ body::after {
     font-family: 'Nunito', sans-serif;
     font-size: 14px;
     font-weight: 700;
-    transition: all var(--duration-fast) var(--ease-standard);
+    transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard), transform var(--duration-fast) var(--ease-standard);
 }
 
 .menu-btn:hover {
@@ -280,7 +280,7 @@ body::after {
     font-size: 13px;
     font-weight: 700;
     white-space: nowrap;
-    transition: all var(--duration-fast) var(--ease-standard);
+    transition: transform var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
@@ -308,7 +308,7 @@ body::after {
     font-weight: 800;
     font-size: 12px;
     opacity: 0.6;
-    transition: all 0.2s;
+    transition: opacity 0.2s, background-color 0.2s, color 0.2s;
 }
 
 .tab:hover .tab-x {
@@ -340,7 +340,7 @@ body::after {
     cursor: pointer;
     font-size: 18px;
     font-weight: 800;
-    transition: all var(--duration-fast);
+    transition: background-color var(--duration-fast), border-style var(--duration-fast), border-color var(--duration-fast), transform var(--duration-fast);
 }
 
 .tab-add:hover {
@@ -369,7 +369,7 @@ body::after {
     border-radius: 12px;
     color: var(--accent, var(--bg-ocean-deep));
     cursor: pointer;
-    transition: all var(--duration-fast);
+    transition: background-color var(--duration-fast), transform var(--duration-fast), color var(--duration-fast), box-shadow var(--duration-fast);
 }
 
 .toggle-btn:hover {
@@ -395,7 +395,7 @@ body::after {
     font-weight: 700;
     font-size: 13px;
     cursor: pointer;
-    transition: all var(--duration-fast) var(--ease-standard);
+    transition: transform var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard), background-color var(--duration-fast) var(--ease-standard);
 }
 
 .action-btn:hover {
@@ -625,7 +625,7 @@ body::after {
     font-weight: 700;
     padding: 20px 30px;
     width: 140px;
-    transition: all var(--duration-fast);
+    transition: transform var(--duration-fast), background-color var(--duration-fast), border-color var(--duration-fast), box-shadow var(--duration-fast);
 }
 
 .welcome-btn:hover {

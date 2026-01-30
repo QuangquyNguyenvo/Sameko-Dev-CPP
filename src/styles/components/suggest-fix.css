@@ -153,8 +153,7 @@ body[data-theme="kawaii-light"] .suggest-details {
     font-weight: 700 !important;
     /* Bold */
     cursor: pointer !important;
-    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
-    /* Bouncy transition */
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
     text-decoration: none !important;
 
     /* Colors matches settings tabs */
@@ -248,7 +247,7 @@ body[data-theme="kawaii-light"] .suggest-details {
     box-shadow: 0 4px 0 var(--border, #e0f0ff) !important;
 
     cursor: pointer !important;
-    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
     transform: translateY(0);
 }
 
@@ -291,7 +290,7 @@ body[data-theme="kawaii-light"] .suggest-details {
     box-shadow: 0 4px 0 var(--bg-ocean-deep, #88c9ea) !important;
 
     cursor: pointer !important;
-    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), border-color 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
 .fullscreen-popup-actions .btn-primary:hover {

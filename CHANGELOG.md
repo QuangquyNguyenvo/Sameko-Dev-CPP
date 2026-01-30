@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [1.0.2] - 2026-01-31
+
+### Added
+- **Auto-Update UI**: Added download progress bar to the update notification to show download status clearly.
+- **Update Optimization**: Optimized the update process for better reliability.
+
+### Fixed
+- **[[BUG] Shortcut customization not working (Fixes #14)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/14)**: Resolved issue where custom keybindings were not being saved/applied correctly.
+- **[[BUG] Random keyboard input freeze in editor (Fixes #13)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/13)**: Fixed intermittent input freezing requiring restart.
+- **[[BUG] Linker/Build error when switching C++ versions quickly (Fixes #12)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/12)**: Fixed race condition by using settings snapshot during build and deferring compiler settings changes until build completes.
+- **[[BUG] Test Detail View ignores trailing output (Fixes #10)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/10)**: Corrected output comparison logic to handle trailing output/whitespace properly.
+- **[[BUG] Lỗi bản portable (Fixes #9)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/9)**: Addressed issues with the portable distribution build.
+
+### Improved
+- **Video Background Performance**: Video backgrounds now pause when window loses focus, reducing CPU/GPU usage when alt-tabbing.
+- **Theme Customizer Cleanup**: Fixed potential video memory leak when closing theme customizer with video preview.
+- **CSS Transition Optimization**: Replaced ~50 instances of `transition: all` with specific properties, reducing browser repaint overhead during hover/active states.
+- **Panel Resizer Throttling**: Added requestAnimationFrame throttling to panel resize handlers for smoother dragging.
+
 ## [1.0.1] - 2026-01-29
 
 ### Fixed
