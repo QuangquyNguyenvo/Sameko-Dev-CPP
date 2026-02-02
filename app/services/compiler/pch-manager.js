@@ -87,7 +87,7 @@ async function ensurePCH(flags = '', onMessage = null) {
         const stdStr = stdMatch ? ' ' + stdMatch[0] : '';
         onMessage({
             type: 'info',
-            message: `Đang tối ưu thư viện cho cấu hình ${optStr}${stdStr}...`
+            message: `Optimizing libraries for configuration ${optStr}${stdStr}...`
         });
     }
 

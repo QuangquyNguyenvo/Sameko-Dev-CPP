@@ -2374,12 +2374,12 @@ async function formatCode() {
     const scrollTop = editor.getScrollTop();
 
 
-    setStatus('formatting', 'Đang format code...');
+    setStatus('formatting', 'Formatting code...');
 
     try {
         if (!window.electronAPI?.formatCode) {
-            setStatus('error', 'Format không khả dụng');
-            termLog('⚠ Format code không khả dụng trong môi trường này', 'warning');
+            setStatus('error', 'Format unavailable');
+            termLog('⚠ Code formatting is not available in this environment', 'warning');
             return;
         }
 
@@ -2408,14 +2408,14 @@ async function formatCode() {
             }
             editor.setScrollTop(scrollTop);
 
-            setStatus('ready', 'Format thành công!');
-            termLog('✓ Code đã được format (Google Style) - Nhấn Ctrl+Z để hoàn tác', 'success');
+            setStatus('ready', 'Format successful!');
+            termLog('✓ Code has been formatted (Google Style) - Press Ctrl+Z to undo', 'success');
         } else {
-            setStatus('error', 'Format thất bại');
+            setStatus('error', 'Format failed');
             termLog(`⚠ Format thất bại: ${result.error}`, 'error');
         }
     } catch (err) {
-        setStatus('error', 'Format lỗi');
+        setStatus('error', 'Format error');
         termLog(`⚠ Lỗi format: ${err.message}`, 'error');
     }
 }
@@ -2763,7 +2763,7 @@ function dockTerminalToProblems() {
         const terminalTab = document.createElement('span');
         terminalTab.className = 'panel-title terminal docked-tab';
         terminalTab.id = 'docked-terminal-tab';
-        terminalTab.innerHTML = 'TERMINAL <span class="dock-undock" title="Kéo để tách">×</span>';
+        terminalTab.innerHTML = 'TERMINAL <span class="dock-undock" title="Drag to detach">×</span>';
         terminalTab.setAttribute('draggable', 'true');
 
 
@@ -3063,7 +3063,7 @@ function dockIOToProblems() {
         const ioTab = document.createElement('span');
         ioTab.className = 'panel-title io docked-tab';
         ioTab.id = 'docked-io-tab';
-        ioTab.innerHTML = 'I/O <span class="dock-undock" title="Kéo để tách">×</span>';
+        ioTab.innerHTML = 'I/O <span class="dock-undock" title="Drag to detach">×</span>';
         ioTab.setAttribute('draggable', 'true');
 
 
@@ -3164,24 +3164,24 @@ function createDockedIOView(container) {
             <div class="docked-io-header-bar">
                 <span class="docked-io-title">Test Cases</span>
                 <div class="docked-test-nav" id="docked-test-nav">
-                    <button class="docked-nav-btn" id="docked-btn-add-test" title="Thêm test">
+                    <button class="docked-nav-btn" id="docked-btn-add-test" title="Add test">
                         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3">
                             <line x1="12" y1="5" x2="12" y2="19"></line>
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
                     </button>
-                    <button class="docked-nav-btn" id="docked-btn-prev-test" title="Test trước">
+                    <button class="docked-nav-btn" id="docked-btn-prev-test" title="Previous test">
                         <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3">
                             <polyline points="15 18 9 12 15 6" />
                         </svg>
                     </button>
                     <span class="docked-test-label" id="docked-test-label">0/0</span>
-                    <button class="docked-nav-btn" id="docked-btn-next-test" title="Test tiếp">
+                    <button class="docked-nav-btn" id="docked-btn-next-test" title="Next test">
                         <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="3">
                             <polyline points="9 18 15 12 9 6" />
                         </svg>
                     </button>
-                    <button class="docked-nav-btn danger" id="docked-btn-delete-test" title="Xóa test">
+                    <button class="docked-nav-btn danger" id="docked-btn-delete-test" title="Delete test">
                         <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -3192,12 +3192,12 @@ function createDockedIOView(container) {
             <div class="docked-io-split">
                 <div class="docked-io-panel">
                     <div class="docked-io-header">INPUT</div>
-                    <textarea class="docked-io-textarea" id="docked-input" placeholder="Nhập dữ liệu test..."></textarea>
+                    <textarea class="docked-io-textarea" id="docked-input" placeholder="Enter test data..."></textarea>
                 </div>
                 <div class="docked-io-divider"></div>
                 <div class="docked-io-panel">
                     <div class="docked-io-header">EXPECTED</div>
-                    <textarea class="docked-io-textarea" id="docked-expected" placeholder="Kết quả mong đợi..."></textarea>
+                    <textarea class="docked-io-textarea" id="docked-expected" placeholder="Expected output..."></textarea>
                     <div class="docked-io-textarea" id="docked-expected-diff" style="display: none; overflow: auto; cursor: text;"></div>
                 </div>
             </div>
@@ -4627,20 +4627,20 @@ async function startCCServer(silent = false) {
 
         if (result?.success) {
             ccConnected = true;
-            btn.title = 'Lấy test từ OJ';
+            btn.title = 'Get test cases from Online Judge';
 
             if (!silent) {
-                log('OJ: Sẵn sàng nhận test cases', 'success');
+                log('OJ: Ready to receive test cases', 'success');
 
 
                 if (!ccHasReceivedProblem) {
-                    log('    Cài extension: Chrome Web Store > "Competitive Companion"', 'info');
-                    log('    Sau đó vào VNOI/Codeforces và click icon extension', 'info');
+                    log('    Install extension: Chrome Web Store > "Competitive Companion"', 'info');
+                    log('    Then go to VNOI/Codeforces and click the extension icon', 'info');
                 }
             }
         } else if (!silent) {
             ccConnected = false;
-            log('OJ: Không thể khởi động (port 27121 đang dùng)', 'warning');
+            log('OJ: Unable to start (port 27121 is already in use)', 'warning');
         }
     } catch (e) {
         console.error('CC Server error:', e);
@@ -4891,11 +4891,11 @@ function showReloadNotification(tab) {
                     <div class="reload-notification-text">
                         <div class="reload-notification-title">File đã thay đổi</div>
                         <div class="reload-notification-file">${tab.name}</div>
-                        <div class="reload-notification-desc">File đã được thay đổi bên ngoài. Bạn có muốn tải lại?</div>
+                        <div class="reload-notification-desc">File has been changed externally. Do you want to reload?</div>
                     </div>
                     <div class="reload-notification-actions">
-                        <button class="reload-btn reload-btn-yes" title="Tải lại từ disk">Tải lại</button>
-                        <button class="reload-btn reload-btn-no" title="Giữ nguyên">Bỏ qua</button>
+                        <button class="reload-btn reload-btn-yes" title="Reload from disk">Reload</button>
+                        <button class="reload-btn reload-btn-no" title="Keep current">Ignore</button>
                     </div>
                 </div>
                 `;
@@ -4975,12 +4975,12 @@ function initBatchTesting() {
 
 async function runAllTests() {
     if (!ccProblem || !ccProblem.tests || ccProblem.tests.length === 0) {
-        log('Không có test cases để chạy. Hãy lấy test từ OJ trước!', 'warning');
+        log('No test cases to run. Get test cases from OJ first!', 'warning');
         return;
     }
 
     if (isBatchTesting) {
-        log('Đang chạy tests...', 'warning');
+        log('Tests are already running...', 'warning');
         return;
     }
 
@@ -5018,7 +5018,7 @@ async function runAllTests() {
     try {
         const tab = App.tabs.find(t => t.id === App.activeTabId);
         if (!tab) {
-            log('Không có file đang mở!', 'error');
+            log('No file is currently open!', 'error');
             return;
         }
 

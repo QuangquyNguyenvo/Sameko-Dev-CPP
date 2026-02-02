@@ -59,7 +59,7 @@
 
             <div class="header-actions">
                 <!-- Toggle buttons -->
-                <button class="toggle-btn" id="btn-toggle-io" title="Hiện Input/Expected">
+                <button class="toggle-btn" id="btn-toggle-io" title="Show Input/Expected">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                         stroke-linejoin="round">
                         <rect x="3" y="3" width="7" height="8" rx="1.5" />
@@ -67,21 +67,21 @@
                         <path d="M14 7h6M14 12h4M14 17h5" />
                     </svg>
                 </button>
-                <button class="toggle-btn active" id="btn-toggle-term" title="Hiện Terminal">
+                <button class="toggle-btn active" id="btn-toggle-term" title="Show Terminal">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                         stroke-linejoin="round">
                         <path d="M4 17l6-5-6-5" />
                         <path d="M12 19h8" />
                     </svg>
                 </button>
-                <button class="toggle-btn" id="btn-toggle-problems" title="Hiện khung lỗi (Ctrl+J)">
+                <button class="toggle-btn" id="btn-toggle-problems" title="Show Problems (Ctrl+J)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                         stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10" />
                         <path d="M12 8v4M12 16h.01" />
                     </svg>
                 </button>
-                <button class="toggle-btn" id="btn-cc" title="Lấy test case tự động từ OJ">
+                <button class="toggle-btn" id="btn-cc" title="Get test cases from Online Judge">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
                         stroke-linejoin="round">
                         <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
@@ -93,18 +93,18 @@
                 <span class="sep"></span>
 
                 <!-- Run buttons -->
-                <button class="action-btn primary" id="btn-buildrun" title="Biên dịch và chạy (F11)">
+                <button class="action-btn primary" id="btn-buildrun" title="Build and run (F11)">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M8 5v14l11-7z" />
                     </svg>
                     <span>Run</span>
                 </button>
-                <button class="action-btn" id="btn-run-only" title="Chỉ chạy (F10)">
+                <button class="action-btn" id="btn-run-only" title="Run only (F10)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path d="M5 4l12 8-12 8V4z" />
                     </svg>
                 </button>
-                <button class="action-btn danger" id="btn-stop" title="Dừng chương trình" disabled>
+                <button class="action-btn danger" id="btn-stop" title="Stop program" disabled>
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <rect x="5" y="5" width="14" height="14" rx="2" />
                     </svg>
@@ -213,7 +213,7 @@
                             <path
                                 d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" />
                         </svg>
-                        Lấy test từ OJ
+                        Get Tests from OJ
                     </h2>
                     <button class="cc-close" id="cc-close">×</button>
                 </div>
@@ -221,27 +221,27 @@
                     <div class="cc-steps">
                         <div class="cc-step">
                             <span class="cc-step-num">1</span>
-                            <span class="cc-step-text">Cài extension <strong>Competitive Companion</strong> vào
+                            <span class="cc-step-text">Install <strong>Competitive Companion</strong> extension for
                                 Chrome/Firefox</span>
                         </div>
                         <div class="cc-step">
                             <span class="cc-step-num">2</span>
-                            <span class="cc-step-text">Mở bài tập trên trang OJ bất kỳ</span>
+                            <span class="cc-step-text">Open a problem on any OJ website</span>
                         </div>
                         <div class="cc-step">
                             <span class="cc-step-num">3</span>
-                            <span class="cc-step-text">Click icon <strong>+</strong> của extension trên trình
-                                duyệt</span>
+                            <span class="cc-step-text">Click the <strong>+</strong> icon of the extension in your
+                                browser</span>
                         </div>
                         <div class="cc-step">
                             <span class="cc-step-num">4</span>
-                            <span class="cc-step-text">Test cases sẽ <strong>tự động tải</strong> vào IDE!</span>
+                            <span class="cc-step-text">Test cases will <strong>automatically load</strong> into the IDE!</span>
                         </div>
                     </div>
                 </div>
                 <div class="cc-footer">
-                    <button class="cc-btn secondary" id="cc-cancel">Đóng</button>
-                    <button class="cc-btn primary" id="cc-install">Cài Extension</button>
+                    <button class="cc-btn secondary" id="cc-cancel">Close</button>
+                    <button class="cc-btn primary" id="cc-install">Install Extension</button>
                 </div>
             </div>
         </div>
@@ -861,17 +861,16 @@
                             Mẹo viết Snippet (Smart Template)
                         </div>
                         <div class="tips-content">
-                            • <code>${1:ten_bien}</code> : Điểm dừng số 1, nhấn Tab để nhảy tới đây. Có nội dung mặc
-                            định.<br>
-                            • <code>${2}</code> : Điểm dừng số 2, nhấn Tab lần nữa để tới đây.<br>
-                            • <code>${0}</code> : Điểm dừng cuối cùng (thường để giữa cặp ngoặc { }).
+                            • <code>${1:ten_bien}</code> : Tab stop #1, press Tab to jump here. Has default content.<br>
+                            • <code>${2}</code> : Tab stop #2, press Tab again to go here.<br>
+                            • <code>${0}</code> : Final tab stop (usually placed inside brackets { }).
                             <div class="tips-examples">
-                                <strong>Ví dụ:</strong><br>
-                                1. Vòng lặp:
+                                <strong>Examples:</strong><br>
+                                1. Loop:
                                 <pre>for(int i=0; i<${1:n}; i++) {\n    ${0}\n}</pre>
-                                2. Xuất dữ liệu / Vector:
+                                2. Output / Vector:
                                 <pre>cout<<${1:res}<<"\\n";\nvector<${1:int}> ${2:v};</pre>
-                                3. Viết hàm nhanh:
+                                3. Quick function:
                                 <pre>${1:void} ${2:solve}() {\n    ${0}\n}</pre>
                             </div>
                         </div>

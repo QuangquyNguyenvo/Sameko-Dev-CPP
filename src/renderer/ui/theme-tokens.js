@@ -216,7 +216,6 @@ const ThemeTokens = {
 
         switch (type) {
             case 'image':
-                // Wrap in url() if needed
                 if (value && value !== 'none' && !value.startsWith('url(')) {
                     if (value.startsWith('data:')) {
                         element.style.setProperty(cssVar, `url("${value}")`);
@@ -230,17 +229,14 @@ const ThemeTokens = {
                 break;
 
             case 'opacity':
-                // Convert percentage (0-100) to decimal (0-1)
                 element.style.setProperty(cssVar, (parseFloat(value) / 100).toString());
                 break;
 
             case 'brightness':
-                // Convert percentage (0-100) to multiplier (0-1+)
                 element.style.setProperty(cssVar, (parseFloat(value) / 100).toString());
                 break;
 
             case 'blur':
-                // Add px unit
                 element.style.setProperty(cssVar, `${parseInt(value)}px`);
                 break;
 
@@ -249,7 +245,6 @@ const ThemeTokens = {
                 break;
 
             default:
-                // color, raw, etc. - apply directly
                 element.style.setProperty(cssVar, value);
         }
     },
@@ -265,19 +260,16 @@ const ThemeTokens = {
     applyToElement(element, colors, options = {}) {
         if (!element || !colors) return;
 
-        // Optionally clear existing values first
         if (options.clearFirst) {
             for (const def of Object.values(this.definitions)) {
                 element.style.removeProperty(def.cssVar);
             }
         }
 
-        // Apply each color value
         for (const [key, value] of Object.entries(colors)) {
             this.applyValue(element, key, value);
         }
 
-        // Apply inheritance for variant keys
         for (const [childKey, parentKey] of Object.entries(this.inheritance)) {
             const hasChild = colors[childKey] !== undefined && colors[childKey] !== null;
             if (!hasChild && colors[parentKey]) {

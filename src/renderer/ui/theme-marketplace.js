@@ -24,7 +24,6 @@ const ThemeMarketplace = {
         const carousel = document.getElementById('theme-carousel');
         if (!carousel) return;
 
-        // Left/Right arrows
         document.getElementById('theme-carousel-left')?.addEventListener('click', () => {
             carousel.scrollBy({ left: -180, behavior: 'smooth' });
         });
@@ -33,7 +32,6 @@ const ThemeMarketplace = {
             carousel.scrollBy({ left: 180, behavior: 'smooth' });
         });
 
-        // Mouse wheel horizontal scroll
         carousel.addEventListener('wheel', (e) => {
             if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
                 e.preventDefault();
@@ -46,15 +44,12 @@ const ThemeMarketplace = {
      * Setup button handlers
      */
     _setupButtons() {
-        // Marketplace button
         document.getElementById('btn-open-marketplace')?.addEventListener('click', () => {
             this.openMarketplace();
         });
 
-        // Customizer button - just open, auto-select first if needed
         document.getElementById('btn-open-customizer')?.addEventListener('click', (e) => {
             e.stopPropagation();
-            // Pass current theme or null - customizer will auto-handle
             const currentTheme = App?.settings?.appearance?.theme;
             if (typeof ThemeCustomizer !== 'undefined') {
                 ThemeCustomizer.open(currentTheme);
@@ -63,7 +58,6 @@ const ThemeMarketplace = {
             }
         });
 
-        // Marketplace popup buttons
         document.getElementById('btn-import-file')?.addEventListener('click', () => this._importFile());
         document.getElementById('btn-import-gist')?.addEventListener('click', () => this._importGist());
         document.getElementById('btn-export-file')?.addEventListener('click', () => this._exportFile());
@@ -88,14 +82,12 @@ const ThemeMarketplace = {
         const themes = ThemeManager.getThemeList();
         const currentTheme = App?.settings?.appearance?.theme || 'kawaii-dark';
 
-        // Update hidden select
         if (hiddenSelect) {
             hiddenSelect.innerHTML = themes.map(t =>
                 `<option value="${t.id}" ${t.id === currentTheme ? 'selected' : ''}>${t.name}</option>`
             ).join('');
         }
 
-        // Render cards
         carousel.innerHTML = themes.map(theme => {
             const themeData = ThemeManager.themes.get(theme.id);
             const preview = this._generatePreview(themeData);
@@ -118,14 +110,12 @@ const ThemeMarketplace = {
             `;
         }).join('');
 
-        // Bind click handlers
         carousel.querySelectorAll('.theme-carousel-card').forEach(card => {
             card.addEventListener('click', () => {
                 this._selectTheme(card.dataset.themeId);
             });
         });
 
-        // Scroll to active
         requestAnimationFrame(() => {
             const active = carousel.querySelector('.theme-carousel-card.active');
             if (active) {
@@ -169,20 +159,16 @@ const ThemeMarketplace = {
      * Select and apply theme
      */
     _selectTheme(themeId) {
-        // Update cards
         document.querySelectorAll('.theme-carousel-card').forEach(card => {
             card.classList.toggle('active', card.dataset.themeId === themeId);
         });
 
-        // Update hidden select
         const select = document.getElementById('set-theme');
         if (select) select.value = themeId;
 
-        // Apply theme
         ThemeManager.setTheme(themeId);
         if (typeof App !== 'undefined') {
             App.settings.appearance.theme = themeId;
-            // Save settings immediately so theme persists
             if (typeof saveSettings === 'function') {
                 saveSettings();
             }
@@ -225,7 +211,6 @@ const ThemeMarketplace = {
 
         let html = '';
 
-        // Built-in section
         html += `
             <div class="mp-section">
                 <h3 class="mp-section-title">Built-in Themes</h3>
@@ -235,7 +220,6 @@ const ThemeMarketplace = {
             </div>
         `;
 
-        // Custom section
         if (customThemes.length > 0) {
             html += `
                 <div class="mp-section">
@@ -249,7 +233,6 @@ const ThemeMarketplace = {
 
         container.innerHTML = html;
 
-        // Bind events
         container.querySelectorAll('.mp-card').forEach(card => {
             const id = card.dataset.themeId;
 
@@ -363,12 +346,10 @@ const ThemeMarketplace = {
 
         if (!confirm(`Delete theme "${theme.name || themeId}"?`)) return;
 
-        // Check if this is the current theme
         const isCurrentTheme = App?.settings?.appearance?.theme === themeId;
 
         const result = ThemeManager.deleteTheme(themeId);
         if (result.success) {
-            // If deleted theme was active, switch to first available theme
             if (isCurrentTheme) {
                 const themes = ThemeManager.getThemeList();
                 if (themes.length > 0) {

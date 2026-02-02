@@ -209,7 +209,6 @@ const FileExplorer = {
      * Setup event listeners
      */
     setupEventListeners() {
-        // Toggle button
         if (this.elements.toggleBtn) {
             console.log('[FileExplorer] Attaching click handler to toggle button');
             this.elements.toggleBtn.addEventListener('click', (e) => {
@@ -232,7 +231,6 @@ const FileExplorer = {
             });
         }
 
-        // Refresh button
         const refreshBtn = document.getElementById('btn-refresh-explorer');
         if (refreshBtn) {
             refreshBtn.addEventListener('click', (e) => {
@@ -958,43 +956,36 @@ const FileExplorer = {
             };
         }
 
-        // Note handler
         menu.querySelector('[data-action="note"]').onclick = () => {
             menu.remove();
             this.promptNote(filePath);
         };
 
-        // Save as approach handler
         menu.querySelector('[data-action="save-approach"]').onclick = () => {
             menu.remove();
             this.saveAsApproach(filePath);
         };
 
-        // Create inp handler
         menu.querySelector('[data-action="create-inp"]').onclick = () => {
             this.createCompanionFile(filePath, '.inp');
             menu.remove();
         };
 
-        // Create out handler
         menu.querySelector('[data-action="create-out"]').onclick = () => {
             this.createCompanionFile(filePath, '.out');
             menu.remove();
         };
 
-        // Rename handler
         menu.querySelector('[data-action="rename"]').onclick = () => {
             menu.remove();
             this.promptRename(filePath);
         };
 
-        // Delete handler
         menu.querySelector('[data-action="delete"]').onclick = () => {
             menu.remove();
             this.confirmDelete(filePath);
         };
 
-        // Pin/Unpin handler
         const pinBtn = menu.querySelector('[data-action="pin"], [data-action="unpin"]');
         if (pinBtn) {
             pinBtn.onclick = () => {
@@ -1746,7 +1737,6 @@ const FileExplorer = {
             };
         }
 
-        // Rename handler
         const renameBtn = menu.querySelector('[data-action="rename"]');
         if (renameBtn) {
             renameBtn.onclick = () => {
@@ -1755,7 +1745,6 @@ const FileExplorer = {
             };
         }
 
-        // Delete handler
         const deleteBtn = menu.querySelector('[data-action="delete"]');
         if (deleteBtn) {
             deleteBtn.onclick = () => {

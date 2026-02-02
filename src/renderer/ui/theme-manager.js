@@ -35,12 +35,10 @@ const ThemeManager = {
     async init() {
         console.log('[ThemeManager] Initializing v2.0...');
 
-        // Load hardcoded themes IMMEDIATELY (no lag)
         this._loadAllHardcodedThemes();
         this.loadUserThemes();
         console.log(`[ThemeManager] Loaded ${this.themes.size} themes (hardcoded)`);
 
-        // Then async load JSON versions in background (optional enhancement)
         this._loadJSONThemesInBackground();
     },
 
@@ -57,12 +55,12 @@ const ThemeManager = {
     },
 
     /**
-     * Restore a built-in theme to its hardcoded definition (drops in-memory overrides)
+     * Restore a built-in theme to its hardcoded definition
      */
     _restoreBuiltinTheme(themeId) {
         const hardcoded = this._getHardcodedThemes();
         if (hardcoded[themeId]) {
-            this.registerTheme(hardcoded[themeId], true); // Skip auto re-apply
+            this.registerTheme(hardcoded[themeId], true);
         }
     },
 
@@ -75,22 +73,13 @@ const ThemeManager = {
 
     /**
      * Load JSON themes in background (non-blocking)
-     * NOTE: In Electron, fetch() doesn't work well with relative paths.
-     * Hardcoded themes are already loaded and work perfectly, so JSON loading
-     * is disabled to avoid console errors. Enable only if using a web server.
      */
     _loadJSONThemesInBackground() {
-        // Disabled: In Electron packaged app, fetch() can't access local files
-        // via relative paths. Hardcoded themes already provide full functionality.
-        // This would only be useful for dynamic theme hot-reloading during dev.
-        
-        // Uncomment below for development with a local server:
-        // this._loadBuiltinThemesAsync().catch(() => {});
+        // Disabled in Electron - fetch() can't access local files with relative paths
     },
 
     /**
      * Load builtin themes from JSON files (async, non-blocking)
-     * NOTE: Currently disabled - see _loadJSONThemesInBackground()
      */
     async _loadBuiltinThemesAsync() {
         const promises = this.builtinThemeIds.map(async (themeId) => {
@@ -99,19 +88,16 @@ const ThemeManager = {
                 const response = await fetch(themePath);
                 if (response.ok) {
                     const themeData = await response.json();
-                    // Update the theme with full JSON data
                     this.registerTheme(themeData);
                 }
             } catch (error) {
-                // Silent fail - hardcoded version already loaded
             }
         });
         await Promise.all(promises);
     },
 
-
     /**
-     * Fallback: Load hardcoded theme definition
+     * Load hardcoded theme definition
      */
     _loadHardcodedTheme(themeId) {
         const hardcodedThemes = this._getHardcodedThemes();
@@ -121,7 +107,7 @@ const ThemeManager = {
     },
 
     /**
-     * Hardcoded theme definitions (fallback) - Complete CSS variable sets
+     * Hardcoded theme definitions
      */
     _getHardcodedThemes() {
         return {
@@ -159,7 +145,6 @@ const ThemeManager = {
                     settingsLabelColor: '#a0c0d0',
                     settingsSectionColor: '#88c9ea',
                     buttonTextOnAccent: '#ffffff',
-                    // Button properties for custom themes
                     btnBg: 'rgba(255, 255, 255, 0.1)',
                     btnBgHover: 'rgba(255, 255, 255, 0.15)',
                     btnBorder: '#3a6075',
@@ -219,7 +204,6 @@ const ThemeManager = {
                     settingsLabelColor: '#4a6a7a',
                     settingsSectionColor: '#4a9bc9',
                     buttonTextOnAccent: '#ffffff',
-                    // Button properties
                     btnBg: '#ffffff',
                     btnBgHover: '#e8f4fc',
                     btnBorder: '#a0c8e0',
@@ -279,7 +263,6 @@ const ThemeManager = {
                     settingsLabelColor: '#8b5f65',
                     settingsSectionColor: '#ff9aaf',
                     buttonTextOnAccent: '#ffffff',
-                    // Button properties
                     btnBg: '#fff0f5',
                     btnBgHover: '#ffe4e1',
                     btnBorder: '#ffcad4',
@@ -343,7 +326,6 @@ const ThemeManager = {
                     settingsLabelColor: '#f8f8f2',
                     settingsSectionColor: '#bd93f9',
                     buttonTextOnAccent: '#ffffff',
-                    // Button properties
                     btnBg: 'rgba(255, 255, 255, 0.1)',
                     btnBgHover: 'rgba(255, 255, 255, 0.15)',
                     btnBorder: '#6272a4',
@@ -400,7 +382,7 @@ const ThemeManager = {
                     settingsLabelColor: '#f8f8f2',
                     settingsSectionColor: '#a6e22e',
                     buttonTextOnAccent: '#272822',
-                    // Button properties
+
                     btnBg: 'rgba(255, 255, 255, 0.08)',
                     btnBgHover: 'rgba(255, 255, 255, 0.12)',
                     btnBorder: '#49483e',
@@ -457,7 +439,6 @@ const ThemeManager = {
                     settingsLabelColor: '#d8dee9',
                     settingsSectionColor: '#88c0d0',
                     buttonTextOnAccent: '#2e3440',
-                    // Button properties
                     btnBg: 'rgba(255, 255, 255, 0.08)',
                     btnBgHover: 'rgba(255, 255, 255, 0.12)',
                     btnBorder: '#4c566a',
@@ -528,18 +509,14 @@ const ThemeManager = {
             return false;
         }
 
-        // Normalize the theme structure
         const normalizedTheme = this._normalizeTheme(themeData);
 
-        // Store in registry
         this.themes.set(id, normalizedTheme);
 
-        // Define Monaco theme
         if (typeof monaco !== 'undefined') {
             this._defineMonacoTheme(normalizedTheme);
         }
 
-        // If this is the active theme, re-apply it to update UI colors (e.g. after background JSON load)
         if (!skipReapply && id === this.activeThemeId) {
             this.setTheme(id);
         }
@@ -640,32 +617,23 @@ const ThemeManager = {
         console.log(`[ThemeManager] Applying theme: ${theme.name} (${themeId})`);
         this.activeThemeId = themeId;
 
-        // Load saved background settings for built-in themes
         if (this.builtinThemeIds.includes(themeId)) {
             this._loadSavedBackground(themeId, theme);
 
-            // Ensure kawaii-light always restores its default image when no override is saved
             if (themeId === 'kawaii-light' && (!theme.colors || !theme.colors.appBackground)) {
                 if (!theme.colors) theme.colors = {};
                 theme.colors.appBackground = 'assets/backgrounds/background.jpg';
             }
         }
 
-        // 1. Set data-theme attribute for CSS
         document.documentElement.setAttribute('data-theme', themeId);
-
-        // 2. Inject CSS variables if theme provides them
         this._applyCSSVariables(theme);
-
-        // 3. Update Background Video support
         this._updateBackground(theme);
 
-        // 4. Apply Monaco Editor theme
         if (typeof monaco !== 'undefined') {
             try {
                 monaco.editor.setTheme(themeId);
 
-                // Update all existing editor instances
                 if (typeof App !== 'undefined' && App.editors) {
                     Object.values(App.editors).forEach(editor => {
                         if (editor && editor.updateOptions) {
@@ -724,12 +692,8 @@ const ThemeManager = {
 
     /**
      * Apply inheritance: if child not set, use parent value
-     * This ensures variant CSS variables always have a value
-     * @private
-     * @deprecated - Now handled by ThemeTokens.applyToElement()
      */
     _applyInheritance(root, colors, childKey, parentKey, cssVar) {
-        // Check if child already has explicit value
         const hasChild = colors[childKey] !== undefined && colors[childKey] !== null;
         if (!hasChild && colors[parentKey]) {
             root.style.setProperty(cssVar, colors[parentKey]);
@@ -739,7 +703,6 @@ const ThemeManager = {
 
     /**
      * Get list of all available themes
-     * @returns {Array} List of theme info objects
      */
     getThemeList() {
         const list = [];
@@ -757,14 +720,11 @@ const ThemeManager = {
 
     /**
      * Export theme to JSON string
-     * @param {string} themeId 
-     * @returns {string|null} JSON string or null if not found
      */
     exportTheme(themeId) {
         const theme = this.themes.get(themeId);
         if (!theme) return null;
 
-        // Reconstruct full JSON structure for export
         const exportData = {
             meta: {
                 id: theme.id,
@@ -835,13 +795,12 @@ const ThemeManager = {
         )) {
             bgVideo.src = bgPath;
             bgVideo.style.display = 'block';
-            // Disable CSS image background to avoid conflict/double-rendering
             document.documentElement.style.setProperty('--app-bg-image', 'none');
         } else {
             bgVideo.style.display = 'none';
             bgVideo.src = '';
-            bgVideo.removeAttribute('src'); // Ensure it stops buffering
-            bgVideo.load(); // Force browser to release video resources
+            bgVideo.removeAttribute('src');
+            bgVideo.load();
         }
     },
 
@@ -893,7 +852,6 @@ const ThemeManager = {
 
         const newId = newName.toLowerCase().replace(/\s+/g, '-');
 
-        // Deep clone
         const newTheme = JSON.parse(JSON.stringify(source));
         newTheme.id = newId;
         newTheme.name = newName;
