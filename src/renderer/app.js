@@ -462,6 +462,33 @@ function createEditor(containerId) {
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Backslash, toggleSplit);
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyA, formatCode);
 
+    // Prevent accidental drops into editor (from dragging panels/UI elements)
+    const editorContainer = document.getElementById(containerId);
+    if (editorContainer) {
+        editorContainer.addEventListener('dragover', (e) => {
+            // Block internal UI drags (panels, tabs)
+            if (e.dataTransfer.types.includes('application/x-sameko-panel') ||
+                e.dataTransfer.types.includes('application/x-sameko-tab')) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.effectAllowed = 'none';
+                e.dataTransfer.dropEffect = 'none';
+            }
+            // Allow file drops and external text
+        }, true);
+
+        editorContainer.addEventListener('drop', (e) => {
+            // Block internal UI drops
+            if (e.dataTransfer.types.includes('application/x-sameko-panel') ||
+                e.dataTransfer.types.includes('application/x-sameko-tab')) {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+            // Allow file and external text drops to proceed
+        }, true);
+    }
+
     return editor;
 }
 
@@ -634,6 +661,9 @@ function initTabDrag() {
             draggedTabEl = tab;
             e.dataTransfer.effectAllowed = 'move';
             tab.classList.add('dragging');
+            
+            // Set custom type to prevent drop into editor
+            e.dataTransfer.setData('application/x-sameko-tab', tab.dataset.id);
 
             e.dataTransfer.setDragImage(tab, tab.offsetWidth / 2, tab.offsetHeight / 2);
         }
@@ -2718,6 +2748,24 @@ function initPanels() {
     setupRightClickPaste(document.getElementById('expected-area'));
     setupRightClickPaste(document.getElementById('terminal-in'));
 
+    // Setup 2-way sync between main IO panels and docked IO panels
+    const inputArea = document.getElementById('input-area');
+    const expectedArea = document.getElementById('expected-area');
+    
+    if (inputArea) {
+        inputArea.addEventListener('input', () => {
+            const dockedInput = document.getElementById('docked-input');
+            if (dockedInput) dockedInput.value = inputArea.value;
+        });
+    }
+    
+    if (expectedArea) {
+        expectedArea.addEventListener('input', () => {
+            const dockedExpected = document.getElementById('docked-expected');
+            if (dockedExpected) dockedExpected.value = expectedArea.value;
+        });
+    }
+
 
     initDockablePanels();
 }
@@ -2749,7 +2797,7 @@ function initDockablePanels() {
         terminalHead.style.cursor = 'grab';
 
         terminalHead.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', 'terminal');
+            e.dataTransfer.setData('application/x-sameko-panel', 'terminal');
             e.dataTransfer.effectAllowed = 'move';
             terminalSection.classList.add('panel-dragging');
             DockingState.draggedPanel = 'terminal';
@@ -2770,7 +2818,7 @@ function initDockablePanels() {
         ioHead.style.cursor = 'grab';
 
         ioHead.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', 'io');
+            e.dataTransfer.setData('application/x-sameko-panel', 'io');
             e.dataTransfer.effectAllowed = 'move';
             ioSection.classList.add('panel-dragging');
             DockingState.draggedPanel = 'io';
@@ -2802,9 +2850,13 @@ function initDockablePanels() {
     problemsPanel.addEventListener('drop', (e) => {
         e.preventDefault();
         problemsPanel.classList.remove('dock-drop-target');
-        if (DockingState.draggedPanel === 'terminal') {
+        
+        // Check for custom panel drag type
+        const panelType = e.dataTransfer.getData('application/x-sameko-panel');
+        
+        if (panelType === 'terminal' || DockingState.draggedPanel === 'terminal') {
             dockTerminalToProblems();
-        } else if (DockingState.draggedPanel === 'io') {
+        } else if (panelType === 'io' || DockingState.draggedPanel === 'io') {
             dockIOToProblems();
         }
     });
@@ -2875,7 +2927,7 @@ function dockTerminalToProblems() {
 
         // Drag to undock
         terminalTab.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', 'undock-terminal');
+            e.dataTransfer.setData('application/x-sameko-panel', 'undock-terminal');
             e.dataTransfer.effectAllowed = 'move';
             terminalTab.classList.add('dragging');
         });
@@ -3164,7 +3216,7 @@ function dockIOToProblems() {
 
         // Drag to undock
         ioTab.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('text/plain', 'undock-io');
+            e.dataTransfer.setData('application/x-sameko-panel', 'undock-io');
             e.dataTransfer.effectAllowed = 'move';
             ioTab.classList.add('dragging');
         });

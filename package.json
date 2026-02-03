@@ -135,7 +135,7 @@
             "publisherName": "Sameko Project"
         },
         "nsis": {
-            "artifactName": "${productName}-Setup-${version}.${ext}",
+            "artifactName": "sameko-dev-cpp-setup-${version}.${ext}",
             "oneClick": false,
             "allowToChangeInstallationDirectory": true,
             "createDesktopShortcut": true,
@@ -145,7 +145,7 @@
             "allowElevation": true
         },
         "portable": {
-            "artifactName": "${productName}-${version}-Portable.${ext}"
+            "artifactName": "sameko-dev-cpp-${version}-portable.${ext}"
         },
         "mac": {
             "target": "dmg",

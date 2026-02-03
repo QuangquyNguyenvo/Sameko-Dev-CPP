@@ -74,6 +74,10 @@ class AutoUpdateService {
                 releaseDate: info.releaseDate,
                 isPrerelease: info.version.includes('beta') || info.version.includes('alpha')
             });
+            
+            // Since autoDownload is true, also send download-started immediately
+            // This ensures the progress bar shows up when auto-download begins
+            this.sendStatusToRenderer('download-started');
         });
 
         // No update available
