@@ -529,13 +529,6 @@
     box-shadow: 0 0 0 2px var(--bg-ocean-deep), 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
-[data-theme="kawaii-dark"] .tab.focused::before,
-[data-theme="dracula"] .tab.focused::before,
-[data-theme="monokai"] .tab.focused::before,
-[data-theme="nord"] .tab.focused::before {
-    background: var(--bg-ocean-deep);
-}
-
 /* Hamburger button for dark themes */
 [data-theme="kawaii-dark"] .hamburger-btn,
 [data-theme="dracula"] .hamburger-btn,

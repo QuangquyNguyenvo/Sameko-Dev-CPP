@@ -9,6 +9,61 @@ const { WINDOW } = require('../shared/constants');
 let mainWindow = null;
 let devServer = null;
 let devServerPort = null;
+let saveTimeout = null;
+
+const settingsPath = path.join(app.getPath('userData'), 'settings.json');
+
+function loadWindowBounds() {
+    try {
+        if (fs.existsSync(settingsPath)) {
+            const data = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+            return data.windowBounds || null;
+        }
+    } catch (error) {
+        console.error('[Window] Failed to load window bounds:', error);
+    }
+    return null;
+}
+
+function saveWindowBounds() {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    
+    // Debounce: only save after 500ms of no changes
+    if (saveTimeout) clearTimeout(saveTimeout);
+    
+    saveTimeout = setTimeout(() => {
+        try {
+            const isMaximized = mainWindow.isMaximized();
+            
+            let settings = {};
+            if (fs.existsSync(settingsPath)) {
+                settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+            }
+            
+            // Only save bounds when NOT maximized to get correct restore size
+            if (!isMaximized) {
+                const bounds = mainWindow.getBounds();
+                settings.windowBounds = {
+                    x: bounds.x,
+                    y: bounds.y,
+                    width: bounds.width,
+                    height: bounds.height,
+                    isMaximized: false
+                };
+            } else {
+                // Just update maximized state, keep previous bounds for restore
+                if (!settings.windowBounds) {
+                    settings.windowBounds = {};
+                }
+                settings.windowBounds.isMaximized = true;
+            }
+            
+            fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
+        } catch (error) {
+            console.error('[Window] Failed to save window bounds:', error);
+        }
+    }, 500);
+}
 
 function startDevStaticServer(appRoot) {
     if (app.isPackaged) return null;
@@ -70,15 +125,14 @@ function getAppRoot() {
 
 function createMainWindow() {
     const appRoot = getAppRoot();
-    
-    console.log('[Window] App is packaged:', app.isPackaged);
-    console.log('[Window] __dirname:', __dirname);
-    console.log('[Window] appRoot:', appRoot);
-    console.log('[Window] index.html path:', path.join(appRoot, 'src', 'index.html'));
 
-    mainWindow = new BrowserWindow({
-        width: WINDOW.DEFAULT_WIDTH,
-        height: WINDOW.DEFAULT_HEIGHT,
+    // Load saved window bounds
+    const savedBounds = loadWindowBounds();
+    const windowOptions = {
+        width: savedBounds?.width || WINDOW.DEFAULT_WIDTH,
+        height: savedBounds?.height || WINDOW.DEFAULT_HEIGHT,
+        x: savedBounds?.x,
+        y: savedBounds?.y,
         frame: false,
         webPreferences: {
             nodeIntegration: false,
@@ -87,24 +141,72 @@ function createMainWindow() {
         },
         icon: path.join(appRoot, 'src', 'assets', 'icon.ico'),
         backgroundColor: WINDOW.BACKGROUND_COLOR
-    });
+    };
+
+    mainWindow = new BrowserWindow(windowOptions);
+
+    // Restore maximized state
+    if (savedBounds?.isMaximized) {
+        mainWindow.maximize();
+    }
 
     const devServerInfo = startDevStaticServer(appRoot);
     if (devServerInfo?.port) {
         const devUrl = `http://localhost:${devServerInfo.port}/`;
         mainWindow.loadURL(devUrl);
-        console.log(`[Window] DevTools URL: ${devUrl}`);
     } else {
         mainWindow.loadFile(path.join(appRoot, 'src', 'index.html'));
     }
 
     Menu.setApplicationMenu(null);
 
+    // Save window bounds on resize, move, maximize, unmaximize
+    mainWindow.on('resize', saveWindowBounds);
+    mainWindow.on('move', saveWindowBounds);
+    mainWindow.on('maximize', saveWindowBounds);
+    mainWindow.on('unmaximize', saveWindowBounds);
+
+    // Save immediately before closing
+    mainWindow.on('close', () => {
+        if (saveTimeout) {
+            clearTimeout(saveTimeout);
+        }
+        // Force immediate save on close
+        try {
+            const isMaximized = mainWindow.isMaximized();
+            
+            let settings = {};
+            if (fs.existsSync(settingsPath)) {
+                settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
+            }
+            
+            // Only save bounds when NOT maximized
+            if (!isMaximized) {
+                const bounds = mainWindow.getBounds();
+                settings.windowBounds = {
+                    x: bounds.x,
+                    y: bounds.y,
+                    width: bounds.width,
+                    height: bounds.height,
+                    isMaximized: false
+                };
+            } else {
+                // Just update maximized state, keep previous bounds
+                if (!settings.windowBounds) {
+                    settings.windowBounds = {};
+                }
+                settings.windowBounds.isMaximized = true;
+            }
+            
+            fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
+        } catch (error) {
+            console.error('[Window] Failed to save bounds on close:', error);
+        }
+    });
+
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
-
-    console.log('[Window] Main window created');
 
     // Enable DevTools shortcut (Ctrl+Shift+I) - FOR DEBUGGING
     mainWindow.webContents.on('before-input-event', (event, input) => {

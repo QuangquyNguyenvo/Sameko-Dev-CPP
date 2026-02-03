@@ -3372,7 +3372,7 @@ function newFile() {
     const id = 'tab_' + Date.now();
 
     const templateCode = App.settings.template?.code || DEFAULT_CODE;
-    const tab = { id, name: 'untitled.cpp', path: null, content: templateCode, original: templateCode, modified: false };
+    const tab = { id, name: 'untitled.cpp', path: null, content: templateCode, original: '', modified: true };
     App.tabs.push(tab);
     setActive(id);
     updateUI();
@@ -3390,10 +3390,9 @@ function setActive(id) {
 
     App.activeTabId = id;
     if (App.editor && App.ready) {
+        App.isSettingValue = true;
         App.editor.setValue(tab.content);
-
-        tab.original = App.editor.getValue();
-        tab.modified = false;
+        App.isSettingValue = false;
     }
     clearErrorDecorations();
     renderTabs();
@@ -4687,8 +4686,8 @@ function handleProblemReceived(problem) {
         name: fileName,
         path: null,
         content: template,
-        original: template,
-        modified: false
+        original: '',
+        modified: true
     });
 
 
@@ -4696,7 +4695,9 @@ function handleProblemReceived(problem) {
 
 
     if (App.editor && App.ready) {
+        App.isSettingValue = true;
         App.editor.setValue(template);
+        App.isSettingValue = false;
     }
 
     renderTabs();
