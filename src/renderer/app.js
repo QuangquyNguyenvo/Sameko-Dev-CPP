@@ -2977,7 +2977,7 @@ function createDockedTerminalView(container) {
             // Send each line separately
             const lines = input.value.split('\n');
             lines.forEach(line => {
-                log(line, '');
+                log(line, 'input');
                 window.electronAPI?.sendInput(line);
             });
             input.value = '';
@@ -3984,20 +3984,21 @@ async function run(clearTerminal = true) {
         return;
     }
 
-    if (App.inputLines.length > 0) {
-        setTimeout(sendNextInput, 100);
+    // Send all input at once (like freopen) for maximum speed
+    if (inputText && App.settings.execution.autoSendInput) {
+        setTimeout(() => {
+            if (App.isRunning) {
+                // Log each line to terminal with input styling
+                inputText.split('\n').forEach(line => log(line, 'input'));
+                
+                // Send entire input to stdin at once (no per-line delay)
+                window.electronAPI.sendInput(inputText);
+            }
+        }, 20);
     }
 }
 
-function sendNextInput() {
-    if (App.inputIndex < App.inputLines.length && App.isRunning) {
-        const line = App.inputLines[App.inputIndex];
-        log(line, '');
-        window.electronAPI.sendInput(line);
-        App.inputIndex++;
-        setTimeout(sendNextInput, 50);
-    }
-}
+// Removed sendNextInput() - no longer needed
 
 async function stop() {
     if (App.runTimeout) {
@@ -4314,7 +4315,7 @@ async function sendInput() {
         // Send each line separately
         const lines = inp.value.split('\n');
         for (const line of lines) {
-            log(line, '');
+            log(line, 'input');
             await window.electronAPI.sendInput(line);
         }
         inp.value = '';
@@ -4347,7 +4348,8 @@ function compareOutput() {
         if (text.includes('--- Exit') || text.includes('--- Stopped')) {
             break;
         }
-        if (capturing && !text.startsWith('>') && !line.classList.contains('system') && !line.classList.contains('info')) {
+        // Skip input lines (they have .input class), system and info messages
+        if (capturing && !line.classList.contains('input') && !line.classList.contains('system') && !line.classList.contains('info')) {
             actualText += (actualText ? '\n' : '') + text;
         }
     }

@@ -2641,6 +2641,12 @@ body.split-active .editor-pane {
     font-style: italic;
 }
 
+/* Input messages (cyan/lighter) */
+.terminal-body .line.input {
+    color: #56b6c2;
+    opacity: 0.85;
+}
+
 /* ===== COMPETITIVE COMPANION BUTTON ===== */
 #btn-cc {
     position: relative;
@@ -3180,6 +3186,12 @@ body.split-active .editor-pane {
 .docked-terminal-body .line.system {
     color: #7a8a9a;
     font-style: italic;
+}
+
+/* Input messages (cyan/lighter) */
+.docked-terminal-body .line.input {
+    color: #56b6c2;
+    opacity: 0.85;
 }
 
 /* Make terminal header grabbable */

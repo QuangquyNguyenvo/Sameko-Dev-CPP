@@ -379,7 +379,13 @@ async function run({ exePath, cwd }) {
  */
 function sendInput(input) {
     if (runningProcess && runningProcess.stdin) {
-        runningProcess.stdin.write(input + '\n');
+        // If input contains newlines, send as-is (bulk input mode)
+        // Otherwise add newline for single-line input
+        if (input.includes('\n')) {
+            runningProcess.stdin.write(input + '\n');
+        } else {
+            runningProcess.stdin.write(input + '\n');
+        }
         return { success: true };
     }
     return { success: false, error: 'No running process' };

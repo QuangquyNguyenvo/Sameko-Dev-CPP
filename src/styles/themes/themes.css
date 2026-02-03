@@ -698,6 +698,11 @@
     color: #6a8a9a;
 }
 
+[data-theme="kawaii-light"] .terminal-body .line.input {
+    color: #5fb9cf;
+    opacity: 0.85;
+}
+
 [data-theme="kawaii-light"] .terminal-input {
     background: var(--terminal-bg);
     border-top-color: var(--border);
