@@ -106,8 +106,9 @@ window.registerCppIntellisense = function (monaco) {
         const suggestions = [];
         const insideInclude = /#include\s*[<"]\s*$/.test(textUntilPosition);
         const insideParentheses = /\([^\)]*$/.test(textUntilPosition);
+        const atPreprocessor = /#\s*$/.test(textUntilPosition);
+        const afterDot = /\.\s*$/.test(textUntilPosition);
 
-        // --- 1. HEADERS ---
         if (insideInclude) {
             let hList = [...HEADERS.c];
             if (languageId === 'cpp') hList = [...hList, ...HEADERS.cpp];
@@ -117,15 +118,34 @@ window.registerCppIntellisense = function (monaco) {
             return { suggestions };
         }
 
-        // --- 2. SNIPPETS (Bị chặn nếu ở trong ngoặc) ---
+        if (atPreprocessor) {
+            ['include', 'define', 'ifdef', 'ifndef', 'endif', 'pragma'].forEach(d => {
+                suggestions.push({
+                    label: d, kind: monaco.languages.CompletionItemKind.Keyword, insertText: d, range: range
+                });
+            });
+            return { suggestions };
+        }
+
+        if (afterDot) {
+            STL_KEYWORDS.forEach(k => {
+                const info = STL_DOCS[k];
+                if (info.type === 'Method') {
+                    suggestions.push({
+                        label: k, kind: monaco.languages.CompletionItemKind.Method,
+                        insertText: k, documentation: info.doc, detail: info.detail, range: range
+                    });
+                }
+            });
+            return { suggestions };
+        }
+
         if (!insideParentheses) {
-            // Common (for, ford, while...)
             SNIPPETS.common.forEach(s => suggestions.push({
                 label: s.label, kind: monaco.languages.CompletionItemKind.Snippet,
                 insertText: s.text, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                 documentation: s.doc, range: range
             }));
-            // Lang specific
             const langSnippets = (languageId === 'cpp') ? SNIPPETS.cpp : SNIPPETS.c;
             langSnippets.forEach(s => suggestions.push({
                 label: s.label, kind: monaco.languages.CompletionItemKind.Snippet,
@@ -133,47 +153,33 @@ window.registerCppIntellisense = function (monaco) {
                 documentation: s.doc, range: range
             }));
 
-            // User Custom Snippets (from App.settings)
             if (typeof App !== 'undefined' && App.settings && Array.isArray(App.settings.snippets)) {
                 App.settings.snippets.forEach(s => {
                     suggestions.push({
-                        label: s.trigger,
-                        kind: monaco.languages.CompletionItemKind.Snippet,
-                        insertText: s.content,
-                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                        documentation: s.name || 'Custom Snippet',
-                        range: range
+                        label: s.trigger, kind: monaco.languages.CompletionItemKind.Snippet,
+                        insertText: s.content, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                        documentation: s.name || 'Custom Snippet', range: range
                     });
                 });
             }
         }
 
-        // --- 3. KEYWORDS & STL METHODS (Luôn hiện) ---
-        // Các từ khóa cơ bản
         ['int', 'long', 'void', 'char', 'bool', 'return', 'break', 'continue', 'struct', 'const'].forEach(k => {
             suggestions.push({ label: k, kind: monaco.languages.CompletionItemKind.Keyword, insertText: k, range: range });
         });
 
         if (languageId === 'cpp') {
-            // CP Shortcuts
             ['ll', 'pb', 'mp', 'fi', 'se', 'vi', 'pii'].forEach(k => {
                 suggestions.push({ label: k, kind: monaco.languages.CompletionItemKind.Constant, insertText: k, range: range });
             });
-            // STL Methods
             STL_KEYWORDS.forEach(k => {
                 const info = STL_DOCS[k];
-                const kind = (info.type === 'Func')
-                    ? monaco.languages.CompletionItemKind.Function
-                    : monaco.languages.CompletionItemKind.Method;
-
-                suggestions.push({
-                    label: k,
-                    kind: kind,
-                    insertText: k,
-                    documentation: info.doc,
-                    detail: info.detail,
-                    range: range
-                });
+                if (info.type === 'Func') {
+                    suggestions.push({
+                        label: k, kind: monaco.languages.CompletionItemKind.Function,
+                        insertText: k, documentation: info.doc, detail: info.detail, range: range
+                    });
+                }
             });
         }
 
@@ -184,13 +190,17 @@ window.registerCppIntellisense = function (monaco) {
     // 4. REGISTRATION (HOVER & SIGNATURE)
     // ========================================================================
     const registerFeatures = (lang) => {
-        // Completion
         monaco.languages.registerCompletionItemProvider(lang, {
-            triggerCharacters: ['<', '/', '"', '#', '.', '>'],
+            triggerCharacters: ['<', '/', '"', '#', '.'],
             provideCompletionItems: (model, position) => {
                 const word = model.getWordUntilPosition(position);
                 const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
                 const textUntilPosition = model.getValueInRange({ startLineNumber: position.lineNumber, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column });
+                
+                if (/[<>]{2}\s*$/.test(textUntilPosition)) {
+                    return { suggestions: [] };
+                }
+                
                 return createProposals(range, lang, textUntilPosition);
             }
         });

@@ -182,6 +182,15 @@ function getCompilerEnv() {
     return env;
 }
 
+function getUnbufferObjectPath() {
+    const resourcesPath = getResourcesPath();
+    const objPath = path.join(resourcesPath, 'Sameko-GCC', 'lib', 'sameko_unbuffer.o');
+    if (fs.existsSync(objPath)) {
+        return objPath;
+    }
+    return null;
+}
+
 module.exports = {
     detectCompiler,
     getCompilerVersion,
@@ -191,4 +200,5 @@ module.exports = {
     getCompilerEnv,
     getBasePath,
     getResourcesPath,
+    getUnbufferObjectPath,
 };

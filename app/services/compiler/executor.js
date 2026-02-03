@@ -10,7 +10,7 @@ const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn, exec } = require('child_process');
-const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getBasePath } = require('./detector');
+const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getBasePath, getUnbufferObjectPath } = require('./detector');
 const { ensurePCH } = require('./pch-manager');
 
 let runningProcess = null;
@@ -145,7 +145,8 @@ async function compile({ filePath, content, flags, useLLD }) {
         ? await ensurePCH(flags, (msg) => sendToRenderer('system-message', msg))
         : { ready: false };
 
-    // Build args
+    const unbufferObj = getUnbufferObjectPath();
+    
     const args = [
         ...sourceFiles,
         '-o', outputPath,
@@ -153,6 +154,10 @@ async function compile({ filePath, content, flags, useLLD }) {
         '-pipe',
         '-s'
     ];
+    
+    if (unbufferObj) {
+        args.push(unbufferObj);
+    }
 
     // Apply user flags
     if (flags) {
