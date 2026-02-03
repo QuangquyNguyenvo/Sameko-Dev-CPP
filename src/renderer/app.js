@@ -375,6 +375,81 @@ function createEditor(containerId) {
     });
 
 
+    // Auto-indentation after control statements
+    editor.onKeyDown((e) => {
+        if (e.keyCode === monaco.KeyCode.Enter && !e.ctrlKey && !e.shiftKey && !e.altKey) {
+            const position = editor.getPosition();
+            const model = editor.getModel();
+            if (!model) return;
+            
+            const lineNumber = position.lineNumber;
+            const lineContent = model.getLineContent(lineNumber).trim();
+            const fullLine = model.getLineContent(lineNumber);
+            const currentIndent = fullLine.match(/^\s*/)[0];
+            
+            // Case 1: Check if current line ends with statement after control structure (dedent)
+            // If line ends with ; and previous line was a control statement without {}, dedent
+            if (lineNumber > 1 && /;\s*$/.test(lineContent)) {
+                const prevLine = model.getLineContent(lineNumber - 1).trim();
+                const isPrevControlStatement = (
+                    /^\s*(if|while|for|switch)\s*\([^)]*\)\s*$/.test(prevLine) ||
+                    /^\s*(else|do)\s*$/.test(prevLine)
+                );
+                
+                if (isPrevControlStatement) {
+                    // Dedent: go back to previous line's indent level
+                    e.preventDefault();
+                    const prevFullLine = model.getLineContent(lineNumber - 1);
+                    const prevIndent = prevFullLine.match(/^\s*/)[0];
+                    
+                    editor.executeEdits('auto-dedent', [{
+                        range: new monaco.Range(lineNumber, model.getLineMaxColumn(lineNumber), lineNumber, model.getLineMaxColumn(lineNumber)),
+                        text: '\n' + prevIndent
+                    }]);
+                    
+                    editor.setPosition({
+                        lineNumber: lineNumber + 1,
+                        column: prevIndent.length + 1
+                    });
+                    return;
+                }
+            }
+            
+            // Case 2: Check if line ends with control statement pattern (indent)
+            // Match: if/while/for/else followed by condition, or do/else/case/default with :
+            const shouldIndent = (
+                // if (condition), while (condition), for (condition)
+                /^\s*(if|while|for|switch)\s*\([^)]*\)\s*$/.test(lineContent) ||
+                // else, do
+                /^\s*(else|do)\s*$/.test(lineContent) ||
+                // case value:, default:
+                /^\s*(case\s+.+|default)\s*:\s*$/.test(lineContent) ||
+                // Any line ending with ) but not with );
+                (/\)\s*$/.test(lineContent) && !/;\s*$/.test(lineContent))
+            );
+            
+            if (shouldIndent) {
+                e.preventDefault();
+                
+                const tabChar = '\t'; // Use tab character
+                
+                // Insert newline + current indent + one more tab
+                const newIndent = currentIndent + tabChar;
+                
+                editor.executeEdits('auto-indent', [{
+                    range: new monaco.Range(lineNumber, model.getLineMaxColumn(lineNumber), lineNumber, model.getLineMaxColumn(lineNumber)),
+                    text: '\n' + newIndent
+                }]);
+                
+                // Set cursor position
+                editor.setPosition({
+                    lineNumber: lineNumber + 1,
+                    column: newIndent.length + 1
+                });
+            }
+        }
+    });
+
     editor.addCommand(monaco.KeyCode.F9, compileOnly);
     editor.addCommand(monaco.KeyCode.F11, buildRun);
     editor.addCommand(monaco.KeyCode.F10, run);
