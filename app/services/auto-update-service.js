@@ -70,6 +70,13 @@ class AutoUpdateService {
             return;
         }
 
+        // Check for pending update from previous version (1.0.2 fix)
+        if (app.isPackaged) {
+            setTimeout(() => {
+                this.checkPendingUpdate();
+            }, 3000);
+        }
+
         // Only check for updates in packaged app (skip in development/first run)
         if (app.isPackaged || testUpdatesInDev) {
             if (testUpdatesInDev) {
@@ -331,6 +338,101 @@ class AutoUpdateService {
                 });
             }
         }, 300);
+    }
+
+    /**
+     * Check for pending update from previous version (hotfix for 1.0.2)
+     */
+    checkPendingUpdate() {
+        const fs = require('fs');
+        const path = require('path');
+        const os = require('os');
+        
+        try {
+            const pendingDir = path.join(os.homedir(), 'AppData', 'Local', 'sameko-dev-cpp-updater', 'pending');
+            
+            if (fs.existsSync(pendingDir)) {
+                const files = fs.readdirSync(pendingDir);
+                const installerFile = files.find(f => f.endsWith('.exe') && f.includes('sameko-dev-cpp-setup'));
+                
+                if (installerFile) {
+                    log.info('[AutoUpdate] Found pending update file:', installerFile);
+                    
+                    // Extract version from filename (e.g., sameko-dev-cpp-setup-1.0.3.exe)
+                    const versionMatch = installerFile.match(/sameko-dev-cpp-setup-(\d+\.\d+\.\d+)/);
+                    const pendingVersion = versionMatch ? versionMatch[1] : null;
+                    const currentVersion = app.getVersion();
+                    
+                    if (pendingVersion) {
+                        // Compare versions
+                        const versionComparison = this.compareVersions(pendingVersion, currentVersion);
+                        
+                        if (versionComparison > 0) {
+                            // Pending version is definitely newer (e.g., 1.0.4 > 1.0.3)
+                            log.info(`[AutoUpdate] Pending update (v${pendingVersion}) is newer than current (v${currentVersion})`);
+                            
+                            // Trigger update-downloaded event to show Restart button
+                            this.updateDownloaded = true;
+                            this.sendStatusToRenderer('update-downloaded', {
+                                version: pendingVersion,
+                                releaseNotes: 'Update downloaded in previous session',
+                                releaseDate: new Date().toISOString(),
+                                fromPending: true
+                            });
+                        } else if (versionComparison === 0) {
+                            // Same version - check file timestamp
+                            const filePath = path.join(pendingDir, installerFile);
+                            const fileStats = fs.statSync(filePath);
+                            const appCompileTime = fs.statSync(process.execPath).mtime;
+                            
+                            if (fileStats.mtime > appCompileTime) {
+                                // File is newer than current app binary
+                                log.info(`[AutoUpdate] Pending file (v${pendingVersion}) is newer build than current app`);
+                                
+                                this.updateDownloaded = true;
+                                this.sendStatusToRenderer('update-downloaded', {
+                                    version: pendingVersion,
+                                    releaseNotes: 'Update downloaded in previous session',
+                                    releaseDate: new Date().toISOString(),
+                                    fromPending: true
+                                });
+                            } else {
+                                // File is older or same as current app
+                                log.info(`[AutoUpdate] Pending file (v${pendingVersion}) is older build, cleaning up...`);
+                                fs.unlinkSync(filePath);
+                                log.info('[AutoUpdate] Deleted outdated pending file');
+                            }
+                        } else {
+                            // Pending version is older (e.g., 1.0.2 < 1.0.3)
+                            log.info(`[AutoUpdate] Pending update (v${pendingVersion}) is older than current (v${currentVersion}), cleaning up...`);
+                            
+                            const filePath = path.join(pendingDir, installerFile);
+                            fs.unlinkSync(filePath);
+                            log.info('[AutoUpdate] Deleted outdated pending file');
+                        }
+                    } else {
+                        log.warn('[AutoUpdate] Could not extract version from filename:', installerFile);
+                    }
+                }
+            }
+        } catch (err) {
+            log.warn('[AutoUpdate] Failed to check pending update:', err.message);
+        }
+    }
+    
+    /**
+     * Compare two semver versions
+     * @returns {number} 1 if v1 > v2, -1 if v1 < v2, 0 if equal
+     */
+    compareVersions(v1, v2) {
+        const parts1 = v1.split('.').map(Number);
+        const parts2 = v2.split('.').map(Number);
+        
+        for (let i = 0; i < 3; i++) {
+            if (parts1[i] > parts2[i]) return 1;
+            if (parts1[i] < parts2[i]) return -1;
+        }
+        return 0;
     }
 }
 
