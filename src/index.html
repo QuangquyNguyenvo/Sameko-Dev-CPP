@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="styles/components/snippet-editor.css">
     <link rel="stylesheet" href="styles/themes/themes.css">
     <link rel="stylesheet" href="styles/components/local-history.css">
+    <link rel="stylesheet" href="styles/components/confirm-dialog.css">
     <link rel="stylesheet" href="../node_modules/monaco-editor/min/vs/editor/editor.main.css">
 </head>
 
@@ -883,6 +884,24 @@
             </div>
         </div>
 
+        <!-- ===== CONFIRM DIALOG ===== -->
+        <div class="confirm-dialog-overlay" id="confirm-dialog-overlay"></div>
+        <div class="confirm-dialog" id="confirm-dialog">
+            <div class="confirm-dialog-icon">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            </div>
+            <h3 class="confirm-dialog-title" id="confirm-dialog-title">Confirm Action</h3>
+            <p class="confirm-dialog-message" id="confirm-dialog-message">Are you sure?</p>
+            <div class="confirm-dialog-buttons">
+                <button class="confirm-dialog-btn confirm-dialog-cancel" id="confirm-dialog-cancel">Cancel</button>
+                <button class="confirm-dialog-btn confirm-dialog-confirm" id="confirm-dialog-confirm">OK</button>
+            </div>
+        </div>
+
         <!-- ===== THEME MARKETPLACE POPUP ===== -->
         <div class="fullscreen-popup" id="marketplace-popup" style="display:none;">
             <div class="fullscreen-popup-overlay"></div>
@@ -1097,7 +1116,7 @@
                                 </svg>
                                 Run All
                             </button>
-                            <button class="run-all-btn danger" id="btn-delete-all-tests" title="Xóa tất cả test cases"
+                            <button class="run-all-btn danger" id="btn-delete-all-tests" title="Delete all test cases"
                                 style="display:none">
                                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -1224,6 +1243,7 @@
     <script src="renderer/ui/theme-manager.js"></script>
     <script src="renderer/ui/theme-marketplace.js"></script>
     <script src="renderer/ui/theme-customizer.js"></script>
+    <script src="renderer/ui/confirm-dialog.js"></script>
     <script src="features/local-history/history-manager.js"></script>
     <script src="features/file-explorer/file-explorer.js"></script>
     <script src="renderer/app.js"></script>

@@ -1851,8 +1851,14 @@ function saveSettingsAndClose() {
     log('Settings saved', 'success');
 }
 
-function resetSettings() {
-    if (confirm('Reset all settings to defaults?')) {
+async function resetSettings() {
+    const confirmed = await showConfirmDialog({
+        title: 'Reset Settings',
+        message: 'Reset all settings to defaults? This action cannot be undone.',
+        confirmText: 'Reset',
+        danger: true
+    });
+    if (confirmed) {
         App.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
         // Clear any saved per-theme background overrides (Customizer)
         clearThemeBackgroundOverrides();
@@ -2002,16 +2008,27 @@ function cancelEditingKeybinding() {
     document.removeEventListener('keydown', captureKeybinding);
 }
 
-function resetKeybindings() {
-    if (confirm('Reset all keybindings to defaults?')) {
+async function resetKeybindings() {
+    const confirmed = await showConfirmDialog({
+        title: 'Reset Keybindings',
+        message: 'Reset all keybindings to defaults?',
+        confirmText: 'Reset',
+        danger: true
+    });
+    if (confirmed) {
         App.settings.keybindings = { ...DEFAULT_SETTINGS.keybindings };
         renderKeybindings();
         log('Keybindings reset to defaults', 'info');
     }
 }
 
-function resetTemplate() {
-    if (confirm('Reset template to default?')) {
+async function resetTemplate() {
+    const confirmed = await showConfirmDialog({
+        title: 'Reset Template',
+        message: 'Reset template to default?',
+        confirmText: 'Reset'
+    });
+    if (confirmed) {
         const defaultCode = DEFAULT_SETTINGS.template.code;
         const textarea = document.getElementById('set-template');
         if (textarea) {
@@ -3537,18 +3554,32 @@ function setActive(id) {
     renderTabs();
 }
 
-function closeTab(id) {
+async function closeTab(id) {
     const idx = App.tabs.findIndex(t => t.id === id);
     if (idx === -1) return;
 
     const tab = App.tabs[idx];
     
     if (App.isRunning) {
-        if (!confirm(`A process is running. Stop it and close "${tab.name}"?`)) return;
+        const confirmed = await showConfirmDialog({
+            title: 'Process Running',
+            message: `A process is running. Stop it and close "${tab.name}"?`,
+            confirmText: 'Stop & Close',
+            danger: true
+        });
+        if (!confirmed) return;
         stop();
     }
     
-    if (tab.modified && !confirm(`"${tab.name}" has unsaved changes. Close?`)) return;
+    if (tab.modified) {
+        const confirmed = await showConfirmDialog({
+            title: 'Unsaved Changes',
+            message: `"${tab.name}" has unsaved changes. Close without saving?`,
+            confirmText: 'Close',
+            danger: true
+        });
+        if (!confirmed) return;
+    }
 
 
     if (tab.path) stopFileWatch(tab.path);
@@ -4768,86 +4799,104 @@ function showConfirmPopup(message, onConfirm) {
     overlay.onclick = (e) => { if (e.target === overlay) close(); };
 }
 
-function deleteTestCase() {
+async function deleteTestCase() {
     if (!ccProblem || !ccProblem.tests || ccProblem.tests.length === 0) return;
 
-    showConfirmPopup(`Xóa Test Case ${ccTestIndex + 1}?`, () => {
-        ccProblem.tests.splice(ccTestIndex, 1);
-
-        if (ccProblem.tests.length === 0) {
-            document.getElementById('input-area').value = '';
-            document.getElementById('expected-area').value = '';
-            const dockedInput = document.getElementById('docked-input');
-            const dockedExpected = document.getElementById('docked-expected');
-            if (dockedInput) dockedInput.value = '';
-            if (dockedExpected) dockedExpected.value = '';
-            ccTestIndex = 0;
-        } else {
-            ccTestIndex = Math.max(0, ccTestIndex - 1);
-            switchTestCase(ccTestIndex);
-        }
-        updateTestNavUI();
-        renderTestResults();
-        
-        setTimeout(() => {
-            if (App.editor) App.editor.focus();
-        }, 50);
+    const confirmed = await showConfirmDialog({
+        title: 'Delete Test Case',
+        message: `Delete Test Case ${ccTestIndex + 1}?`,
+        confirmText: 'Delete',
+        danger: true
     });
-}
+    if (!confirmed) return;
+    
+    ccProblem.tests.splice(ccTestIndex, 1);
 
-function deleteTestCaseByIndex(index) {
-    if (!ccProblem || !ccProblem.tests || index < 0 || index >= ccProblem.tests.length) return;
-
-    showConfirmPopup(`Xóa Test Case ${index + 1}?`, () => {
-        ccProblem.tests.splice(index, 1);
-
-        if (ccProblem.tests.length === 0) {
-            document.getElementById('input-area').value = '';
-            document.getElementById('expected-area').value = '';
-            const dockedInput = document.getElementById('docked-input');
-            const dockedExpected = document.getElementById('docked-expected');
-            if (dockedInput) dockedInput.value = '';
-            if (dockedExpected) dockedExpected.value = '';
-            ccTestIndex = 0;
-        } else {
-            if (ccTestIndex >= ccProblem.tests.length) {
-                ccTestIndex = ccProblem.tests.length - 1;
-            }
-            switchTestCase(ccTestIndex);
-        }
-        updateTestNavUI();
-        renderTestResults();
-        
-        setTimeout(() => {
-            if (App.editor) App.editor.focus();
-        }, 50);
-    });
-}
-
-function deleteAllTestCases() {
-    if (!ccProblem || !ccProblem.tests || ccProblem.tests.length === 0) return;
-
-    showConfirmPopup(`Xóa tất cả ${ccProblem.tests.length} test cases?`, () => {
-        ccProblem.tests = [];
-        ccTestIndex = 0;
-        
+    if (ccProblem.tests.length === 0) {
         document.getElementById('input-area').value = '';
         document.getElementById('expected-area').value = '';
         const dockedInput = document.getElementById('docked-input');
         const dockedExpected = document.getElementById('docked-expected');
         if (dockedInput) dockedInput.value = '';
         if (dockedExpected) dockedExpected.value = '';
-        
-        batchTestResults = [];
-        updateTestNavUI();
-        renderTestResults();
-        
-        setTimeout(() => {
-            if (App.editor) App.editor.focus();
-        }, 50);
-        
-        log('All test cases deleted', 'info');
+        ccTestIndex = 0;
+    } else {
+        ccTestIndex = Math.max(0, ccTestIndex - 1);
+        switchTestCase(ccTestIndex);
+    }
+    updateTestNavUI();
+    renderTestResults();
+    
+    setTimeout(() => {
+        if (App.editor) App.editor.focus();
+    }, 50);
+}
+
+async function deleteTestCaseByIndex(index) {
+    if (!ccProblem || !ccProblem.tests || index < 0 || index >= ccProblem.tests.length) return;
+
+    const confirmed = await showConfirmDialog({
+        title: 'Delete Test Case',
+        message: `Delete Test Case ${index + 1}?`,
+        confirmText: 'Delete',
+        danger: true
     });
+    if (!confirmed) return;
+    
+    ccProblem.tests.splice(index, 1);
+
+    if (ccProblem.tests.length === 0) {
+        document.getElementById('input-area').value = '';
+        document.getElementById('expected-area').value = '';
+        const dockedInput = document.getElementById('docked-input');
+        const dockedExpected = document.getElementById('docked-expected');
+        if (dockedInput) dockedInput.value = '';
+        if (dockedExpected) dockedExpected.value = '';
+        ccTestIndex = 0;
+    } else {
+        if (ccTestIndex >= ccProblem.tests.length) {
+            ccTestIndex = ccProblem.tests.length - 1;
+        }
+        switchTestCase(ccTestIndex);
+    }
+    updateTestNavUI();
+    renderTestResults();
+    
+    setTimeout(() => {
+        if (App.editor) App.editor.focus();
+    }, 50);
+}
+
+async function deleteAllTestCases() {
+    if (!ccProblem || !ccProblem.tests || ccProblem.tests.length === 0) return;
+
+    const confirmed = await showConfirmDialog({
+        title: 'Delete All Test Cases',
+        message: `Delete all ${ccProblem.tests.length} test cases? This action cannot be undone.`,
+        confirmText: 'Delete All',
+        danger: true
+    });
+    if (!confirmed) return;
+    
+    ccProblem.tests = [];
+    ccTestIndex = 0;
+    
+    document.getElementById('input-area').value = '';
+    document.getElementById('expected-area').value = '';
+    const dockedInput = document.getElementById('docked-input');
+    const dockedExpected = document.getElementById('docked-expected');
+    if (dockedInput) dockedInput.value = '';
+    if (dockedExpected) dockedExpected.value = '';
+    
+    batchTestResults = [];
+    updateTestNavUI();
+    renderTestResults();
+    
+    setTimeout(() => {
+        if (App.editor) App.editor.focus();
+    }, 50);
+    
+    log('All test cases deleted', 'info');
 }
 
 function showCCPopup() {

@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.0.3] - 2026-02-04
+
+### Added
+- **Custom Confirm Dialog**: Replaced native browser confirm dialogs with custom, theme-aware confirmation modals for better UX and keyboard navigation support.
+
+### Fixed
+- **[[BUG] Taskcase result shows "Failed" even when Expected aligns with Input (Fixes #22)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/22)**: Fixed test case comparison logic to correctly validate when expected output matches input.
+- **[[BUG] Unsaved changes indicator (dot) appears on unchanged files (Fixes #21)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/21)**: Corrected file change detection to prevent false-positive unsaved indicators.
+- **[[BUG] Expected output panel incorrectly displays input data (Fixes #20)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/20)**: Fixed panel data binding to properly show expected output instead of input.
+- **[[BUG] Remaining Vietnamese Strings (Fixes #19)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/19)**: Completed localization by translating remaining Vietnamese strings to English.
+- **[[BUG] Output buffering: Input prompts appear after user input in C programs (Fixes #18)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/18)**: Improved terminal buffer handling to ensure proper prompt/input ordering.
+- **[[UI] Window size and position resets on restart (Fixes #16)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/16)**: Window bounds are now persisted and restored correctly across sessions.
+- **[[Editor] Auto-indentation missing after control statements (if/loop) (Fixes #15)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/15)**: Fixed automatic indentation after control structures.
+- **Native Confirm Dialog Blocking Input**: Fixed issue where native confirm dialogs would block all input until window regain focus via alt-tab.
+- **UI Fixes**: Resolved various UI-related issues for better visual consistency and user experience.
+
+### Improved
+- **Lazy Loading Optimization**: Implemented lazy loading for Monaco Editor to prevent initialization conflicts and reduce startup time.
+- **Input/Output Color Scheme**: Enhanced color differentiation between input and output panels for better readability.
+- **Terminal Buffer Optimization**: Improved buffer management and input handling performance for faster and more responsive text input.
+- **Confirm Dialog UX**: All confirmation dialogs now use clearer button labels and support keyboard shortcuts (Enter/Escape).
+- **Performance Enhancements**: General performance optimizations for smoother operation.
+
 ## [1.0.2] - 2026-01-31
 
 ### Added
