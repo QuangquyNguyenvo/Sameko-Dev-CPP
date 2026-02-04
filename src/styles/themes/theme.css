@@ -548,28 +548,37 @@ body.customizer-open::before {
 
 /* Update Ready button */
 .action-btn.update-ready {
-    background: var(--bg-ocean-deep);
-    border-color: var(--bg-ocean-deep);
-    color: var(--btn-primary-text, white);
+    background: var(--bg-ocean-deep) !important;
+    border: 2px solid var(--bg-ocean-dark) !important;
+    color: var(--btn-primary-text, white) !important;
     animation: pulse-update 2s infinite;
-    font-weight: 500;
+    font-weight: 700;
     padding: 8px 16px;
+    font-size: 12px;
+    gap: 6px;
+}
+
+.action-btn.update-ready svg {
+    flex-shrink: 0;
+    stroke: var(--btn-primary-text, white);
+}
+
+.action-btn.update-ready span {
+    display: inline !important;
+    color: var(--btn-primary-text, white) !important;
 }
 
 .action-btn.update-ready:hover {
-    background: var(--bg-ocean-dark);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    background: var(--bg-ocean-dark) !important;
+    transform: translateY(-1px);
 }
 
 @keyframes pulse-update {
-
-    0%,
-    100% {
-        opacity: 1;
+    0%, 100% {
+        transform: scale(1);
     }
-
     50% {
-        opacity: 0.7;
+        transform: scale(1.02);
     }
 }
 
@@ -3850,11 +3859,9 @@ body.split-active .editor-pane {
 
 .header-progress-text {
     font-family: 'Fredoka', sans-serif;
-    /* Use app font */
     font-size: 11px;
     font-weight: 600;
-    color: var(--bg-ocean-dark);
-    /* Theme text color */
+    color: var(--text-secondary, #6b7a8f) !important;
     min-width: 40px;
     text-align: right;
 }

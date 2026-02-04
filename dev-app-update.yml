@@ -1,0 +1,4 @@
+provider: github
+owner: QuangquyNguyenvo
+repo: Sameko-Dev-CPP
+updaterCacheDirName: sameko-dev-cpp-updater

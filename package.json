@@ -132,7 +132,10 @@
                 }
             ],
             "icon": "src/assets/icon.ico",
-            "publisherName": "Sameko Project"
+            "publisherName": "Sameko Project",
+            "verifyUpdateCodeSignature": false,
+            "signDlls": false,
+            "signExts": []
         },
         "nsis": {
             "artifactName": "sameko-dev-cpp-setup-${version}.${ext}",

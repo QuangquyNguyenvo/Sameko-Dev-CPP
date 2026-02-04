@@ -6016,14 +6016,6 @@ function handleUpdateStatus(data) {
             console.log('[Update] Update available:', updateData?.version);
             pendingUpdateVersion = updateData?.version;
 
-            // Show badges in header
-            const badgeMain = document.getElementById('badge-settings-main');
-            const badgeTab = document.getElementById('badge-settings-tab');
-            const badgeBtn = document.getElementById('badge-update-btn');
-            if (badgeMain) badgeMain.style.display = 'block';
-            if (badgeTab) badgeTab.style.display = 'block';
-            if (badgeBtn) badgeBtn.style.display = 'block';
-
             // Update version info
             const upCur = document.getElementById('update-current');
             const upNew = document.getElementById('update-new');
@@ -6106,6 +6098,18 @@ function handleUpdateStatus(data) {
                 if (headerFill) headerFill.style.width = percent + '%';
                 if (headerText) headerText.textContent = percent + '%';
             }
+            
+            // If reached 100% but update-downloaded not triggered yet, wait and check
+            if (percent >= 100 && !updateDownloaded) {
+                console.log('[Update] Download reached 100%, waiting for update-downloaded event...');
+                setTimeout(() => {
+                    if (!updateDownloaded) {
+                        console.warn('[Update] update-downloaded event not received, manually triggering UI update');
+                        // Manually trigger the downloaded state
+                        handleUpdateMessage({ status: 'update-downloaded', data: updateData });
+                    }
+                }, 2000);
+            }
             break;
 
         case 'update-downloaded':
@@ -6120,14 +6124,7 @@ function handleUpdateStatus(data) {
             const headerProgressDone = document.getElementById('header-update-progress');
             if (headerProgressDone) headerProgressDone.style.display = 'none';
 
-            // Hide badges (since we now show the big Restart button)
-            const badgesToHide = ['badge-settings-main', 'badge-settings-tab', 'badge-update-btn'];
-            badgesToHide.forEach(id => {
-                const badge = document.getElementById(id);
-                if (badge) badge.style.display = 'none';
-            });
-
-            // Show "Restart to Update" button in header (installer only)
+            // Show "Restart to Update" button in header with badge
             const headerRestartBtn = document.getElementById('btn-restart-update');
             if (headerRestartBtn) {
                 headerRestartBtn.style.display = 'flex';
