@@ -3942,6 +3942,15 @@ body.split-active .editor-pane {
     flex-shrink: 0;
 }
 
+.run-all-btn.danger {
+    background: var(--error, #e74c3c);
+    margin-left: 0;
+}
+
+.run-all-btn.danger:hover {
+    background: #c0392b;
+}
+
 @keyframes pulse {
 
     0%,
@@ -3966,10 +3975,12 @@ body.split-active .editor-pane {
 
 /* Auto-expand Problems Panel when showing test results */
 .problems-panel.auto-expand {
-    min-height: 200px;
-    height: auto;
-    max-height: 50vh;
-    transition: min-height 0.3s ease, height 0.3s ease, max-height 0.3s ease;
+    flex: 1 1 200px;
+}
+
+/* Expand panel when has test cases (like docked terminal) */
+.problems-panel.has-tests {
+    flex: 1 1 200px;
 }
 
 .test-count {
@@ -4004,6 +4015,27 @@ body.split-active .editor-pane {
 .test-result-item:hover {
     background: var(--bg-glass-heavy, rgba(255, 255, 255, 0.9));
     transform: translateX(4px);
+}
+
+.test-result-item:hover .test-delete-btn {
+    opacity: 1;
+}
+
+.test-delete-btn {
+    opacity: 0;
+    background: transparent;
+    border: none;
+    padding: 4px;
+    cursor: pointer;
+    color: var(--error, #e74c3c);
+    border-radius: 4px;
+    transition: opacity 0.15s, background 0.15s;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.test-delete-btn:hover {
+    background: rgba(231, 76, 60, 0.15);
 }
 
 .test-result-status {
@@ -5370,6 +5402,86 @@ body.split-active .editor-pane {
 
 .gutter:hover {
     background-color: var(--accent, #88c9ea);
+}
+
+/* ===== CONFIRM POPUP ===== */
+.confirm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--overlay-bg, rgba(0, 0, 0, 0.5));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    backdrop-filter: blur(2px);
+}
+
+.confirm-overlay.show {
+    opacity: 1;
+}
+
+.confirm-popup {
+    background: var(--bg-ocean-medium, var(--bg-secondary, #2a2a3e));
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.15));
+    border-radius: 12px;
+    padding: 24px 28px;
+    min-width: 300px;
+    max-width: 400px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    transform: scale(0.9);
+    transition: transform 0.2s ease;
+}
+
+.confirm-overlay.show .confirm-popup {
+    transform: scale(1);
+}
+
+.confirm-message {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary, #333);
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.confirm-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+.confirm-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.15s, filter 0.15s, background 0.15s;
+}
+
+.confirm-btn:hover {
+    filter: brightness(1.1);
+}
+
+.confirm-btn:active {
+    transform: scale(0.95);
+}
+
+.confirm-btn.cancel {
+    background: var(--bg-tertiary, var(--bg-glass, rgba(128, 128, 128, 0.2)));
+    color: var(--text-primary, #666);
+    border-color: var(--border, rgba(128, 128, 128, 0.3));
+}
+
+.confirm-btn.confirm {
+    background: var(--error, #e74c3c);
+    color: var(--text-on-error, #fff);
 }
 
 /* Layout Resizer (Gutter) */

@@ -1732,6 +1732,43 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     color: var(--error);
 }
 
+/* ===== SAKURA TEST RESULTS - Darker text for light background ===== */
+[data-theme="sakura"] .test-summary-stat.passed {
+    color: #2d8a2d;
+}
+
+[data-theme="sakura"] .test-summary-stat.failed {
+    color: #c0392b;
+}
+
+[data-theme="sakura"] .test-result-status.AC {
+    background: rgba(45, 138, 45, 0.15);
+    color: #2d8a2d;
+}
+
+[data-theme="sakura"] .test-result-status.WA {
+    background: rgba(192, 57, 43, 0.15);
+    color: #c0392b;
+}
+
+[data-theme="sakura"] .test-result-status.pending {
+    color: #7f8c8d;
+}
+
+[data-theme="sakura"] .test-result-item.item-ac {
+    background: rgba(45, 138, 45, 0.08);
+    border-left: 3px solid #2d8a2d;
+}
+
+[data-theme="sakura"] .run-all-btn {
+    color: #5d4a4d;
+}
+
+[data-theme="sakura"] .run-all-btn.danger {
+    background: #c0392b;
+    color: white;
+}
+
 /* ===== DOCK TABS - Dark Theme ===== */
 [data-theme="kawaii-dark"] .dock-tabs,
 [data-theme="dracula"] .dock-tabs,

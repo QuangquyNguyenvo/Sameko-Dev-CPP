@@ -3163,6 +3163,12 @@ function undockTerminal() {
         saveSettings();
     }
 
+    // Refresh tests list if has tests
+    if (ccProblem?.tests?.length > 0) {
+        renderTestResults();
+        switchProblemsTab('tests');
+    }
+
     log('Terminal undocked', 'info');
     refreshEditorLayout();
 }
@@ -3275,6 +3281,12 @@ function undockIO() {
     if (App.settings.panels) {
         App.settings.panels.ioDocked = false;
         saveSettings();
+    }
+
+    // Refresh tests list if has tests
+    if (ccProblem?.tests?.length > 0) {
+        renderTestResults();
+        switchProblemsTab('tests');
     }
 
     log('I/O undocked', 'info');
@@ -3530,6 +3542,12 @@ function closeTab(id) {
     if (idx === -1) return;
 
     const tab = App.tabs[idx];
+    
+    if (App.isRunning) {
+        if (!confirm(`A process is running. Stop it and close "${tab.name}"?`)) return;
+        stop();
+    }
+    
     if (tab.modified && !confirm(`"${tab.name}" has unsaved changes. Close?`)) return;
 
 
@@ -4358,6 +4376,12 @@ function setRunning(v) {
     document.getElementById('btn-stop').disabled = !v;
     document.getElementById('terminal-in').disabled = !v;
     document.getElementById('btn-send').disabled = !v;
+    
+    const dockedTermIn = document.getElementById('docked-terminal-in');
+    const dockedSendBtn = document.getElementById('docked-send-btn');
+    if (dockedTermIn) dockedTermIn.disabled = !v;
+    if (dockedSendBtn) dockedSendBtn.disabled = !v;
+    
     if (v) document.getElementById('terminal-in').focus();
 }
 
@@ -4715,25 +4739,115 @@ function addTestCase() {
     log(`Test Case ${ccTestIndex + 1} added`, 'info');
 }
 
+function showConfirmPopup(message, onConfirm) {
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.innerHTML = `
+        <div class="confirm-popup">
+            <div class="confirm-message">${message}</div>
+            <div class="confirm-buttons">
+                <button class="confirm-btn cancel">Hủy</button>
+                <button class="confirm-btn confirm">Xác nhận</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+    
+    requestAnimationFrame(() => overlay.classList.add('show'));
+    
+    const close = () => {
+        overlay.classList.remove('show');
+        setTimeout(() => overlay.remove(), 200);
+    };
+    
+    overlay.querySelector('.confirm-btn.cancel').onclick = close;
+    overlay.querySelector('.confirm-btn.confirm').onclick = () => {
+        close();
+        onConfirm();
+    };
+    overlay.onclick = (e) => { if (e.target === overlay) close(); };
+}
+
 function deleteTestCase() {
     if (!ccProblem || !ccProblem.tests || ccProblem.tests.length === 0) return;
 
-    if (confirm(`Xóa Test Case ${ccTestIndex + 1}?`)) {
+    showConfirmPopup(`Xóa Test Case ${ccTestIndex + 1}?`, () => {
         ccProblem.tests.splice(ccTestIndex, 1);
 
         if (ccProblem.tests.length === 0) {
-            // If all deleted, just clear areas
             document.getElementById('input-area').value = '';
             document.getElementById('expected-area').value = '';
+            const dockedInput = document.getElementById('docked-input');
+            const dockedExpected = document.getElementById('docked-expected');
+            if (dockedInput) dockedInput.value = '';
+            if (dockedExpected) dockedExpected.value = '';
             ccTestIndex = 0;
         } else {
-            // Go to previous or remain at 0
             ccTestIndex = Math.max(0, ccTestIndex - 1);
             switchTestCase(ccTestIndex);
         }
         updateTestNavUI();
-        renderTestResults(); // Refresh list
-    }
+        renderTestResults();
+        
+        setTimeout(() => {
+            if (App.editor) App.editor.focus();
+        }, 50);
+    });
+}
+
+function deleteTestCaseByIndex(index) {
+    if (!ccProblem || !ccProblem.tests || index < 0 || index >= ccProblem.tests.length) return;
+
+    showConfirmPopup(`Xóa Test Case ${index + 1}?`, () => {
+        ccProblem.tests.splice(index, 1);
+
+        if (ccProblem.tests.length === 0) {
+            document.getElementById('input-area').value = '';
+            document.getElementById('expected-area').value = '';
+            const dockedInput = document.getElementById('docked-input');
+            const dockedExpected = document.getElementById('docked-expected');
+            if (dockedInput) dockedInput.value = '';
+            if (dockedExpected) dockedExpected.value = '';
+            ccTestIndex = 0;
+        } else {
+            if (ccTestIndex >= ccProblem.tests.length) {
+                ccTestIndex = ccProblem.tests.length - 1;
+            }
+            switchTestCase(ccTestIndex);
+        }
+        updateTestNavUI();
+        renderTestResults();
+        
+        setTimeout(() => {
+            if (App.editor) App.editor.focus();
+        }, 50);
+    });
+}
+
+function deleteAllTestCases() {
+    if (!ccProblem || !ccProblem.tests || ccProblem.tests.length === 0) return;
+
+    showConfirmPopup(`Xóa tất cả ${ccProblem.tests.length} test cases?`, () => {
+        ccProblem.tests = [];
+        ccTestIndex = 0;
+        
+        document.getElementById('input-area').value = '';
+        document.getElementById('expected-area').value = '';
+        const dockedInput = document.getElementById('docked-input');
+        const dockedExpected = document.getElementById('docked-expected');
+        if (dockedInput) dockedInput.value = '';
+        if (dockedExpected) dockedExpected.value = '';
+        
+        batchTestResults = [];
+        updateTestNavUI();
+        renderTestResults();
+        
+        setTimeout(() => {
+            if (App.editor) App.editor.focus();
+        }, 50);
+        
+        log('All test cases deleted', 'info');
+    });
 }
 
 function showCCPopup() {
@@ -4881,12 +4995,18 @@ function updateTestNavUI() {
     const testLabel = document.getElementById('test-nav-label');
     const runAllBtn = document.getElementById('btn-run-all-tests');
     const deleteBtn = document.getElementById('btn-delete-test');
+    const deleteAllBtn = document.getElementById('btn-delete-all-tests');
 
     const testCount = ccProblem?.tests?.length || 0;
 
     // Show/hide Run All button in header
     if (runAllBtn) {
         runAllBtn.style.display = testCount > 0 ? 'flex' : 'none';
+    }
+    
+    // Show/hide Delete All button in TESTS header
+    if (deleteAllBtn) {
+        deleteAllBtn.style.display = testCount > 0 ? 'flex' : 'none';
     }
 
     // Show/hide Panel Add button
@@ -4953,6 +5073,66 @@ function switchTestCase(index) {
 
     updateTestNavUI();
     updateDockedTestNavUI();
+    
+    // Show diff if we have batch test result for this test
+    const result = batchTestResults?.find(r => r.testIndex === index);
+    if (result && result.actualOutput !== undefined) {
+        showTestResultDiff(test.output || '', result.actualOutput);
+    } else {
+        // Reset to edit mode if no result
+        switchToExpectedEdit();
+    }
+}
+
+function showTestResultDiff(expectedText, actualText) {
+    const diffDisplay = document.getElementById('expected-diff');
+    const textarea = document.getElementById('expected-area');
+    const dockedDiffDisplay = document.getElementById('docked-expected-diff');
+    const dockedTextarea = document.getElementById('docked-expected');
+
+    if (!expectedText.trim() && !actualText.trim()) {
+        switchToExpectedEdit();
+        return;
+    }
+
+    const expectedLines = expectedText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const actualLines = actualText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+
+    let html = '';
+    const maxLen = Math.max(expectedLines.length, actualLines.length);
+
+    for (let i = 0; i < maxLen; i++) {
+        const expLine = i < expectedLines.length ? expectedLines[i] : null;
+        const actLine = i < actualLines.length ? actualLines[i] : null;
+
+        if (expLine !== null && actLine !== null && expLine === actLine) {
+            html += `<div class="diff-line match-compact">${escapeHtml(expLine)}</div>`;
+        } else {
+            html += `<div class="diff-line mismatch-compact">`;
+            if (actLine !== null && expLine !== null) {
+                html += `<span class="diff-wrong" title="Actual">${escapeHtml(actLine)}</span> 
+                         <span class="diff-arrow">→</span> 
+                         <span class="diff-right" title="Expected">${escapeHtml(expLine)}</span>`;
+            } else if (actLine !== null && expLine === null) {
+                html += `<span class="diff-extra" title="Extra output">[Extra] ${escapeHtml(actLine)}</span>`;
+            } else if (actLine === null && expLine !== null) {
+                html += `<span class="diff-missing" title="Missing output">Missing: ${escapeHtml(expLine)}</span>`;
+            }
+            html += `</div>`;
+        }
+    }
+
+    if (diffDisplay && textarea) {
+        diffDisplay.innerHTML = html;
+        diffDisplay.style.display = 'block';
+        textarea.style.display = 'none';
+    }
+
+    if (dockedDiffDisplay && dockedTextarea) {
+        dockedDiffDisplay.innerHTML = html;
+        dockedDiffDisplay.style.display = 'block';
+        dockedTextarea.style.display = 'none';
+    }
 }
 
 function nextTestCase() {
@@ -5090,10 +5270,14 @@ let isBatchTesting = false;
 
 function initBatchTesting() {
     const runAllBtn = document.getElementById('btn-run-all-tests');
-    if (!runAllBtn) return;
-
-    runAllBtn.addEventListener('click', runAllTests);
-
+    if (runAllBtn) {
+        runAllBtn.addEventListener('click', runAllTests);
+    }
+    
+    const deleteAllBtn = document.getElementById('btn-delete-all-tests');
+    if (deleteAllBtn) {
+        deleteAllBtn.addEventListener('click', deleteAllTestCases);
+    }
 
     const problemsPanel = document.getElementById('problems-panel');
     if (problemsPanel) {
@@ -5227,6 +5411,7 @@ async function runAllTests() {
 function renderTestResults() {
     const container = document.getElementById('tests-results-list');
     const countEl = document.getElementById('test-results-count');
+    const problemsPanel = document.getElementById('problems-panel');
 
     if (!container) return;
 
@@ -5249,6 +5434,15 @@ function renderTestResults() {
             countEl.textContent = `${total} tests`;
         }
         countEl.style.display = total > 0 ? 'inline' : 'none';
+    }
+    
+    // Auto-expand panel when we have test cases (like docked terminal)
+    if (problemsPanel) {
+        if (total > 0) {
+            problemsPanel.classList.add('has-tests');
+        } else {
+            problemsPanel.classList.remove('has-tests');
+        }
     }
 
 
@@ -5300,6 +5494,12 @@ function renderTestResults() {
                         <span class="test-result-details">${details}</span>
                     </div>
                     <span class="test-result-time">${timeStr}</span>
+                    <button class="test-delete-btn" data-delete-index="${idx}" title="Xóa test case này">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
                 </div>
                 `;
     });
@@ -5319,17 +5519,25 @@ function renderTestResults() {
 
 
     container.querySelectorAll('.test-result-item').forEach(item => {
-        item.addEventListener('click', () => {
+        item.addEventListener('click', (e) => {
+            if (e.target.closest('.test-delete-btn')) return;
             const idx = parseInt(item.dataset.index);
             if (ccProblem && ccProblem.tests[idx]) {
                 switchTestCase(idx);
-                // Also switch to IO panel to view it
                 if (DockingState.ioDocked) {
                     switchDockedPanel('io');
                 } else {
                     if (!App.showIO) toggleIO();
                 }
             }
+        });
+    });
+    
+    container.querySelectorAll('.test-delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = parseInt(btn.dataset.deleteIndex);
+            deleteTestCaseByIndex(idx);
         });
     });
 
@@ -5363,25 +5571,12 @@ function switchProblemsTab(tabName) {
 }
 
 function showTestsTab() {
-    const problemsPanel = document.getElementById('problems-panel');
-
-
     if (!App.showProblems) {
         App.showProblems = true;
         updateUI();
     }
 
-
     switchProblemsTab('tests');
-
-
-    if (problemsPanel) {
-        problemsPanel.classList.add('auto-expand');
-        // Set a reasonable min-height based on number of tests
-        const testCount = batchTestResults.length;
-        const minHeight = Math.min(200 + testCount * 50, 400);
-        problemsPanel.style.minHeight = `${minHeight}px`;
-    }
 }
 
 function buildCompileFlags() {
