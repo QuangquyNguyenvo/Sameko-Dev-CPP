@@ -162,9 +162,16 @@ async function compile({ filePath, content, flags, useLLD }) {
     // Apply user flags
     if (flags) {
         const flagsArr = flags.split(' ').filter(f => f.trim());
+        
+        // Ensure C++ standard is set (needed for stoi(), to_string(), etc.)
+        const hasStdFlag = flagsArr.some(f => f.startsWith('-std='));
+        if (!hasStdFlag) {
+            args.push('-std=c++17'); // Default to C++17 if not specified
+        }
+        
         args.push(...flagsArr);
     } else {
-        args.push('-O0', '-w');
+        args.push('-std=c++17', '-O0', '-w');
     }
 
     const compilerExe = getDetectedCompiler() || 'g++';
