@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://quangquynguyenvo.github.io/Sameko-Dev-CPP/sitemap.xml
+Sitemap: https://samekocpp.wibu.me/sitemap.xml
 
 
 

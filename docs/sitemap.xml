@@ -7,12 +7,12 @@
     
     <!-- Homepage / Documentation -->
     <url>
-        <loc>https://quangquynguyenvo.github.io/Sameko-Dev-CPP/</loc>
+        <loc>https://samekocpp.wibu.me/</loc>
         <lastmod>2026-01-22</lastmod>
         <changefreq>daily</changefreq>
         <priority>1.0</priority>
         <image:image>
-            <image:loc>https://quangquynguyenvo.github.io/Sameko-Dev-CPP/assets/a.webp</image:loc>
+            <image:loc>https://samekocpp.wibu.me/assets/a.webp</image:loc>
             <image:title>Sameko Character (Hero Image)</image:title>
             <image:caption>The Aesthetic Competitive Programming IDE Mascot</image:caption>
         </image:image>
@@ -20,7 +20,7 @@
     
     <!-- Wiki / Documentation Page -->
     <url>
-        <loc>https://quangquynguyenvo.github.io/Sameko-Dev-CPP/wiki.html</loc>
+        <loc>https://samekocpp.wibu.me/wiki.html</loc>
         <lastmod>2026-01-22</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>

@@ -22,10 +22,23 @@
     <link rel="icon" type="image/svg+xml" href="assets/readme-header.svg">
     <!-- Fallback to SVG if available or valid -->
     <link rel="apple-touch-icon" href="assets/icon-192.png">
-    <link rel="canonical" href="https://quangquynguyenvo.github.io/Sameko-Dev-CPP/">
+    <link rel="canonical" href="https://samekocpp.wibu.me/">
+
+    <script>
+        (function () {
+            const newHost = 'samekocpp.wibu.me';
+            if (location.hostname.endsWith('github.io')) {
+                const target = 'https://' + newHost + location.pathname + location.search + location.hash;
+                location.replace(target);
+            }
+        })();
+    </script>
+    <noscript>
+        <meta http-equiv="refresh" content="0; url=https://samekocpp.wibu.me/">
+    </noscript>
 
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://quangquynguyenvo.github.io/Sameko-Dev-CPP/">
+    <meta property="og:url" content="https://samekocpp.wibu.me/">
     <meta property="og:title" content="Sameko Dev C++ | Lightweight C++ IDE for Windows">
     <meta property="og:description"
         content="Free portable C++ IDE with built-in GCC 16 compiler. Perfect for competitive programming and students.">
@@ -51,7 +64,7 @@
             "applicationCategory": "DeveloperApplication",
             "operatingSystem": "Windows 10, Windows 11",
             "description": "A free portable C++ IDE for Windows with built-in GCC 16 compiler. Perfect for competitive programming, students, and beginners.",
-            "url": "https://quangquynguyenvo.github.io/Sameko-Dev-CPP/",
+            "url": "https://samekocpp.wibu.me/",
             "author": { "@type": "Person", "name": "QuangquyNguyenvo", "url": "https://github.com/QuangquyNguyenvo" },
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
             "downloadUrl": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases",
@@ -64,7 +77,7 @@
             "@context": "https://schema.org",
             "@type": "WebSite",
             "name": "Sameko Dev C++",
-            "url": "https://quangquynguyenvo.github.io/Sameko-Dev-CPP/",
+            "url": "https://samekocpp.wibu.me/",
             "alternateName": ["Sameko IDE", "Dev-C++ New Version"]
         }
     ]

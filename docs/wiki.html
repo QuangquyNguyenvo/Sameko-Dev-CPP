@@ -18,7 +18,20 @@
     <link rel="icon" href="assets/favicon-32.png" sizes="32x32">
     <link rel="icon" href="assets/logo-48.png" sizes="48x48">
     <link rel="apple-touch-icon" href="assets/icon-192.png">
-    <link rel="canonical" href="https://quangquynguyenvo.github.io/Sameko-Dev-CPP/wiki.html">
+    <link rel="canonical" href="https://samekocpp.wibu.me/wiki.html">
+
+    <script>
+        (function () {
+            const newHost = 'samekocpp.wibu.me';
+            if (location.hostname.endsWith('github.io')) {
+                const target = 'https://' + newHost + location.pathname + location.search + location.hash;
+                location.replace(target);
+            }
+        })();
+    </script>
+    <noscript>
+        <meta http-equiv="refresh" content="0; url=https://samekocpp.wibu.me/wiki.html">
+    </noscript>
 
     <link rel="stylesheet" href="styles.min.css">
 
