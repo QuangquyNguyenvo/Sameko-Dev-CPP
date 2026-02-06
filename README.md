@@ -10,7 +10,7 @@
   **The cutest & fastest C++ IDE for your coding adventures! (≧◡≦) ♡**
 
   <p>
-    <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases">
+    <a href="https://samekocpp.wibu.me/">
       <img src="https://img.shields.io/github/v/release/QuangquyNguyenvo/Sameko-Dev-CPP?include_prereleases&style=for-the-badge&color=88c9ea&labelColor=1a2530" alt="Release" />
     </a>
     <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/LICENSE">
