@@ -10,8 +10,8 @@
   **The cutest & fastest C++ IDE for your coding adventures! (≧◡≦) ♡**
 
   <p>
-    <a href="https://samekocpp.wibu.me/">
-      <img src="https://img.shields.io/github/v/release/QuangquyNguyenvo/Sameko-Dev-CPP?include_prereleases&style=for-the-badge&color=88c9ea&labelColor=1a2530" alt="Release" />
+    <a href="https://samekocpp.wibu.me/" target="_blank" rel="noopener noreferrer">
+      <img src="https://img.shields.io/badge/Download-Sameko%20IDE-88c9ea?style=for-the-badge&labelColor=1a2530" alt="Download" />
     </a>
     <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/LICENSE">
       <img src="https://img.shields.io/github/license/QuangquyNguyenvo/Sameko-Dev-CPP?style=for-the-badge&color=88c9ea&labelColor=1a2530" alt="License" />
@@ -101,7 +101,7 @@
 
 ### Windows (Portable)
 
-1. Go to [**Releases**](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases)
+1. Go to [**samekocpp.wibu.me**](https://samekocpp.wibu.me/)
 2. Download the latest `.rar` or `.exe` file
 3. Extract and run — that's it!
 
