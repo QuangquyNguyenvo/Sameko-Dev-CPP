@@ -134,6 +134,12 @@ document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
 const dlTrigger = document.getElementById('download-trigger');
 const dlWrapper = document.querySelector('.dropdown-wrapper');
 
+function openDownloadMenu() {
+    if (dlWrapper && !dlWrapper.classList.contains('active')) {
+        dlWrapper.classList.add('active');
+    }
+}
+
 if (dlTrigger && dlWrapper) {
     dlTrigger.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -257,7 +263,7 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)
 const scrollTopBtn = document.getElementById('scroll-top');
 
 // Generic Smooth Scroll Function
-function smoothScrollTo(targetY, duration = 1000) {
+function smoothScrollTo(targetY, duration = 1000, onComplete) {
     const startY = window.scrollY;
     // Handle document height limit
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
@@ -266,7 +272,10 @@ function smoothScrollTo(targetY, duration = 1000) {
     const diff = effectiveTargetY - startY;
 
     // If distance is 0, don't animate
-    if (diff === 0) return;
+    if (diff === 0) {
+        if (typeof onComplete === 'function') onComplete();
+        return;
+    }
 
     const startTime = performance.now();
 
@@ -284,6 +293,8 @@ function smoothScrollTo(targetY, duration = 1000) {
 
         if (progress < 1) {
             requestAnimationFrame(scrollStep);
+        } else if (typeof onComplete === 'function') {
+            onComplete();
         }
     }
 
@@ -326,7 +337,12 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             const elementPosition = targetElement.getBoundingClientRect().top;
             const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
-            smoothScrollTo(offsetPosition);
+            smoothScrollTo(offsetPosition, 1000, () => {
+                if (targetId === 'download-trigger') {
+                    openDownloadMenu();
+                    if (dlTrigger) dlTrigger.focus();
+                }
+            });
 
             // Optional: Update URL without jumping
             // Optional: Update URL without jumping (deferred to avoid stutter)
@@ -340,6 +356,23 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 if (scrollTopBtn) {
     window.addEventListener('scroll', checkScrollTop, { passive: true });
     scrollTopBtn.addEventListener('click', scrollToTop);
-    // Initial check
     checkScrollTop();
 }
+
+// ===== FAQ ACCORDION =====
+document.querySelectorAll('.faq-question').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        const isActive = item.classList.contains('active');
+
+        document.querySelectorAll('.faq-item.active').forEach(el => {
+            el.classList.remove('active');
+            el.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+        });
+
+        if (!isActive) {
+            item.classList.add('active');
+            btn.setAttribute('aria-expanded', 'true');
+        }
+    });
+});

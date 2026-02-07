@@ -44,7 +44,7 @@
   <p>
     <a href="#-features">Features</a> •
     <a href="#-screenshots">Screenshots</a> •
-    <a href="#-download">Download</a> •
+    <a href="https://samekocpp.wibu.me/" target="_blank" rel="noopener noreferrer">Download</a> •
     <a href="#-development">Development</a> •
     <a href="#-shortcuts">Shortcuts</a>
   </p>
