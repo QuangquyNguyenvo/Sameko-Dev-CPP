@@ -15,6 +15,22 @@
     <meta name="theme-color" content="#64B5F6">
     <meta name="robots" content="index, follow">
 
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://samekocpp.wibu.me/wiki.html">
+    <meta property="og:title" content="Wiki | Sameko Dev C++">
+    <meta property="og:description"
+        content="Tài liệu hướng dẫn sử dụng Sameko Dev C++ - Từ cài đặt, cấu hình compiler đến các tính năng nâng cao cho competitive programming.">
+    <meta property="og:image"
+        content="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/screenshots/screenshot_editor.png">
+    <meta property="og:site_name" content="Sameko Dev C++">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Wiki | Sameko Dev C++">
+    <meta name="twitter:description"
+        content="Tài liệu hướng dẫn sử dụng Sameko Dev C++ - Từ cài đặt, cấu hình compiler đến các tính năng nâng cao.">
+    <meta name="twitter:image"
+        content="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/screenshots/screenshot_editor.png">
+
     <link rel="icon" href="assets/favicon-32.png" sizes="32x32">
     <link rel="icon" href="assets/logo-48.png" sizes="48x48">
     <link rel="apple-touch-icon" href="assets/icon-192.png">
@@ -22,10 +38,9 @@
 
     <script>
         (function () {
-            const newHost = 'samekocpp.wibu.me';
             if (location.hostname.endsWith('github.io')) {
-                const target = 'https://' + newHost + location.pathname + location.search + location.hash;
-                location.replace(target);
+                var p = location.pathname.replace(/^\/[^\/]+/, '');
+                location.replace('https://samekocpp.wibu.me' + (p || '/') + location.search + location.hash);
             }
         })();
     </script>
@@ -99,8 +114,9 @@
             </a>
         </div>
         <div class="nav-links">
-            <a href="index.html#features">Features</a>
             <a href="index.html#benchmark">Benchmarks</a>
+            <a href="index.html#features">Features</a>
+            <a href="index.html#faq">FAQ</a>
             <a href="wiki.html" style="color: var(--primary);">Wiki</a>
             <a target="_blank" rel="noopener noreferrer"
                 href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases">Download</a>
@@ -123,12 +139,19 @@
                     <div class="wiki-nav-title">Configuration</div>
                     <a href="#compiler" class="wiki-nav-link">Compiler Settings</a>
                     <a href="#shortcuts" class="wiki-nav-link">Shortcuts</a>
-                    <a href="#themes" class="wiki-nav-link">Themes & Fonts</a>
+                    <a href="#themes" class="wiki-nav-link">Themes & Customization</a>
                 </div>
                 <div class="wiki-nav-group">
-                    <div class="wiki-nav-title">Advanced</div>
+                    <div class="wiki-nav-title">Features</div>
+                    <a href="#editor-features" class="wiki-nav-link">Editor</a>
+                    <a href="#file-explorer" class="wiki-nav-link">File Explorer</a>
+                    <a href="#checkpoints" class="wiki-nav-link">Checkpoints</a>
                     <a href="#competitive" class="wiki-nav-link">Competitive Companion</a>
                     <a href="#snippets" class="wiki-nav-link">Snippets</a>
+                    <a href="#auto-update" class="wiki-nav-link">Auto-Update</a>
+                </div>
+                <div class="wiki-nav-group">
+                    <div class="wiki-nav-title">Help</div>
                     <a href="#troubleshooting" class="wiki-nav-link">Troubleshooting</a>
                 </div>
             </aside>
@@ -198,33 +221,18 @@
                         <h2>Installing Sameko IDE</h2>
                         <p>Installation takes about 3-5 minutes.</p>
 
-                        <!-- Installer vs Portable Guide -->
-                        <section id="installer-vs-portable"
-                            style="margin: 20px 0; padding: 20px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color);">
-                            <h3 style="margin-top: 0;">Which one should I choose?</h3>
+                        <div class="callout note">
+                            <div class="callout-title">Which one should I choose?</div>
                             <p>Sameko provides 2 download options:</p>
-                            <ul style="margin-bottom: 0;">
-                                <li style="margin-bottom: 12px;">
-                                    <b>Installer (.exe)</b> <span
-                                        style="background: rgba(76, 175, 80, 0.2); color: #4CAF50; font-size: 0.8em; padding: 2px 8px; border-radius: 12px;">Recommended</span>
-                                    <ul>
-                                        <li>Automatic setup, adds shortcuts to Start Menu.</li>
-                                        <li>Integrates with right-click menu (Open with Sameko).</li>
-                                        <li>Includes uninstaller for clean removal.</li>
-                                    </ul>
+                            <ul>
+                                <li>
+                                    <b>Installer (.exe)</b> — Automatic setup with Start Menu shortcuts, right-click integration, auto-updates, and a clean uninstaller. Recommended for most users.
                                 </li>
                                 <li>
-                                    <b>Portable (.rar)</b>
-                                    <ul>
-                                        <li>Unzip and run immediately, no Admin rights required.</li>
-                                        <li>Perfect for USB drives or public computers.</li>
-                                        <li>Data is stored within the folder, keeping system registry clean.</li>
-                                        <li><span style="color: #EF5350; font-weight: bold;">Note:</span> Automatic
-                                            updates are NOT supported in the portable version.</li>
-                                    </ul>
+                                    <b>Portable (.rar)</b> — Unzip and run anywhere. No admin rights needed. Great for USB drives or school computers. Note: auto-updates are not available in portable mode.
                                 </li>
                             </ul>
-                        </section>
+                        </div>
 
                         <div class="tutorial-steps">
                             <div class="tutorial-step">
@@ -431,64 +439,211 @@ int main() {
 
                     <!-- THEMES -->
                     <section id="themes">
-                        <h2>Themes & Fonts</h2>
-                        <p>Sameko includes 6 built-in themes. Change themes in Settings or click the palette icon.</p>
+                        <h2>Themes & Customization</h2>
+                        <p>Sameko includes 7 built-in themes. Change themes in Settings or click the palette icon.</p>
 
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Theme</th>
+                                    <th>Style</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Kawaii Light</td>
+                                    <td>Default light theme with soft blue tones</td>
+                                </tr>
+                                <tr>
+                                    <td>Kawaii Dark</td>
+                                    <td>Dark theme with blue accents</td>
+                                </tr>
+                                <tr>
+                                    <td>Sakura Pink</td>
+                                    <td>Light pink anime-style theme</td>
+                                </tr>
+                                <tr>
+                                    <td>Dracula</td>
+                                    <td>Popular purple-toned dark theme</td>
+                                </tr>
+                                <tr>
+                                    <td>Monokai</td>
+                                    <td>Classic warm dark theme</td>
+                                </tr>
+                                <tr>
+                                    <td>Nord</td>
+                                    <td>Arctic blue dark theme</td>
+                                </tr>
+                                <tr>
+                                    <td>One Dark</td>
+                                    <td>Atom-inspired dark theme</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>Theme Customizer</h3>
+                        <p>Open the Theme Customizer to click on any UI element and change its color. You can also set custom background images or videos with opacity control, and import/export your custom themes.</p>
+                    </section>
+
+                    <!-- EDITOR FEATURES -->
+                    <section id="editor-features">
+                        <h2>Editor</h2>
+                        <p>Sameko uses the Monaco Editor — the same engine that powers VS Code. This gives you a professional editing experience out of the box.</p>
+
+                        <h3>Key Editor Features</h3>
                         <ul>
-                            <li><b>Sameko Blue</b> - Default theme with blue tones</li>
-                            <li><b>Sakura Pink</b> - Light pink anime-style theme</li>
-                            <li><b>Dark Mode</b> - Dark theme for night work</li>
-                            <li><b>Dracula</b> - Popular purple theme</li>
-                            <li><b>Monokai</b> - Classic programmer theme</li>
-                            <li><b>Nord</b> - Arctic blue theme</li>
+                            <li><b>IntelliSense</b> — autocomplete for STL methods, functions, and your own code</li>
+                            <li><b>Bracket Colorization</b> — matching brackets are colored for readability</li>
+                            <li><b>Minimap</b> — a bird's-eye view of your code on the right side</li>
+                            <li><b>Multi-cursor</b> — hold <kbd>Alt</kbd> and click to place multiple cursors</li>
+                            <li><b>Find & Replace</b> — <kbd>Ctrl</kbd> + <kbd>H</kbd> with regex support</li>
+                            <li><b>Code Folding</b> — collapse functions and blocks to focus on what matters</li>
+                            <li><b>Split Editor</b> — press <kbd>Ctrl</kbd> + <kbd>\</kbd> to work on two files side by side</li>
                         </ul>
 
-                        <p>The IDE also supports GIF backgrounds in Settings.</p>
+                        <h3>Tabs</h3>
+                        <p>Open multiple files in tabs. Drag to reorder, middle-click to close, or right-click for options like "Close Others" and "Pin Tab". Your open tabs are restored when you reopen the IDE.</p>
+                    </section>
+
+                    <!-- FILE EXPLORER -->
+                    <section id="file-explorer">
+                        <h2>File Explorer</h2>
+                        <p>The sidebar file explorer lets you browse and manage files without leaving the IDE.</p>
+
+                        <ul>
+                            <li>Click any <code>.cpp</code>, <code>.c</code>, or <code>.h</code> file to open it in a tab</li>
+                            <li>Right-click for rename, delete, and other file operations</li>
+                            <li>Drag and drop files into the IDE to open them</li>
+                            <li>Recent files are tracked and accessible from the menu</li>
+                        </ul>
+                    </section>
+
+                    <!-- CHECKPOINTS / LOCAL HISTORY -->
+                    <section id="checkpoints">
+                        <h2>Checkpoints (Local History)</h2>
+                        <p>Sameko automatically saves a checkpoint every time you save a file. This means you can always go back to a previous version — even if you forgot to undo.</p>
+
+                        <h3>How It Works</h3>
+                        <ol>
+                            <li>Every <kbd>Ctrl</kbd> + <kbd>S</kbd> creates a timestamped backup</li>
+                            <li>Open the Checkpoints panel to see all saved versions</li>
+                            <li>Click any checkpoint to preview it</li>
+                            <li>Restore a checkpoint to revert your file</li>
+                        </ol>
+
+                        <div class="callout tip">
+                            <div class="callout-title">Tip</div>
+                            <p>Checkpoints are stored locally and persist across IDE restarts. Great for experimenting with different solutions during a contest.</p>
+                        </div>
                     </section>
 
                     <!-- COMPETITIVE -->
                     <section id="competitive">
                         <h2>Competitive Companion</h2>
-                        <p>Competitive Companion is an extension that automatically fetches test cases from sites like
-                            Codeforces, AtCoder, LeetCode.</p>
+                        <p>Competitive Companion is a browser extension that automatically fetches test cases from online judges like Codeforces, AtCoder, and LeetCode.</p>
 
                         <h3>Setup</h3>
                         <ol>
                             <li>Install <a
                                     href="https://chrome.google.com/webstore/detail/competitive-companion/cjnmckjndlpiamhfimnnjmnckgghkjbl"
-                                    target="_blank" rel="noopener noreferrer">Competitive Companion</a> extension on
-                                Chrome/Firefox</li>
+                                    target="_blank" rel="noopener noreferrer">Competitive Companion</a> on Chrome or Firefox</li>
                             <li>Open Sameko IDE</li>
-                            <li>Go to a problem page (e.g., Codeforces) and click the extension icon</li>
-                            <li>Test cases will be automatically added to the IDE</li>
+                            <li>Navigate to a problem page and click the extension icon</li>
+                            <li>Test cases are loaded into the IDE automatically</li>
                         </ol>
 
-                        <div class="callout tip">
-                            <div class="callout-title">Tip</div>
-                            <p>After parsing test cases, click Run All Tests to run all and see AC/WA/TLE results.</p>
-                        </div>
+                        <h3>Verdicts</h3>
+                        <p>After running tests, each case shows a verdict:</p>
+                        <ul>
+                            <li><b>AC</b> — Accepted, output matches expected</li>
+                            <li><b>WA</b> — Wrong Answer, output differs</li>
+                            <li><b>TLE</b> — Time Limit Exceeded</li>
+                            <li><b>RE</b> — Runtime Error</li>
+                            <li><b>MLE</b> — Memory Limit Exceeded</li>
+                        </ul>
                     </section>
 
                     <!-- SNIPPETS -->
                     <section id="snippets">
                         <h2>Snippets</h2>
-                        <p>Snippets help you type code templates faster. Sameko has built-in snippets and you can add
-                            your own.</p>
+                        <p>Snippets let you insert code templates by typing a short prefix and pressing <kbd>Tab</kbd> or <kbd>Enter</kbd>.</p>
 
                         <h3>Built-in Snippets</h3>
-                        <ul>
-                            <li><code>cp</code> - Competitive programming template with bits/stdc++.h</li>
-                            <li><code>bfs</code> - BFS template</li>
-                            <li><code>dfs</code> - DFS template</li>
-                            <li><code>segtree</code> - Segment Tree</li>
-                            <li><code>dsu</code> - Disjoint Set Union</li>
-                        </ul>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Prefix</th>
+                                    <th>Template</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><code>cp</code></td>
+                                    <td>Competitive programming template with bits/stdc++.h and fast I/O</td>
+                                </tr>
+                                <tr>
+                                    <td><code>for</code></td>
+                                    <td>For loop (0 → n-1)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>for1</code></td>
+                                    <td>For loop (1 → n)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>ford</code></td>
+                                    <td>Reverse for loop (n-1 → 0)</td>
+                                </tr>
+                                <tr>
+                                    <td><code>fore</code></td>
+                                    <td>Range-based for loop</td>
+                                </tr>
+                                <tr>
+                                    <td><code>vec</code></td>
+                                    <td>Declare a vector</td>
+                                </tr>
+                                <tr>
+                                    <td><code>vecn</code></td>
+                                    <td>Vector with size n</td>
+                                </tr>
+                                <tr>
+                                    <td><code>vv</code></td>
+                                    <td>2D vector</td>
+                                </tr>
+                                <tr>
+                                    <td><code>all</code></td>
+                                    <td>v.begin(), v.end()</td>
+                                </tr>
+                                <tr>
+                                    <td><code>pq</code></td>
+                                    <td>Priority queue</td>
+                                </tr>
+                            </tbody>
+                        </table>
 
-                        <p>Type the prefix and press <kbd>Tab</kbd> or <kbd>Enter</kbd> to expand the snippet.</p>
+                        <h3>STL IntelliSense</h3>
+                        <p>Sameko provides autocomplete with documentation for 30+ STL methods and functions including <code>push_back</code>, <code>sort</code>, <code>lower_bound</code>, <code>substr</code>, and more. Hover over any STL call to see its signature and description.</p>
 
-                        <h3>Adding custom snippets</h3>
-                        <p>Go to Settings > Snippets to open the snippet editor. Each snippet has a prefix (trigger) and
-                            body (code to expand).</p>
+                        <h3>Custom Snippets</h3>
+                        <p>Go to <b>Settings → Snippets</b> to create your own. Each snippet has a prefix (trigger word) and a body (the code that gets inserted). Use this to add your own algorithm templates like BFS, DFS, Segment Tree, or DSU.</p>
+                    </section>
+
+                    <!-- AUTO-UPDATE -->
+                    <section id="auto-update">
+                        <h2>Auto-Update</h2>
+                        <p>The Installer version of Sameko checks for updates automatically in the background.</p>
+
+                        <h3>How It Works</h3>
+                        <ol>
+                            <li>On startup, the IDE checks GitHub Releases for a newer version</li>
+                            <li>If an update is found, it downloads in the background</li>
+                            <li>A notification appears when the download is complete</li>
+                            <li>Click "Restart" to apply the update — your open files are restored</li>
+                        </ol>
+
+                        <div class="callout warning">
+                            <div class="callout-title">Note</div>
+                            <p>Auto-update is only available in the Installer version. Portable users need to download new versions manually from the website.</p>
+                        </div>
                     </section>
 
                     <!-- TROUBLESHOOTING -->
@@ -552,10 +707,10 @@ int main() {
 
     <!-- Footer -->
     <footer>
-        <div class="container"
-            style="text-align: center; padding: 40px 0; border-top: 1px solid var(--border-color); margin-top: 40px;">
-            <p>© 2026 Sameko Dev C++ Project. Open Source under MIT License.</p>
-            <p style="opacity: 0.7; margin-top: 5px;">Built with 💙 by QuangquyNguyenvo</p>
+        <div class="footer-content">
+            <div class="footer-bottom">
+                <p>© 2026 Sameko Dev C++ Project. Built with 💙 by QuangquyNguyenvo</p>
+            </div>
         </div>
     </footer>
 

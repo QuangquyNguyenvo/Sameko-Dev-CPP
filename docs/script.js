@@ -1,19 +1,27 @@
 const canvas = document.getElementById('grid-canvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas ? canvas.getContext('2d') : null;
 let width, height;
 let points = [];
 let spacing = 50;
 const mouse = { x: -1000, y: -1000 };
 let animationFrameId;
 let isAnimating = false;
+const isMobile = window.innerWidth < 768;
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function init() {
+    if (!canvas || !ctx) return;
+
+    // Disable canvas entirely on mobile & reduced motion for performance
+    if (isMobile || prefersReducedMotion) {
+        canvas.style.display = 'none';
+        return;
+    }
+
     width = canvas.width = window.innerWidth;
     height = canvas.height = window.innerHeight;
 
-    // Increase spacing on mobile to improve performance
-    spacing = window.innerWidth < 768 ? 70 : 50;
-
+    spacing = 50;
     points = [];
 
     if (width * height > 50000000) return;
@@ -39,6 +47,8 @@ window.addEventListener('mousemove', e => {
 });
 
 function checkAnimationStatus() {
+    if (isMobile || prefersReducedMotion || !canvas || !ctx) return;
+
     const shouldAnimate = window.scrollY < window.innerHeight + 100;
 
     if (shouldAnimate && !isAnimating) {
@@ -54,30 +64,27 @@ function checkAnimationStatus() {
 window.addEventListener('scroll', checkAnimationStatus, { passive: true });
 
 function animate() {
-    if (!isAnimating) return;
+    if (!isAnimating || !ctx) return;
 
     ctx.clearRect(0, 0, width, height);
     ctx.fillStyle = window.dotColor || 'rgba(100, 181, 246, 0.36)';
     ctx.beginPath();
 
-    const maxDist = 150; // Reduced interaction radius
+    const maxDist = 150;
     const maxDistSq = maxDist * maxDist;
-    const stiffness = 0.03; // Spring stiffness
-    const damping = 0.9;    // Friction
-    const mouseForce = 30;  // Reduced force
+    const stiffness = 0.03;
+    const damping = 0.9;
+    const mouseForce = 30;
 
     for (let i = 0; i < points.length; i++) {
         const p = points[i];
 
-        // Calculate distance to mouse
         const dx = mouse.x - p.x;
         const dy = mouse.y - p.y;
         const distSq = dx * dx + dy * dy;
 
-        // Mouse interaction (Repulsion)
         if (distSq < maxDistSq) {
             const dist = Math.sqrt(distSq);
-            // Non-linear interaction for smoother feel
             const force = Math.pow((maxDist - dist) / maxDist, 2) * mouseForce;
             const angle = Math.atan2(dy, dx);
 
@@ -85,14 +92,12 @@ function animate() {
             p.vy -= Math.sin(angle) * force;
         }
 
-        // Spring Force (Return to origin)
         const dxHome = p.originX - p.x;
         const dyHome = p.originY - p.y;
 
         p.vx += dxHome * stiffness;
         p.vy += dyHome * stiffness;
 
-        // Apply Velocity & Damping
         p.vx *= damping;
         p.vy *= damping;
 
@@ -108,10 +113,12 @@ function animate() {
 }
 
 init();
-checkAnimationStatus();
-if (window.scrollY < window.innerHeight + 100) {
-    isAnimating = true;
-    animate();
+if (!isMobile && !prefersReducedMotion && canvas && ctx) {
+    checkAnimationStatus();
+    if (window.scrollY < window.innerHeight + 100) {
+        isAnimating = true;
+        animate();
+    }
 }
 
 const observerOptions = {
@@ -158,17 +165,13 @@ fetch('https://api.github.com/repos/QuangquyNguyenvo/Sameko-Dev-CPP/releases')
     .then(res => res.json())
     .then(data => {
         if (data && data.length > 0) {
-            // Find latest pre-release or release
             const latest = data[0];
-            // Note: Users asked for "latest pre-release", usually API returns sorted by date.
-            // If we strictly want specific types, we can filter. 
-            // data[0] is usually the latest created, which includes pre-releases if not filtered.
 
             const installerBtn = document.getElementById('dl-installer');
             const portableBtn = document.getElementById('dl-portable');
 
-            let installerUrl = latest.html_url; // Fallback
-            let portableUrl = latest.html_url;  // Fallback
+            let installerUrl = latest.html_url;
+            let portableUrl = latest.html_url;
 
             if (latest.assets && latest.assets.length > 0) {
                 latest.assets.forEach(asset => {
@@ -183,6 +186,12 @@ fetch('https://api.github.com/repos/QuangquyNguyenvo/Sameko-Dev-CPP/releases')
 
             if (installerBtn) installerBtn.href = installerUrl;
             if (portableBtn) portableBtn.href = portableUrl;
+
+            // Dynamic hero badge with release name
+            const heroBadge = document.getElementById('hero-badge');
+            if (heroBadge && latest.name) {
+                heroBadge.textContent = latest.name;
+            }
         }
     })
     .catch(e => console.log('GitHub API warning: ', e));

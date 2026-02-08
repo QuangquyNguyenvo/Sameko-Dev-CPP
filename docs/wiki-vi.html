@@ -22,10 +22,9 @@
 
     <script>
         (function () {
-            const newHost = 'samekocpp.wibu.me';
             if (location.hostname.endsWith('github.io')) {
-                const target = 'https://' + newHost + location.pathname + location.search + location.hash;
-                location.replace(target);
+                var p = location.pathname.replace(/^\/[^\/]+/, '');
+                location.replace('https://samekocpp.wibu.me' + (p || '/') + location.search + location.hash);
             }
         })();
     </script>
