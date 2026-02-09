@@ -208,17 +208,27 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 
         if (targetElement) {
             e.preventDefault();
+
+            // Special handling: CTA download scrolls to top then opens dropdown
+            if (targetId === 'download-trigger') {
+                smoothScrollTo(0, 800, () => {
+                    setTimeout(() => {
+                        openDownloadMenu();
+                        if (dlTrigger) dlTrigger.focus();
+                    }, 150);
+                });
+                if (history.pushState) {
+                    history.pushState(null, null, ' ');
+                }
+                return;
+            }
+
             // Account for sticky header height (approx 80px)
             const headerOffset = 80;
             const elementPosition = targetElement.getBoundingClientRect().top;
             const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
-            smoothScrollTo(offsetPosition, 1000, () => {
-                if (targetId === 'download-trigger') {
-                    openDownloadMenu();
-                    if (dlTrigger) dlTrigger.focus();
-                }
-            });
+            smoothScrollTo(offsetPosition, 1000);
 
             // Optional: Update URL without jumping
             // Optional: Update URL without jumping (deferred to avoid stutter)
@@ -276,9 +286,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let particles = [];
 
     // Config
-    const gap = 40;
+    const gap = 45;
     const radius = 1.5;
-    const mouseRadius = 150;
+    const mouseRadius = 180;
     const returnSpeed = 0.08;
     const pushWeb = 0.8;
 
@@ -319,7 +329,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.clearRect(0, 0, width, height);
 
         const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
+        ctx.fillStyle = isDark ? 'rgba(100, 181, 246, 0.25)' : 'rgba(2, 136, 209, 0.18)';
 
         particles.forEach(p => {
             const dx = mouse.x - p.x;

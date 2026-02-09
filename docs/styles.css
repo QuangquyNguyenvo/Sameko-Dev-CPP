@@ -2629,6 +2629,10 @@ kbd {
             radial-gradient(ellipse at 50% 80%, var(--hero-gradient-end) 0%, transparent 60%);
     }
 
+    #bg-canvas {
+        display: none;
+    }
+
     .hero-content {
         order: 1;
         /* Text first */
