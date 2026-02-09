@@ -858,6 +858,15 @@ int main() {
 
         // Initial call
         setTimeout(updateTocOnScroll, 150);
+
+        // Auto-wrap tables in scrollable wrapper
+        document.querySelectorAll('.wiki-content table').forEach(function(table) {
+            if (table.parentElement.classList.contains('wiki-table-wrapper')) return;
+            var wrapper = document.createElement('div');
+            wrapper.className = 'wiki-table-wrapper';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+        });
     </script>
 </body>
 

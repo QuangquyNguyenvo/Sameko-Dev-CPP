@@ -1,126 +1,3 @@
-const canvas = document.getElementById('grid-canvas');
-const ctx = canvas ? canvas.getContext('2d') : null;
-let width, height;
-let points = [];
-let spacing = 50;
-const mouse = { x: -1000, y: -1000 };
-let animationFrameId;
-let isAnimating = false;
-const isMobile = window.innerWidth < 768;
-const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-function init() {
-    if (!canvas || !ctx) return;
-
-    // Disable canvas entirely on mobile & reduced motion for performance
-    if (isMobile || prefersReducedMotion) {
-        canvas.style.display = 'none';
-        return;
-    }
-
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight;
-
-    spacing = 50;
-    points = [];
-
-    if (width * height > 50000000) return;
-
-    for (let x = 0; x < width + spacing; x += spacing) {
-        for (let y = 0; y < height + spacing; y += spacing) {
-            points.push({
-                originX: x,
-                originY: y,
-                x: x,
-                y: y,
-                vx: 0,
-                vy: 0
-            });
-        }
-    }
-}
-
-window.addEventListener('resize', init);
-window.addEventListener('mousemove', e => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-});
-
-function checkAnimationStatus() {
-    if (isMobile || prefersReducedMotion || !canvas || !ctx) return;
-
-    const shouldAnimate = window.scrollY < window.innerHeight + 100;
-
-    if (shouldAnimate && !isAnimating) {
-        isAnimating = true;
-        animate();
-    } else if (!shouldAnimate && isAnimating) {
-        isAnimating = false;
-        if (animationFrameId) cancelAnimationFrame(animationFrameId);
-        ctx.clearRect(0, 0, width, height);
-    }
-}
-
-window.addEventListener('scroll', checkAnimationStatus, { passive: true });
-
-function animate() {
-    if (!isAnimating || !ctx) return;
-
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = window.dotColor || 'rgba(100, 181, 246, 0.36)';
-    ctx.beginPath();
-
-    const maxDist = 150;
-    const maxDistSq = maxDist * maxDist;
-    const stiffness = 0.03;
-    const damping = 0.9;
-    const mouseForce = 30;
-
-    for (let i = 0; i < points.length; i++) {
-        const p = points[i];
-
-        const dx = mouse.x - p.x;
-        const dy = mouse.y - p.y;
-        const distSq = dx * dx + dy * dy;
-
-        if (distSq < maxDistSq) {
-            const dist = Math.sqrt(distSq);
-            const force = Math.pow((maxDist - dist) / maxDist, 2) * mouseForce;
-            const angle = Math.atan2(dy, dx);
-
-            p.vx -= Math.cos(angle) * force;
-            p.vy -= Math.sin(angle) * force;
-        }
-
-        const dxHome = p.originX - p.x;
-        const dyHome = p.originY - p.y;
-
-        p.vx += dxHome * stiffness;
-        p.vy += dyHome * stiffness;
-
-        p.vx *= damping;
-        p.vy *= damping;
-
-        p.x += p.vx;
-        p.y += p.vy;
-
-        ctx.moveTo(p.x + 1.5, p.y);
-        ctx.arc(p.x, p.y, 1.5, 0, Math.PI * 2);
-    }
-
-    ctx.fill();
-    animationFrameId = requestAnimationFrame(animate);
-}
-
-init();
-if (!isMobile && !prefersReducedMotion && canvas && ctx) {
-    checkAnimationStatus();
-    if (window.scrollY < window.innerHeight + 100) {
-        isAnimating = true;
-        animate();
-    }
-}
-
 const observerOptions = {
     threshold: 0.1,
     rootMargin: "0px 0px -50px 0px"
@@ -233,16 +110,6 @@ function applyTheme(theme) {
         html.removeAttribute('data-theme');
     }
     localStorage.setItem('theme', theme);
-
-    // Update canvas dot color based on theme
-    updateCanvasColor(theme);
-}
-
-// Update canvas animation color based on theme
-function updateCanvasColor(theme) {
-    const isDark = theme === 'dark';
-    // The animate function will use this color
-    window.dotColor = isDark ? 'rgba(100, 181, 246, 0.5)' : 'rgba(100, 181, 246, 0.36)';
 }
 
 // Toggle theme
@@ -385,3 +252,113 @@ document.querySelectorAll('.faq-question').forEach(btn => {
         }
     });
 });
+
+/* ===== AUTO-WRAP TABLES IN SCROLLABLE WRAPPER ===== */
+document.querySelectorAll('.wiki-content table').forEach(table => {
+    if (table.parentElement.classList.contains('wiki-table-wrapper')) return;
+    const wrapper = document.createElement('div');
+    wrapper.className = 'wiki-table-wrapper';
+    table.parentNode.insertBefore(wrapper, table);
+    wrapper.appendChild(table);
+});
+
+/* ===== DYNAMIC BACKGROUND (Anti-Gravity Dots) ===== */
+document.addEventListener('DOMContentLoaded', () => {
+    const heroWrapper = document.querySelector('.hero-wrapper');
+    if (!heroWrapper) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.id = 'bg-canvas';
+    heroWrapper.insertBefore(canvas, heroWrapper.firstChild);
+
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let particles = [];
+
+    // Config
+    const gap = 40;
+    const radius = 1.5;
+    const mouseRadius = 150;
+    const returnSpeed = 0.08;
+    const pushWeb = 0.8;
+
+    function resize() {
+        width = heroWrapper.offsetWidth;
+        height = heroWrapper.offsetHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initParticles();
+    }
+
+    function initParticles() {
+        particles = [];
+        for (let x = 0; x < width; x += gap) {
+            for (let y = 0; y < height; y += gap) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    originX: x,
+                    originY: y,
+                    vx: 0,
+                    vy: 0
+                });
+            }
+        }
+    }
+
+    let mouse = { x: -1000, y: -1000 };
+
+    // Update mouse position relative to canvas
+    window.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = e.clientX - rect.left;
+        mouse.y = e.clientY - rect.top;
+    });
+
+    function animate() {
+        ctx.clearRect(0, 0, width, height);
+
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        ctx.fillStyle = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
+
+        particles.forEach(p => {
+            const dx = mouse.x - p.x;
+            const dy = mouse.y - p.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            if (distance < mouseRadius) {
+                const forceDirectionX = dx / distance;
+                const forceDirectionY = dy / distance;
+                const force = (mouseRadius - distance) / mouseRadius;
+                const directionX = forceDirectionX * force * pushWeb;
+                const directionY = forceDirectionY * force * pushWeb;
+
+                p.vx -= directionX;
+                p.vy -= directionY;
+            }
+
+            const odx = p.originX - p.x;
+            const ody = p.originY - p.y;
+
+            p.vx += odx * returnSpeed * 0.5;
+            p.vy += ody * returnSpeed * 0.5;
+
+            p.vx *= 0.85;
+            p.vy *= 0.85;
+
+            p.x += p.vx;
+            p.y += p.vy;
+
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+            ctx.fill();
+        });
+
+        requestAnimationFrame(animate);
+    }
+
+    window.addEventListener('resize', resize);
+    resize(); // Init
+    animate();
+});
+

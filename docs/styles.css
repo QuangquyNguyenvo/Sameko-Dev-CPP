@@ -215,6 +215,10 @@ html {
     scroll-padding-top: 80px;
 }
 
+html {
+    background-color: var(--body-bg);
+}
+
 body {
     background-color: var(--body-bg);
     color: var(--text-main);
@@ -226,6 +230,16 @@ body {
     width: 100%;
     display: flex;
     flex-direction: column;
+}
+
+#bg-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
 }
 
 /* Custom Scrollbar */
@@ -247,25 +261,14 @@ body {
     background: var(--text-muted);
 }
 
-/* === GRAVITY GRID EFFECT === */
 
-
-#grid-canvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 0;
-    pointer-events: none;
-}
 
 .container {
     max-width: var(--max-width);
     margin: 0 auto;
     padding: 0 30px;
     position: relative;
-    z-index: 2;
+    z-index: 1;
 }
 
 svg.icon {
@@ -298,10 +301,6 @@ svg.icon {
 
     .float-animation {
         animation: none;
-    }
-
-    #grid-canvas {
-        display: none !important;
     }
 
     .blob {
@@ -434,9 +433,11 @@ nav {
 .hero-wrapper {
     position: relative;
     padding-bottom: 120px;
-    z-index: 1;
+    z-index: 2;
     width: 100%;
     overflow-x: hidden;
+    overflow-y: visible;
+    background: transparent;
 }
 
 .content-wrapper {
@@ -444,7 +445,6 @@ nav {
     background: linear-gradient(180deg, var(--hero-gradient-start) 0%, var(--hero-gradient-mid) 20%, var(--hero-gradient-end) 100%);
     padding-bottom: 60px;
     padding-top: 120px;
-    z-index: 5;
     z-index: 5;
     backdrop-filter: blur(2px);
     width: 100%;
@@ -458,24 +458,61 @@ nav {
     align-items: center;
     padding: 40px 0 20px;
     gap: 80px;
-    /* Increased gap for better spacing */
+    position: relative;
+    z-index: 1;
 }
 
 .hero-badge {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    background: var(--badge-bg);
-    color: #0277BD;
-    /* Darker blue for AAA contrast */
-    padding: 8px 18px;
+    gap: 8px;
+    background: var(--tag-supported-bg);
+    color: var(--primary);
+    padding: 8px 20px;
     border-radius: 100px;
-    font-size: 14px;
-    font-weight: 800;
+    font-size: 13px;
+    font-weight: 700;
     margin-bottom: 24px;
-    border: 1px solid var(--badge-border);
-    box-shadow: 0 4px 15px var(--shadow-color);
+    border: 1px solid var(--primary-dim);
+    letter-spacing: 0.3px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    white-space: nowrap;
+    max-width: 100%;
+    text-overflow: ellipsis;
 }
+
+.hero-badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    flex-shrink: 0;
+    animation: badge-pulse 2s ease-in-out infinite;
+}
+
+@keyframes badge-pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.hero-badge:hover {
+    transform: translateY(-2px);
+    border-color: var(--primary);
+    box-shadow: 0 4px 16px var(--primary-dim);
+}
+
+[data-theme="dark"] .hero-badge {
+    background: rgba(100, 181, 246, 0.1);
+    border-color: rgba(100, 181, 246, 0.2);
+    color: #64B5F6;
+    backdrop-filter: blur(8px);
+}
+
 
 h1 {
     font-size: 52px;
@@ -1555,7 +1592,12 @@ footer {
 
     .hero-badge {
         font-size: 12px;
-        padding: 6px 14px;
+        padding: 7px 16px;
+    }
+
+    .hero-badge::before {
+        width: 6px;
+        height: 6px;
     }
 
     .hero-wrapper {
@@ -2007,17 +2049,23 @@ footer {
 /* === WIKI ADDITIONAL STYLES === */
 
 /* Wiki Tables */
+.wiki-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 24px 0;
+    border-radius: var(--radius-m);
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 12px var(--shadow-color);
+}
+
 .wiki-content table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0;
-    margin: 24px 0;
     font-size: 15px;
-    border-radius: var(--radius-m);
-    overflow: hidden;
-    border: 1px solid var(--border-color);
     background: var(--card-bg);
-    box-shadow: 0 4px 12px var(--shadow-color);
+    min-width: 500px;
 }
 
 .wiki-content thead {
@@ -2402,20 +2450,6 @@ kbd {
         font-size: 36px;
     }
 
-    .wiki-content table {
-        display: block;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-    }
-
-    .wiki-content thead,
-    .wiki-content tbody,
-    .wiki-content tr {
-        display: table;
-        width: 100%;
-        table-layout: fixed;
-    }
-
     .wiki-section-nav {
         flex-direction: column;
         gap: 12px;
@@ -2474,34 +2508,16 @@ kbd {
         font-size: 14px;
     }
 
-    /* Table: scrollable card on mobile */
+    /* Table: responsive on mobile */
     .wiki-content table {
-        display: block;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
         font-size: 13px;
-        min-width: 0;
-    }
-
-    .wiki-content thead,
-    .wiki-content tbody,
-    .wiki-content tr {
-        display: table;
-        width: 100%;
-        table-layout: auto;
     }
 
     .wiki-content th,
     .wiki-content td {
-        padding: 8px 10px;
-        font-size: 12px;
+        padding: 10px 14px;
+        font-size: 13px;
         white-space: nowrap;
-    }
-
-    .wiki-content th:first-child,
-    .wiki-content td:first-child {
-        white-space: normal;
-        min-width: 100px;
     }
 
     /* kbd smaller on mobile */
@@ -2688,7 +2704,20 @@ kbd {
         width: 0;
     }
 
-    .theme-toggle,.scroll-top{width:44px;height:44px;bottom:16px}.theme-toggle{left:16px}.scroll-top{right:16px}
+    .theme-toggle,
+    .scroll-top {
+        width: 44px;
+        height: 44px;
+        bottom: 16px
+    }
+
+    .theme-toggle {
+        left: 16px
+    }
+
+    .scroll-top {
+        right: 16px
+    }
 }
 
 /* Accessibility Fixes */
