@@ -140,13 +140,26 @@ async function compile({ filePath, content, flags, useLLD }) {
         } catch (e) { }
     }
 
-    // PCH optimization
+    // Resolve flags FIRST so PCH uses the same flags as compilation
+    let resolvedFlags = flags;
+    if (flags) {
+        const flagsArr = flags.split(' ').filter(f => f.trim());
+        const hasStdFlag = flagsArr.some(f => f.startsWith('-std='));
+        if (!hasStdFlag) {
+            // Inject default standard so PCH and compilation match
+            resolvedFlags = '-std=c++17 ' + flags;
+        }
+    } else {
+        resolvedFlags = '-std=c++17 -O0 -w';
+    }
+
+    // PCH optimization - use resolvedFlags so PCH matches actual compilation
     const pch = (content.includes('bits/stdc++.h'))
-        ? await ensurePCH(flags, (msg) => sendToRenderer('system-message', msg))
+        ? await ensurePCH(resolvedFlags, (msg) => sendToRenderer('system-message', msg))
         : { ready: false };
 
     const unbufferObj = getUnbufferObjectPath();
-    
+
     const args = [
         ...sourceFiles,
         '-o', outputPath,
@@ -154,25 +167,13 @@ async function compile({ filePath, content, flags, useLLD }) {
         '-pipe',
         '-s'
     ];
-    
+
     if (unbufferObj) {
         args.push(unbufferObj);
     }
 
-    // Apply user flags
-    if (flags) {
-        const flagsArr = flags.split(' ').filter(f => f.trim());
-        
-        // Ensure C++ standard is set (needed for stoi(), to_string(), etc.)
-        const hasStdFlag = flagsArr.some(f => f.startsWith('-std='));
-        if (!hasStdFlag) {
-            args.push('-std=c++17'); // Default to C++17 if not specified
-        }
-        
-        args.push(...flagsArr);
-    } else {
-        args.push('-std=c++17', '-O0', '-w');
-    }
+    // Apply resolved flags
+    args.push(...resolvedFlags.split(' ').filter(f => f.trim()));
 
     const compilerExe = getDetectedCompiler() || 'g++';
     const compilerInfo = getCompilerInfo();

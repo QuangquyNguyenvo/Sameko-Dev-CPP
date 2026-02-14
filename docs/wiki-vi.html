@@ -15,6 +15,22 @@
     <meta name="theme-color" content="#64B5F6">
     <meta name="robots" content="index, follow">
 
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://samekocpp.wibu.me/wiki-vi.html">
+    <meta property="og:title" content="Wiki | Sameko Dev C++">
+    <meta property="og:description"
+        content="Tài liệu hướng dẫn sử dụng Sameko Dev C++ - Từ cài đặt, cấu hình compiler đến các tính năng nâng cao cho competitive programming.">
+    <meta property="og:image"
+        content="https://samekocpp.wibu.me/assets/icon.png">
+    <meta property="og:site_name" content="Sameko Dev C++">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Wiki | Sameko Dev C++">
+    <meta name="twitter:description"
+        content="Tài liệu hướng dẫn sử dụng Sameko Dev C++ - Từ cài đặt, cấu hình compiler đến các tính năng nâng cao.">
+    <meta name="twitter:image"
+        content="https://samekocpp.wibu.me/assets/icon.png">
+
     <link rel="icon" href="assets/favicon-32.png" sizes="32x32">
     <link rel="icon" href="assets/logo-48.png" sizes="48x48">
     <link rel="apple-touch-icon" href="assets/icon-192.png">
@@ -42,6 +58,15 @@
             // Language - Default to EN
             const lang = localStorage.getItem('wiki-lang') || 'en';
             document.documentElement.lang = lang;
+        })();
+    </script>
+    <script>
+        // Clean URL: remove .html extension from address bar
+        (function () {
+            if (window.history.replaceState && location.pathname.endsWith('.html')) {
+                var clean = location.pathname.replace(/\.html$/, '') + location.search + location.hash;
+                history.replaceState(null, '', clean);
+            }
         })();
     </script>
     <link rel="stylesheet" href="assets/css/atom-one-dark.min.css">
@@ -233,7 +258,7 @@
 
                         <div class="tutorial-steps">
                             <div class="tutorial-step">
-                                <h3>Tải file từ GitHub</h3>
+                                <h3>Tải Sameko</h3>
                                 <p>Truy cập <a href="index.html#download-trigger">trang chủ</a> và nhấn nút <b>Download</b> để chọn phiên
                                     bản phù hợp (Installer hoặc Portable).</p>
                             </div>

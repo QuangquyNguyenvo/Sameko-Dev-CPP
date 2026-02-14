@@ -41,7 +41,8 @@ const DEFAULT_SETTINGS = {
         timeLimitSeconds: 3,
         clearTerminal: true,
         autoSendInput: true,
-        useExternalTerminal: false
+        useExternalTerminal: false,
+        panelFontSize: 13
     },
     appearance: {
         theme: 'kawaii-light',
@@ -189,6 +190,103 @@ document.addEventListener('DOMContentLoaded', () => {
 function initMonaco() {
     require(['vs/editor/editor.main'], async function () {
 
+        // Register enhanced C++ tokenizer with escape sequence highlighting
+        monaco.languages.setMonarchTokensProvider('cpp', {
+            defaultToken: '',
+            tokenPostfix: '.cpp',
+            keywords: [
+                'abstract', 'alignas', 'alignof', 'and', 'and_eq', 'asm', 'auto',
+                'bitand', 'bitor', 'bool', 'break', 'case', 'catch', 'char',
+                'char8_t', 'char16_t', 'char32_t', 'class', 'co_await', 'co_return',
+                'co_yield', 'compl', 'concept', 'const', 'const_cast', 'consteval',
+                'constexpr', 'constinit', 'continue', 'decltype', 'default', 'delete',
+                'do', 'double', 'dynamic_cast', 'else', 'enum', 'explicit', 'export',
+                'extern', 'false', 'final', 'float', 'for', 'friend', 'goto', 'if',
+                'import', 'inline', 'int', 'long', 'module', 'mutable', 'namespace',
+                'new', 'noexcept', 'not', 'not_eq', 'nullptr', 'operator', 'or',
+                'or_eq', 'override', 'private', 'protected', 'public', 'register',
+                'reinterpret_cast', 'requires', 'return', 'short', 'signed', 'sizeof',
+                'static', 'static_assert', 'static_cast', 'struct', 'switch',
+                'template', 'this', 'thread_local', 'throw', 'true', 'try', 'typedef',
+                'typeid', 'typename', 'union', 'unsigned', 'using', 'virtual', 'void',
+                'volatile', 'wchar_t', 'while', 'xor', 'xor_eq',
+                'string', 'vector', 'map', 'set', 'pair', 'queue', 'stack',
+                'deque', 'list', 'array', 'unordered_map', 'unordered_set',
+                'priority_queue', 'multiset', 'multimap', 'bitset',
+                'cout', 'cin', 'endl', 'cerr', 'clog',
+                'size_t', 'ptrdiff_t', 'int8_t', 'int16_t', 'int32_t', 'int64_t',
+                'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t',
+                '#include', '#define', '#ifdef', '#ifndef', '#endif', '#pragma',
+                '#if', '#else', '#elif', '#undef', '#error'
+            ],
+            operators: [
+                '=', '>', '<', '!', '~', '?', ':', '==', '<=', '>=', '!=',
+                '&&', '||', '++', '--', '+', '-', '*', '/', '&', '|', '^', '%',
+                '<<', '>>', '+=', '-=', '*=', '/=', '&=', '|=', '^=',
+                '%=', '<<=', '>>=', '->', '::', '...'
+            ],
+            symbols: /[=><!~?:&|+\-*\/\^%]+/,
+            escapes: /\\(?:[abfnrtv\\"'0?]|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|[0-7]{1,3})/,
+            tokenizer: {
+                root: [
+                    // Preprocessor directives
+                    [/^\s*#\s*\w+/, 'keyword'],
+                    // Identifiers and keywords
+                    [/[a-zA-Z_]\w*/, {
+                        cases: {
+                            '@keywords': 'keyword',
+                            '@default': 'identifier'
+                        }
+                    }],
+                    // Whitespace
+                    { include: '@whitespace' },
+                    // Delimiters and operators
+                    [/[{}()\[\]]/, '@brackets'],
+                    [/[<>](?!@symbols)/, '@brackets'],
+                    [/@symbols/, {
+                        cases: {
+                            '@operators': 'operator',
+                            '@default': ''
+                        }
+                    }],
+                    // Numbers
+                    [/\d*\.\d+([eE][\-+]?\d+)?[fFlL]?/, 'number.float'],
+                    [/0[xX][0-9a-fA-F]+[uUlL]*/, 'number.hex'],
+                    [/0[bB][01]+[uUlL]*/, 'number.binary'],
+                    [/0[0-7]+[uUlL]*/, 'number.octal'],
+                    [/\d+[uUlL]*/, 'number'],
+                    // Delimiter
+                    [/[;,.]/, 'delimiter'],
+                    // Strings with escape sequences
+                    [/"([^"\\]|\\.)*$/, 'string.invalid'], // non-terminated string
+                    [/"/, 'string', '@string_double'],
+                    // Characters with escape sequences
+                    [/'[^\\']'/, 'string'],
+                    [/'/, 'string', '@string_single'],
+                ],
+                whitespace: [
+                    [/[ \t\r\n]+/, ''],
+                    [/\/\*/, 'comment', '@comment'],
+                    [/\/\/.*$/, 'comment'],
+                ],
+                comment: [
+                    [/[^\/*]+/, 'comment'],
+                    [/\*\//, 'comment', '@pop'],
+                    [/[\/*]/, 'comment']
+                ],
+                string_double: [
+                    [/@escapes/, 'string.escape'],
+                    [/[^\\"]+/, 'string'],
+                    [/"/, 'string', '@pop']
+                ],
+                string_single: [
+                    [/@escapes/, 'string.escape'],
+                    [/[^\\']+/, 'string'],
+                    [/'/, 'string', '@pop']
+                ]
+            }
+        });
+
         // Initialize ThemeManager (async for JSON loading)
         if (typeof ThemeManager !== 'undefined') {
             try {
@@ -243,26 +341,40 @@ function initCtrlWheelZoom() {
     window.addEventListener('wheel', e => {
         if (!e.ctrlKey) return;
 
-
         const editorContainer = e.target.closest('#editor-container, #editor-container-2');
-        if (!editorContainer) return;
+        const panelContainer = e.target.closest('.terminal-body, .terminal-input, .panel-textarea, .docked-io-textarea, .io-section, .terminal-section');
+
+        if (!editorContainer && !panelContainer) return;
 
         e.preventDefault();
         e.stopPropagation();
 
         const delta = e.deltaY > 0 ? -1 : 1;
-        const currentSize = App.settings.editor.fontSize;
-        const newSize = Math.min(40, Math.max(8, currentSize + delta));
 
-        if (newSize !== currentSize) {
-            App.settings.editor.fontSize = newSize;
-
-
-            if (App.editor) App.editor.updateOptions({ fontSize: newSize });
-            if (App.editor2) App.editor2.updateOptions({ fontSize: newSize });
-
-
-            saveSettings();
+        if (editorContainer) {
+            // Zoom editor font size
+            const currentSize = App.settings.editor.fontSize;
+            const newSize = Math.min(40, Math.max(8, currentSize + delta));
+            if (newSize !== currentSize) {
+                App.settings.editor.fontSize = newSize;
+                if (App.editor) App.editor.updateOptions({ fontSize: newSize });
+                if (App.editor2) App.editor2.updateOptions({ fontSize: newSize });
+                saveSettings();
+            }
+        } else if (panelContainer) {
+            // Zoom panel font size (terminal, I/O panels)
+            const currentSize = App.settings.execution.panelFontSize || 13;
+            const newSize = Math.min(30, Math.max(8, currentSize + delta));
+            if (newSize !== currentSize) {
+                App.settings.execution.panelFontSize = newSize;
+                document.documentElement.style.setProperty('--panel-font-size', newSize + 'px');
+                // Update settings slider if visible
+                const slider = document.getElementById('set-panelFontSize');
+                const valSpan = document.getElementById('val-panelFontSize');
+                if (slider) slider.value = newSize;
+                if (valSpan) valSpan.textContent = newSize + 'px';
+                saveSettings();
+            }
         }
     }, { passive: false, capture: true });
 }
@@ -381,12 +493,19 @@ function createEditor(containerId) {
             const position = editor.getPosition();
             const model = editor.getModel();
             if (!model) return;
-            
+
             const lineNumber = position.lineNumber;
             const lineContent = model.getLineContent(lineNumber).trim();
             const fullLine = model.getLineContent(lineNumber);
             const currentIndent = fullLine.match(/^\s*/)[0];
-            
+
+            // Skip custom handling if line already ends with a brace - let Monaco handle it
+            if (/[{}]\s*$/.test(lineContent)) return;
+
+            // Also skip if cursor is not at end of line (user is editing mid-line)
+            const lineMaxCol = model.getLineMaxColumn(lineNumber);
+            if (position.column < lineMaxCol) return;
+
             // Case 1: Check if current line ends with statement after control structure (dedent)
             // If line ends with ; and previous line was a control statement without {}, dedent
             if (lineNumber > 1 && /;\s*$/.test(lineContent)) {
@@ -395,18 +514,18 @@ function createEditor(containerId) {
                     /^\s*(if|while|for|switch)\s*\([^)]*\)\s*$/.test(prevLine) ||
                     /^\s*(else|do)\s*$/.test(prevLine)
                 );
-                
+
                 if (isPrevControlStatement) {
                     // Dedent: go back to previous line's indent level
                     e.preventDefault();
                     const prevFullLine = model.getLineContent(lineNumber - 1);
                     const prevIndent = prevFullLine.match(/^\s*/)[0];
-                    
+
                     editor.executeEdits('auto-dedent', [{
-                        range: new monaco.Range(lineNumber, model.getLineMaxColumn(lineNumber), lineNumber, model.getLineMaxColumn(lineNumber)),
+                        range: new monaco.Range(lineNumber, lineMaxCol, lineNumber, lineMaxCol),
                         text: '\n' + prevIndent
                     }]);
-                    
+
                     editor.setPosition({
                         lineNumber: lineNumber + 1,
                         column: prevIndent.length + 1
@@ -414,7 +533,7 @@ function createEditor(containerId) {
                     return;
                 }
             }
-            
+
             // Case 2: Check if line ends with control statement pattern (indent)
             // Match: if/while/for/else followed by condition, or do/else/case/default with :
             const shouldIndent = (
@@ -423,24 +542,22 @@ function createEditor(containerId) {
                 // else, do
                 /^\s*(else|do)\s*$/.test(lineContent) ||
                 // case value:, default:
-                /^\s*(case\s+.+|default)\s*:\s*$/.test(lineContent) ||
-                // Any line ending with ) but not with );
-                (/\)\s*$/.test(lineContent) && !/;\s*$/.test(lineContent))
+                /^\s*(case\s+.+|default)\s*:\s*$/.test(lineContent)
             );
-            
+
             if (shouldIndent) {
                 e.preventDefault();
-                
+
                 const tabChar = '\t'; // Use tab character
-                
+
                 // Insert newline + current indent + one more tab
                 const newIndent = currentIndent + tabChar;
-                
+
                 editor.executeEdits('auto-indent', [{
-                    range: new monaco.Range(lineNumber, model.getLineMaxColumn(lineNumber), lineNumber, model.getLineMaxColumn(lineNumber)),
+                    range: new monaco.Range(lineNumber, lineMaxCol, lineNumber, lineMaxCol),
                     text: '\n' + newIndent
                 }]);
-                
+
                 // Set cursor position
                 editor.setPosition({
                     lineNumber: lineNumber + 1,
@@ -661,7 +778,7 @@ function initTabDrag() {
             draggedTabEl = tab;
             e.dataTransfer.effectAllowed = 'move';
             tab.classList.add('dragging');
-            
+
             // Set custom type to prevent drop into editor
             e.dataTransfer.setData('application/x-sameko-tab', tab.dataset.id);
 
@@ -1719,6 +1836,18 @@ function openSettings() {
 
     document.getElementById('set-terminalColorScheme').value = App.settings.terminal?.colorScheme || 'ansi-16';
 
+    // Panel font size
+    const panelFontSize = App.settings.execution.panelFontSize || 13;
+    const panelFSSlider = document.getElementById('set-panelFontSize');
+    const panelFSVal = document.getElementById('val-panelFontSize');
+    if (panelFSSlider) {
+        panelFSSlider.value = panelFontSize;
+        if (panelFSVal) panelFSVal.textContent = panelFontSize + 'px';
+        panelFSSlider.oninput = () => {
+            if (panelFSVal) panelFSVal.textContent = panelFSSlider.value + 'px';
+        };
+    }
+
     // Set theme values after dropdown is populated
     document.getElementById('set-theme').value = App.settings.appearance.theme;
     // Sync carousel selection to saved theme
@@ -1806,6 +1935,10 @@ function saveSettingsAndClose() {
 
     if (!App.settings.terminal) App.settings.terminal = {};
     App.settings.terminal.colorScheme = document.getElementById('set-terminalColorScheme').value;
+
+    // Panel font size
+    const panelFSInput = document.getElementById('set-panelFontSize');
+    if (panelFSInput) App.settings.execution.panelFontSize = parseInt(panelFSInput.value) || 13;
 
     App.settings.appearance.theme = document.getElementById('set-theme').value;
     App.settings.appearance.performanceMode = document.getElementById('set-performanceMode').checked;
@@ -2224,6 +2357,9 @@ function applySettings() {
     if (App.editor) App.editor.updateOptions(opts);
     if (App.editor2) App.editor2.updateOptions(opts);
 
+    // Apply panel font size to terminal, I/O panels
+    const panelFontSize = App.settings.execution.panelFontSize || 13;
+    document.documentElement.style.setProperty('--panel-font-size', panelFontSize + 'px');
 
     if (App.settings.appearance.performanceMode) {
         document.body.classList.add('performance-mode');
@@ -2411,14 +2547,45 @@ function updateShortcutMap() {
     // Reverse map: "Ctrl+S" -> "save"
     for (const [action, combo] of Object.entries(bindings)) {
         if (combo) {
-            // Normalize the combo string from settings if needed, 
-            // but assuming they match the format produced by captureKeybinding, we just use it.
-            // We might want to ensure case-insensitivity or standardized order if settings data is messy.
-            // For now, trust the settings format (Ctrl+Shift+F etc).
             currentShortcutMap.set(combo, action);
         }
     }
     console.log('[Shortcuts] Updated map:', currentShortcutMap);
+
+    // Sync menu dropdown shortcut labels
+    updateMenuShortcutLabels();
+}
+
+/**
+ * Update dropdown menu .key labels to match current keybindings
+ */
+function updateMenuShortcutLabels() {
+    // Map menu data-action → keybinding action name
+    const menuToKeybinding = {
+        'new': 'newFile',
+        'open': 'openFile',
+        'save': 'save',
+        'buildrun': 'buildRun',
+        'run': 'run',
+        'stop': 'stop',
+        'toggleproblems': 'toggleProblems',
+        'settings': 'settings',
+        'spliteditor': 'toggleSplit',
+    };
+
+    const bindings = App.settings.keybindings || DEFAULT_SETTINGS.keybindings;
+
+    document.querySelectorAll('.dropdown-item[data-action]').forEach(item => {
+        const action = item.dataset.action;
+        const keybindingKey = menuToKeybinding[action];
+        if (!keybindingKey) return;
+
+        const combo = bindings[keybindingKey];
+        const keySpan = item.querySelector('.key');
+        if (keySpan && combo) {
+            keySpan.textContent = combo;
+        }
+    });
 }
 
 function initShortcuts() {
@@ -2768,14 +2935,14 @@ function initPanels() {
     // Setup 2-way sync between main IO panels and docked IO panels
     const inputArea = document.getElementById('input-area');
     const expectedArea = document.getElementById('expected-area');
-    
+
     if (inputArea) {
         inputArea.addEventListener('input', () => {
             const dockedInput = document.getElementById('docked-input');
             if (dockedInput) dockedInput.value = inputArea.value;
         });
     }
-    
+
     if (expectedArea) {
         expectedArea.addEventListener('input', () => {
             const dockedExpected = document.getElementById('docked-expected');
@@ -2867,10 +3034,10 @@ function initDockablePanels() {
     problemsPanel.addEventListener('drop', (e) => {
         e.preventDefault();
         problemsPanel.classList.remove('dock-drop-target');
-        
+
         // Check for custom panel drag type
         const panelType = e.dataTransfer.getData('application/x-sameko-panel');
-        
+
         if (panelType === 'terminal' || DockingState.draggedPanel === 'terminal') {
             dockTerminalToProblems();
         } else if (panelType === 'io' || DockingState.draggedPanel === 'io') {
@@ -3559,7 +3726,7 @@ async function closeTab(id) {
     if (idx === -1) return;
 
     const tab = App.tabs[idx];
-    
+
     if (App.isRunning) {
         const confirmed = await showConfirmDialog({
             title: 'Process Running',
@@ -3570,7 +3737,7 @@ async function closeTab(id) {
         if (!confirmed) return;
         stop();
     }
-    
+
     if (tab.modified) {
         const confirmed = await showConfirmDialog({
             title: 'Unsaved Changes',
@@ -4091,7 +4258,7 @@ async function run(clearTerminal = true) {
             if (App.isRunning) {
                 // Log each line to terminal with input styling
                 inputText.split('\n').forEach(line => log(line, 'input'));
-                
+
                 // Send entire input to stdin at once (no per-line delay)
                 window.electronAPI.sendInput(inputText);
             }
@@ -4407,12 +4574,12 @@ function setRunning(v) {
     document.getElementById('btn-stop').disabled = !v;
     document.getElementById('terminal-in').disabled = !v;
     document.getElementById('btn-send').disabled = !v;
-    
+
     const dockedTermIn = document.getElementById('docked-terminal-in');
     const dockedSendBtn = document.getElementById('docked-send-btn');
     if (dockedTermIn) dockedTermIn.disabled = !v;
     if (dockedSendBtn) dockedSendBtn.disabled = !v;
-    
+
     if (v) document.getElementById('terminal-in').focus();
 }
 
@@ -4783,14 +4950,14 @@ function showConfirmPopup(message, onConfirm) {
         </div>
     `;
     document.body.appendChild(overlay);
-    
+
     requestAnimationFrame(() => overlay.classList.add('show'));
-    
+
     const close = () => {
         overlay.classList.remove('show');
         setTimeout(() => overlay.remove(), 200);
     };
-    
+
     overlay.querySelector('.confirm-btn.cancel').onclick = close;
     overlay.querySelector('.confirm-btn.confirm').onclick = () => {
         close();
@@ -4809,7 +4976,7 @@ async function deleteTestCase() {
         danger: true
     });
     if (!confirmed) return;
-    
+
     ccProblem.tests.splice(ccTestIndex, 1);
 
     if (ccProblem.tests.length === 0) {
@@ -4826,7 +4993,7 @@ async function deleteTestCase() {
     }
     updateTestNavUI();
     renderTestResults();
-    
+
     setTimeout(() => {
         if (App.editor) App.editor.focus();
     }, 50);
@@ -4842,7 +5009,7 @@ async function deleteTestCaseByIndex(index) {
         danger: true
     });
     if (!confirmed) return;
-    
+
     ccProblem.tests.splice(index, 1);
 
     if (ccProblem.tests.length === 0) {
@@ -4861,7 +5028,7 @@ async function deleteTestCaseByIndex(index) {
     }
     updateTestNavUI();
     renderTestResults();
-    
+
     setTimeout(() => {
         if (App.editor) App.editor.focus();
     }, 50);
@@ -4877,25 +5044,25 @@ async function deleteAllTestCases() {
         danger: true
     });
     if (!confirmed) return;
-    
+
     ccProblem.tests = [];
     ccTestIndex = 0;
-    
+
     document.getElementById('input-area').value = '';
     document.getElementById('expected-area').value = '';
     const dockedInput = document.getElementById('docked-input');
     const dockedExpected = document.getElementById('docked-expected');
     if (dockedInput) dockedInput.value = '';
     if (dockedExpected) dockedExpected.value = '';
-    
+
     batchTestResults = [];
     updateTestNavUI();
     renderTestResults();
-    
+
     setTimeout(() => {
         if (App.editor) App.editor.focus();
     }, 50);
-    
+
     log('All test cases deleted', 'info');
 }
 
@@ -5052,7 +5219,7 @@ function updateTestNavUI() {
     if (runAllBtn) {
         runAllBtn.style.display = testCount > 0 ? 'flex' : 'none';
     }
-    
+
     // Show/hide Delete All button in TESTS header
     if (deleteAllBtn) {
         deleteAllBtn.style.display = testCount > 0 ? 'flex' : 'none';
@@ -5122,7 +5289,7 @@ function switchTestCase(index) {
 
     updateTestNavUI();
     updateDockedTestNavUI();
-    
+
     // Show diff if we have batch test result for this test
     const result = batchTestResults?.find(r => r.testIndex === index);
     if (result && result.actualOutput !== undefined) {
@@ -5322,7 +5489,7 @@ function initBatchTesting() {
     if (runAllBtn) {
         runAllBtn.addEventListener('click', runAllTests);
     }
-    
+
     const deleteAllBtn = document.getElementById('btn-delete-all-tests');
     if (deleteAllBtn) {
         deleteAllBtn.addEventListener('click', deleteAllTestCases);
@@ -5484,7 +5651,7 @@ function renderTestResults() {
         }
         countEl.style.display = total > 0 ? 'inline' : 'none';
     }
-    
+
     // Auto-expand panel when we have test cases (like docked terminal)
     if (problemsPanel) {
         if (total > 0) {
@@ -5581,7 +5748,7 @@ function renderTestResults() {
             }
         });
     });
-    
+
     container.querySelectorAll('.test-delete-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -6098,7 +6265,7 @@ function handleUpdateStatus(data) {
                 if (headerFill) headerFill.style.width = percent + '%';
                 if (headerText) headerText.textContent = percent + '%';
             }
-            
+
             // If reached 100% but update-downloaded not triggered yet, wait and check
             if (percent >= 100 && !updateDownloaded) {
                 console.log('[Update] Download reached 100%, waiting for update-downloaded event...');

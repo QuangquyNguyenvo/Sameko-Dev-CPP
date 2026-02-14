@@ -542,7 +542,7 @@ body::after {
     flex: 1;
     padding: 12px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    font-size: var(--panel-font-size, 13px);
     overflow-y: auto;
 }
 

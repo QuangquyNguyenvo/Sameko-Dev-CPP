@@ -21,7 +21,7 @@
     <meta property="og:description"
         content="Tài liệu hướng dẫn sử dụng Sameko Dev C++ - Từ cài đặt, cấu hình compiler đến các tính năng nâng cao cho competitive programming.">
     <meta property="og:image"
-        content="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/screenshots/screenshot_editor.png">
+        content="https://samekocpp.wibu.me/assets/icon.png">
     <meta property="og:site_name" content="Sameko Dev C++">
 
     <meta name="twitter:card" content="summary_large_image">
@@ -29,7 +29,7 @@
     <meta name="twitter:description"
         content="Tài liệu hướng dẫn sử dụng Sameko Dev C++ - Từ cài đặt, cấu hình compiler đến các tính năng nâng cao.">
     <meta name="twitter:image"
-        content="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/screenshots/screenshot_editor.png">
+        content="https://samekocpp.wibu.me/assets/icon.png">
 
     <link rel="icon" href="assets/favicon-32.png" sizes="32x32">
     <link rel="icon" href="assets/logo-48.png" sizes="48x48">
@@ -58,6 +58,15 @@
             // Language - Default to EN
             const lang = localStorage.getItem('wiki-lang') || 'en';
             document.documentElement.lang = lang;
+        })();
+    </script>
+    <script>
+        // Clean URL: remove .html extension from address bar
+        (function () {
+            if (window.history.replaceState && location.pathname.endsWith('.html')) {
+                var clean = location.pathname.replace(/\.html$/, '') + location.search + location.hash;
+                history.replaceState(null, '', clean);
+            }
         })();
     </script>
     <link rel="stylesheet" href="assets/css/atom-one-dark.min.css">

@@ -574,9 +574,12 @@ body.customizer-open::before {
 }
 
 @keyframes pulse-update {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: scale(1);
     }
+
     50% {
         transform: scale(1.02);
     }
@@ -755,7 +758,7 @@ body.customizer-open::before {
     flex: 1;
     padding: 12px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    font-size: var(--panel-font-size, 13px);
     overflow-y: auto;
     overflow-x: hidden;
     user-select: text;
@@ -1827,7 +1830,7 @@ input[type="color"] {
     border: none;
     color: var(--text-primary, #e0f0ff);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    font-size: var(--panel-font-size, 13px);
     outline: none;
 }
 
@@ -2005,7 +2008,7 @@ input[type="color"] {
     border: none;
     resize: none;
     font-family: 'JetBrains Mono', Consolas, monospace;
-    font-size: 12px;
+    font-size: var(--panel-font-size, 13px);
     line-height: 1.6;
     outline: none;
 }
@@ -3268,7 +3271,7 @@ body.split-active .editor-pane {
     flex: 1;
     padding: 10px 12px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    font-size: var(--panel-font-size, 13px);
     line-height: 1.5;
     color: var(--text-primary, #e0f0ff);
     background: var(--editor-bg, #1a2530);

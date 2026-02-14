@@ -88,6 +88,22 @@ const barObserver = new IntersectionObserver((entries) => {
 const benchmarkCard = document.getElementById('benchmark-card');
 if (benchmarkCard) barObserver.observe(benchmarkCard);
 
+// Handle #download-trigger hash on page load (from external links like wiki)
+if (window.location.hash === '#download-trigger') {
+    // Prevent browser default jump to anchor
+    window.scrollTo(0, 0);
+    document.addEventListener('DOMContentLoaded', () => {
+        window.scrollTo(0, 0);
+        setTimeout(() => {
+            openDownloadMenu();
+            if (dlTrigger) dlTrigger.focus();
+        }, 300);
+        if (history.pushState) {
+            history.pushState(null, null, ' ');
+        }
+    });
+}
+
 // ===== THEME TOGGLE =====
 const themeToggle = document.getElementById('theme-toggle');
 const html = document.documentElement;

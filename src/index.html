@@ -124,7 +124,8 @@
                 <!-- Restart to Update button (hidden by default) -->
                 <button class="action-btn update-ready" id="btn-restart-update" title="Install the pending update"
                     style="display: none;">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="12" y1="8" x2="12" y2="12"></line>
                         <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -235,7 +236,8 @@
                         </div>
                         <div class="cc-step">
                             <span class="cc-step-num">4</span>
-                            <span class="cc-step-text">Test cases will <strong>automatically load</strong> into the IDE!</span>
+                            <span class="cc-step-text">Test cases will <strong>automatically load</strong> into the
+                                IDE!</span>
                         </div>
                     </div>
                 </div>
@@ -613,6 +615,14 @@
                                     <option value="disabled">Disabled (Plain)</option>
                                 </select>
                             </div>
+                            <div class="setting-row">
+                                <label>Panel Font Size <span class="tooltip"
+                                        title="Font size for Input, Output, and Terminal panels">?</span></label>
+                                <div class="setting-control">
+                                    <input type="range" id="set-panelFontSize" min="10" max="24" value="13">
+                                    <span class="setting-value" id="val-panelFontSize">13px</span>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Appearance Tab with Preview -->
@@ -887,7 +897,8 @@
         <div class="confirm-dialog-overlay" id="confirm-dialog-overlay"></div>
         <div class="confirm-dialog" id="confirm-dialog">
             <div class="confirm-dialog-icon">
-                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="8" x2="12" y2="12"></line>
                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
@@ -1117,9 +1128,12 @@
                             </button>
                             <button class="run-all-btn danger" id="btn-delete-all-tests" title="Delete all test cases"
                                 style="display:none">
-                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor"
+                                    stroke-width="2">
                                     <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    <path
+                                        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2">
+                                    </path>
                                 </svg>
                                 Delete All
                             </button>

@@ -161,6 +161,7 @@ const ThemeManager = {
                         comment: { color: '6a8a9a', fontStyle: 'italic' },
                         keyword: { color: '88c9ea' },
                         string: { color: 'a3d9a5' },
+                        escape: { color: 'ebcb8b', fontStyle: 'bold' },
                         number: { color: 'ebcb8b' },
                         type: { color: 'e8a8b8' },
                         function: { color: '7ec8e3' },
@@ -220,6 +221,7 @@ const ThemeManager = {
                         comment: { color: '6a8a9a', fontStyle: 'italic' },
                         keyword: { color: '88c9ea' },
                         string: { color: 'a3d9a5' },
+                        escape: { color: 'ebcb8b', fontStyle: 'bold' },
                         number: { color: 'ebcb8b' },
                         type: { color: 'e8a8b8' },
                         function: { color: '7ec8e3' },
@@ -284,6 +286,7 @@ const ThemeManager = {
                         comment: { color: '8b7080', fontStyle: 'italic' },
                         keyword: { color: 'ff69b4' },
                         string: { color: '98d998' },
+                        escape: { color: 'da75e3', fontStyle: 'bold' },
                         number: { color: 'da75e3' },
                         type: { color: 'ffb7c5', fontStyle: 'italic' },
                         function: { color: 'ffb07a' },
@@ -342,6 +345,7 @@ const ThemeManager = {
                         comment: { color: '6272a4', fontStyle: 'italic' },
                         keyword: { color: 'ff79c6' },
                         string: { color: 'f1fa8c' },
+                        escape: { color: 'ff79c6', fontStyle: 'bold' },
                         number: { color: 'bd93f9' },
                         type: { color: '8be9fd', fontStyle: 'italic' },
                         function: { color: '50fa7b' }
@@ -399,6 +403,7 @@ const ThemeManager = {
                         comment: { color: '75715e', fontStyle: 'italic' },
                         keyword: { color: 'f92672' },
                         string: { color: 'e6db74' },
+                        escape: { color: 'ae81ff', fontStyle: 'bold' },
                         number: { color: 'ae81ff' },
                         type: { color: '66d9ef', fontStyle: 'italic' },
                         function: { color: 'a6e22e' }
@@ -455,6 +460,7 @@ const ThemeManager = {
                         comment: { color: '616e88', fontStyle: 'italic' },
                         keyword: { color: '81a1c1' },
                         string: { color: 'a3be8c' },
+                        escape: { color: 'ebcb8b', fontStyle: 'bold' },
                         number: { color: 'b48ead' },
                         type: { color: '8fbcbb' },
                         function: { color: '88c0d0' }
@@ -553,6 +559,13 @@ const ThemeManager = {
         if (syntax.comment) rules.push({ token: 'comment', foreground: syntax.comment.color, fontStyle: syntax.comment.fontStyle });
         if (syntax.keyword) rules.push({ token: 'keyword', foreground: syntax.keyword.color });
         if (syntax.string) rules.push({ token: 'string', foreground: syntax.string.color });
+        // Escape sequences (\n, \t, \0, etc.) - use dedicated color or derive from string
+        if (syntax.escape) {
+            rules.push({ token: 'string.escape', foreground: syntax.escape.color, fontStyle: syntax.escape.fontStyle || 'bold' });
+        } else if (syntax.keyword && syntax.string) {
+            // Auto-derive: use keyword color with bold to make escapes stand out from strings
+            rules.push({ token: 'string.escape', foreground: syntax.keyword.color, fontStyle: 'bold' });
+        }
         if (syntax.number) rules.push({ token: 'number', foreground: syntax.number.color });
         if (syntax.type) rules.push({ token: 'type', foreground: syntax.type.color, fontStyle: syntax.type.fontStyle });
         if (syntax.function) rules.push({ token: 'function', foreground: syntax.function.color });
