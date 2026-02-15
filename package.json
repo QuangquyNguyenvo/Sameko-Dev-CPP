@@ -1,6 +1,6 @@
 {
     "name": "sameko-dev-cpp",
-    "version": "1.0.3",
+    "version": "1.0.4",
     "description": "A fast, modern, and beautiful C++ IDE built with Electron and Monaco Editor",
     "main": "app/main.js",
     "author": "QuangquyNguyenvo",

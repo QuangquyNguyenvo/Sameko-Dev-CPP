@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## [1.0.4] - 2026-02-15
+
+### Added
+- **[[FEATURE] Syntax highlighting for special characters (\\n, \\t, \\0) (Fixes #25)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/25)**: Added highlighting for escaped special characters.
+- **[[FEATURE] Adjustable Font Size for Input, Output, and Terminal panels (Fixes #23)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/23)**: Added font size controls for Input, Output, and Terminal panels.
+
+### Fixed
+- **[[BUG] Enter key intermittently fails to insert new line after brace (Fixes #26)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/26)**: Fixed intermittent newline insertion after brace.
+- **[[BUG] Menu shortcut label does not update after customization (Fixes #24)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/24)**: Menu shortcut labels now refresh after customization.
+- **Monaco color scheme**: Adjusted Monaco editor color palette for better consistency.
+
 ## [1.0.3] - 2026-02-04
 
 ### Added
