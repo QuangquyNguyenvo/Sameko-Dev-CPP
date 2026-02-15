@@ -195,29 +195,54 @@ function initMonaco() {
             defaultToken: '',
             tokenPostfix: '.cpp',
             keywords: [
-                'abstract', 'alignas', 'alignof', 'and', 'and_eq', 'asm', 'auto',
-                'bitand', 'bitor', 'bool', 'break', 'case', 'catch', 'char',
-                'char8_t', 'char16_t', 'char32_t', 'class', 'co_await', 'co_return',
+                'abstract', 'alignas', 'alignof', 'and', 'and_eq', 'asm',
+                'bitand', 'bitor', 'break', 'case', 'catch',
+                'co_await', 'co_return',
                 'co_yield', 'compl', 'concept', 'const', 'const_cast', 'consteval',
                 'constexpr', 'constinit', 'continue', 'decltype', 'default', 'delete',
-                'do', 'double', 'dynamic_cast', 'else', 'enum', 'explicit', 'export',
-                'extern', 'false', 'final', 'float', 'for', 'friend', 'goto', 'if',
-                'import', 'inline', 'int', 'long', 'module', 'mutable', 'namespace',
+                'do', 'dynamic_cast', 'else', 'explicit', 'export',
+                'extern', 'false', 'final', 'for', 'friend', 'goto', 'if',
+                'import', 'inline', 'module', 'mutable', 'namespace',
                 'new', 'noexcept', 'not', 'not_eq', 'nullptr', 'operator', 'or',
                 'or_eq', 'override', 'private', 'protected', 'public', 'register',
-                'reinterpret_cast', 'requires', 'return', 'short', 'signed', 'sizeof',
-                'static', 'static_assert', 'static_cast', 'struct', 'switch',
+                'reinterpret_cast', 'requires', 'return', 'signed', 'sizeof',
+                'static', 'static_assert', 'static_cast', 'switch',
                 'template', 'this', 'thread_local', 'throw', 'true', 'try', 'typedef',
-                'typeid', 'typename', 'union', 'unsigned', 'using', 'virtual', 'void',
-                'volatile', 'wchar_t', 'while', 'xor', 'xor_eq',
+                'typeid', 'typename', 'union', 'unsigned', 'using', 'virtual',
+                'volatile', 'while', 'xor', 'xor_eq'
+            ],
+            typeKeywords: [
+                'auto', 'bool', 'char', 'char8_t', 'char16_t', 'char32_t', 'class',
+                'double', 'enum', 'float', 'int', 'long', 'short', 'struct',
+                'void', 'wchar_t',
                 'string', 'vector', 'map', 'set', 'pair', 'queue', 'stack',
                 'deque', 'list', 'array', 'unordered_map', 'unordered_set',
                 'priority_queue', 'multiset', 'multimap', 'bitset',
-                'cout', 'cin', 'endl', 'cerr', 'clog',
                 'size_t', 'ptrdiff_t', 'int8_t', 'int16_t', 'int32_t', 'int64_t',
                 'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t',
-                '#include', '#define', '#ifdef', '#ifndef', '#endif', '#pragma',
-                '#if', '#else', '#elif', '#undef', '#error'
+                'tuple', 'optional', 'variant', 'any', 'span',
+                'string_view', 'unique_ptr', 'shared_ptr', 'weak_ptr',
+                'complex', 'valarray', 'regex', 'thread', 'mutex',
+                'istream', 'ostream', 'fstream', 'ifstream', 'ofstream',
+                'stringstream', 'istringstream', 'ostringstream'
+            ],
+            builtins: [
+                'cout', 'cin', 'endl', 'cerr', 'clog',
+                'printf', 'scanf', 'puts', 'getchar', 'putchar',
+                'malloc', 'calloc', 'realloc', 'free',
+                'memset', 'memcpy', 'memmove', 'memcmp',
+                'strlen', 'strcmp', 'strcpy', 'strcat',
+                'sort', 'reverse', 'swap', 'min', 'max',
+                'abs', 'pow', 'sqrt', 'log', 'ceil', 'floor',
+                'gcd', 'lcm', 'lower_bound', 'upper_bound',
+                'next_permutation', 'prev_permutation',
+                'accumulate', 'count', 'find', 'fill',
+                'push_back', 'pop_back', 'push_front', 'pop_front',
+                'begin', 'end', 'size', 'empty', 'clear',
+                'insert', 'erase', 'front', 'back',
+                'first', 'second', 'make_pair', 'make_tuple',
+                'stoi', 'stol', 'stoll', 'stof', 'stod',
+                'to_string', 'getline', 'substr'
             ],
             operators: [
                 '=', '>', '<', '!', '~', '?', ':', '==', '<=', '>=', '!=',
@@ -229,12 +254,26 @@ function initMonaco() {
             escapes: /\\(?:[abfnrtv\\"'0?]|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|[0-7]{1,3})/,
             tokenizer: {
                 root: [
+                    // Preprocessor: #include <header> with highlighted path
+                    [/(^\s*#\s*include\s*)(<)([^>]*)(>)/, ['keyword', 'keyword', 'string.include', 'keyword']],
+                    // Preprocessor: #include "header" (string part handled by string rules below)
+                    [/^\s*#\s*include/, 'keyword'],
                     // Preprocessor directives
                     [/^\s*#\s*\w+/, 'keyword'],
                     // Identifiers and keywords
+                    [/[a-zA-Z_]\w*(?=\s*\()/, {
+                        cases: {
+                            '@keywords': 'keyword',
+                            '@typeKeywords': 'type',
+                            '@builtins': 'function',
+                            '@default': 'function'
+                        }
+                    }],
                     [/[a-zA-Z_]\w*/, {
                         cases: {
                             '@keywords': 'keyword',
+                            '@typeKeywords': 'type',
+                            '@builtins': 'variable.predefined',
                             '@default': 'identifier'
                         }
                     }],

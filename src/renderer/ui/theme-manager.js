@@ -570,7 +570,11 @@ const ThemeManager = {
         if (syntax.type) rules.push({ token: 'type', foreground: syntax.type.color, fontStyle: syntax.type.fontStyle });
         if (syntax.function) rules.push({ token: 'function', foreground: syntax.function.color });
         if (syntax.variable) rules.push({ token: 'variable', foreground: syntax.variable.color });
+        // Built-in identifiers (cout, sort, etc.) — use function color to distinguish from plain variables
+        if (syntax.function) rules.push({ token: 'variable.predefined', foreground: syntax.function.color });
         if (syntax.operator) rules.push({ token: 'operator', foreground: syntax.operator.color });
+        // Include paths: #include <header> — use string color
+        if (syntax.string) rules.push({ token: 'string.include', foreground: syntax.string.color });
         if (syntax.bracket) {
             rules.push({ token: 'delimiter.bracket', foreground: syntax.bracket.color });
             rules.push({ token: 'delimiter.parenthesis', foreground: syntax.bracket.color });
