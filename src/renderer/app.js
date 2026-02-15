@@ -6245,13 +6245,8 @@ function handleUpdateStatus(data) {
                 // Don't show overlay for portable - just header notification
                 if (overlay) overlay.style.display = 'none';
             } else {
-                // Installer: Auto-download in background
-                console.log('[Update] Auto-downloading update in background...');
-                if (window.electronAPI?.downloadUpdate) {
-                    window.electronAPI.downloadUpdate().catch(err => {
-                        console.error('[Update] Auto-download failed:', err);
-                    });
-                }
+                // Installer: Auto-download handled by electron-updater (autoDownload = true)
+                console.log('[Update] Update will be auto-downloaded in background...');
                 // Don't show overlay - silent download
                 if (overlay) overlay.style.display = 'none';
             }
@@ -6289,6 +6284,12 @@ function handleUpdateStatus(data) {
         case 'download-progress':
             console.log('[Update] Download progress:', updateData?.percent + '%');
 
+            // Skip progress updates if update is already downloaded
+            if (updateDownloaded) {
+                console.log('[Update] Ignoring progress event - update already downloaded');
+                break;
+            }
+
             const percent = updateData?.percent || 0;
 
             // Update overlay progress
@@ -6312,7 +6313,7 @@ function handleUpdateStatus(data) {
                     if (!updateDownloaded) {
                         console.warn('[Update] update-downloaded event not received, manually triggering UI update');
                         // Manually trigger the downloaded state
-                        handleUpdateMessage({ status: 'update-downloaded', data: updateData });
+                        handleUpdateStatus({ status: 'update-downloaded', data: updateData });
                     }
                 }, 2000);
             }

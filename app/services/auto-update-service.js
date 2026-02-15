@@ -380,27 +380,14 @@ class AutoUpdateService {
                                 fromPending: true
                             });
                         } else if (versionComparison === 0) {
-                            // Same version - check file timestamp
+                            // Same version means update was already applied - clean up
                             const filePath = path.join(pendingDir, installerFile);
-                            const fileStats = fs.statSync(filePath);
-                            const appCompileTime = fs.statSync(process.execPath).mtime;
-                            
-                            if (fileStats.mtime > appCompileTime) {
-                                // File is newer than current app binary
-                                log.info(`[AutoUpdate] Pending file (v${pendingVersion}) is newer build than current app`);
-                                
-                                this.updateDownloaded = true;
-                                this.sendStatusToRenderer('update-downloaded', {
-                                    version: pendingVersion,
-                                    releaseNotes: 'Update downloaded in previous session',
-                                    releaseDate: new Date().toISOString(),
-                                    fromPending: true
-                                });
-                            } else {
-                                // File is older or same as current app
-                                log.info(`[AutoUpdate] Pending file (v${pendingVersion}) is older build, cleaning up...`);
+                            log.info(`[AutoUpdate] Pending file (v${pendingVersion}) matches current version (v${currentVersion}), update already applied. Cleaning up...`);
+                            try {
                                 fs.unlinkSync(filePath);
-                                log.info('[AutoUpdate] Deleted outdated pending file');
+                                log.info('[AutoUpdate] Deleted applied pending file');
+                            } catch (cleanupErr) {
+                                log.warn('[AutoUpdate] Failed to clean up pending file:', cleanupErr.message);
                             }
                         } else {
                             // Pending version is older (e.g., 1.0.2 < 1.0.3)
