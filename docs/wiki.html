@@ -136,6 +136,13 @@
         <div class="container wiki-layout">
             <!-- SIDEBAR - English -->
             <aside class="wiki-sidebar">
+                <button class="wiki-sidebar-toggle" aria-label="Toggle navigation">
+                    <span class="wiki-sidebar-toggle-text">Navigation</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div class="wiki-sidebar-nav">
                 <div class="wiki-nav-group">
                     <div class="wiki-nav-title">Getting Started</div>
                     <a href="#introduction-en" class="wiki-nav-link active">Introduction</a>
@@ -161,6 +168,7 @@
                 <div class="wiki-nav-group">
                     <div class="wiki-nav-title">Help</div>
                     <a href="#troubleshooting" class="wiki-nav-link">Troubleshooting</a>
+                </div>
                 </div>
             </aside>
 
@@ -722,6 +730,38 @@ int main() {
 
     <!-- Scripts -->
     <script>
+        // Mobile sidebar toggle
+        (function() {
+            const sidebar = document.querySelector('.wiki-sidebar');
+            const toggle = document.querySelector('.wiki-sidebar-toggle');
+            const toggleText = document.querySelector('.wiki-sidebar-toggle-text');
+            if (toggle && sidebar) {
+                toggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('open');
+                });
+                // Close sidebar when clicking a nav link (on mobile)
+                sidebar.querySelectorAll('.wiki-nav-link').forEach(function(link) {
+                    link.addEventListener('click', function() {
+                        sidebar.classList.remove('open');
+                    });
+                });
+                // Update toggle text with current section name
+                function updateToggleText(sectionId) {
+                    if (!toggleText) return;
+                    var activeLink = sidebar.querySelector('.wiki-nav-link[href="#' + sectionId + '"]');
+                    if (activeLink) {
+                        toggleText.textContent = activeLink.textContent;
+                    }
+                }
+                // Override updateActiveLink to also update toggle text
+                var origUpdateActiveLink = window.updateActiveLink || function(){};
+                window.updateActiveLinkAndToggle = function(sectionId) {
+                    origUpdateActiveLink(sectionId);
+                    updateToggleText(sectionId);
+                };
+            }
+        })();
+
         // Theme Toggle
         const themeToggle = document.getElementById('theme-toggle');
         if (themeToggle) {
@@ -812,6 +852,12 @@ int main() {
                     link.classList.add('active');
                 }
             });
+            // Update mobile toggle text
+            const toggleText = document.querySelector('.wiki-sidebar-toggle-text');
+            if (toggleText) {
+                const activeLink = document.querySelector('.wiki-nav-link[href="#' + sectionId + '"]');
+                if (activeLink) toggleText.textContent = activeLink.textContent;
+            }
         }
 
         // Scroll tracking function
@@ -865,13 +911,32 @@ int main() {
         // Initial call
         setTimeout(updateTocOnScroll, 150);
 
-        // Auto-wrap tables in scrollable wrapper
+        // Auto-wrap tables in scrollable wrapper with scroll indicators
         document.querySelectorAll('.wiki-content table').forEach(function(table) {
             if (table.parentElement.classList.contains('wiki-table-wrapper')) return;
             var wrapper = document.createElement('div');
             wrapper.className = 'wiki-table-wrapper';
             table.parentNode.insertBefore(wrapper, table);
             wrapper.appendChild(table);
+
+            // Check if table overflows and add scroll hint
+            function updateScrollHint() {
+                if (wrapper.scrollWidth > wrapper.clientWidth + 2) {
+                    wrapper.classList.add('has-scroll');
+                    // Check if scrolled to end
+                    if (wrapper.scrollLeft + wrapper.clientWidth >= wrapper.scrollWidth - 4) {
+                        wrapper.classList.add('scrolled-end');
+                    } else {
+                        wrapper.classList.remove('scrolled-end');
+                    }
+                } else {
+                    wrapper.classList.remove('has-scroll');
+                }
+            }
+
+            wrapper.addEventListener('scroll', updateScrollHint, { passive: true });
+            window.addEventListener('resize', updateScrollHint, { passive: true });
+            updateScrollHint();
         });
     </script>
 </body>

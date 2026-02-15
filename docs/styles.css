@@ -209,7 +209,7 @@ footer,
 }
 
 html {
-    overflow-x: hidden;
+    /* overflow-x: hidden; */
     width: 100%;
     /* scroll-behavior: smooth; REMOVED to prevent conflict with JS smooth scroll */
     scroll-padding-top: 80px;
@@ -224,7 +224,7 @@ body {
     color: var(--text-main);
     font-family: 'Quicksand', sans-serif;
     line-height: 1.6;
-    overflow-x: clip;
+    /* overflow-x: hidden; */
     /* Fix for sticky positioning */
     min-height: 100vh;
     width: 100%;
@@ -510,8 +510,17 @@ nav {
 }
 
 @keyframes badge-pulse {
-    0%, 100% { opacity: 1; transform: scale(1); }
-    50% { opacity: 0.5; transform: scale(0.8); }
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(0.8);
+    }
 }
 
 .hero-badge:hover {
@@ -1524,11 +1533,12 @@ footer {
 
     .wave-divider svg,
     .wave-divider-2 svg {
-        height: 30px;
+        height: 50px;
     }
 
     .content-wrapper {
         padding-top: 60px;
+        margin-top: -2px;
     }
 
     /* Mobile Nav Fixes */
@@ -1615,7 +1625,7 @@ footer {
     }
 
     .hero-wrapper {
-        padding-bottom: 60px;
+        padding-bottom: 40px;
     }
 
     .hero-card img {
@@ -1821,10 +1831,19 @@ footer {
 .wiki-sidebar {
     position: sticky;
     top: 100px;
+    align-self: start;
     padding-right: 20px;
     border-right: 2px solid var(--border-color);
     max-height: calc(100vh - 140px);
     overflow-y: auto;
+}
+
+.wiki-sidebar-toggle {
+    display: none;
+}
+
+.wiki-sidebar-nav {
+    display: contents;
 }
 
 .wiki-nav-group {
@@ -2071,6 +2090,48 @@ footer {
     border-radius: var(--radius-m);
     border: 1px solid var(--border-color);
     box-shadow: 0 4px 12px var(--shadow-color);
+    position: relative;
+    touch-action: pan-x pan-y;
+}
+
+/* Scroll hint indicator for tables */
+.wiki-table-wrapper.has-scroll::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 32px;
+    background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.06));
+    border-radius: 0 var(--radius-m) var(--radius-m) 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+}
+
+[data-theme="dark"] .wiki-table-wrapper.has-scroll::after {
+    background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.25));
+}
+
+.wiki-table-wrapper.scrolled-end::after {
+    opacity: 0;
+}
+
+/* Mobile scrollbar visibility for table wrappers */
+@media (max-width: 900px) {
+    .wiki-table-wrapper::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .wiki-table-wrapper::-webkit-scrollbar-track {
+        background: var(--bar-track-bg);
+        border-radius: 3px;
+    }
+
+    .wiki-table-wrapper::-webkit-scrollbar-thumb {
+        background: var(--text-muted);
+        border-radius: 3px;
+        opacity: 0.6;
+    }
 }
 
 .wiki-content table {
@@ -2079,7 +2140,7 @@ footer {
     border-spacing: 0;
     font-size: 15px;
     background: var(--card-bg);
-    min-width: 500px;
+    min-width: 480px;
 }
 
 .wiki-content thead {
@@ -2447,13 +2508,60 @@ kbd {
     }
 
     .wiki-sidebar {
-        position: static;
+        position: sticky;
+        top: 0;
+        z-index: 100;
         border-right: none;
         border-bottom: 1px solid var(--border-color);
-        padding-bottom: 24px;
+        padding: 0;
         margin-bottom: 40px;
         max-height: none;
         padding-right: 0;
+        background: var(--body-bg);
+        overflow: visible;
+    }
+
+    .wiki-sidebar-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+        padding: 14px 16px;
+        background: var(--card-bg);
+        border: none;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-main);
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+        gap: 8px;
+    }
+
+    .wiki-sidebar-toggle svg {
+        width: 18px;
+        height: 18px;
+        color: var(--text-muted);
+        transition: transform 0.3s;
+        flex-shrink: 0;
+    }
+
+    .wiki-sidebar.open .wiki-sidebar-toggle svg {
+        transform: rotate(180deg);
+    }
+
+    .wiki-sidebar-nav {
+        display: none;
+        padding: 12px 16px 16px;
+        background: var(--card-bg);
+        border-bottom: 1px solid var(--border-color);
+        max-height: 60vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
+
+    .wiki-sidebar.open .wiki-sidebar-nav {
+        display: block;
     }
 
     .wiki-content h1 {
@@ -2492,12 +2600,16 @@ kbd {
 
     .wiki-content {
         max-width: 100%;
-        overflow-x: visible;
+        overflow-x: hidden;
     }
 
     .wiki-table-wrapper {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        margin-left: -2px;
+        margin-right: -2px;
+        padding-left: 2px;
+        padding-right: 2px;
     }
 
     .wiki-content h1 {
@@ -2530,11 +2642,12 @@ kbd {
     /* Table: responsive on mobile */
     .wiki-content table {
         font-size: 13px;
+        min-width: 420px;
     }
 
     .wiki-content th,
     .wiki-content td {
-        padding: 10px 14px;
+        padding: 10px 12px;
         font-size: 13px;
         white-space: nowrap;
     }
@@ -2608,8 +2721,16 @@ kbd {
 
     /* Sidebar compact on mobile */
     .wiki-sidebar {
-        padding-bottom: 16px;
         margin-bottom: 24px;
+    }
+
+    .wiki-sidebar-toggle {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    .wiki-sidebar-nav {
+        padding: 10px 14px 14px;
     }
 
     .wiki-nav-title {
@@ -2645,7 +2766,9 @@ kbd {
         background:
             radial-gradient(ellipse at 20% 50%, var(--hero-gradient-start) 0%, transparent 60%),
             radial-gradient(ellipse at 80% 20%, var(--hero-gradient-mid) 0%, transparent 50%),
-            radial-gradient(ellipse at 50% 80%, var(--hero-gradient-end) 0%, transparent 60%);
+            radial-gradient(ellipse at 50% 80%, var(--hero-gradient-end) 0%, transparent 60%),
+            linear-gradient(to bottom, var(--body-bg) 0%, var(--hero-gradient-start) 100%);
+        background-color: var(--hero-gradient-start);
     }
 
     #bg-canvas {

@@ -2146,12 +2146,20 @@ function captureKeybinding(e) {
     }
     App.settings.keybindings[editingKeybinding] = keyCombo;
 
+    // Update ShortcutsManager binding
+    if (window.ShortcutsManager?.setKeybinding) {
+        window.ShortcutsManager.setKeybinding(editingKeybinding, keyCombo);
+    }
+
     // Update UI
     const btn = document.querySelector(`.keybinding-key[data-action="${editingKeybinding}"]`);
     if (btn) {
         btn.textContent = keyCombo;
         btn.classList.remove('editing');
     }
+
+    // Persist changes
+    saveSettings();
 
     // Cleanup
     editingKeybinding = null;
