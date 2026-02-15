@@ -1972,7 +1972,8 @@ footer {
     line-height: 1.8;
 }
 
-.wiki-content ul {
+.wiki-content ul,
+.wiki-content ol {
     margin-bottom: 24px;
     padding-left: 24px;
     color: var(--text-main);
