@@ -2492,7 +2492,12 @@ kbd {
 
     .wiki-content {
         max-width: 100%;
-        overflow-x: hidden;
+        overflow-x: visible;
+    }
+
+    .wiki-table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
     }
 
     .wiki-content h1 {

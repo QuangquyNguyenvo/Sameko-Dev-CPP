@@ -66,7 +66,7 @@
                 "color": "ff79c6"
             },
             "string": {
-                "color": "f1fa8c"
+                "color": "e8e08c"
             },
             "number": {
                 "color": "bd93f9"
@@ -76,13 +76,13 @@
                 "fontStyle": "italic"
             },
             "function": {
-                "color": "50fa7b"
+                "color": "6bcf8e"
             },
             "variable": {
-                "color": "f8f8f2"
+                "color": "f0f0e8"
             },
             "operator": {
-                "color": "ff79c6"
+                "color": "d8a0c0"
             }
         }
     },

@@ -62,7 +62,7 @@
         "scrollbarActive": "#88c9ea80",
         "syntax": {
             "comment": {
-                "color": "6a8a9a",
+                "color": "607888",
                 "fontStyle": "italic"
             },
             "keyword": {
@@ -72,22 +72,22 @@
                 "color": "a3d9a5"
             },
             "number": {
-                "color": "ebcb8b"
+                "color": "dcc088"
             },
             "type": {
-                "color": "e8a8b8"
+                "color": "d4a8c4"
             },
             "function": {
-                "color": "7ec8e3"
+                "color": "8ac8a8"
             },
             "variable": {
-                "color": "9cdcfe"
+                "color": "b8d4e4"
             },
             "operator": {
-                "color": "e0f0ff"
+                "color": "a0b8c8"
             },
             "bracket": {
-                "color": "ffd700"
+                "color": "d4b878"
             }
         }
     },

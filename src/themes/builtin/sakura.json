@@ -61,30 +61,30 @@
         "scrollbarActive": "#ff69b4",
         "syntax": {
             "comment": {
-                "color": "8b7080",
+                "color": "7a6070",
                 "fontStyle": "italic"
             },
             "keyword": {
-                "color": "ff69b4"
+                "color": "e87aa0"
             },
             "string": {
-                "color": "98d998"
+                "color": "90c890"
             },
             "number": {
-                "color": "da75e3"
+                "color": "c490c8"
             },
             "type": {
-                "color": "ffb7c5",
+                "color": "dca8b8",
                 "fontStyle": "italic"
             },
             "function": {
-                "color": "ffb07a"
+                "color": "d0a080"
             },
             "variable": {
-                "color": "f8e8f0"
+                "color": "e0d0d8"
             },
             "operator": {
-                "color": "ff69b4"
+                "color": "c898a8"
             }
         }
     },

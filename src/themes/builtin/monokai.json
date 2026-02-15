@@ -64,26 +64,26 @@
                 "fontStyle": "italic"
             },
             "keyword": {
-                "color": "f92672"
+                "color": "e8386c"
             },
             "string": {
-                "color": "e6db74"
+                "color": "e0d870"
             },
             "number": {
-                "color": "ae81ff"
+                "color": "ab80e8"
             },
             "type": {
-                "color": "66d9ef",
+                "color": "66d0e8",
                 "fontStyle": "italic"
             },
             "function": {
-                "color": "a6e22e"
+                "color": "98d030"
             },
             "variable": {
-                "color": "f8f8f2"
+                "color": "f0f0e8"
             },
             "operator": {
-                "color": "f92672"
+                "color": "c8607a"
             }
         }
     },

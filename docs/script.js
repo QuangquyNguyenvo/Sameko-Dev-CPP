@@ -1,28 +1,37 @@
-const observerOptions = {
-    threshold: 0.1,
-    rootMargin: "0px 0px -50px 0px"
-};
+// ===== REVEAL ANIMATIONS (Critical — must run first) =====
+try {
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: "0px 0px -50px 0px"
+    };
 
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.classList.add('active');
-            observer.unobserve(entry.target);
-        }
-    });
-}, observerOptions);
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('active');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
 
-document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+} catch (e) {
+    // Fallback: show all content immediately if observer fails
+    document.querySelectorAll('.reveal').forEach(el => el.classList.add('active'));
+    console.warn('Reveal observer failed, showing content directly:', e);
+}
 
-// Dropdown Logic
-const dlTrigger = document.getElementById('download-trigger');
-const dlWrapper = document.querySelector('.dropdown-wrapper');
+// ===== DROPDOWN LOGIC =====
+var dlTrigger = document.getElementById('download-trigger');
+var dlWrapper = document.querySelector('.dropdown-wrapper');
 
 function openDownloadMenu() {
     if (dlWrapper && !dlWrapper.classList.contains('active')) {
         dlWrapper.classList.add('active');
     }
 }
+
+try {
 
 if (dlTrigger && dlWrapper) {
     dlTrigger.addEventListener('click', (e) => {
@@ -72,7 +81,9 @@ fetch('https://api.github.com/repos/QuangquyNguyenvo/Sameko-Dev-CPP/releases')
         }
     })
     .catch(e => console.log('GitHub API warning: ', e));
+} catch (e) { console.warn('Dropdown/fetch section error:', e); }
 
+try {
 const barObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
         if (entry.isIntersecting) {
@@ -87,6 +98,7 @@ const barObserver = new IntersectionObserver((entries) => {
 
 const benchmarkCard = document.getElementById('benchmark-card');
 if (benchmarkCard) barObserver.observe(benchmarkCard);
+} catch (e) { console.warn('Benchmark bar animation error:', e); }
 
 // Handle #download-trigger hash on page load (from external links like wiki)
 if (window.location.hash === '#download-trigger') {
@@ -105,6 +117,7 @@ if (window.location.hash === '#download-trigger') {
 }
 
 // ===== THEME TOGGLE =====
+try {
 const themeToggle = document.getElementById('theme-toggle');
 const html = document.documentElement;
 
@@ -151,7 +164,10 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)
     }
 });
 
+} catch (e) { console.warn('Theme toggle error:', e); }
+
 // ===== SCROLL TO TOP =====
+try {
 const scrollTopBtn = document.getElementById('scroll-top');
 
 // Generic Smooth Scroll Function
@@ -261,7 +277,10 @@ if (scrollTopBtn) {
     checkScrollTop();
 }
 
+} catch (e) { console.warn('Scroll/nav error:', e); }
+
 // ===== FAQ ACCORDION =====
+try {
 document.querySelectorAll('.faq-question').forEach(btn => {
     btn.addEventListener('click', () => {
         const item = btn.closest('.faq-item');
@@ -279,7 +298,10 @@ document.querySelectorAll('.faq-question').forEach(btn => {
     });
 });
 
+} catch (e) { console.warn('FAQ accordion error:', e); }
+
 /* ===== AUTO-WRAP TABLES IN SCROLLABLE WRAPPER ===== */
+try {
 document.querySelectorAll('.wiki-content table').forEach(table => {
     if (table.parentElement.classList.contains('wiki-table-wrapper')) return;
     const wrapper = document.createElement('div');
@@ -288,16 +310,21 @@ document.querySelectorAll('.wiki-content table').forEach(table => {
     wrapper.appendChild(table);
 });
 
+} catch (e) { console.warn('Table wrapper error:', e); }
+
 /* ===== DYNAMIC BACKGROUND (Anti-Gravity Dots) ===== */
+try {
 document.addEventListener('DOMContentLoaded', () => {
     const heroWrapper = document.querySelector('.hero-wrapper');
     if (!heroWrapper) return;
 
     const canvas = document.createElement('canvas');
+    if (!canvas || !canvas.getContext) return;
     canvas.id = 'bg-canvas';
     heroWrapper.insertBefore(canvas, heroWrapper.firstChild);
 
     const ctx = canvas.getContext('2d');
+    if (!ctx) return;
     let width, height;
     let particles = [];
 
@@ -387,4 +414,5 @@ document.addEventListener('DOMContentLoaded', () => {
     resize(); // Init
     animate();
 });
+} catch (e) { console.warn('Dynamic background error:', e); }
 

@@ -73,16 +73,16 @@
                 "color": "b48ead"
             },
             "type": {
-                "color": "8fbcbb"
+                "color": "ebcb8b"
             },
             "function": {
                 "color": "88c0d0"
             },
             "variable": {
-                "color": "eceff4"
+                "color": "d8dee9"
             },
             "operator": {
-                "color": "81a1c1"
+                "color": "a0b0c0"
             }
         }
     },
