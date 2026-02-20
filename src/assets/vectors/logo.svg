@@ -1,111 +1,245 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350">
   <defs>
-    <!-- Bubbly Text Filter -->
-    <filter id="bubble-glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur"/>
-      <feOffset in="blur" dx="4" dy="4" result="offsetBlur"/>
+    <!-- Bubbly Text Filter with softer glow -->
+    <filter id="bubble-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
+      <feOffset in="blur" dx="0" dy="3" result="offsetBlur"/>
+      <feComponentTransfer in="offsetBlur" result="shadow">
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
       <feMerge>
-        <feMergeNode in="offsetBlur"/>
+        <feMergeNode in="shadow"/>
         <feMergeNode in="SourceGraphic"/>
       </feMerge>
     </filter>
-    
-    <!-- Gradient for Text -->
-    <linearGradient id="ocean-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#A2D9F5;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#5FA8D3;stop-opacity:1" />
-    </linearGradient>
 
-    <!-- Stroke Gradient -->
-    <linearGradient id="stroke-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <filter id="drop-shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#5FA8D3" flood-opacity="0.4" />
+    </filter>
+    
+    <!-- Gradients -->
+    <linearGradient id="text-grad-top" x1="0%" y1="0%" x2="0%" y2="50%">
       <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
       <stop offset="100%" style="stop-color:#e0f7fa;stop-opacity:1" />
     </linearGradient>
+    
+    <linearGradient id="text-grad-bottom" x1="0%" y1="50%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#A2D9F5;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6ebbdf;stop-opacity:1" />
+    </linearGradient>
+
+    <!-- Subtitle Glow -->
+    <filter id="sub-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="1.5" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
   </defs>
 
-  <!-- Background decorative elements (Bubbles) -->
-  <circle cx="50" cy="150" r="15" fill="#A2D9F5" opacity="0.4">
-    <animate attributeName="cy" values="160;140;160" dur="4s" repeatCount="indefinite"/>
-  </circle>
-  <circle cx="550" cy="40" r="10" fill="#A2D9F5" opacity="0.6">
-    <animate attributeName="cy" values="40;20;40" dur="3s" repeatCount="indefinite"/>
-  </circle>
-  
-  <!-- Main Text Group -->
-  <g transform="translate(30, 20)">
-    <!-- Outline/Shadow Layer -->
-    <text x="50%" y="110" text-anchor="middle" 
-          font-family="'Fredoka One', 'Nunito', sans-serif" 
-          font-weight="900" 
-          font-size="110" 
-          fill="none" 
-          stroke="#3FA0D8" 
-          stroke-width="18"
-          stroke-linejoin="round"
-          filter="url(#bubble-glow)">
-      SAMEKO
-    </text>
-
-    <!-- Inner White Stroke -->
-    <text x="50%" y="110" text-anchor="middle" 
-          font-family="'Fredoka One', 'Nunito', sans-serif" 
-          font-weight="900" 
-          font-size="110" 
-          fill="none" 
-          stroke="url(#stroke-grad)" 
-          stroke-width="10"
-          stroke-linejoin="round">
-      SAMEKO
-    </text>
-
-    <!-- Main Fill -->
-    <text x="50%" y="110" text-anchor="middle" 
-          font-family="'Fredoka One', 'Nunito', sans-serif" 
-          font-weight="900" 
-          font-size="110" 
-          fill="url(#ocean-grad)">
-      SAMEKO
-    </text>
+  <!-- Background decorative elements (Bubbles & Stars) floating animation -->
+  <g opacity="0.6">
+    <circle cx="100" cy="250" r="18" fill="none" stroke="#7fcbee" stroke-width="4" opacity="0.6">
+      <animate attributeName="cy" values="250;230;250" dur="5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+    </circle>
+    <circle cx="130" cy="270" r="8" fill="none" stroke="#7fcbee" stroke-width="3" opacity="0.8">
+      <animate attributeName="cy" values="270;240;270" dur="4s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+    </circle>
+    <circle cx="80" cy="220" r="12" fill="none" stroke="#7fcbee" stroke-width="3" opacity="0.5">
+      <animate attributeName="cy" values="220;190;220" dur="6s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+    </circle>
     
-    <!-- Highlight Shine -->
-    <path d="M120,50 Q140,40 160,50" stroke="white" stroke-width="5" fill="none" opacity="0.8" />
-    <path d="M440,50 Q460,40 480,50" stroke="white" stroke-width="5" fill="none" opacity="0.8" />
+    <circle cx="700" cy="100" r="22" fill="none" stroke="#7fcbee" stroke-width="4" opacity="0.5">
+      <animate attributeName="cy" values="100;70;100" dur="5.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+    </circle>
+    <circle cx="740" cy="130" r="10" fill="none" stroke="#7fcbee" stroke-width="3" opacity="0.7">
+      <animate attributeName="cy" values="130;110;130" dur="4.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+    </circle>
+    <circle cx="670" cy="60" r="14" fill="none" stroke="#7fcbee" stroke-width="3" opacity="0.6">
+      <animate attributeName="cy" values="60;40;60" dur="6.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+    </circle>
+    
+    <circle cx="180" cy="80" r="10" fill="none" stroke="#7fcbee" stroke-width="3" opacity="0.4">
+      <animate attributeName="cy" values="80;50;80" dur="5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+    </circle>
+    <circle cx="620" cy="260" r="15" fill="none" stroke="#7fcbee" stroke-width="4" opacity="0.5">
+      <animate attributeName="cy" values="260;230;260" dur="6s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+    </circle>
+  </g>
 
-    <!-- Subtitle Group -->
-    <g>
-      <!-- Blue Outline -->
-      <text x="50%" y="165" text-anchor="middle" 
-            font-family="'Fredoka One', 'Nunito', sans-serif" 
-            font-weight="700" 
-            font-size="32" 
+  <!-- Cute sparkles blinking animation -->
+  <g fill="#A2D9F5" opacity="0.8">
+    <g transform="translate(150,110)">
+      <path d="M0,10 Q10,10 10,0 Q10,10 20,10 Q10,10 10,20 Q10,10 0,10 Z">
+        <animate attributeName="opacity" values="0.2;1;0.2" dur="3s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+        <animateTransform attributeName="transform" type="scale" values="0.8;1.2;0.8" dur="3s" repeatCount="indefinite" additive="sum" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+      </path>
+    </g>
+    <g transform="translate(650,190)">
+      <path d="M0,5 Q5,5 5,0 Q5,5 10,5 Q5,5 5,10 Q5,5 0,5 Z">
+        <animate attributeName="opacity" values="0.2;1;0.2" dur="4s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+        <animateTransform attributeName="transform" type="scale" values="0.5;1;0.5" dur="4s" repeatCount="indefinite" additive="sum" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+      </path>
+    </g>
+    <g transform="translate(300,40)">
+      <path d="M0,10 Q10,10 10,0 Q10,10 20,10 Q10,10 10,20 Q10,10 0,10 Z">
+        <animate attributeName="opacity" values="0.2;1;0.2" dur="3.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+        <animateTransform attributeName="transform" type="scale" values="0.7;1.1;0.7" dur="3.5s" repeatCount="indefinite" additive="sum" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+      </path>
+    </g>
+  </g>
+
+  <!-- Floating Group for entire Logo (Text + Crown + Fish + Subtitle) -->
+  <g>
+    <!-- Removed Translate floating animation completely so the text stays rock solid -->
+
+    <!-- Main "SAMEKO" Text (Inspired by the Saba logo style) -->
+    <g transform="translate(400, 180)" filter="url(#drop-shadow)">
+      <!-- Deepest shadow/outline -->
+      <text x="0" y="0" text-anchor="middle" 
+            font-family="'Fredoka One', 'Nunito', 'Segoe UI', sans-serif" 
+            font-weight="900" 
+            font-size="140" 
             fill="none" 
-            stroke="#3FA0D8" 
-            stroke-width="5"
+            stroke="#4293ca" 
+            stroke-width="32"
             stroke-linejoin="round"
-            letter-spacing="2">
-        IDE PROJECT
+            letter-spacing="5">
+        SAMEKO
       </text>
-      <!-- White Inner Stroke -->
-      <text x="50%" y="165" text-anchor="middle" 
-            font-family="'Fredoka One', 'Nunito', sans-serif" 
-            font-weight="700" 
-            font-size="32" 
+
+      <!-- White outer rim -->
+      <text x="0" y="0" text-anchor="middle" 
+            font-family="'Fredoka One', 'Nunito', 'Segoe UI', sans-serif" 
+            font-weight="900" 
+            font-size="140" 
             fill="none" 
             stroke="#ffffff" 
-            stroke-width="2"
+            stroke-width="18"
             stroke-linejoin="round"
-            letter-spacing="2">
-        IDE PROJECT
+            letter-spacing="5">
+        SAMEKO
       </text>
-      <!-- Fill -->
-      <text x="50%" y="165" text-anchor="middle" 
-            font-family="'Fredoka One', 'Nunito', sans-serif" 
-            font-weight="700" 
-            font-size="32" 
-            fill="#5FA8D3" 
-            letter-spacing="2">
-        IDE PROJECT
+
+      <!-- Inner dark blue outline -->
+      <text x="0" y="0" text-anchor="middle" 
+            font-family="'Fredoka One', 'Nunito', 'Segoe UI', sans-serif" 
+            font-weight="900" 
+            font-size="140" 
+            fill="none" 
+            stroke="#5FA8D3" 
+            stroke-width="10"
+            stroke-linejoin="round"
+            letter-spacing="5">
+        SAMEKO
       </text>
+
+      <!-- Bottom Fill (Light Blue) -->
+      <text x="0" y="0" text-anchor="middle" 
+            font-family="'Fredoka One', 'Nunito', 'Segoe UI', sans-serif" 
+            font-weight="900" 
+            font-size="140" 
+            fill="url(#text-grad-bottom)"
+            letter-spacing="5">
+        SAMEKO
+      </text>
+      
+      <!-- Top Fill (White/Cyan) -->
+      <!-- Clip to only show top half -->
+      <g>
+        <clipPath id="top-half">
+          <rect x="-400" y="-140" width="800" height="90" />
+        </clipPath>
+        <text x="0" y="0" text-anchor="middle" 
+              font-family="'Fredoka One', 'Nunito', 'Segoe UI', sans-serif" 
+              font-weight="900" 
+              font-size="140" 
+              fill="url(#text-grad-top)"
+              clip-path="url(#top-half)"
+              letter-spacing="5">
+          SAMEKO
+        </text>
+      </g>
+
+      <!-- Cute Highlights/Reflections on letters -->
+      <path d="M-230,-80 C-210,-90 -160,-90 -140,-80" stroke="white" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.6"/>
+      <path d="M40,-80 C60,-90 100,-90 120,-80" stroke="white" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.6"/>
+      <path d="M-300,-15 C-290,-35 -260,-35 -250,-15" stroke="white" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.4"/>
+      <path d="M210,-15 C230,-35 250,-35 270,-15" stroke="white" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.4"/>
+    </g>
+
+    <!-- "IDE PROJECT" Subtitle Tag (Sticker style) -->
+    <g transform="translate(400, 270)">
+      <g>
+        <!-- Slow & Smooth Swing animation -->
+        <animateTransform attributeName="transform" type="rotate" values="-2;2;-2" dur="6s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+        
+        <!-- White background sticker padding -->
+        <rect x="-140" y="-30" width="280" height="50" rx="25" fill="#ffffff" filter="url(#drop-shadow)" />
+        
+        <!-- Subtle inner dash border -->
+        <rect x="-132" y="-22" width="264" height="34" rx="17" fill="none" stroke="#A2D9F5" stroke-width="2" stroke-dasharray="6,4" opacity="0.8" />
+        
+        <text x="0" y="3" text-anchor="middle" 
+              font-family="'Nunito', 'Segoe UI', sans-serif" 
+              font-weight="800" 
+              font-size="22" 
+              fill="#5FA8D3" 
+              letter-spacing="4"
+              filter="url(#sub-glow)">
+          IDE PROJECT
+        </text>
+
+        <!-- Little star icon next to text -->
+        <path d="M-105,-4 Q-100,-4 -100,-9 Q-100,-4 -95,-4 Q-100,-4 -100,1 Q-100,-4 -105,-4 Z" fill="#6ebbdf" />
+        <path d="M105,-4 Q100,-4 100,-9 Q100,-4 95,-4 Q100,-4 100,1 Q100,-4 105,-4 Z" fill="#6ebbdf" />
+      </g>
+    </g>
+
+    <!-- Little fish illustration sitting on the logo -->
+    <g transform="translate(140, 60)">
+      <g transformOrigin="40 30">
+        <!-- Relaxed, slow rocking for the fish -->
+        <animateTransform attributeName="transform" type="rotate" values="-15;-23;-15" dur="5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+      
+        <!-- Fish shadow -->
+        <path d="M40,50 Q10,50 0,30 Q10,10 40,10 Q60,10 70,30 Q60,50 40,50 Z" fill="rgba(66, 147, 202, 0.2)" filter="url(#bubble-glow)"/>
+        
+        <!-- White outline for sticker effect -->
+        <path d="M40,56 Q10,56 -6,30 Q10,4 40,4 Q66,4 76,30 Q66,56 40,56 Z" fill="#ffffff" />
+        <path d="M70,30 L96,4 L96,56 Z" fill="#ffffff" />
+
+        <!-- Fish Tail -->
+        <g>
+          <path d="M70,30 L90,10 L90,50 Z" fill="#6ebbdf" />
+          <path d="M70,30 L85,15 L85,45 Z" fill="#4293ca" />
+        </g>
+
+        <!-- Fish Body main -->
+        <path d="M40,50 Q10,50 0,30 Q10,10 40,10 Q60,10 70,30 Q60,50 40,50 Z" fill="#6ebbdf" />
+        
+        <!-- Fish Eye -->
+        <circle cx="20" cy="25" r="4" fill="#ffffff" />
+        <circle cx="19" cy="24" r="2" fill="#1a2530" />
+        
+        <!-- Fish Fin -->
+        <path d="M35,25 Q45,20 50,30 Q40,35 35,25 Z" fill="#A2D9F5" opacity="0.8">
+        </path>
+      </g>
+    </g>
+
+    <!-- Crown decoration -->
+    <g transform="translate(620, -10)">
+      <!-- Smooth gentle tilt -->
+      <g>
+        <animateTransform attributeName="transform" type="rotate" values="15;10;15" dur="5.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
+        <g transform="scale(0.9)">
+           <path d="M10,60 L20,30 L40,45 L60,20 L80,45 L100,30 L110,60 Z" fill="#ffffff" stroke="#ffffff" stroke-width="8" stroke-linejoin="round"/>
+           <path d="M10,60 L20,30 L40,45 L60,20 L80,45 L100,30 L110,60 Z" fill="#ffd166" stroke="#f4a261" stroke-width="3" stroke-linejoin="round"/>
+           <!-- Crown Jewels -->
+           <circle cx="20" cy="30" r="4" fill="#ffffff" />
+           <circle cx="60" cy="20" r="4" fill="#ffffff" />
+           <circle cx="100" cy="30" r="4" fill="#ffffff" />
+        </g>
+      </g>
     </g>
   </g>
 </svg>
