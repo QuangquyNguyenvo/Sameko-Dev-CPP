@@ -17,14 +17,14 @@
       <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#5FA8D3" flood-opacity="0.4" />
     </filter>
     
-    <!-- Gradients -->
-    <linearGradient id="text-grad-top" x1="0%" y1="0%" x2="0%" y2="50%">
+    <!-- Gradient for Text (Split in half) -->
+    <linearGradient id="text-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <!-- Top Half (White to Cyan) -->
       <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#e0f7fa;stop-opacity:1" />
-    </linearGradient>
-    
-    <linearGradient id="text-grad-bottom" x1="0%" y1="50%" x2="0%" y2="100%">
-      <stop offset="0%" style="stop-color:#A2D9F5;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#e0f7fa;stop-opacity:1" />
+      <!-- Sharp transition -->
+      <stop offset="50.1%" style="stop-color:#A2D9F5;stop-opacity:1" />
+      <!-- Bottom Half (Blue to Darker Blue) -->
       <stop offset="100%" style="stop-color:#6ebbdf;stop-opacity:1" />
     </linearGradient>
 
@@ -35,7 +35,7 @@
     </filter>
   </defs>
 
-  <!-- Background decorative elements (Bubbles & Stars) floating animation -->
+  <!-- Background decorative elements (Bubbles & Stars) -->
   <g opacity="0.6">
     <circle cx="100" cy="250" r="18" fill="none" stroke="#7fcbee" stroke-width="4" opacity="0.6">
       <animate attributeName="cy" values="250;230;250" dur="5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
@@ -87,11 +87,9 @@
     </g>
   </g>
 
-  <!-- Floating Group for entire Logo (Text + Crown + Fish + Subtitle) -->
+  <!-- Floating Group -->
   <g>
-    <!-- Removed Translate floating animation completely so the text stays rock solid -->
-
-    <!-- Main "SAMEKO" Text (Inspired by the Saba logo style) -->
+    <!-- Main "SAMEKO" Text -->
     <g transform="translate(400, 180)" filter="url(#drop-shadow)">
       <!-- Deepest shadow/outline -->
       <text x="0" y="0" text-anchor="middle" 
@@ -132,32 +130,15 @@
         SAMEKO
       </text>
 
-      <!-- Bottom Fill (Light Blue) -->
+      <!-- Full Unified Gradient Fill -->
       <text x="0" y="0" text-anchor="middle" 
             font-family="'Fredoka One', 'Nunito', 'Segoe UI', sans-serif" 
             font-weight="900" 
             font-size="140" 
-            fill="url(#text-grad-bottom)"
+            fill="url(#text-grad)"
             letter-spacing="5">
         SAMEKO
       </text>
-      
-      <!-- Top Fill (White/Cyan) -->
-      <!-- Clip to only show top half -->
-      <g>
-        <clipPath id="top-half">
-          <rect x="-400" y="-140" width="800" height="90" />
-        </clipPath>
-        <text x="0" y="0" text-anchor="middle" 
-              font-family="'Fredoka One', 'Nunito', 'Segoe UI', sans-serif" 
-              font-weight="900" 
-              font-size="140" 
-              fill="url(#text-grad-top)"
-              clip-path="url(#top-half)"
-              letter-spacing="5">
-          SAMEKO
-        </text>
-      </g>
 
       <!-- Cute Highlights/Reflections on letters -->
       <path d="M-230,-80 C-210,-90 -160,-90 -140,-80" stroke="white" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.6"/>
