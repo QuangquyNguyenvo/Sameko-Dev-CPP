@@ -2,7 +2,7 @@
 
 <div align="center">
   <br />
-  <img src="src/assets/vectors/logo.svg" alt="Sameko Logo" width="420" />
+  <img src="src/assets/vectors/logo.svg" alt="Sameko Logo" width="650" />
   <br />
 
   # 🐟 Sameko IDE ⚓
