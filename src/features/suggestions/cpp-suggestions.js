@@ -22,7 +22,8 @@ window.registerCppIntellisense = function (monaco) {
             { label: 'vv', doc: 'Vector 2D', text: 'vector<vector<${1:int}>> ${2:v};' },
 
             { label: 'ios', doc: 'Fast I/O', text: 'ios_base::sync_with_stdio(false); cin.tie(NULL);' },
-            { label: 'setp', doc: 'Set precision', text: 'cout << fixed << setprecision(${1:number});' }
+            { label: 'setp', doc: 'Set precision', text: 'cout << fixed << setprecision(${1:number});' },
+            { label: 'fre', doc: 'File I/O', text: 'if (fopen("${1:test}.inp", "r")) {\n    freopen("${1:test}.inp", "r", stdin);\n    freopen("${1:test}.out", "w", stdout);\n}' }
         ],
         c: [
             { label: 'main', doc: 'Main C', text: 'int main(){\n    ${0}\n    return 0;\n}' },
@@ -82,6 +83,15 @@ window.registerCppIntellisense = function (monaco) {
         'top': { type: 'Method', detail: 'T& top()', doc: 'Access top element.' },
         'empty': { type: 'Method', detail: 'bool empty()', doc: 'Check if container is empty.' },
 
+        'push_front': { type: 'Method', detail: 'void push_front(val)', doc: 'Add element to the front.' },
+        'emplace_front': { type: 'Method', detail: 'void emplace_front(args...)', doc: 'Construct and add element to the front.' },
+        'pop_front': { type: 'Method', detail: 'void pop_front()', doc: 'Remove the first element.' },
+
+        // --- Iterators & Capacity ---
+        'begin': { type: 'Method', detail: 'iterator begin()', doc: 'Return iterator to beginning.' },
+        'end': { type: 'Method', detail: 'iterator end()', doc: 'Return iterator to end.' },
+        'size': { type: 'Method', detail: 'size_t size()', doc: 'Return size of container.' },
+
         // --- Algorithms & Utils ---
         'sort': { type: 'Func', detail: 'sort(begin, end)', doc: 'Sort range.' },
         'reverse': { type: 'Func', detail: 'reverse(begin, end)', doc: 'Reverse range.' },
@@ -96,7 +106,25 @@ window.registerCppIntellisense = function (monaco) {
         'stoi': { type: 'Func', detail: 'stoi(str)', doc: 'Convert string to integer.' },
         'stoll': { type: 'Func', detail: 'stoll(str)', doc: 'Convert string to long long.' },
         'stod': { type: 'Func', detail: 'stod(str)', doc: 'Convert string to double.' },
-        'itoa': { type: 'Func', detail: 'itoa(val, buffer, radix)', doc: 'Convert integer to string (Non-standard).' }
+        'itoa': { type: 'Func', detail: 'itoa(val, buffer, radix)', doc: 'Convert integer to string (Non-standard).' },
+
+        // --- Standard Library ---
+        'fopen': { type: 'Func', detail: 'FILE* fopen(filename, mode)', doc: 'Open file.' },
+        'freopen': { type: 'Func', detail: 'FILE* freopen(filename, mode, stream)', doc: 'Reassign file stream.' }
+    };
+
+    const STL_TYPE_METHODS = {
+        'vector': ['push_back', 'emplace_back', 'pop_back', 'resize', 'assign', 'clear', 'erase', 'insert', 'front', 'back', 'at', 'empty', 'begin', 'end', 'size'],
+        'string': ['push_back', 'pop_back', 'resize', 'assign', 'clear', 'erase', 'insert', 'front', 'back', 'at', 'substr', 'length', 'c_str', 'append', 'empty', 'begin', 'end', 'size', 'find'],
+        'deque': ['push_back', 'emplace_back', 'pop_back', 'push_front', 'emplace_front', 'pop_front', 'resize', 'assign', 'clear', 'erase', 'insert', 'front', 'back', 'at', 'empty', 'begin', 'end', 'size'],
+        'set': ['insert', 'erase', 'clear', 'find', 'count', 'lower_bound', 'upper_bound', 'empty', 'begin', 'end', 'size'],
+        'map': ['insert', 'erase', 'clear', 'find', 'count', 'lower_bound', 'upper_bound', 'empty', 'begin', 'end', 'size', 'at'],
+        'queue': ['push', 'pop', 'front', 'back', 'empty', 'size'],
+        'stack': ['push', 'pop', 'top', 'empty', 'size'],
+        'priority_queue': ['push', 'pop', 'top', 'empty', 'size'],
+        'multiset': ['insert', 'erase', 'clear', 'find', 'count', 'lower_bound', 'upper_bound', 'empty', 'begin', 'end', 'size'],
+        'unordered_set': ['insert', 'erase', 'clear', 'find', 'count', 'empty', 'begin', 'end', 'size'],
+        'unordered_map': ['insert', 'erase', 'clear', 'find', 'count', 'empty', 'begin', 'end', 'size', 'at']
     };
 
     const STL_KEYWORDS = Object.keys(STL_DOCS);
@@ -110,7 +138,7 @@ window.registerCppIntellisense = function (monaco) {
     // ========================================================================
     // 3. LOGIC PROVIDER
     // ========================================================================
-    const createProposals = (range, languageId, textUntilPosition) => {
+    const createProposals = (range, languageId, textUntilPosition, objectContextType = null) => {
         const suggestions = [];
         const insideInclude = /#include\s*[<"]\s*$/.test(textUntilPosition);
         const insideParentheses = /\([^\)]*$/.test(textUntilPosition);
@@ -136,9 +164,14 @@ window.registerCppIntellisense = function (monaco) {
         }
 
         if (afterDot) {
-            STL_KEYWORDS.forEach(k => {
+            let allowedMethods = STL_KEYWORDS; // default to all
+            if (objectContextType && STL_TYPE_METHODS[objectContextType]) {
+                allowedMethods = STL_TYPE_METHODS[objectContextType];
+            }
+
+            allowedMethods.forEach(k => {
                 const info = STL_DOCS[k];
-                if (info.type === 'Method') {
+                if (info && info.type === 'Method') {
                     suggestions.push({
                         label: k, kind: monaco.languages.CompletionItemKind.Method,
                         insertText: k, documentation: info.doc, detail: info.detail, range: range
@@ -217,7 +250,23 @@ window.registerCppIntellisense = function (monaco) {
                     return { suggestions: [] };
                 }
 
-                let baseProposals = createProposals(range, lang, textUntilPosition);
+                if (/<\s*$/.test(textUntilPosition) && !/#include\s*<\s*$/.test(textUntilPosition)) {
+                    return { suggestions: [] };
+                }
+
+                let objectContextType = null;
+                const afterDotMatch = textUntilPosition.match(/([a-zA-Z0-9_]+)\.\s*$/);
+                if (afterDotMatch) {
+                    const objectName = afterDotMatch[1];
+                    const content = model.getValue();
+                    const regex = new RegExp(`\\b(vector|string|deque|set|map|multiset|priority_queue|queue|stack|unordered_set|unordered_map)\\b[^;=]*?\\b${objectName}\\b`);
+                    const declMatch = content.match(regex);
+                    if (declMatch) {
+                        objectContextType = declMatch[1];
+                    }
+                }
+
+                let baseProposals = createProposals(range, lang, textUntilPosition, objectContextType);
 
                 if (window.electronAPI && window.electronAPI.getSmartSuggestions) {
                     try {

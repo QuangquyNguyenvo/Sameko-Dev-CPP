@@ -54,27 +54,9 @@ function getBundledCompilerPaths() {
 
     const basePath = getBasePath();
     paths.push(path.join(basePath, 'Sameko-GCC', 'bin', 'g++.exe'));
-    paths.push(path.join(basePath, 'mingw64', 'bin', 'g++.exe'));
-    paths.push(path.join(basePath, 'mingw32', 'bin', 'g++.exe'));
-    paths.push(path.join(basePath, 'MinGW', 'bin', 'g++.exe'));
-    paths.push(path.join(basePath, 'compiler', 'bin', 'g++.exe'));
 
     return paths;
 }
-
-/**
- * System-installed compiler paths (fallback)
- */
-const SYSTEM_COMPILER_PATHS = [
-    'C:\\TDM-GCC-64\\bin\\g++.exe',
-    'C:\\TDM-GCC-32\\bin\\g++.exe',
-    'C:\\MinGW\\bin\\g++.exe',
-    'C:\\MinGW64\\bin\\g++.exe',
-    'C:\\msys64\\mingw64\\bin\\g++.exe',
-    'C:\\msys64\\mingw32\\bin\\g++.exe',
-    'C:\\Program Files\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\bin\\g++.exe',
-    'C:\\Program Files (x86)\\Dev-Cpp\\MinGW64\\bin\\g++.exe',
-];
 
 function detectCompiler() {
     const bundledPaths = getBundledCompilerPaths();
@@ -99,32 +81,6 @@ function detectCompiler() {
             compilerInfo.hasLLD = fs.existsSync(path.join(binDir, 'ld.lld.exe'));
 
             console.log(`[Compiler] Selected bundled: ${compilerPath} (LLD: ${compilerInfo.hasLLD})`);
-            return compilerPath;
-        }
-    }
-
-    for (const compilerPath of SYSTEM_COMPILER_PATHS) {
-        if (fs.existsSync(compilerPath)) {
-            detectedCompiler = compilerPath;
-            const dirName = path.dirname(path.dirname(compilerPath));
-
-            if (dirName.includes('TDM-GCC')) {
-                compilerInfo.name = 'TDM-GCC';
-            } else if (dirName.includes('Dev-Cpp')) {
-                compilerInfo.name = 'Dev-C++ MinGW';
-            } else if (dirName.includes('msys64')) {
-                compilerInfo.name = 'MSYS2 MinGW';
-            } else {
-                compilerInfo.name = 'MinGW';
-            }
-
-            compilerInfo.path = compilerPath;
-            compilerInfo.bundled = false;
-
-            const binDir = path.dirname(compilerPath);
-            compilerInfo.hasLLD = fs.existsSync(path.join(binDir, 'ld.lld.exe'));
-
-            console.log(`[Compiler] Selected system: ${compilerPath} (LLD: ${compilerInfo.hasLLD})`);
             return compilerPath;
         }
     }

@@ -14,6 +14,7 @@ const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getBasePath, getUn
 const { ensurePCH } = require('./pch-manager');
 
 let runningProcess = null;
+let activeCompilerProcess = null;
 
 let lastRunningPID = null;
 
@@ -57,6 +58,16 @@ function sendToRenderer(channel, data) {
  */
 async function compile({ filePath, content, flags, useLLD }) {
     const startTime = Date.now();
+
+    if (activeCompilerProcess) {
+        try {
+            activeCompilerProcess.kill();
+        } catch (e) { }
+        activeCompilerProcess = null;
+        console.log(`[Compile] Cancelled previous active compilation`);
+        // Let it breathe for a few ms before spawning a new one
+        await new Promise(r => setTimeout(r, 50));
+    }
 
     // Kill any running process first (to release .exe lock)
     if (runningProcess) {
@@ -200,6 +211,7 @@ async function compile({ filePath, content, flags, useLLD }) {
 
     return new Promise((resolve) => {
         const compiler = spawn(compilerExe, args, { cwd: dir, env: env });
+        activeCompilerProcess = compiler;
 
         let stderr = '';
 
@@ -208,8 +220,22 @@ async function compile({ filePath, content, flags, useLLD }) {
         });
 
         compiler.on('close', (code) => {
+            // Unset if it's still us
+            if (activeCompilerProcess === compiler) {
+                activeCompilerProcess = null;
+            } else {
+                // Return cancelled state if we were killed by newer compile
+                return resolve({
+                    success: false,
+                    cancelled: true,
+                    error: 'Compilation cancelled by new request.',
+                    outputPath: null,
+                    time: Date.now() - startTime
+                });
+            }
+
             const compileTime = Date.now() - startTime;
-            console.log(`[Compile] Finished in ${compileTime}ms`);
+            console.log(`[Compile] Finished in ${compileTime}ms (exit code: ${code})`);
 
             if (code !== 0) {
                 // Log error for debugging
@@ -239,6 +265,7 @@ async function compile({ filePath, content, flags, useLLD }) {
         });
 
         compiler.on('error', (err) => {
+            if (activeCompilerProcess === compiler) activeCompilerProcess = null;
             let errorMessage = err.message;
             if (err.code === 'ENOENT') {
                 errorMessage = `Compiler not found: ${compilerExe}\n\nPlease ensure the bundled compiler is available or install MinGW/TDM-GCC.`;

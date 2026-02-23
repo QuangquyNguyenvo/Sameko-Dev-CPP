@@ -9,6 +9,7 @@
 const path = require('path');
 const fs = require('fs');
 const { spawn, exec } = require('child_process');
+const { getCompilerEnv } = require('../compiler/detector');
 
 /**
  * Run a single test case
@@ -38,6 +39,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd }
         // Create test process
         const testProcess = spawn(exePath, [], {
             cwd: workingDir,
+            env: getCompilerEnv(),
             stdio: ['pipe', 'pipe', 'pipe']
         });
 
