@@ -53,6 +53,7 @@ module.exports = {
     isTreeSitterAvailable: treeSitter.isAvailable,
     checkSyntaxTreeSitter: treeSitter.checkSyntax,
     parse: treeSitter.parse,
+    getSmartSuggestions: treeSitter.getSmartSuggestions,
 
     // GCC
     checkSyntaxGcc: gccChecker.checkSyntax,

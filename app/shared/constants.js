@@ -57,6 +57,7 @@ const IPC = {
     FORMAT: {
         CODE: 'format-code',
         SYNTAX_CHECK: 'syntax-check',
+        SMART_SUGGESTIONS: 'smart-suggestions',
     },
 
     // Competitive Programming

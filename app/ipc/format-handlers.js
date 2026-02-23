@@ -30,6 +30,11 @@ function registerHandlers() {
         return await syntax.checkSyntax(content, filePath);
     });
 
+    // Smart Suggestions via Tree-sitter
+    ipcMain.handle(IPC.FORMAT.SMART_SUGGESTIONS, async (event, { content, row, column }) => {
+        return syntax.getSmartSuggestions(content, row, column);
+    });
+
 
 }
 

@@ -192,16 +192,57 @@ window.registerCppIntellisense = function (monaco) {
     const registerFeatures = (lang) => {
         monaco.languages.registerCompletionItemProvider(lang, {
             triggerCharacters: ['<', '/', '"', '#', '.'],
-            provideCompletionItems: (model, position) => {
+            provideCompletionItems: async (model, position) => {
                 const word = model.getWordUntilPosition(position);
                 const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
                 const textUntilPosition = model.getValueInRange({ startLineNumber: position.lineNumber, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column });
-                
+
                 if (/[<>]{2}\s*$/.test(textUntilPosition)) {
                     return { suggestions: [] };
                 }
-                
-                return createProposals(range, lang, textUntilPosition);
+
+                // 1. Get Base Proposals (from Dict/Regex)
+                let baseProposals = createProposals(range, lang, textUntilPosition);
+
+                // 2. Call Tree-sitter (IPC) to get smart context
+                if (window.electronAPI && window.electronAPI.getSmartSuggestions) {
+                    try {
+                        const content = model.getValue();
+                        const context = await window.electronAPI.getSmartSuggestions(content, position.lineNumber - 1, position.column - 1);
+
+                        if (context && context.available) {
+                            // If we are deep inside a string or comment, shut off keywords!
+                            if (context.isComment || context.isString) {
+                                return { suggestions: [] };
+                            }
+
+                            // Add discovered local variables/functions to autocomplete!
+                            if (context.locals && context.locals.length > 0) {
+                                // Filter out anything that matches current word to avoid duplicating what user just typed
+                                const query = word.word.toLowerCase();
+                                const smartVars = context.locals
+                                    .filter(l => l.toLowerCase().startsWith(query))
+                                    .map(l => {
+                                        return {
+                                            label: l,
+                                            kind: monaco.languages.CompletionItemKind.Variable,
+                                            insertText: l,
+                                            detail: 'Local / Global Variable',
+                                            range: range,
+                                            // Make variables rank higher
+                                            sortText: '000_' + l
+                                        };
+                                    });
+                                // Merge smart variables with base proposals
+                                baseProposals.suggestions = [...smartVars, ...baseProposals.suggestions];
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('[SmartSuggest] Error:', e);
+                    }
+                }
+
+                return baseProposals;
             }
         });
 

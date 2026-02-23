@@ -100,6 +100,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Real-time syntax checking
     syntaxCheck: (content, filePath) => ipcRenderer.invoke('syntax-check', { content, filePath }),
+    getSmartSuggestions: (content, row, column) => ipcRenderer.invoke('smart-suggestions', { content, row, column }),
 
     // Local History - backup before save
     createHistoryBackup: (data) => ipcRenderer.invoke('create-history-backup', data),
