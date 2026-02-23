@@ -58,4 +58,5 @@ module.exports = {
     // GCC
     checkSyntaxGcc: gccChecker.checkSyntax,
     parseGccOutput: gccChecker.parseGccOutput,
+    cancelSyntaxCheck: gccChecker.cancelSyntaxCheck,
 };

@@ -128,8 +128,6 @@ function getSmartSuggestions(content, row, column) {
         const tree = parser.parse(content);
         const rootNode = tree.rootNode;
 
-        // Find the node exactly at or just before the cursor
-        // Column - 1 because cursor is usually after the character just typed
         let targetCol = Math.max(0, column - 1);
         let node = rootNode.namedDescendantForPosition({ row: row, column: targetCol });
 
@@ -148,7 +146,6 @@ function getSmartSuggestions(content, row, column) {
             if (node.type === 'comment') context.isComment = true;
             if (node.type === 'string_literal' || node.type === 'char_literal') context.isString = true;
 
-            // Traverse upwards to find function boundaries to get local variables
             let current = node;
             const locals = new Set();
 
@@ -157,12 +154,10 @@ function getSmartSuggestions(content, row, column) {
             }
 
             if (current && current.type === 'function_definition') {
-                // We are inside a function, let's find all declarations before our line
                 const findDeclarations = (n) => {
-                    if (n.startPosition.row >= row) return; // Only get declarations before cursor
+                    if (n.startPosition.row >= row) return;
 
                     if (n.type === 'identifier') {
-                        // Check if it's a declaration
                         if (n.parent && (n.parent.type === 'init_declarator' || n.parent.type === 'declaration' || n.parent.type === 'parameter_declaration')) {
                             locals.add(n.text);
                         }
@@ -175,7 +170,6 @@ function getSmartSuggestions(content, row, column) {
                 findDeclarations(current);
             }
 
-            // Also get global variables/functions
             const findGlobals = (n) => {
                 if (n.startPosition.row >= row) return;
 

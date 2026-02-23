@@ -16,13 +16,11 @@ window.registerCppIntellisense = function (monaco) {
             { label: 'rall', doc: 'Reverse Range', text: '${1:v}.rbegin(), ${1:v}.rend()' },
             { label: 'sz', doc: 'Size', text: '${1:v}.size()' },
 
-            // --- BỔ SUNG VECTOR SNIPPETS ---
             { label: 'vec', doc: 'Vector', text: 'vector<${1:int}> ${2:v};' },
             { label: 'vecn', doc: 'Vector size n', text: 'vector<${1:int}> ${2:v}(${3:n});' },
             { label: 'vecval', doc: 'Vector size n, val', text: 'vector<${1:int}> ${2:v}(${3:n}, ${4:0});' },
             { label: 'vv', doc: 'Vector 2D', text: 'vector<vector<${1:int}>> ${2:v};' },
 
-            // --- FAST IO & UTILS ---
             { label: 'ios', doc: 'Fast I/O', text: 'ios_base::sync_with_stdio(false); cin.tie(NULL);' },
             { label: 'setp', doc: 'Set precision', text: 'cout << fixed << setprecision(${1:number});' }
         ],
@@ -94,7 +92,6 @@ window.registerCppIntellisense = function (monaco) {
         'max': { type: 'Func', detail: 'max(a, b)', doc: 'Return larger value.' },
         'swap': { type: 'Func', detail: 'swap(a, b)', doc: 'Swap two values.' },
 
-        // --- String Conversions ---
         'to_string': { type: 'Func', detail: 'to_string(val)', doc: 'Convert numerical value to string.' },
         'stoi': { type: 'Func', detail: 'stoi(str)', doc: 'Convert string to integer.' },
         'stoll': { type: 'Func', detail: 'stoll(str)', doc: 'Convert string to long long.' },
@@ -220,24 +217,19 @@ window.registerCppIntellisense = function (monaco) {
                     return { suggestions: [] };
                 }
 
-                // 1. Get Base Proposals (from Dict/Regex)
                 let baseProposals = createProposals(range, lang, textUntilPosition);
 
-                // 2. Call Tree-sitter (IPC) to get smart context
                 if (window.electronAPI && window.electronAPI.getSmartSuggestions) {
                     try {
                         const content = model.getValue();
                         const context = await window.electronAPI.getSmartSuggestions(content, position.lineNumber - 1, position.column - 1);
 
                         if (context && context.available) {
-                            // If we are deep inside a string or comment, shut off keywords!
                             if (context.isComment || context.isString) {
                                 return { suggestions: [] };
                             }
 
-                            // Add discovered local variables/functions to autocomplete!
                             if (context.locals && context.locals.length > 0) {
-                                // Filter out anything that matches current word to avoid duplicating what user just typed
                                 const query = word.word.toLowerCase();
                                 const smartVars = context.locals
                                     .filter(l => l.toLowerCase().startsWith(query))
@@ -248,11 +240,9 @@ window.registerCppIntellisense = function (monaco) {
                                             insertText: l,
                                             detail: 'Local / Global Variable',
                                             range: range,
-                                            // Make variables rank higher
                                             sortText: '000_' + l
                                         };
                                     });
-                                // Merge smart variables with base proposals
                                 baseProposals.suggestions = [...smartVars, ...baseProposals.suggestions];
                             }
                         }

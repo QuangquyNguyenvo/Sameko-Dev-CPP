@@ -66,6 +66,11 @@ async function compile({ filePath, content, flags, useLLD }) {
         await new Promise(r => setTimeout(r, 50));
     }
 
+    try {
+        const syntax = require('../syntax');
+        syntax.cancelSyntaxCheck();
+    } catch (e) { }
+
     // Use temp file if no filePath provided (unsaved file)
     let actualFilePath = filePath;
     let usingTempFile = false;

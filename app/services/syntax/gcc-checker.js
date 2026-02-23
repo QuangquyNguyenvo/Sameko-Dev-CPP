@@ -13,6 +13,8 @@ const { spawn } = require('child_process');
 const { getDetectedCompiler } = require('../compiler/detector');
 const { ensurePCH } = require('../compiler/pch-manager');
 
+let activeChecker = null;
+
 /**
  * Check syntax using GCC (g++ -fsyntax-only)
  * Provides semantic error checking
@@ -23,6 +25,8 @@ const { ensurePCH } = require('../compiler/pch-manager');
  */
 async function checkSyntax(content, filePath = null) {
     const compilerExe = getDetectedCompiler() || 'g++';
+
+    cancelSyntaxCheck();
 
     // Create temp file for checking
     const tempDir = path.join(app.getPath('temp'), 'cpp-ide-check');
@@ -59,22 +63,37 @@ async function checkSyntax(content, filePath = null) {
     }
 
     return new Promise((resolve) => {
-        const checker = spawn(compilerExe, args, { cwd: tempDir });
+        activeChecker = spawn(compilerExe, args, { cwd: tempDir });
         let stderr = '';
 
-        checker.stderr.on('data', (data) => {
+        activeChecker.stderr.on('data', (data) => {
             stderr += data.toString();
         });
 
-        checker.on('close', (code) => {
+        activeChecker.on('close', (code) => {
+            activeChecker = null;
+            if (code === null) {
+                resolve([]);
+                return;
+            }
             const diagnostics = parseGccOutput(stderr);
             resolve(diagnostics);
         });
 
-        checker.on('error', () => {
+        activeChecker.on('error', () => {
+            activeChecker = null;
             resolve([]);
         });
     });
+}
+
+function cancelSyntaxCheck() {
+    if (activeChecker) {
+        try {
+            activeChecker.kill('SIGKILL');
+        } catch (e) { }
+        activeChecker = null;
+    }
 }
 
 /**
@@ -106,4 +125,5 @@ function parseGccOutput(output) {
 module.exports = {
     checkSyntax,
     parseGccOutput,
+    cancelSyntaxCheck
 };
