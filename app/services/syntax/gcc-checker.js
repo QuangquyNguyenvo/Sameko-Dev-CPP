@@ -11,6 +11,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const { getDetectedCompiler } = require('../compiler/detector');
+const { ensurePCH } = require('../compiler/pch-manager');
 
 /**
  * Check syntax using GCC (g++ -fsyntax-only)
@@ -34,16 +35,25 @@ async function checkSyntax(content, filePath = null) {
 
     const args = [
         '-fsyntax-only',
+        '-std=c++17',
         '-fmax-errors=50',
         '-Wall',
         '-Wextra',
         '-pipe',
         '-fno-exceptions',
-        '-fno-rtti',
-        tempFile
+        '-fno-rtti'
     ];
 
-    // Add include path if original file path provided
+    try {
+        const pch = await ensurePCH('-std=c++17 -O0');
+        if (pch && pch.ready) {
+            args.push('-I', pch.pchSubDir);
+            args.push('-include', 'stdc++.h');
+        }
+    } catch (e) { }
+
+    args.push(tempFile);
+
     if (filePath) {
         args.push('-I', path.dirname(filePath));
     }
