@@ -20,7 +20,11 @@ window.registerCppIntellisense = function (monaco) {
             { label: 'vec', doc: 'Vector', text: 'vector<${1:int}> ${2:v};' },
             { label: 'vecn', doc: 'Vector size n', text: 'vector<${1:int}> ${2:v}(${3:n});' },
             { label: 'vecval', doc: 'Vector size n, val', text: 'vector<${1:int}> ${2:v}(${3:n}, ${4:0});' },
-            { label: 'vv', doc: 'Vector 2D', text: 'vector<vector<${1:int}>> ${2:v};' }
+            { label: 'vv', doc: 'Vector 2D', text: 'vector<vector<${1:int}>> ${2:v};' },
+
+            // --- FAST IO & UTILS ---
+            { label: 'ios', doc: 'Fast I/O', text: 'ios_base::sync_with_stdio(false); cin.tie(NULL);' },
+            { label: 'setp', doc: 'Set precision', text: 'cout << fixed << setprecision(${1:number});' }
         ],
         c: [
             { label: 'main', doc: 'Main C', text: 'int main(){\n    ${0}\n    return 0;\n}' },
@@ -88,7 +92,14 @@ window.registerCppIntellisense = function (monaco) {
         '__gcd': { type: 'Func', detail: '__gcd(a, b)', doc: 'Greatest Common Divisor.' },
         'min': { type: 'Func', detail: 'min(a, b)', doc: 'Return smaller value.' },
         'max': { type: 'Func', detail: 'max(a, b)', doc: 'Return larger value.' },
-        'swap': { type: 'Func', detail: 'swap(a, b)', doc: 'Swap two values.' }
+        'swap': { type: 'Func', detail: 'swap(a, b)', doc: 'Swap two values.' },
+
+        // --- String Conversions ---
+        'to_string': { type: 'Func', detail: 'to_string(val)', doc: 'Convert numerical value to string.' },
+        'stoi': { type: 'Func', detail: 'stoi(str)', doc: 'Convert string to integer.' },
+        'stoll': { type: 'Func', detail: 'stoll(str)', doc: 'Convert string to long long.' },
+        'stod': { type: 'Func', detail: 'stod(str)', doc: 'Convert string to double.' },
+        'itoa': { type: 'Func', detail: 'itoa(val, buffer, radix)', doc: 'Convert integer to string (Non-standard).' }
     };
 
     const STL_KEYWORDS = Object.keys(STL_DOCS);
@@ -164,7 +175,15 @@ window.registerCppIntellisense = function (monaco) {
             }
         }
 
-        ['int', 'long', 'void', 'char', 'bool', 'return', 'break', 'continue', 'struct', 'const'].forEach(k => {
+        const cppKeywords = [
+            'int', 'long', 'void', 'char', 'bool', 'return', 'break', 'continue', 'struct', 'const',
+            'auto', 'double', 'float', 'unsigned', 'class', 'namespace', 'using', 'template',
+            'typename', 'constexpr', 'inline', 'static', 'virtual', 'override', 'final',
+            'public', 'private', 'protected', 'switch', 'case', 'default', 'try', 'catch',
+            'throw', 'new', 'delete', 'sizeof', 'typedef', 'enum', 'union', 'extern'
+        ];
+
+        cppKeywords.forEach(k => {
             suggestions.push({ label: k, kind: monaco.languages.CompletionItemKind.Keyword, insertText: k, range: range });
         });
 
