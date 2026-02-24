@@ -17,13 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **[[BUG] Menu shortcut label does not update after customization (Fixes #24)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/24)**: Menu shortcut labels now refresh after customization.
 - **Monaco color scheme**: Adjusted Monaco editor color palette for better consistency.
 
-## [1.0.3] - 2026-02-04
+## [1.0.3] - 2026-02-23
 
 ### Added
-- **Custom Confirm Dialog**: Replaced native browser confirm dialogs with custom, theme-aware confirmation modals for better UX and keyboard navigation support.
+- **Custom Confirm Popup**: Replaced native browser `confirm()` dialogs with custom, theme-aware confirmation modals with smooth animation and backdrop blur.
+- **Delete All Test Cases**: Added "Delete All" button in TESTS panel header to quickly remove all test cases at once.
+- **Per-Test Delete Button**: Each test case now shows a delete button on hover for quick individual removal.
+- **Test Result Diff on Switch**: Selecting a test case after "Run All" now displays the expected vs actual output diff inline.
+- **Auto-Expand TESTS Panel**: Problems panel automatically expands when test cases are present, similar to docked terminal behavior.
 
 ### Fixed
-- **[[BUG] Taskcase result shows "Failed" even when Expected aligns with Input (Fixes #22)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/22)**: Fixed test case comparison logic to correctly validate when expected output matches input.
+- **[[BUG] Testcase result shows "Failed" even when Expected aligns with Input (Fixes #22)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/22)**:
+  - *Case 2*: Fixed Permission Denied error when closing tab (Ctrl+W) while a program is running — process is now stopped before closing.
+  - *Case 3*: Synced disable state between main terminal input and docked terminal input to prevent ambiguous input sources.
+  - *Case 4*: Fixed keyboard input freeze after deleting all test cases — editor focus is now restored properly.
 - **[[BUG] Unsaved changes indicator (dot) appears on unchanged files (Fixes #21)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/21)**: Corrected file change detection to prevent false-positive unsaved indicators.
 - **[[BUG] Expected output panel incorrectly displays input data (Fixes #20)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/20)**: Fixed panel data binding to properly show expected output instead of input.
 - **[[BUG] Remaining Vietnamese Strings (Fixes #19)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/19)**: Completed localization by translating remaining Vietnamese strings to English.
@@ -32,13 +39,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **[[Editor] Auto-indentation missing after control statements (if/loop) (Fixes #15)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/15)**: Fixed automatic indentation after control structures.
 - **Native Confirm Dialog Blocking Input**: Fixed issue where native confirm dialogs would block all input until window regain focus via alt-tab.
 - **Auto-Update Stuck at 100%**: Fixed issue where auto-update would get stuck at 100% download progress for unsigned builds due to signature verification error.
-- **UI Fixes**: Resolved various UI-related issues for better visual consistency and user experience.
+- **Panel Gap After Undocking**: Fixed empty space appearing in TESTS panel after undocking terminal or I/O.
 
 ### Improved
 - **Lazy Loading Optimization**: Implemented lazy loading for Monaco Editor to prevent initialization conflicts and reduce startup time.
 - **Input/Output Color Scheme**: Enhanced color differentiation between input and output panels for better readability.
 - **Terminal Buffer Optimization**: Improved buffer management and input handling performance for faster and more responsive text input.
-- **Confirm Dialog UX**: All confirmation dialogs now use clearer button labels and support keyboard shortcuts (Enter/Escape).
+- **Confirm Dialog UX**: All confirmation dialogs now use theme-aware styling with CSS variables, ensuring proper contrast across all themes (including Sakura).
+- **Sakura Theme Test Results**: Improved text contrast for test result status, summary stats, and action buttons on light backgrounds.
 - **Performance Enhancements**: General performance optimizations for smoother operation.
 
 ## [1.0.2] - 2026-01-31
