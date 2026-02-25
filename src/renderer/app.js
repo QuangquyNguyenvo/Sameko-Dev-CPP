@@ -2767,18 +2767,22 @@ function updateUI() {
     document.getElementById('welcome').style.display = hasTabs ? 'none' : 'flex';
     document.getElementById('editor-section').style.display = hasTabs ? 'flex' : 'none';
 
+    // Force hide panels if the welcome screen is open (no tabs)
+    const showIO = hasTabs && App.showIO;
+    const showTerm = hasTabs && App.showTerm;
+    const showProblems = hasTabs && App.showProblems;
 
-    document.getElementById('io-section').classList.toggle('panel-hidden', !App.showIO);
-    document.getElementById('resizer-io').classList.toggle('panel-hidden', !App.showIO);
-    document.getElementById('btn-toggle-io').classList.toggle('active', App.showIO);
+    document.getElementById('io-section').classList.toggle('panel-hidden', !showIO);
+    document.getElementById('resizer-io').classList.toggle('panel-hidden', !showIO);
+    document.getElementById('btn-toggle-io').classList.toggle('active', showIO);
 
-    document.getElementById('terminal-section').classList.toggle('panel-hidden', !App.showTerm);
-    document.getElementById('resizer-term').classList.toggle('panel-hidden', !App.showTerm);
-    document.getElementById('btn-toggle-term').classList.toggle('active', App.showTerm);
+    document.getElementById('terminal-section').classList.toggle('panel-hidden', !showTerm);
+    document.getElementById('resizer-term').classList.toggle('panel-hidden', !showTerm);
+    document.getElementById('btn-toggle-term').classList.toggle('active', showTerm);
 
-    document.getElementById('problems-panel').classList.toggle('hidden', !App.showProblems);
-    document.getElementById('resizer-problems').classList.toggle('panel-hidden', !App.showProblems);
-    document.getElementById('btn-toggle-problems').classList.toggle('active', App.showProblems);
+    document.getElementById('problems-panel').classList.toggle('hidden', !showProblems);
+    document.getElementById('resizer-problems').classList.toggle('panel-hidden', !showProblems);
+    document.getElementById('btn-toggle-problems').classList.toggle('active', showProblems);
 }
 
 // ============================================================================
