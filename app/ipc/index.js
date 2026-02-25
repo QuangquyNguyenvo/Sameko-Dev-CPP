@@ -9,6 +9,7 @@ const formatHandlers = require('./format-handlers');
 const competitiveHandlers = require('./competitive-handlers');
 const updateHandlers = require('./update-handlers');
 const historyHandlers = require('./history-handlers');
+const discordHandlers = require('./discord-handlers');
 
 function registerAllHandlers(mainWindow) {
     fileHandlers.setMainWindow(mainWindow);
@@ -25,6 +26,8 @@ function registerAllHandlers(mainWindow) {
     competitiveHandlers.registerHandlers();
     updateHandlers();
     historyHandlers.registerHistoryHandlers();
+    discordHandlers.registerHandlers();
 }
 
 module.exports = registerAllHandlers;
+

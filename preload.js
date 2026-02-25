@@ -108,6 +108,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getHistoryContent: (backupPath) => ipcRenderer.invoke('get-history-content', backupPath),
     clearFileHistory: (filePath) => ipcRenderer.invoke('clear-file-history', filePath),
 
+    // Discord Rich Presence
+    discordUpdatePresence: (data) => ipcRenderer.invoke('discord-update-presence', data),
+    discordClearPresence: () => ipcRenderer.invoke('discord-clear-presence'),
+    discordGetStatus: () => ipcRenderer.invoke('discord-get-status'),
+
     // System info
     getSystemVersions: () => process.versions
 });

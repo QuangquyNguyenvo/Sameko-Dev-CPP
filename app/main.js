@@ -6,6 +6,7 @@ const { app } = require('electron');
 const { initializeApp, setupAppEvents } = require('./core/app-lifecycle');
 const { createMainWindow } = require('./windows/main-window');
 const autoUpdateService = require('./services/auto-update-service');
+const discordRPC = require('./services/discord-rpc-service');
 const registerLegacyHandlers = require('./ipc');
 
 if (process.platform === 'win32') {
@@ -28,7 +29,12 @@ app.whenReady().then(async () => {
     const mainWindow = createMainWindow();
     registerLegacyHandlers(mainWindow);
     autoUpdateService.initialize(mainWindow);
+    discordRPC.connect();
     console.log('[App] Sameko Dev C++ is ready!');
+});
+
+app.on('before-quit', () => {
+    discordRPC.destroy();
 });
 
 process.on('uncaughtException', (error) => {

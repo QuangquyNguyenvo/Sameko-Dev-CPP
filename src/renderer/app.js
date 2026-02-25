@@ -3732,6 +3732,20 @@ function setupResizerH(resizerId, targetId, min, max) {
 }
 
 // ============================================================================
+// DISCORD RICH PRESENCE
+// ============================================================================
+function updateDiscordPresence(tab) {
+    if (!window.electronAPI?.discordUpdatePresence) return;
+    const fileName = tab?.name || null;
+    let workspaceName = null;
+    if (tab?.path) {
+        const parts = tab.path.replace(/\\\\/g, '/').split('/');
+        if (parts.length >= 2) workspaceName = parts[parts.length - 2];
+    }
+    window.electronAPI.discordUpdatePresence({ fileName, workspaceName }).catch(() => { });
+}
+
+// ============================================================================
 // TABS
 // ============================================================================
 function newFile() {
@@ -3762,6 +3776,7 @@ function setActive(id) {
     }
     clearErrorDecorations();
     renderTabs();
+    updateDiscordPresence(tab);
 }
 
 async function closeTab(id) {
@@ -3801,7 +3816,11 @@ async function closeTab(id) {
 
     if (App.activeTabId === id) {
         if (App.tabs.length) setActive(App.tabs[Math.min(idx, App.tabs.length - 1)].id);
-        else { App.activeTabId = null; if (App.editor) App.editor.setValue(''); }
+        else {
+            App.activeTabId = null;
+            if (App.editor) App.editor.setValue('');
+            updateDiscordPresence(null);
+        }
     }
     renderTabs();
     updateUI();
