@@ -3040,7 +3040,7 @@ const ThemeCustomizer = {
             if (valEl) valEl.textContent = val + suffix;
             if (!this.workingTheme.colors) this.workingTheme.colors = {};
             this.workingTheme.colors[key] = val;
-            
+
             // For brightness and blur sliders, we need to re-render the preview
             // to update the inline filter styles on the video elements
             if (key.includes('Brightness') || key.includes('Blur')) {
@@ -4343,12 +4343,17 @@ const ThemeCustomizer = {
             if (typeof App !== 'undefined') {
                 App.settings.appearance.theme = id;
                 if (typeof saveSettings === 'function') {
-                    // Await for settings to save
-                    saveSettings().then(() => {
-                        console.log('[Customizer] Settings saved successfully');
-                    }).catch((err) => {
-                        console.error('[Customizer] Failed to save settings:', err);
-                    });
+                    // Await for settings to save safely
+                    try {
+                        const savePromise = saveSettings();
+                        Promise.resolve(savePromise).then(() => {
+                            console.log('[Customizer] Settings saved successfully');
+                        }).catch((err) => {
+                            console.error('[Customizer] Failed to save settings:', err);
+                        });
+                    } catch (e) {
+                        console.error('[Customizer] Exception while saving settings:', e);
+                    }
                 }
             }
 
@@ -4415,12 +4420,17 @@ const ThemeCustomizer = {
             if (typeof App !== 'undefined') {
                 App.settings.appearance.theme = this.sourceThemeId;
                 if (typeof saveSettings === 'function') {
-                    // Await for settings to save before closing
-                    saveSettings().then(() => {
-                        console.log('[Customizer] Settings saved successfully');
-                    }).catch((err) => {
-                        console.error('[Customizer] Failed to save settings:', err);
-                    });
+                    // Await for settings to save before closing safely
+                    try {
+                        const savePromise = saveSettings();
+                        Promise.resolve(savePromise).then(() => {
+                            console.log('[Customizer] Settings saved successfully');
+                        }).catch((err) => {
+                            console.error('[Customizer] Failed to save settings:', err);
+                        });
+                    } catch (e) {
+                        console.error('[Customizer] Exception while saving settings:', e);
+                    }
                 }
             }
 
