@@ -1,5 +1,5 @@
 ﻿/**
- * Theme Customizer v6.1
+ * Theme Customizer v6.2
  * Click-to-edit live preview with background support
  * 
  * Features:
@@ -10,17 +10,6 @@
  * 
  * @author Sameko Team
  */
-
-// Normalize a color to an opaque RGBA value (forces alpha to 1 if rgb/rgba)
-const makeOpaque = (color) => {
-    if (!color) return color;
-    const match = color.match(/rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)(?:\s*,\s*([\d.]+))?\s*\)/i);
-    if (match) {
-        const [, r, g, b] = match;
-        return `rgba(${r}, ${g}, ${b}, 1)`;
-    }
-    return color;
-};
 
 const ThemeCustomizer = {
     sourceThemeId: null,
@@ -58,25 +47,7 @@ const ThemeCustomizer = {
         if (!this.workingTheme.colors) this.workingTheme.colors = {};
         if (!this.workingTheme.editor) this.workingTheme.editor = { syntax: {} };
 
-        const c = this.workingTheme.colors;
-        if (c.bgOpacity === undefined) c.bgOpacity = 100;
-        if (c.bgBrightness === undefined) c.bgBrightness = 100;
-        if (c.bgBlur === undefined) c.bgBlur = 0;
-        if (c.editorBgOpacity === undefined) c.editorBgOpacity = 100;
-        if (c.editorBgBrightness === undefined) c.editorBgBrightness = 100;
-        if (c.editorBgBlur === undefined) c.editorBgBlur = 0;
-        if (c.welcomeBoxOpacity === undefined) c.welcomeBoxOpacity = 0.4;
-        if (c.welcomeBtnBorder === undefined) c.welcomeBtnBorder = c.borderStrong || c.border || '#88c9ea';
-        if (c.welcomeBtnPrimaryBorder === undefined) c.welcomeBtnPrimaryBorder = c.accent || '#88c9ea';
-
-        if (c.btnBg === undefined) c.btnBg = c.bgButton || '#ffffff';
-        if (c.btnBgHover === undefined) c.btnBgHover = c.bgButtonHover || c.bgOceanLight || '#e8f4fc';
-        if (c.btnBorder === undefined) c.btnBorder = c.border || '#a0c8e0';
-        if (c.btnText === undefined) c.btnText = c.textSecondary || '#4a6a7a';
-        if (c.btnTextHover === undefined) c.btnTextHover = c.accent || '#4a9bc9';
-        if (c.btnPrimaryBg === undefined) c.btnPrimaryBg = c.accent || c.bgOceanDeep || '#4a9bc9';
-        if (c.btnPrimaryBgHover === undefined) c.btnPrimaryBgHover = c.accentHover || c.bgOceanMedium || '#3a8ab8';
-        if (c.btnPrimaryText === undefined) c.btnPrimaryText = c.buttonTextOnAccent || '#ffffff';
+        this._fillAllDefaults(this.workingTheme.colors);
 
         if (ThemeManager.builtinThemeIds?.includes(themeId)) {
             const storageKey = `theme-bg-${themeId}`;
@@ -98,15 +69,7 @@ const ThemeCustomizer = {
         this.historyIndex = 0;
 
         const root = document.documentElement;
-        this._savedAppBgOpacity = root.style.getPropertyValue('--app-bg-opacity');
-        this._savedEditorBgOpacity = root.style.getPropertyValue('--editor-bg-opacity');
-        this._savedAppBgImage = root.style.getPropertyValue('--app-bg-image');
-        this._savedEditorBgImage = root.style.getPropertyValue('--editor-bg-image');
-        this._savedAppBgBrightness = root.style.getPropertyValue('--app-bg-brightness');
-        this._savedEditorBgBrightness = root.style.getPropertyValue('--editor-bg-brightness');
-        this._savedAppBgBlur = root.style.getPropertyValue('--app-bg-blur');
-        this._savedEditorBgBlur = root.style.getPropertyValue('--editor-bg-blur');
-
+        // Hide app background during customizer (restored via ThemeManager.setTheme on close)
         root.style.setProperty('--app-bg-opacity', '0');
         root.style.setProperty('--editor-bg-opacity', '0');
         root.style.setProperty('--app-bg-image', 'none');
@@ -161,120 +124,98 @@ const ThemeCustomizer = {
             this._renderTimeout = null;
         }
 
-        const root = document.documentElement;
-        const activeTheme = ThemeManager.themes.get(ThemeManager.activeThemeId);
-
-        if (this._savedAppBgOpacity) {
-            root.style.setProperty('--app-bg-opacity', this._savedAppBgOpacity);
-        } else if (activeTheme?.colors?.bgOpacity !== undefined) {
-            root.style.setProperty('--app-bg-opacity', (activeTheme.colors.bgOpacity / 100).toString());
-        } else {
-            root.style.removeProperty('--app-bg-opacity');
-        }
-
-        if (this._savedEditorBgOpacity) {
-            root.style.setProperty('--editor-bg-opacity', this._savedEditorBgOpacity);
-        } else if (activeTheme?.colors?.editorBgOpacity !== undefined) {
-            root.style.setProperty('--editor-bg-opacity', (activeTheme.colors.editorBgOpacity / 100).toString());
-        } else {
-            root.style.removeProperty('--editor-bg-opacity');
-        }
-
-        if (this._savedAppBgBrightness) {
-            root.style.setProperty('--app-bg-brightness', this._savedAppBgBrightness);
-        } else if (activeTheme?.colors?.bgBrightness !== undefined) {
-            root.style.setProperty('--app-bg-brightness', (activeTheme.colors.bgBrightness / 100).toString());
-        } else {
-            root.style.removeProperty('--app-bg-brightness');
-        }
-
-        if (this._savedEditorBgBrightness) {
-            root.style.setProperty('--editor-bg-brightness', this._savedEditorBgBrightness);
-        } else if (activeTheme?.colors?.editorBgBrightness !== undefined) {
-            root.style.setProperty('--editor-bg-brightness', (activeTheme.colors.editorBgBrightness / 100).toString());
-        } else {
-            root.style.removeProperty('--editor-bg-brightness');
-        }
-
-        if (this._savedAppBgBlur) {
-            root.style.setProperty('--app-bg-blur', this._savedAppBgBlur);
-        } else if (activeTheme?.colors?.bgBlur !== undefined) {
-            root.style.setProperty('--app-bg-blur', activeTheme.colors.bgBlur + 'px');
-        } else {
-            root.style.removeProperty('--app-bg-blur');
-        }
-
-        if (this._savedEditorBgBlur) {
-            root.style.setProperty('--editor-bg-blur', this._savedEditorBgBlur);
-        } else if (activeTheme?.colors?.editorBgBlur !== undefined) {
-            root.style.setProperty('--editor-bg-blur', activeTheme.colors.editorBgBlur + 'px');
-        } else {
-            root.style.removeProperty('--editor-bg-blur');
-        }
-
-        if (this._savedAppBgImage) {
-            root.style.setProperty('--app-bg-image', this._savedAppBgImage);
-        } else if (activeTheme?.colors?.appBackground) {
-            const bgUrl = activeTheme.colors.appBackground.startsWith('data:')
-                ? `url("${activeTheme.colors.appBackground}")`
-                : `url('${activeTheme.colors.appBackground.replace(/'/g, "\\'")}')`;
-            root.style.setProperty('--app-bg-image', bgUrl);
-        } else {
-            root.style.removeProperty('--app-bg-image');
-        }
-
-        if (this._savedEditorBgImage) {
-            root.style.setProperty('--editor-bg-image', this._savedEditorBgImage);
-        } else if (activeTheme?.colors?.editorBackground) {
-            const bgUrl = activeTheme.colors.editorBackground.startsWith('data:')
-                ? `url("${activeTheme.colors.editorBackground}")`
-                : `url('${activeTheme.colors.editorBackground.replace(/'/g, "\\'")}')`;
-            root.style.setProperty('--editor-bg-image', bgUrl);
-        } else {
-            root.style.removeProperty('--editor-bg-image');
-        }
-
-        if (activeTheme && typeof ThemeTokens !== 'undefined') {
-            ThemeTokens.applyToElement(root, activeTheme.colors || {}, { clearFirst: false });
-        }
-
-        this._savedAppBgOpacity = null;
-        this._savedEditorBgOpacity = null;
-        this._savedAppBgImage = null;
-        this._savedEditorBgImage = null;
-        this._savedAppBgBrightness = null;
-        this._savedEditorBgBrightness = null;
-        this._savedAppBgBlur = null;
-        this._savedEditorBgBlur = null;
-
         document.body.classList.remove('customizer-open');
+
+        // Restore original theme cleanly — re-applies all CSS variables, bg video, Monaco theme
+        if (ThemeManager.activeThemeId) {
+            ThemeManager.setTheme(ThemeManager.activeThemeId);
+        }
 
         this.workingTheme = null;
         this.sourceThemeId = null;
     },
 
     /**
-     * Migrate old theme format to new format with variant keys
-     * Old format: only base keys (bgHeader, bgPanel)
-     * New format: variant keys (bgHeader-main, bgPanel-input, etc.)
-     * 
-     * This ensures backward compatibility when loading themes created
-     * before the variant key system was introduced.
-     * 
+     * Fill all missing token defaults for a colors object.
+     * Called once when opening the customizer so every token has a usable value.
+     * Derives missing values from related keys where possible.
+     * @param {Object} c - theme.colors (mutated in place)
+     */
+    _fillAllDefaults(c) {
+        // Helper: set key from first truthy fallback (string = key ref, other = literal)
+        const d = (key, ...fallbacks) => {
+            if (c[key] !== undefined && c[key] !== null) return;
+            for (const f of fallbacks) {
+                if (typeof f === 'string') {
+                    if (c[f] !== undefined && c[f] !== null) { c[key] = c[f]; return; }
+                } else {
+                    c[key] = f; return;
+                }
+            }
+        };
+
+        // Numeric / effect defaults
+        d('bgOpacity',           100);
+        d('bgBrightness',        100);
+        d('bgBlur',              0);
+        d('editorBgOpacity',     100);
+        d('editorBgBrightness',  100);
+        d('editorBgBlur',        0);
+        d('welcomeBoxOpacity',   0.4);
+
+        // Derived color defaults — order matters (dependents after their sources)
+        d('accentHover',             'accent', '#5eb7e0');
+        d('borderStrong',            'accent', '#88c9ea');
+        d('bgGlassBorder',           'border', 'borderStrong', '#3a6075');
+        d('bgBase',                  'bgOceanDark', 'editorBg', '#0d1a25');
+        d('bgSurface',               'bgOceanLight', 'bgPanel', '#1a3a50');
+        d('buttonTextOnAccent',      '#ffffff');
+        d('settingsLabelColor',      'textSecondary', 'textPrimary', '#a0c0d0');
+        d('settingsSectionColor',    'accent', '#88c9ea');
+        d('bgButton',                'bgOceanLight', '#243040');
+        d('bgButtonHover',           'bgOceanMedium', '#3a5060');
+
+        // Button tokens
+        d('btnBg',                   'bgButton',      'rgba(255, 255, 255, 0.1)');
+        d('btnBgHover',              'bgButtonHover', 'bgOceanLight', 'rgba(255, 255, 255, 0.15)');
+        d('btnBorder',               'border',        '#a0c8e0');
+        d('btnText',                 'textPrimary',   'textSecondary', '#e0f0ff');
+        d('btnTextHover',            'accent',        '#88c9ea');
+        d('btnPrimaryBg',            'accent',        'bgOceanDeep', '#4a9bc9');
+        d('btnPrimaryBgHover',       'accentHover',   'bgOceanMedium', '#3a8ab8');
+        d('btnPrimaryText',          'buttonTextOnAccent', '#ffffff');
+        d('btnSuccessBg',            'success',       '#50fa7b');
+        d('btnSuccessText',          'buttonTextOnAccent', '#ffffff');
+        d('btnErrorBg',              'error',         '#ff5555');
+        d('btnErrorText',            'buttonTextOnAccent', '#ffffff');
+
+        // Welcome box tokens
+        d('welcomeBoxBg',            'bgGlass', 'bgPanel', 'rgba(37, 64, 90, 0.4)');
+        d('welcomeBtnBorder',        'borderStrong', 'border', '#88c9ea');
+        d('welcomeBtnPrimaryBorder', 'accent', '#88c9ea');
+    },
+
+    /**
+     * Migrate old theme format to new format with variant keys.
+     * Handles both built-in key variants and legacy single-key themes.
+     * Uses ThemeTokens.toOpaque for statusbar solid color derivation.
      * @param {object} theme - Theme object to migrate (mutated in place)
      */
     _migrateThemeFormat(theme) {
         if (!theme || !theme.colors) return;
 
         const colors = theme.colors;
+        const toOpaque = ThemeTokens?.toOpaque;
 
+        // bgHeader variants
         if (!colors['bgHeader-main'] && colors.bgHeader) {
             colors['bgHeader-main'] = colors.bgHeader;
         }
         if (!colors['bgHeader-statusbar'] && colors.bgHeader) {
-            colors['bgHeader-statusbar'] = makeOpaque(colors.bgHeader);
+            colors['bgHeader-statusbar'] = toOpaque ? toOpaque(colors.bgHeader) : colors.bgHeader;
         }
 
+        // bgPanel variants
         if (!colors['bgPanel-problems'] && colors.bgPanel) {
             colors['bgPanel-problems'] = colors.bgPanel;
         }
@@ -3011,7 +2952,20 @@ const ThemeCustomizer = {
             this._renderPreview();
         };
 
-        colorInput.addEventListener('input', (e) => updateGroupColor(e.target.value));
+        // input = live drag → fast path: update CSS vars only, no DOM rebuild
+        colorInput.addEventListener('input', (e) => {
+            const newColor = e.target.value;
+            swatch.style.background = newColor;
+            hexInput.value = newColor.toUpperCase();
+            targetEl.style.background = newColor;
+            const derivedColors = window.ColorRegistry?.deriveGroupColors?.(groupId, newColor) || {};
+            for (const [key, value] of Object.entries(derivedColors)) {
+                this._setColor(key, value);
+            }
+            this._injectAllPreviewVariables();
+        });
+        // change = mouse-up → full render for final state
+        colorInput.addEventListener('change', (e) => updateGroupColor(e.target.value));
 
         hexInput.addEventListener('input', (e) => {
             const val = e.target.value.replace(/[^0-9A-Fa-f#]/g, '');
@@ -3041,17 +2995,8 @@ const ThemeCustomizer = {
             if (!this.workingTheme.colors) this.workingTheme.colors = {};
             this.workingTheme.colors[key] = val;
 
-            // For brightness and blur sliders, we need to re-render the preview
-            // to update the inline filter styles on the video elements
-            if (key.includes('Brightness') || key.includes('Blur')) {
-                this._renderPreview();
-                // Then update the actual DOM elements after rendering
-                requestAnimationFrame(() => {
-                    this._updateBgStyles();
-                });
-            } else {
-                this._updateBgStyles();
-            }
+            // _updateBgStyles handles filter/opacity/blur updates for both image and video elements
+            this._updateBgStyles();
         });
     },
 
@@ -3417,6 +3362,20 @@ const ThemeCustomizer = {
             // Extend inset to prevent blur edge artifacts
             editorBgEl.style.inset = blur > 0 ? `-${blur}px` : '0';
         }
+    },
+
+    /**
+     * Schedule a preview render, coalescing multiple calls into one RAF frame.
+     * Safe to call many times — only one render will execute per animation frame.
+     */
+    _scheduleRender() {
+        if (this._renderTimeout) return; // already queued, skip
+        this._renderTimeout = requestAnimationFrame(() => {
+            this._renderTimeout = null;
+            if (this.popup) {
+                this._renderPreview();
+            }
+        });
     },
 
     /**
@@ -4761,7 +4720,7 @@ const ThemeCustomizer = {
         if (c[key]) return c[key];
 
         if (key === 'bgHeader-statusbar' && c.bgHeader) {
-            return makeOpaque(c.bgHeader);
+            return ThemeTokens.toOpaque(c.bgHeader);
         }
 
         // Normalize unique keys to base keys
@@ -4815,7 +4774,7 @@ const ThemeCustomizer = {
             this.workingTheme.colors[key] = value;
             if (key === 'bgHeader') {
                 this.workingTheme.colors['bgHeader-main'] = value;
-                this.workingTheme.colors['bgHeader-statusbar'] = makeOpaque(value);
+                this.workingTheme.colors['bgHeader-statusbar'] = ThemeTokens.toOpaque(value);
             }
             if (key === 'bgPanel') {
                 this.workingTheme.colors['bgPanel-problems'] = value;
@@ -4980,7 +4939,7 @@ const ThemeCustomizer = {
         };
 
         applyInheritance('bgHeader-main', 'bgHeader', '--bg-header-main');
-        applyInheritance('bgHeader-statusbar', 'bgHeader', '--bg-header-statusbar', makeOpaque);
+        applyInheritance('bgHeader-statusbar', 'bgHeader', '--bg-header-statusbar', ThemeTokens.toOpaque);
         applyInheritance('bgPanel-problems', 'bgPanel', '--bg-panel-problems');
         applyInheritance('bgPanel-input', 'bgPanel', '--bg-panel-input');
         applyInheritance('bgPanel-expected', 'bgPanel', '--bg-panel-expected');

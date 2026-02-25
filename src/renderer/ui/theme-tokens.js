@@ -298,7 +298,15 @@ const ThemeTokens = {
                 element.style.setProperty(`--syntax-${name}`, hexColor);
             }
         }
-    }
+    },
+
+    /**
+     * Exposed version of toOpaque for external callers (ThemeCustomizer etc.)
+     * Forces alpha channel to 1 on any rgb/rgba color string.
+     * @param {string} color
+     * @returns {string}
+     */
+    toOpaque
 };
 
 // Freeze for immutability
