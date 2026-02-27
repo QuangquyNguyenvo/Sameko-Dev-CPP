@@ -33,8 +33,13 @@ app.whenReady().then(async () => {
     console.log('[App] Sameko Dev C++ is ready!');
 });
 
-app.on('before-quit', () => {
-    discordRPC.destroy();
+app.on('will-quit', (event) => {
+    // Prevent quit until Discord presence is cleared, then re-quit
+    if (!discordRPC.isRpcConnected()) return; // nothing to clear, let quit proceed
+    event.preventDefault();
+    discordRPC.destroy().finally(() => {
+        app.quit();
+    });
 });
 
 process.on('uncaughtException', (error) => {

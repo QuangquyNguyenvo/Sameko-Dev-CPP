@@ -92,7 +92,10 @@ int main() {
     },
     snippets: [
         { trigger: 'hello', name: 'Hello World', content: '#include <iostream>\nusing namespace std;\n\nint main() {\n\tcout << "Hello World!";\n\treturn 0;\n}', isBuiltin: true },
-    ]
+    ],
+    discord: {
+        enabled: true
+    }
 };
 
 // ============================================================================
@@ -494,6 +497,7 @@ function createEditor(containerId) {
 
     editor.onDidChangeCursorPosition(e => {
         document.getElementById('cursor-pos').textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+        scheduleDiscordCursorUpdate(e.position.lineNumber, e.position.column);
     });
 
     editor.onDidChangeModelContent(() => {
@@ -1075,7 +1079,8 @@ function loadSettings() {
                 template: { ...DEFAULT_SETTINGS.template, ...saved.template },
                 keybindings: { ...DEFAULT_SETTINGS.keybindings, ...saved.keybindings },
                 snippets: saved.snippets || DEFAULT_SETTINGS.snippets,
-                localHistory: { ...DEFAULT_SETTINGS.localHistory, ...saved.localHistory }
+                localHistory: { ...DEFAULT_SETTINGS.localHistory, ...saved.localHistory },
+                discord: { ...DEFAULT_SETTINGS.discord, ...saved.discord }
             };
         }
 
@@ -1916,6 +1921,13 @@ function openSettings() {
 
     renderKeybindings();
 
+    // Discord settings
+    const discordEnabledEl = document.getElementById('set-discordEnabled');
+    if (discordEnabledEl) {
+        discordEnabledEl.checked = App.settings.discord?.enabled !== false;
+        updateDiscordPreview();
+    }
+
     // Update theme preview to match current theme
     updateThemePreview();
 
@@ -2007,6 +2019,23 @@ function saveSettingsAndClose() {
 
     if (!App.settings.template) App.settings.template = {};
     App.settings.template.code = document.getElementById('set-template').value;
+
+    // Discord RPC toggle
+    const discordEnabledEl = document.getElementById('set-discordEnabled');
+    if (discordEnabledEl) {
+        const newEnabled = discordEnabledEl.checked;
+        const wasEnabled = App.settings.discord?.enabled !== false;
+        if (!App.settings.discord) App.settings.discord = {};
+        App.settings.discord.enabled = newEnabled;
+        if (newEnabled !== wasEnabled) {
+            _discordAppliedEnabled = newEnabled; // keep guard in sync
+            if (newEnabled) {
+                window.electronAPI?.discordEnable?.();
+            } else {
+                window.electronAPI?.discordDisable?.();
+            }
+        }
+    }
 
     applySettings();
     saveSettings();
@@ -2408,6 +2437,26 @@ function applySettings() {
 
 
     applyTheme(App.settings.appearance.theme);
+
+    // Apply Discord RPC enabled/disabled state
+    applyDiscordSetting();
+}
+
+/**
+ * Enable or disable Discord RPC based on the current settings value.
+ * Safe to call multiple times — it compares against the previously applied state.
+ */
+let _discordAppliedEnabled = true; // matches the service default (enabled at startup)
+
+function applyDiscordSetting() {
+    const shouldBeEnabled = App.settings?.discord?.enabled !== false;
+    if (shouldBeEnabled === _discordAppliedEnabled) return; // no change
+    _discordAppliedEnabled = shouldBeEnabled;
+    if (shouldBeEnabled) {
+        window.electronAPI?.discordEnable?.();
+    } else {
+        window.electronAPI?.discordDisable?.();
+    }
 }
 
 // ============================================================================
@@ -3734,15 +3783,62 @@ function setupResizerH(resizerId, targetId, min, max) {
 // ============================================================================
 // DISCORD RICH PRESENCE
 // ============================================================================
-function updateDiscordPresence(tab) {
+
+let _discordCursorTimer = null;
+let _discordLastPos = { line: 1, col: 1 };
+
+function updateDiscordPresence(tab, line, col) {
+    // Respect the enabled setting
+    if (App.settings?.discord?.enabled === false) return;
     if (!window.electronAPI?.discordUpdatePresence) return;
+
     const fileName = tab?.name || null;
     let workspaceName = null;
     if (tab?.path) {
-        const parts = tab.path.replace(/\\\\/g, '/').split('/');
+        const parts = tab.path.replace(/\\/g, '/').split('/');
         if (parts.length >= 2) workspaceName = parts[parts.length - 2];
     }
-    window.electronAPI.discordUpdatePresence({ fileName, workspaceName }).catch(() => { });
+
+    const ln = line || _discordLastPos.line;
+    const cl = col || _discordLastPos.col;
+
+    window.electronAPI.discordUpdatePresence({ fileName, workspaceName, line: ln, col: cl }).catch(() => { });
+}
+
+/**
+ * Called on cursor move — throttled to avoid spamming the RPC socket
+ */
+function scheduleDiscordCursorUpdate(line, col) {
+    if (App.settings?.discord?.enabled === false) return;
+    _discordLastPos = { line, col };
+    if (_discordCursorTimer) return; // already scheduled
+    _discordCursorTimer = setTimeout(() => {
+        _discordCursorTimer = null;
+        const activeTab = App.tabs.find(t => t.id === App.activeTabId) || null;
+        updateDiscordPresence(activeTab, _discordLastPos.line, _discordLastPos.col);
+    }, 5000); // update presence every 5 s at most on cursor movement
+}
+
+/**
+ * Update the Discord preview card inside settings panel
+ */
+function updateDiscordPreview() {
+    const detailsEl = document.getElementById('discord-preview-details');
+    const stateEl = document.getElementById('discord-preview-state');
+    if (!detailsEl || !stateEl) return;
+    const activeTab = App.tabs.find(t => t.id === App.activeTabId);
+    if (activeTab?.name) {
+        detailsEl.textContent = `Working on ${activeTab.name}`;
+        const folder = activeTab.path
+            ? activeTab.path.replace(/\\/g, '/').split('/').slice(-2, -1)[0]
+            : null;
+        stateEl.textContent = folder
+            ? `In ${folder} \u2014 Ln ${_discordLastPos.line}, Col ${_discordLastPos.col}`
+            : `Sameko Dev C++ \u2014 Ln ${_discordLastPos.line}, Col ${_discordLastPos.col}`;
+    } else {
+        detailsEl.textContent = 'Idle';
+        stateEl.textContent = 'Sameko Dev C++';
+    }
 }
 
 // ============================================================================
@@ -3776,7 +3872,10 @@ function setActive(id) {
     }
     clearErrorDecorations();
     renderTabs();
-    updateDiscordPresence(tab);
+    // Reset cursor tracker so presence shows Ln 1, Col 1 for the new tab
+    _discordLastPos = { line: 1, col: 1 };
+    if (_discordCursorTimer) { clearTimeout(_discordCursorTimer); _discordCursorTimer = null; }
+    updateDiscordPresence(tab, 1, 1);
 }
 
 async function closeTab(id) {

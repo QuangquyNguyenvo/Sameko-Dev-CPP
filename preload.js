@@ -112,6 +112,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     discordUpdatePresence: (data) => ipcRenderer.invoke('discord-update-presence', data),
     discordClearPresence: () => ipcRenderer.invoke('discord-clear-presence'),
     discordGetStatus: () => ipcRenderer.invoke('discord-get-status'),
+    discordEnable: () => ipcRenderer.invoke('discord-enable'),
+    discordDisable: () => ipcRenderer.invoke('discord-disable'),
 
     // System info
     getSystemVersions: () => process.versions
