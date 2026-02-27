@@ -189,6 +189,15 @@ function registerHandlers() {
         }
     });
 
+    ipcMain.handle('delete-folder', async (event, folderPath) => {
+        try {
+            fs.rmSync(folderPath, { recursive: true, force: true });
+            return { success: true };
+        } catch (error) {
+            throw new Error(`Cannot delete folder: ${error.message}`);
+        }
+    });
+
     ipcMain.handle(IPC.FILE.WATCH, async (event, filePath) => {
         watchFile(filePath);
         return { success: true };

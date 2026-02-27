@@ -35,6 +35,10 @@ const FileExplorer = {
     selectedFilePath: null,
     clipboardFile: null, // { path, mode: 'copy' | 'cut' }
 
+    // Chip multi-select (contest mode)
+    selectedChips: new Set(),   // Set of problem IDs
+    lastChipClickIdx: -1,       // For shift-range selection
+
     // ==================== CONTEST MODE STATE ====================
     displayMode: 'normal', // 'normal' | 'contest'
     contestMeta: null,     // Parsed .sameko data for current folder
@@ -967,23 +971,40 @@ const FileExplorer = {
     renderQuickStatusBar() {
         if (!this.contestMeta || !this.contestMeta.problems) return '';
 
-        const chips = this.contestMeta.problems.map(prob => {
+        const chips = this.contestMeta.problems.map((prob, idx) => {
             const statusInfo = this.CP_STATUSES[prob.status] || this.CP_STATUSES.todo;
             const icon = this.STATUS_ICONS[prob.status] || this.STATUS_ICONS.todo;
             const timeStr = this.SessionTimer.getDisplay(prob.id);
-            const tooltip = `${prob.id}${prob.label ? ' · ' + prob.label : ''} · ${statusInfo.label}${timeStr ? ' · ' + timeStr : ''}`;
+            const tooltip = `${prob.id}${prob.label ? ' · ' + prob.label : ''} · ${statusInfo.label}${timeStr ? ' · ' + timeStr : ''}\nCtrl+click to select · Shift+click for range`;
             const isActive = this.isActiveProblem(prob.id);
+            const isSelected = this.selectedChips.has(prob.id);
+            // Show truncated label if set (max ~8 chars)
+            const shortLabel = prob.label ? (prob.label.length > 8 ? prob.label.slice(0, 7) + '…' : prob.label) : '';
 
             return `
-                <div class="cp-problem-chip ${isActive ? 'active' : ''} cp-status-${prob.status || 'todo'}" 
-                     data-problem="${prob.id}" title="${tooltip}">
+                <div class="cp-problem-chip ${isActive ? 'active' : ''} ${isSelected ? 'cp-chip-selected' : ''} cp-status-${prob.status || 'todo'}"
+                     data-problem="${prob.id}" data-chip-idx="${idx}" title="${tooltip}">
                     <span class="cp-chip-label">${prob.id}</span>
+                    ${shortLabel ? `<span class="cp-chip-sublabel">${shortLabel}</span>` : ''}
                     <span class="cp-chip-icon">${icon}</span>
                 </div>
             `;
         }).join('');
 
-        return `<div class="cp-status-bar">${chips}</div>`;
+        const selCount = this.selectedChips.size;
+        const selBar = selCount > 0 ? `
+            <div class="cp-chip-selbar">
+                <span class="cp-chip-selcount">${selCount} selected</span>
+                <button class="cp-chip-del-btn" data-action="delete-selected-problems" title="Delete selected problems">
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                    Delete ${selCount}
+                </button>
+                <button class="cp-chip-clear-btn" data-action="clear-chip-selection" title="Clear selection">
+                    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+            </div>` : '';
+
+        return `<div class="cp-status-bar">${chips}</div>${selBar}`;
     },
 
     /**
@@ -2395,8 +2416,45 @@ const FileExplorer = {
         // Quick Status Bar chips
         const chips = this.elements.tree.querySelectorAll('.cp-problem-chip');
         chips.forEach(chip => {
-            chip.addEventListener('click', () => {
+            chip.addEventListener('click', (e) => {
                 const problemId = chip.dataset.problem;
+                const chipIdx = parseInt(chip.dataset.chipIdx, 10);
+
+                if (e.ctrlKey || e.metaKey) {
+                    // Ctrl+click: toggle this chip's selection
+                    e.preventDefault();
+                    if (this.selectedChips.has(problemId)) {
+                        this.selectedChips.delete(problemId);
+                    } else {
+                        this.selectedChips.add(problemId);
+                        this.lastChipClickIdx = chipIdx;
+                    }
+                    this.renderTree();
+                    return;
+                }
+
+                if (e.shiftKey && this.lastChipClickIdx >= 0) {
+                    // Shift+click: range-select between lastChipClickIdx and current
+                    e.preventDefault();
+                    const probs = this.contestMeta.problems;
+                    const lo = Math.min(this.lastChipClickIdx, chipIdx);
+                    const hi = Math.max(this.lastChipClickIdx, chipIdx);
+                    for (let i = lo; i <= hi; i++) {
+                        this.selectedChips.add(probs[i].id);
+                    }
+                    this.lastChipClickIdx = chipIdx;
+                    this.renderTree();
+                    return;
+                }
+
+                // Plain click: open file (clear selection if any)
+                if (this.selectedChips.size > 0) {
+                    this.selectedChips.clear();
+                    this.renderTree();
+                    return;
+                }
+
+                this.lastChipClickIdx = chipIdx;
                 // Find corresponding tree row and scroll to it
                 const row = this.elements.tree.querySelector(`[data-problem-id="${problemId}"]`);
                 if (row) {
@@ -2404,7 +2462,7 @@ const FileExplorer = {
                     row.classList.add('highlight-flash');
                     setTimeout(() => row.classList.remove('highlight-flash'), 1000);
                 }
-                // Also open the file
+                // Open the file
                 const filePath = `${this.currentFolder}/${problemId}.cpp`.replace(/\\/g, '/');
                 this.openFile(filePath);
                 this.SessionTimer.onFileOpen(problemId);
@@ -2416,6 +2474,20 @@ const FileExplorer = {
                 this.showQuickStatusMenu(e, chip.dataset.problem);
             });
         });
+
+        // Selection bar: delete + clear
+        const delBtn = this.elements.tree.querySelector('[data-action="delete-selected-problems"]');
+        if (delBtn) {
+            delBtn.addEventListener('click', () => this.deleteSelectedProblems());
+        }
+        const clearBtn = this.elements.tree.querySelector('[data-action="clear-chip-selection"]');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', () => {
+                this.selectedChips.clear();
+                this.lastChipClickIdx = -1;
+                this.renderTree();
+            });
+        }
 
         // Contest header actions
         const addProbBtn = this.elements.tree.querySelector('[data-action="add-problem"]');
@@ -2508,6 +2580,11 @@ const FileExplorer = {
                 ${isPinned ? this.ICONS.unpin + ' Unpin' : this.ICONS.pin + ' Pin to Top'}
             </div>
             <div class="context-item" data-action="copy-path">Copy Path</div>
+            <div class="context-separator"></div>
+            <div class="context-item danger" data-action="delete-problem" style="color:#ef5350">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ef5350" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                Delete Problem
+            </div>
         `;
 
         this.positionMenu(menu, e.clientX, e.clientY);
@@ -2575,6 +2652,11 @@ const FileExplorer = {
         menu.querySelector('[data-action="copy-path"]').onclick = () => {
             navigator.clipboard.writeText(filePath);
             menu.remove();
+        };
+
+        menu.querySelector('[data-action="delete-problem"]').onclick = () => {
+            menu.remove();
+            this.deleteProblemFromContest(problemId);
         };
 
         setTimeout(() => {
@@ -2704,6 +2786,11 @@ const FileExplorer = {
             <div class="context-separator"></div>
             <div class="context-item" data-action="reset-all-status">Reset All Status</div>
             <div class="context-item" data-action="remove-contest-marker">Remove Contest Marker</div>
+            <div class="context-separator"></div>
+            <div class="context-item" data-action="delete-contest-folder" style="color:#ef5350">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ef5350" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                Delete Contest Folder
+            </div>
         `;
 
         this.positionMenu(menu, e.clientX, e.clientY);
@@ -2745,6 +2832,11 @@ const FileExplorer = {
             menu.remove();
             localStorage.setItem(`cp-mode:${this.currentFolder}`, 'normal');
             this.refreshTree();
+        };
+
+        menu.querySelector('[data-action="delete-contest-folder"]').onclick = () => {
+            menu.remove();
+            this.deleteContestFolder();
         };
 
         setTimeout(() => {
@@ -2899,6 +2991,80 @@ const FileExplorer = {
     },
 
     /**
+     * Delete a single problem from the contest (.cpp file + remove from .sameko)
+     */
+    async deleteProblemFromContest(problemId) {
+        if (!this.contestMeta) return;
+        const prob = this.getProblemMeta(problemId);
+        const label = prob?.label ? ` "${prob.label}"` : '';
+        if (!confirm(`Delete problem ${problemId}${label} and its .cpp file?`)) return;
+
+        // Remove the .cpp file
+        const filePath = `${this.contestFolder}/${problemId}.cpp`.replace(/\\/g, '/');
+        if (window.electronAPI && window.electronAPI.deleteFile) {
+            try { await window.electronAPI.deleteFile(filePath); } catch (_) {}
+        }
+        // Remove from .sameko
+        this.contestMeta.problems = this.contestMeta.problems.filter(p => p.id !== problemId);
+        this.selectedChips.delete(problemId);
+        await this.saveContestMeta(this.contestFolder, this.contestMeta);
+        this.refreshTree();
+    },
+
+    /**
+     * Delete all currently selected chips (problems)
+     */
+    async deleteSelectedProblems() {
+        if (!this.contestMeta || this.selectedChips.size === 0) return;
+        const ids = [...this.selectedChips];
+        if (!confirm(`Delete ${ids.length} problem(s): ${ids.join(', ')}? This will remove the .cpp files.`)) return;
+
+        for (const problemId of ids) {
+            const filePath = `${this.contestFolder}/${problemId}.cpp`.replace(/\\/g, '/');
+            if (window.electronAPI && window.electronAPI.deleteFile) {
+                try { await window.electronAPI.deleteFile(filePath); } catch (_) {}
+            }
+        }
+        this.contestMeta.problems = this.contestMeta.problems.filter(p => !ids.includes(p.id));
+        this.selectedChips.clear();
+        this.lastChipClickIdx = -1;
+        await this.saveContestMeta(this.contestFolder, this.contestMeta);
+        this.refreshTree();
+    },
+
+    /**
+     * Delete the entire contest folder
+     */
+    async deleteContestFolder() {
+        if (!this.contestFolder) return;
+        const folderName = this.contestFolder.split(/[/\\]/).pop();
+        if (!confirm(`Delete entire contest folder "${folderName}" and ALL its files? This cannot be undone.`)) return;
+
+        if (window.electronAPI && window.electronAPI.deleteFolder) {
+            try {
+                await window.electronAPI.deleteFolder(this.contestFolder);
+            } catch (err) {
+                alert('Failed: ' + err.message);
+                return;
+            }
+        } else if (window.electronAPI && window.electronAPI.showItemInFolder) {
+            // Fallback: open the folder in explorer so user can delete manually
+            await window.electronAPI.showItemInFolder(this.contestFolder);
+            alert('Auto-delete not available. The folder has been revealed in Explorer — please delete it manually.');
+            return;
+        }
+
+        // Navigate up to parent folder
+        const parentFolder = this.contestFolder.replace(/[/\\][^/\\]+$/, '');
+        this.contestFolder = null;
+        this.contestMeta = null;
+        this.selectedChips.clear();
+        this.currentFolder = parentFolder || null;
+        this.saveState();
+        this.refreshTree();
+    },
+
+    /**
      * Show New Contest Wizard inline dialog
      */
     showNewContestDialog() {
@@ -2913,12 +3079,12 @@ const FileExplorer = {
                 </div>
                 <div class="note-dialog-body">
                     <div class="cp-wizard-field">
-                        <label>Contest Name</label>
-                        <input type="text" class="input-dialog-field" id="cp-wizard-name" placeholder="CF Round 1000" />
+                        <label>Folder / Contest Name</label>
+                        <input type="text" class="input-dialog-field" id="cp-wizard-name" placeholder="CF-Round-1000" />
                     </div>
                     <div class="cp-wizard-field">
-                        <label>Problems (space-separated)</label>
-                        <input type="text" class="input-dialog-field" id="cp-wizard-problems" placeholder="A B C D E F" value="A B C D E F" />
+                        <label>Last Problem ID <span style="opacity:.55;font-size:11px">(e.g. G → creates A B C D E F G)</span></label>
+                        <input type="text" class="input-dialog-field" id="cp-wizard-last-id" placeholder="F" value="F" maxlength="2" style="text-transform:uppercase;letter-spacing:2px" />
                     </div>
                     <div class="cp-wizard-field">
                         <label>Platform</label>
@@ -2930,6 +3096,7 @@ const FileExplorer = {
                             <option value="Other" selected>Other</option>
                         </select>
                     </div>
+                    <div class="cp-wizard-preview" id="cp-wizard-preview" style="font-size:11px;opacity:.7;padding:4px 2px"></div>
                 </div>
                 <div class="note-dialog-footer">
                     <button class="note-dialog-btn note-dialog-cancel">Cancel</button>
@@ -2941,25 +3108,35 @@ const FileExplorer = {
         document.body.appendChild(overlay);
 
         const nameInput = document.getElementById('cp-wizard-name');
-        const problemsInput = document.getElementById('cp-wizard-problems');
+        const lastIdInput = document.getElementById('cp-wizard-last-id');
         const platformSelect = document.getElementById('cp-wizard-platform');
+        const preview = document.getElementById('cp-wizard-preview');
         const saveBtn = overlay.querySelector('.note-dialog-save');
         const cancelBtn = overlay.querySelector('.note-dialog-cancel');
         const closeBtn = overlay.querySelector('.note-dialog-close');
 
+        const updatePreview = () => {
+            const val = lastIdInput.value.trim().toUpperCase();
+            const ids = this._idsUpTo(val);
+            preview.textContent = ids.length ? 'Will create: ' + ids.join(', ') : '';
+        };
+
+        lastIdInput.oninput = updatePreview;
+        updatePreview();
         setTimeout(() => nameInput && nameInput.focus(), 50);
 
         const closeDialog = () => overlay.remove();
 
         const createContest = async () => {
             const name = nameInput.value.trim();
-            const problemStr = problemsInput.value.trim();
+            const lastIdRaw = lastIdInput.value.trim().toUpperCase();
             const platform = platformSelect.value;
 
             if (!name) { nameInput.focus(); return; }
-            if (!problemStr) { problemsInput.focus(); return; }
+            if (!lastIdRaw) { lastIdInput.focus(); return; }
 
-            const problemIds = problemStr.split(/\s+/).map(s => s.toUpperCase());
+            const problemIds = this._idsUpTo(lastIdRaw);
+            if (problemIds.length === 0) { lastIdInput.focus(); return; }
 
             if (!this.currentFolder) {
                 alert('Open a folder first.');
@@ -2975,7 +3152,6 @@ const FileExplorer = {
                 });
 
                 if (result.success) {
-                    // Navigate to the new contest folder
                     this.currentFolder = result.contestDir;
                     this.expandedFolders.clear();
                     this.expandedFolders.add(result.contestDir);
@@ -2995,13 +3171,40 @@ const FileExplorer = {
 
         nameInput.onkeydown = (e) => {
             if (e.key === 'Escape') closeDialog();
-            if (e.key === 'Enter') problemsInput.focus();
+            if (e.key === 'Enter') lastIdInput.focus();
         };
-        problemsInput.onkeydown = (e) => {
+        lastIdInput.onkeydown = (e) => {
             if (e.key === 'Escape') closeDialog();
             if (e.key === 'Enter') createContest();
         };
-    }
+    },
+
+    /**
+     * Generate an array of problem IDs from A up to a given letter (single char A-Z or two chars AA-ZZ)
+     */
+    _idsUpTo(lastId) {
+        if (!lastId) return [];
+        lastId = lastId.toUpperCase();
+        const problems = [];
+        if (lastId.length === 1) {
+            // A–Z range
+            const end = lastId.charCodeAt(0);
+            if (end < 65 || end > 90) return [];
+            for (let c = 65; c <= end; c++) problems.push(String.fromCharCode(c));
+        } else if (lastId.length === 2) {
+            // AA–ZZ range (26 single + AA onwards)
+            for (let c = 65; c <= 90; c++) problems.push(String.fromCharCode(c));
+            const end1 = lastId.charCodeAt(0);
+            const end2 = lastId.charCodeAt(1);
+            for (let c1 = 65; c1 <= end1; c1++) {
+                const c2Max = (c1 === end1) ? end2 : 90;
+                for (let c2 = 65; c2 <= c2Max; c2++) {
+                    problems.push(String.fromCharCode(c1) + String.fromCharCode(c2));
+                }
+            }
+        }
+        return problems;
+    },
 
 };
 

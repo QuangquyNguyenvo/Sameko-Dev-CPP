@@ -5479,19 +5479,21 @@ body.split-active .editor-pane {
     border-bottom: 1px solid var(--border, #e0f0ff);
     overflow-x: auto;
     flex-shrink: 0;
+    flex-wrap: wrap;
 }
 
 .cp-problem-chip {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 3px;
-    padding: 4px 8px;
+    gap: 2px;
+    padding: 4px 7px;
     border-radius: 8px;
     cursor: pointer;
     border: 2px solid transparent;
     transition: background 0.15s, border-color 0.2s, transform 0.1s;
-    min-width: 36px;
+    min-width: 34px;
+    max-width: 56px;
     flex-shrink: 0;
 }
 
@@ -5505,17 +5507,88 @@ body.split-active .editor-pane {
     background: var(--bg-ocean-light, rgba(188, 226, 245, 0.5));
 }
 
+.cp-problem-chip.cp-chip-selected {
+    border-color: #ef5350 !important;
+    background: rgba(239, 83, 80, 0.12) !important;
+}
+
 .cp-chip-label {
     font-family: 'Fredoka', sans-serif;
     font-weight: 700;
     font-size: 12px;
     color: var(--text-primary, #2a5a75);
+    max-width: 48px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.cp-chip-sublabel {
+    font-size: 9px;
+    opacity: 0.65;
+    max-width: 52px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1;
 }
 
 .cp-chip-icon {
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Selection action bar */
+.cp-chip-selbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px 6px;
+    border-bottom: 1px solid var(--border, #e0f0ff);
+    background: rgba(239, 83, 80, 0.06);
+}
+
+.cp-chip-selcount {
+    font-size: 11px;
+    opacity: 0.7;
+    flex: 1;
+}
+
+.cp-chip-del-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    border: 1px solid #ef5350;
+    background: rgba(239, 83, 80, 0.1);
+    color: #ef5350;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.cp-chip-del-btn:hover {
+    background: rgba(239, 83, 80, 0.22);
+}
+
+.cp-chip-clear-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid var(--border, #e0f0ff);
+    background: transparent;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+
+.cp-chip-clear-btn:hover {
+    opacity: 1;
 }
 
 /* Status-specific chip backgrounds */

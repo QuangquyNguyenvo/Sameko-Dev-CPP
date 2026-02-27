@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     deleteFile: (filePath) => ipcRenderer.invoke('delete-file', filePath),
     copyFile: (src, dest) => ipcRenderer.invoke('copy-file', { src, dest }),
     moveFile: (src, dest) => ipcRenderer.invoke('move-file', { src, dest }),
+    deleteFolder: (folderPath) => ipcRenderer.invoke('delete-folder', folderPath),
     showItemInFolder: (filePath) => ipcRenderer.invoke('show-item-in-folder', filePath),
 
     // Settings operations
