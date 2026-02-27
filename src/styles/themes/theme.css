@@ -4758,7 +4758,7 @@ body.split-active .editor-pane {
     border: 1px solid var(--border, #e0f0ff);
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    z-index: 10000;
+    z-index: 99999;
     min-width: 160px;
     padding: 4px;
     animation: fadeIn 0.1s ease;
@@ -4826,6 +4826,17 @@ body.split-active .editor-pane {
     position: relative;
 }
 
+/* Selection & clipboard states */
+.explorer-item.selected {
+    background: var(--bg-ocean-light, rgba(100, 181, 246, 0.18)) !important;
+    outline: 1px solid var(--accent, #64b5f6);
+    outline-offset: -1px;
+}
+
+.explorer-item.cut {
+    opacity: 0.45;
+}
+
 .explorer-item.status-working {
     background: rgba(255, 193, 7, 0.1);
 }
@@ -4888,6 +4899,7 @@ body.split-active .editor-pane {
     border: 1px solid var(--border, #e0f0ff);
     border-radius: 8px;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    z-index: 100000;
     min-width: 140px;
     padding: 4px;
     opacity: 0;

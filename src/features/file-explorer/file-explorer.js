@@ -31,6 +31,10 @@ const FileExplorer = {
     pinnedItems: [], // Array of paths
     recentFiles: [], // Last N opened files (FIFO, max 5)
 
+    // File selection & keyboard clipboard
+    selectedFilePath: null,
+    clipboardFile: null, // { path, mode: 'copy' | 'cut' }
+
     // ==================== CONTEST MODE STATE ====================
     displayMode: 'normal', // 'normal' | 'contest'
     contestMeta: null,     // Parsed .sameko data for current folder
@@ -38,24 +42,24 @@ const FileExplorer = {
 
     // CP Status definitions (Lucide-based SVG icons)
     CP_STATUSES: {
-        todo:    { label: 'Not Started', color: '#555' },
-        coding:  { label: 'In Progress', color: '#64b5f6' },
-        testing: { label: 'Testing',     color: '#ffb74d' },
-        ac:      { label: 'Accepted',    color: '#66bb6a' },
-        wa:      { label: 'Wrong Answer',color: '#ef5350' },
-        tle:     { label: 'Time Limit',  color: '#ffa726' },
-        re:      { label: 'Runtime Error',color:'#ab47bc' },
+        todo: { label: 'Not Started', color: '#555' },
+        coding: { label: 'In Progress', color: '#64b5f6' },
+        testing: { label: 'Testing', color: '#ffb74d' },
+        ac: { label: 'Accepted', color: '#66bb6a' },
+        wa: { label: 'Wrong Answer', color: '#ef5350' },
+        tle: { label: 'Time Limit', color: '#ffa726' },
+        re: { label: 'Runtime Error', color: '#ab47bc' },
     },
 
     // Lucide-based SVG icon strings for CP statuses
     STATUS_ICONS: {
-        todo:    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/></svg>',
-        coding:  '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#64b5f6" stroke-width="2" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+        todo: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/></svg>',
+        coding: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#64b5f6" stroke-width="2" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
         testing: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffb74d" stroke-width="2" stroke-linecap="round"><path d="M14 2v6l3 9H7l3-9V2"/><line x1="8.5" y1="2" x2="15.5" y2="2"/></svg>',
-        ac:      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#66bb6a" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>',
-        wa:      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ef5350" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
-        tle:     '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round"><path d="M10 2h4"/><path d="M12 14l-4-4"/><circle cx="12" cy="14" r="8"/></svg>',
-        re:      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ab47bc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+        ac: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#66bb6a" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>',
+        wa: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ef5350" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        tle: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round"><path d="M10 2h4"/><path d="M12 14l-4-4"/><circle cx="12" cy="14" r="8"/></svg>',
+        re: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ab47bc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
     },
 
     // Session Timer — on-demand, no setInterval
@@ -208,6 +212,9 @@ const FileExplorer = {
         // Load saved state
         this.loadState();
 
+        // Welcome screen: stay closed when no folder is loaded
+        if (!this.currentFolder) this.isOpen = false;
+
         // Setup event listeners
         this.setupEventListeners();
 
@@ -320,6 +327,14 @@ const FileExplorer = {
                 this.refreshTree();
             });
         }
+
+        // Keyboard shortcuts when explorer is open and a file is selected
+        document.addEventListener('keydown', (e) => {
+            if (!this.isOpen || !this.selectedFilePath) return;
+            const tag = document.activeElement?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
+            this.handleExplorerKeydown(e);
+        });
     },
 
     /**
@@ -889,7 +904,6 @@ const FileExplorer = {
                 ${contestHeader}
                 ${quickStatusBar}
                 ${progressBar}
-                ${pinnedHtml}
                 <div class="explorer-items cp-tree-items">
                     ${this.renderItems(this.tree, 0)}
                 </div>
@@ -1245,6 +1259,11 @@ const FileExplorer = {
 
                 const path = item.dataset.path;
 
+                // Track selection
+                this.selectedFilePath = path;
+                this.elements.tree.querySelectorAll('.explorer-item.selected').forEach(el => el.classList.remove('selected'));
+                item.classList.add('selected');
+
                 // Handle approach click (contest mode uses .sameko approaches)
                 if (item.classList.contains('approach')) {
                     if (item.classList.contains('cp-approach') && item.dataset.problemId) {
@@ -1355,6 +1374,24 @@ const FileExplorer = {
     },
 
     /**
+     * Position a context menu so it stays within the viewport.
+     * Must be called AFTER appending menu to body.
+     */
+    positionMenu(menu, clientX, clientY) {
+        menu.style.left = clientX + 'px';
+        menu.style.top = clientY + 'px';
+        document.body.appendChild(menu);
+        requestAnimationFrame(() => {
+            const rect = menu.getBoundingClientRect();
+            const pad = 8;
+            if (rect.right > window.innerWidth - pad)
+                menu.style.left = Math.max(pad, clientX - rect.width) + 'px';
+            if (rect.bottom > window.innerHeight - pad)
+                menu.style.top = Math.max(pad, clientY - rect.height) + 'px';
+        });
+    },
+
+    /**
      * Show context menu for file
      */
     showContextMenu(e, filePath) {
@@ -1431,9 +1468,7 @@ const FileExplorer = {
             </div>
         `;
 
-        menu.style.left = e.pageX + 'px';
-        menu.style.top = e.pageY + 'px';
-        document.body.appendChild(menu);
+        this.positionMenu(menu, e.clientX, e.clientY);
 
         // Status submenu handlers
         const statusMenuItem = menu.querySelector('[data-action="status-menu"]');
@@ -1574,9 +1609,7 @@ const FileExplorer = {
             </div>
         `;
 
-        menu.style.left = e.pageX + 'px';
-        menu.style.top = e.pageY + 'px';
-        document.body.appendChild(menu);
+        this.positionMenu(menu, e.clientX, e.clientY);
 
         menu.querySelector('[data-action="note"]').onclick = () => {
             menu.remove();
@@ -2234,9 +2267,7 @@ const FileExplorer = {
             <div class="context-item" data-action="delete">Delete</div>
         `;
 
-        menu.style.left = e.pageX + 'px';
-        menu.style.top = e.pageY + 'px';
-        document.body.appendChild(menu);
+        this.positionMenu(menu, e.clientX, e.clientY);
 
         // Status submenu handlers
         const statusMenuItem = menu.querySelector('[data-action="status-menu"]');
@@ -2378,6 +2409,12 @@ const FileExplorer = {
                 this.openFile(filePath);
                 this.SessionTimer.onFileOpen(problemId);
             });
+
+            chip.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.showQuickStatusMenu(e, chip.dataset.problem);
+            });
         });
 
         // Contest header actions
@@ -2473,9 +2510,7 @@ const FileExplorer = {
             <div class="context-item" data-action="copy-path">Copy Path</div>
         `;
 
-        menu.style.left = e.pageX + 'px';
-        menu.style.top = e.pageY + 'px';
-        document.body.appendChild(menu);
+        this.positionMenu(menu, e.clientX, e.clientY);
 
         // Status submenu hover
         const statusMenuItem = menu.querySelector('[data-action="status-menu"]');
@@ -2589,9 +2624,7 @@ const FileExplorer = {
             <div class="context-item" data-action="delete-approach">Delete</div>
         `;
 
-        menu.style.left = e.pageX + 'px';
-        menu.style.top = e.pageY + 'px';
-        document.body.appendChild(menu);
+        this.positionMenu(menu, e.clientX, e.clientY);
 
         // Submenu hover
         const statusMenuItem = menu.querySelector('[data-action="status-menu"]');
@@ -2673,9 +2706,7 @@ const FileExplorer = {
             <div class="context-item" data-action="remove-contest-marker">Remove Contest Marker</div>
         `;
 
-        menu.style.left = e.pageX + 'px';
-        menu.style.top = e.pageY + 'px';
-        document.body.appendChild(menu);
+        this.positionMenu(menu, e.clientX, e.clientY);
 
         menu.querySelector('[data-action="rename-contest"]').onclick = () => {
             menu.remove();
@@ -2730,36 +2761,141 @@ const FileExplorer = {
      * Prompt to add a new problem to current contest
      */
     promptAddProblem() {
-        this.showInputDialog('Add Problem ID (e.g. G, H)', '', (id) => {
-            if (!id || !id.trim()) return;
-            const problemId = id.trim().toUpperCase();
+        if (!this.contestMeta) return;
+        // Auto-generate the next sequential letter ID: A→B→C→…→Z→AA→AB…
+        const count = this.contestMeta.problems.length;
+        const nextId = count < 26
+            ? String.fromCharCode(65 + count)
+            : String.fromCharCode(65 + Math.floor((count - 26) / 26)) + String.fromCharCode(65 + (count - 26) % 26);
+        const problemId = nextId;
 
-            // Check if already exists
-            if (this.contestMeta.problems.find(p => p.id === problemId)) {
-                alert(`Problem ${problemId} already exists.`);
-                return;
-            }
+        // Create .cpp file
+        const filePath = `${this.contestFolder}/${problemId}.cpp`.replace(/\\/g, '/');
+        const template = `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // TODO: solve ${problemId}\n\n    return 0;\n}\n`;
 
-            // Create .cpp file
-            const filePath = `${this.contestFolder}/${problemId}.cpp`.replace(/\\/g, '/');
-            const template = `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // TODO: solve ${problemId}\n\n    return 0;\n}\n`;
-
-            if (window.electronAPI && window.electronAPI.saveFile) {
-                window.electronAPI.saveFile({ path: filePath, content: template }).then(() => {
-                    this.contestMeta.problems.push({
-                        id: problemId,
-                        label: '',
-                        status: 'todo',
-                        timeSpentMs: 0,
-                        activeApproach: null,
-                        approaches: []
-                    });
-                    this.contestMeta.problems.sort((a, b) => a.id.localeCompare(b.id));
-                    this.saveContestMeta(this.contestFolder, this.contestMeta);
-                    this.refreshTree();
+        if (window.electronAPI && window.electronAPI.saveFile) {
+            window.electronAPI.saveFile({ path: filePath, content: template }).then(() => {
+                this.contestMeta.problems.push({
+                    id: problemId,
+                    label: '',
+                    status: 'todo',
+                    timeSpentMs: 0,
+                    activeApproach: null,
+                    approaches: []
                 });
+                this.contestMeta.problems.sort((a, b) => a.id.localeCompare(b.id));
+                this.saveContestMeta(this.contestFolder, this.contestMeta);
+                this.refreshTree();
+            });
+        }
+    },
+
+    /**
+     * Handle keyboard shortcuts when explorer is focused (Ctrl+C/X/V, Delete)
+     */
+    handleExplorerKeydown(e) {
+        if (!this.selectedFilePath) return;
+
+        if (e.key === 'Delete' && !e.ctrlKey) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.confirmDelete(this.selectedFilePath);
+
+        } else if (e.key === 'c' && e.ctrlKey && !e.shiftKey) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.clipboardFile = { path: this.selectedFilePath, mode: 'copy' };
+            // Remove any cut-visual from tree items
+            this.elements.tree.querySelectorAll('.explorer-item.cut').forEach(el => el.classList.remove('cut'));
+
+        } else if (e.key === 'x' && e.ctrlKey && !e.shiftKey) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.clipboardFile = { path: this.selectedFilePath, mode: 'cut' };
+            // Visual indicator: dim the cut item
+            this.elements.tree.querySelectorAll('.explorer-item.cut').forEach(el => el.classList.remove('cut'));
+            const selectedEl = this.elements.tree.querySelector(`.explorer-item[data-path="${CSS.escape(this.selectedFilePath)}"]`);
+            if (selectedEl) selectedEl.classList.add('cut');
+
+        } else if (e.key === 'v' && e.ctrlKey && !e.shiftKey) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            this.pasteFile();
+        }
+    },
+
+    /**
+     * Paste file from clipboard into current folder
+     */
+    async pasteFile() {
+        if (!this.clipboardFile || !this.currentFolder) return;
+        const { path: srcPath, mode } = this.clipboardFile;
+        const fileName = srcPath.split(/[/\\]/).pop();
+        const destPath = `${this.currentFolder}/${fileName}`.replace(/\\/g, '/');
+
+        // Normalize paths for comparison
+        const normSrc = srcPath.replace(/\\/g, '/');
+        const normDest = destPath;
+        if (normSrc === normDest) return;
+
+        try {
+            if (mode === 'cut') {
+                if (window.electronAPI && window.electronAPI.moveFile) {
+                    await window.electronAPI.moveFile(srcPath, destPath);
+                }
+                this.clipboardFile = null;
+                this.selectedFilePath = destPath;
+            } else {
+                if (window.electronAPI && window.electronAPI.copyFile) {
+                    await window.electronAPI.copyFile(srcPath, destPath);
+                }
             }
+            await this.refreshTree();
+        } catch (err) {
+            console.error('[FileExplorer] Paste failed:', err);
+            alert('Paste failed: ' + (err.message || err));
+        }
+    },
+
+    /**
+     * Show a quick status picker for a contest problem (from right-click on chip)
+     */
+    showQuickStatusMenu(e, problemId) {
+        document.querySelectorAll('.explorer-context-menu').forEach(el => el.remove());
+
+        const prob = this.getProblemMeta(problemId);
+        const currentStatus = prob ? prob.status : 'todo';
+
+        const menu = document.createElement('div');
+        menu.className = 'explorer-context-menu';
+
+        let itemsHtml = `<div class="context-label" style="padding:4px 12px 2px;font-size:11px;opacity:.6;">Set Status — ${problemId}</div>`;
+        for (const [key, info] of Object.entries(this.CP_STATUSES)) {
+            const isActive = currentStatus === key;
+            itemsHtml += `
+                <div class="context-item ${isActive ? 'active' : ''}" data-status="${key}" style="gap:6px">
+                    <span>${this.STATUS_ICONS[key]}</span>
+                    <span>${info.label}</span>
+                    ${isActive ? this.ICONS.check : ''}
+                </div>`;
+        }
+        menu.innerHTML = itemsHtml;
+
+        this.positionMenu(menu, e.clientX, e.clientY);
+
+        menu.querySelectorAll('[data-status]').forEach(item => {
+            item.onclick = () => {
+                this.setProblemStatus(problemId, item.dataset.status);
+                menu.remove();
+            };
         });
+
+        setTimeout(() => {
+            document.addEventListener('click', function close() {
+                menu.remove();
+                document.removeEventListener('click', close);
+            });
+        }, 10);
     },
 
     /**

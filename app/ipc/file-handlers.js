@@ -171,6 +171,24 @@ function registerHandlers() {
         }
     });
 
+    ipcMain.handle('copy-file', async (event, { src, dest }) => {
+        try {
+            fs.copyFileSync(src, dest);
+            return { success: true };
+        } catch (error) {
+            throw new Error(`Cannot copy file: ${error.message}`);
+        }
+    });
+
+    ipcMain.handle('move-file', async (event, { src, dest }) => {
+        try {
+            fs.renameSync(src, dest);
+            return { success: true };
+        } catch (error) {
+            throw new Error(`Cannot move file: ${error.message}`);
+        }
+    });
+
     ipcMain.handle(IPC.FILE.WATCH, async (event, filePath) => {
         watchFile(filePath);
         return { success: true };

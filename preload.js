@@ -29,6 +29,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
     renameFile: (oldPath, newPath) => ipcRenderer.invoke('rename-file', { oldPath, newPath }),
     deleteFile: (filePath) => ipcRenderer.invoke('delete-file', filePath),
+    copyFile: (src, dest) => ipcRenderer.invoke('copy-file', { src, dest }),
+    moveFile: (src, dest) => ipcRenderer.invoke('move-file', { src, dest }),
     showItemInFolder: (filePath) => ipcRenderer.invoke('show-item-in-folder', filePath),
 
     // Settings operations
