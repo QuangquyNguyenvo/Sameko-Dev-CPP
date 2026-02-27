@@ -21,7 +21,8 @@ const DEFAULT_KEYBINDINGS = {
     'toggleProblems': 'Ctrl+J',
     'settings': 'Ctrl+,',
     'toggleSplit': 'Ctrl+\\',
-    'formatCode': 'Ctrl+Shift+A'
+    'formatCode': 'Ctrl+Shift+A',
+    'toggleExplorer': 'Ctrl+E'
 };
 
 // ============================================================================

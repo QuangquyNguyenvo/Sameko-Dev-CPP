@@ -1,5 +1,5 @@
 /**
- * File Explorer Module
+ * File Explorer Module - CP Edition
  * 
  * Provides a sidebar file tree for navigating and opening files.
  * Features:
@@ -8,6 +8,10 @@
  * - Tree view with expand/collapse
  * - File icons based on extension
  * - Resizable sidebar
+ * - Contest mode with Quick Status Bar & progress
+ * - Multi-approach per problem with snapshots
+ * - Session timer per problem
+ * - New Contest Wizard
  */
 
 const FileExplorer = {
@@ -16,16 +20,93 @@ const FileExplorer = {
     width: 200,
     tree: [],
     expandedFolders: new Set(),
-    fileStatuses: {}, // { path: 'working' | 'done' | 'stuck' | 'review' }
+    fileStatuses: {}, // Legacy: { path: 'working' | 'done' | 'stuck' | 'review' }
     fileNotes: {}, // { path: 'note text content' }
 
-    // NEW: Approach versioning
+    // Approach versioning (legacy localStorage-based, migrated to .sameko in contest mode)
     fileApproaches: {}, // { path: { current: 'id', versions: [...] } }
-    expandedFiles: new Set(), // Track which .cpp files show their children (companions + approaches)
+    expandedFiles: new Set(), // Track which .cpp files show their children
 
-    // NEW: Pin & Recent
+    // Pin & Recent
     pinnedItems: [], // Array of paths
     recentFiles: [], // Last N opened files (FIFO, max 5)
+
+    // ==================== CONTEST MODE STATE ====================
+    displayMode: 'normal', // 'normal' | 'contest'
+    contestMeta: null,     // Parsed .sameko data for current folder
+    contestFolder: null,   // The folder path recognized as contest
+
+    // CP Status definitions (Lucide-based SVG icons)
+    CP_STATUSES: {
+        todo:    { label: 'Not Started', color: '#555' },
+        coding:  { label: 'In Progress', color: '#64b5f6' },
+        testing: { label: 'Testing',     color: '#ffb74d' },
+        ac:      { label: 'Accepted',    color: '#66bb6a' },
+        wa:      { label: 'Wrong Answer',color: '#ef5350' },
+        tle:     { label: 'Time Limit',  color: '#ffa726' },
+        re:      { label: 'Runtime Error',color:'#ab47bc' },
+    },
+
+    // Lucide-based SVG icon strings for CP statuses
+    STATUS_ICONS: {
+        todo:    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/></svg>',
+        coding:  '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#64b5f6" stroke-width="2" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+        testing: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffb74d" stroke-width="2" stroke-linecap="round"><path d="M14 2v6l3 9H7l3-9V2"/><line x1="8.5" y1="2" x2="15.5" y2="2"/></svg>',
+        ac:      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#66bb6a" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>',
+        wa:      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ef5350" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+        tle:     '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round"><path d="M10 2h4"/><path d="M12 14l-4-4"/><circle cx="12" cy="14" r="8"/></svg>',
+        re:      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ab47bc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+    },
+
+    // Session Timer — on-demand, no setInterval
+    SessionTimer: {
+        accumulated: {},   // { problemId: ms } — loaded from .sameko
+        sessionStart: null,
+        currentProblem: null,
+
+        onFileOpen(problemId) {
+            if (this.currentProblem && this.sessionStart) {
+                const elapsed = Date.now() - this.sessionStart;
+                this.accumulated[this.currentProblem] = (this.accumulated[this.currentProblem] || 0) + elapsed;
+            }
+            this.currentProblem = problemId;
+            this.sessionStart = Date.now();
+        },
+
+        flush() {
+            if (this.currentProblem && this.sessionStart) {
+                const elapsed = Date.now() - this.sessionStart;
+                this.accumulated[this.currentProblem] = (this.accumulated[this.currentProblem] || 0) + elapsed;
+                this.sessionStart = Date.now(); // reset start
+            }
+        },
+
+        getTimeMs(problemId) {
+            const saved = this.accumulated[problemId] || 0;
+            const live = (problemId === this.currentProblem && this.sessionStart)
+                ? Date.now() - this.sessionStart : 0;
+            return saved + live;
+        },
+
+        getDisplay(problemId) {
+            return FileExplorer.formatDuration(this.getTimeMs(problemId));
+        },
+
+        loadFromMeta(contestMeta) {
+            if (!contestMeta || !contestMeta.problems) return;
+            for (const p of contestMeta.problems) {
+                this.accumulated[p.id] = p.timeSpentMs || 0;
+            }
+        },
+
+        saveToMeta(contestMeta) {
+            this.flush();
+            if (!contestMeta || !contestMeta.problems) return;
+            for (const p of contestMeta.problems) {
+                p.timeSpentMs = this.accumulated[p.id] || 0;
+            }
+        }
+    },
 
     // SVG Icons - no emojis, all inline SVGs
     ICONS: {
@@ -293,6 +374,13 @@ const FileExplorer = {
             this.elements.toggleBtn.classList.remove('active');
         }
 
+        // Flush timer data to .sameko before saving state
+        if (this.displayMode === 'contest' && this.contestMeta && this.contestFolder) {
+            this.SessionTimer.flush();
+            this.SessionTimer.saveToMeta(this.contestMeta);
+            this.saveContestMeta(this.contestFolder, this.contestMeta);
+        }
+
         this.saveState();
 
         // Trigger editor layout
@@ -385,6 +473,28 @@ const FileExplorer = {
         try {
             if (window.electronAPI && window.electronAPI.readDirectory) {
                 this.tree = await this.loadDirectory(this.currentFolder);
+
+                // Determine display mode (contest or normal)
+                this.displayMode = this.resolveDisplayMode(this.currentFolder, this.tree);
+
+                if (this.displayMode === 'contest') {
+                    this.contestFolder = this.currentFolder;
+                    // Load .sameko if exists
+                    const meta = await this.loadContestMeta(this.currentFolder);
+                    if (meta) {
+                        this.contestMeta = meta;
+                        this.SessionTimer.loadFromMeta(meta);
+                    } else {
+                        // Auto-generate .sameko from detected files
+                        this.contestMeta = this.generateContestMeta(this.tree);
+                        await this.saveContestMeta(this.currentFolder, this.contestMeta);
+                        this.SessionTimer.loadFromMeta(this.contestMeta);
+                    }
+                } else {
+                    this.contestMeta = null;
+                    this.contestFolder = null;
+                }
+
                 this.renderTree();
             } else {
                 console.warn('Electron API not available for reading directory');
@@ -397,6 +507,36 @@ const FileExplorer = {
     },
 
     /**
+     * Auto-generate contest metadata from detected files
+     */
+    generateContestMeta(items) {
+        const problems = [];
+        for (const item of items) {
+            if (!item.isDirectory && /^[A-Z]\.(cpp|c|cc|cxx)$/i.test(item.name)) {
+                const id = item.name.charAt(0).toUpperCase();
+                problems.push({
+                    id,
+                    label: '',
+                    status: 'todo',
+                    timeSpentMs: 0,
+                    activeApproach: null,
+                    approaches: []
+                });
+            }
+        }
+        problems.sort((a, b) => a.id.localeCompare(b.id));
+
+        const folderName = this.currentFolder.split(/[/\\]/).pop();
+        return {
+            type: 'contest',
+            name: folderName,
+            platform: 'Other',
+            date: new Date().toISOString().split('T')[0],
+            problems
+        };
+    },
+
+    /**
      * Load directory contents recursively
      */
     async loadDirectory(dirPath, depth = 0) {
@@ -405,9 +545,16 @@ const FileExplorer = {
         try {
             const items = await window.electronAPI.readDirectory(dirPath);
             const result = [];
+            let hasSameko = false;
 
             for (const item of items) {
                 const fullPath = `${dirPath}/${item.name}`.replace(/\\/g, '/');
+
+                // Detect .sameko file but don't add to tree
+                if (item.name === '.sameko') {
+                    hasSameko = true;
+                    continue;
+                }
 
                 // Skip hidden files, common ignored directories, and .exe files
                 if (item.name.startsWith('.') ||
@@ -444,11 +591,179 @@ const FileExplorer = {
             });
 
             // Group companion files with their parent .cpp
-            return this.groupCompanionFiles(sorted);
+            const grouped = this.groupCompanionFiles(sorted);
+
+            // Auto-detect contest mode for root-level folder
+            if (depth === 0) {
+                grouped._hasSameko = hasSameko;
+            }
+
+            return grouped;
         } catch (e) {
             console.error('Failed to load directory:', dirPath, e);
             return [];
         }
+    },
+
+    /**
+     * Detect folder type based on file patterns
+     */
+    detectFolderType(items) {
+        const singleLetterCpp = items.filter(
+            i => !i.isDirectory && /^[A-Z]\.(cpp|c|cc|cxx)$/i.test(i.name)
+        );
+        if (singleLetterCpp.length >= 2) return 'contest';
+        return 'normal';
+    },
+
+    /**
+     * Resolve display mode: .sameko > manual override > auto-detect
+     */
+    resolveDisplayMode(folderPath, items) {
+        if (items._hasSameko) return 'contest';
+
+        const manualOverride = localStorage.getItem(`cp-mode:${folderPath}`);
+        if (manualOverride) return manualOverride;
+
+        return this.detectFolderType(items);
+    },
+
+    /**
+     * Load .sameko metadata for a contest folder
+     */
+    async loadContestMeta(folderPath) {
+        if (!window.electronAPI || !window.electronAPI.readSameko) return null;
+        try {
+            const result = await window.electronAPI.readSameko(folderPath);
+            if (result.exists && result.data) {
+                return result.data;
+            }
+        } catch (e) {
+            console.error('[FileExplorer] Failed to load .sameko:', e);
+        }
+        return null;
+    },
+
+    /**
+     * Save .sameko metadata for a contest folder
+     */
+    async saveContestMeta(folderPath, data) {
+        if (!window.electronAPI || !window.electronAPI.writeSameko) return;
+        try {
+            // Flush timer data before saving
+            this.SessionTimer.saveToMeta(data);
+            await window.electronAPI.writeSameko(folderPath, data);
+        } catch (e) {
+            console.error('[FileExplorer] Failed to save .sameko:', e);
+        }
+    },
+
+    /**
+     * Get problem metadata by ID from contestMeta
+     */
+    getProblemMeta(problemId) {
+        if (!this.contestMeta || !this.contestMeta.problems) return null;
+        return this.contestMeta.problems.find(p => p.id === problemId);
+    },
+
+    /**
+     * Set problem status in contestMeta and save
+     */
+    async setProblemStatus(problemId, status) {
+        if (!this.contestMeta) return;
+        let prob = this.contestMeta.problems.find(p => p.id === problemId);
+        if (!prob) {
+            prob = { id: problemId, label: '', status: 'todo', timeSpentMs: 0, approaches: [] };
+            this.contestMeta.problems.push(prob);
+        }
+        prob.status = status;
+        await this.saveContestMeta(this.contestFolder, this.contestMeta);
+        this.renderTree();
+    },
+
+    /**
+     * Save current editor content as a new approach in .sameko
+     */
+    async saveApproachToMeta(problemId, name) {
+        if (!this.contestMeta) return;
+        const prob = this.getProblemMeta(problemId);
+        if (!prob) return;
+
+        let content = '';
+        if (window.App && window.App.editor) {
+            content = window.App.editor.getValue();
+        }
+        if (!content) return;
+
+        const id = 'v' + (prob.approaches.length + 1);
+        const approach = {
+            id,
+            name: name || `Approach ${prob.approaches.length + 1}`,
+            status: prob.status || 'coding',
+            savedAt: new Date().toISOString(),
+            snapshot: content
+        };
+        prob.approaches.push(approach);
+        prob.activeApproach = id;
+
+        await this.saveContestMeta(this.contestFolder, this.contestMeta);
+        this.renderTree();
+    },
+
+    /**
+     * Load approach snapshot into editor
+     */
+    loadApproachFromMeta(problemId, approachId) {
+        if (!this.contestMeta) return;
+        const prob = this.getProblemMeta(problemId);
+        if (!prob) return;
+
+        const approach = prob.approaches.find(a => a.id === approachId);
+        if (!approach || !approach.snapshot) return;
+
+        prob.activeApproach = approachId;
+
+        if (window.App && window.App.editor) {
+            const model = window.App.editor.getModel();
+            if (model) {
+                model.setValue(approach.snapshot);
+            }
+        }
+
+        this.saveContestMeta(this.contestFolder, this.contestMeta);
+        this.renderTree();
+    },
+
+    /**
+     * Delete approach from .sameko
+     */
+    async deleteApproachFromMeta(problemId, approachId) {
+        if (!this.contestMeta) return;
+        const prob = this.getProblemMeta(problemId);
+        if (!prob) return;
+
+        const idx = prob.approaches.findIndex(a => a.id === approachId);
+        if (idx === -1) return;
+
+        prob.approaches.splice(idx, 1);
+        if (prob.activeApproach === approachId) {
+            prob.activeApproach = prob.approaches.length > 0 ? prob.approaches[0].id : null;
+        }
+
+        await this.saveContestMeta(this.contestFolder, this.contestMeta);
+        this.renderTree();
+    },
+
+    /**
+     * Format milliseconds to human-readable duration
+     */
+    formatDuration(ms) {
+        if (!ms || ms <= 0) return '';
+        if (ms < 60000) return `${Math.floor(ms / 1000)}s`;
+        if (ms < 3600000) return `${Math.floor(ms / 60000)} min`;
+        const h = Math.floor(ms / 3600000);
+        const m = Math.floor((ms % 3600000) / 60000);
+        return `${h}h ${m}m`;
     },
 
     /**
@@ -516,7 +831,6 @@ const FileExplorer = {
         let pinnedHtml = '';
         if (this.pinnedItems.length > 0) {
             const validPins = this.pinnedItems.filter(p => {
-                // Check if pinned item still exists in tree
                 return p.startsWith(this.currentFolder);
             });
             if (validPins.length > 0) {
@@ -565,19 +879,127 @@ const FileExplorer = {
             }
         }
 
-        this.elements.tree.innerHTML = `
-            ${pinnedHtml}
-            <div class="explorer-folder-header">
-                <span class="explorer-folder-name" title="${this.currentFolder}">${folderName}</span>
-            </div>
-            <div class="explorer-items">
-                ${this.renderItems(this.tree, 0)}
-            </div>
-            ${recentHtml}
-        `;
+        // ==================== CONTEST MODE RENDERING ====================
+        if (this.displayMode === 'contest' && this.contestMeta) {
+            const contestHeader = this.renderContestHeader();
+            const quickStatusBar = this.renderQuickStatusBar();
+            const progressBar = this.renderProgressBar();
+
+            this.elements.tree.innerHTML = `
+                ${contestHeader}
+                ${quickStatusBar}
+                ${progressBar}
+                ${pinnedHtml}
+                <div class="explorer-items cp-tree-items">
+                    ${this.renderItems(this.tree, 0)}
+                </div>
+                ${recentHtml}
+            `;
+        } else {
+            // ==================== NORMAL MODE ====================
+            this.elements.tree.innerHTML = `
+                ${pinnedHtml}
+                <div class="explorer-folder-header">
+                    <span class="explorer-folder-name" title="${this.currentFolder}">${folderName}</span>
+                    <button class="cp-mode-toggle-btn" data-action="toggle-contest-mode" title="Switch to Contest Mode">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    </button>
+                </div>
+                <div class="explorer-items">
+                    ${this.renderItems(this.tree, 0)}
+                </div>
+                ${recentHtml}
+            `;
+        }
 
         // Attach event listeners
         this.attachTreeEventListeners();
+        this.attachContestEventListeners();
+    },
+
+    /**
+     * Render contest header with name, platform badge, and actions
+     */
+    renderContestHeader() {
+        const meta = this.contestMeta;
+        const platformBadge = meta.platform && meta.platform !== 'Other'
+            ? `<span class="cp-platform-badge">${meta.platform}</span>` : '';
+
+        return `
+            <div class="cp-contest-header">
+                <div class="cp-contest-info">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <span class="cp-contest-name" title="Click to rename">${meta.name || 'Contest'}</span>
+                    ${platformBadge}
+                </div>
+                <div class="cp-contest-actions">
+                    <button class="cp-action-btn" data-action="add-problem" title="Add Problem">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                    <button class="cp-action-btn" data-action="contest-menu" title="Contest Settings">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                    </button>
+                    <button class="cp-action-btn" data-action="toggle-normal-mode" title="Switch to Tree Mode">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                    </button>
+                </div>
+            </div>
+        `;
+    },
+
+    /**
+     * Render quick status bar (clickable problem chips)
+     */
+    renderQuickStatusBar() {
+        if (!this.contestMeta || !this.contestMeta.problems) return '';
+
+        const chips = this.contestMeta.problems.map(prob => {
+            const statusInfo = this.CP_STATUSES[prob.status] || this.CP_STATUSES.todo;
+            const icon = this.STATUS_ICONS[prob.status] || this.STATUS_ICONS.todo;
+            const timeStr = this.SessionTimer.getDisplay(prob.id);
+            const tooltip = `${prob.id}${prob.label ? ' · ' + prob.label : ''} · ${statusInfo.label}${timeStr ? ' · ' + timeStr : ''}`;
+            const isActive = this.isActiveProblem(prob.id);
+
+            return `
+                <div class="cp-problem-chip ${isActive ? 'active' : ''} cp-status-${prob.status || 'todo'}" 
+                     data-problem="${prob.id}" title="${tooltip}">
+                    <span class="cp-chip-label">${prob.id}</span>
+                    <span class="cp-chip-icon">${icon}</span>
+                </div>
+            `;
+        }).join('');
+
+        return `<div class="cp-status-bar">${chips}</div>`;
+    },
+
+    /**
+     * Render progress bar showing solved / total
+     */
+    renderProgressBar() {
+        if (!this.contestMeta || !this.contestMeta.problems) return '';
+
+        const total = this.contestMeta.problems.length;
+        const solved = this.contestMeta.problems.filter(p => p.status === 'ac').length;
+        const pct = total > 0 ? Math.round((solved / total) * 100) : 0;
+
+        return `
+            <div class="cp-progress-section">
+                <div class="cp-progress-bar">
+                    <div class="cp-progress-fill" style="width: ${pct}%"></div>
+                </div>
+                <span class="cp-progress-text">${solved} / ${total} solved</span>
+            </div>
+        `;
+    },
+
+    /**
+     * Check if a problem ID corresponds to the currently open file
+     */
+    isActiveProblem(problemId) {
+        const currentPath = window.App?.currentFilePath || window.currentFilePath;
+        if (!currentPath) return false;
+        const fileName = currentPath.split(/[/\\]/).pop();
+        return fileName.replace(/\.[^.]+$/, '').toUpperCase() === problemId.toUpperCase();
     },
 
     /**
@@ -606,16 +1028,102 @@ const FileExplorer = {
                         : ''}
                 `;
             } else {
-                const status = this.fileStatuses[item.path];
-                const statusInfo = status ? this.STATUS_TYPES[status] : null;
                 const isCpp = /\.(cpp|c|cc|cxx|h|hpp)$/i.test(item.name);
                 const hasCompanions = item.companions && item.companions.length > 0;
-                const approaches = this.fileApproaches[item.path];
-                const hasApproaches = approaches && approaches.versions && approaches.versions.length > 0;
-                const hasChildren = hasCompanions || hasApproaches;
                 const isFileExpanded = this.expandedFiles.has(item.path);
                 const note = this.fileNotes[item.path];
                 const hasNote = !!note;
+
+                // ==================== CONTEST MODE FILE RENDERING ====================
+                if (this.displayMode === 'contest' && this.contestMeta && isCpp) {
+                    const baseName = item.name.replace(/\.[^.]+$/, '').toUpperCase();
+                    const prob = this.getProblemMeta(baseName);
+                    const cpStatus = prob ? prob.status : 'todo';
+                    const cpStatusInfo = this.CP_STATUSES[cpStatus] || this.CP_STATUSES.todo;
+                    const cpIcon = this.STATUS_ICONS[cpStatus] || this.STATUS_ICONS.todo;
+                    const timeStr = this.SessionTimer.getDisplay(baseName);
+                    const metaApproaches = prob ? prob.approaches : [];
+                    const hasMetaApproaches = metaApproaches.length > 0;
+                    const hasChildren = hasCompanions || hasMetaApproaches;
+
+                    let childCount = 0;
+                    if (hasCompanions) childCount += item.companions.length;
+                    if (hasMetaApproaches) childCount += metaApproaches.length;
+
+                    let html = `
+                        <div class="explorer-item file cp-file has-status cp-status-${cpStatus} ${hasChildren ? 'has-children' : ''} ${isFileExpanded ? 'expanded' : ''}" 
+                             data-path="${item.path}" data-problem-id="${baseName}"
+                             ${hasNote ? `title="${note.replace(/"/g, '&quot;')}"` : ''}
+                             style="padding-left: ${indent + 8}px">
+                            ${hasChildren ? `
+                                <span class="explorer-file-arrow" data-action="toggle-file">
+                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="9 18 15 12 9 6"/>
+                                    </svg>
+                                </span>
+                            ` : '<span class="explorer-file-spacer"></span>'}
+                            <span class="cp-status-icon" title="${cpStatusInfo.label}">${cpIcon}</span>
+                            ${this.getFileIcon(item.name)}
+                            <span class="explorer-item-name">${item.name}</span>
+                            ${hasNote ? '<span class="explorer-note-icon" title="Click to edit">' + this.ICONS.note + '</span>' : ''}
+                            ${timeStr ? `<span class="cp-time-display">${timeStr}</span>` : ''}
+                            ${hasChildren ? `<span class="child-count">[${childCount}]</span>` : ''}
+                        </div>
+                    `;
+
+                    // Render children when expanded
+                    if (hasChildren && isFileExpanded) {
+                        html += '<div class="explorer-file-children">';
+
+                        // Render approaches from .sameko
+                        if (hasMetaApproaches) {
+                            html += `<div class="cp-approach-group"><div class="cp-group-label">Approaches</div>`;
+                            for (const appr of metaApproaches) {
+                                const isActive = prob.activeApproach === appr.id;
+                                const apprStatus = this.CP_STATUSES[appr.status] || this.CP_STATUSES.todo;
+                                const apprIcon = this.STATUS_ICONS[appr.status] || this.STATUS_ICONS.todo;
+                                html += `
+                                    <div class="explorer-item approach cp-approach ${isActive ? 'current' : ''}" 
+                                         data-path="${item.path}" data-problem-id="${baseName}"
+                                         data-approach-id="${appr.id}"
+                                         style="padding-left: ${indent + 32}px">
+                                        <span class="cp-approach-icon">${apprIcon}</span>
+                                        <span class="explorer-item-name">${appr.name}</span>
+                                        ${isActive ? '<span class="current-marker" title="Active">' + this.ICONS.check + '</span>' : ''}
+                                    </div>
+                                `;
+                            }
+                            html += '</div>';
+                        }
+
+                        // Render companion files
+                        if (hasCompanions) {
+                            html += `<div class="cp-companion-group"><div class="cp-group-label">Test Files</div>`;
+                            for (const comp of item.companions) {
+                                html += `
+                                    <div class="explorer-item file companion" 
+                                         data-path="${comp.path}" 
+                                         style="padding-left: ${indent + 32}px">
+                                        ${this.getFileIcon(comp.name)}
+                                        <span class="explorer-item-name">${comp.name}</span>
+                                    </div>
+                                `;
+                            }
+                            html += '</div>';
+                        }
+
+                        html += '</div>';
+                    }
+
+                    return html;
+                }
+
+                // ==================== NORMAL MODE FILE RENDERING ====================
+                const status = this.fileStatuses[item.path];
+                const statusInfo = status ? this.STATUS_TYPES[status] : null;
+                const approaches = this.fileApproaches[item.path];
+                const hasApproaches = approaches && approaches.versions && approaches.versions.length > 0;
+                const hasChildren = hasCompanions || hasApproaches;
 
                 let childCount = 0;
                 if (hasCompanions) childCount += item.companions.length;
@@ -638,7 +1146,7 @@ const FileExplorer = {
                         <span class="explorer-item-name">${item.name}</span>
                         ${hasNote ? '<span class="explorer-note-icon" title="Click to edit" data-note="' + note.replace(/"/g, '&quot;').replace(/\n/g, ' ') + '">' + this.ICONS.note + '</span>' : ''}
                         ${hasChildren ? `<span class="child-count" title="${childCount} child item(s)">[${childCount}]</span>` : ''}
-                        ${isCpp ? '<span class="explorer-mark-btn" title="Danh dau trang thai"></span>' : ''}
+                        ${isCpp ? '<span class="explorer-mark-btn" title="Mark status"></span>' : ''}
                     </div>
                 `;
 
@@ -737,10 +1245,19 @@ const FileExplorer = {
 
                 const path = item.dataset.path;
 
-                // Handle approach click
+                // Handle approach click (contest mode uses .sameko approaches)
                 if (item.classList.contains('approach')) {
-                    const approachId = item.dataset.approachId;
-                    this.switchToApproach(path, approachId);
+                    if (item.classList.contains('cp-approach') && item.dataset.problemId) {
+                        // Contest mode approach — load from .sameko
+                        const problemId = item.dataset.problemId;
+                        const approachId = item.dataset.approachId;
+                        this.openFile(path);
+                        setTimeout(() => this.loadApproachFromMeta(problemId, approachId), 300);
+                    } else {
+                        // Legacy approach
+                        const approachId = item.dataset.approachId;
+                        this.switchToApproach(path, approachId);
+                    }
                     return;
                 }
 
@@ -748,8 +1265,12 @@ const FileExplorer = {
                 if (item.classList.contains('folder')) {
                     this.toggleFolder(path);
                 } else if (!item.classList.contains('companion')) {
-                    // Handle file click (but not companion files, they are already shown nested)
+                    // Handle file click
                     this.openFile(path);
+                    // In contest mode, track timer for this problem
+                    if (this.displayMode === 'contest' && item.dataset.problemId) {
+                        this.SessionTimer.onFileOpen(item.dataset.problemId);
+                    }
                 }
             });
 
@@ -766,11 +1287,11 @@ const FileExplorer = {
                     const path = item.dataset.path;
                     e.preventDefault();
 
-                    if (/\.(cpp|c|cc|cxx|h|hpp)$/i.test(path)) {
-                        // Full menu for code files
+                    if (this.displayMode === 'contest' && item.dataset.problemId) {
+                        this.showContestFileContextMenu(e, path, item.dataset.problemId);
+                    } else if (/\.(cpp|c|cc|cxx|h|hpp)$/i.test(path)) {
                         this.showContextMenu(e, path);
                     } else {
-                        // Simple menu for companion/other files
                         this.showSimpleContextMenu(e, path);
                     }
                 });
@@ -779,7 +1300,11 @@ const FileExplorer = {
                     e.preventDefault();
                     const path = item.dataset.path;
                     const approachId = item.dataset.approachId;
-                    this.showApproachContextMenu(e, path, approachId);
+                    if (item.classList.contains('cp-approach') && item.dataset.problemId) {
+                        this.showContestApproachContextMenu(e, path, item.dataset.problemId, approachId);
+                    } else {
+                        this.showApproachContextMenu(e, path, approachId);
+                    }
                 });
             }
         });
@@ -1349,6 +1874,21 @@ const FileExplorer = {
         // Add to recent files
         this.addToRecent(filePath);
 
+        // Track timer in contest mode
+        if (this.displayMode === 'contest') {
+            const fileName = filePath.split(/[/\\]/).pop();
+            const problemId = fileName.replace(/\.[^.]+$/, '').toUpperCase();
+            if (/^[A-Z]$/.test(problemId)) {
+                this.SessionTimer.onFileOpen(problemId);
+                // Auto-set status to 'coding' if it's still 'todo'
+                const prob = this.getProblemMeta(problemId);
+                if (prob && prob.status === 'todo') {
+                    prob.status = 'coding';
+                    this.saveContestMeta(this.contestFolder, this.contestMeta);
+                }
+            }
+        }
+
         // Highlight current file
         const items = this.elements.tree.querySelectorAll('.explorer-item.file');
         items.forEach(item => item.classList.remove('active'));
@@ -1800,6 +2340,531 @@ const FileExplorer = {
         this.pinnedItems = this.pinnedItems.filter(p => p !== filePath);
         this.saveState();
         this.renderTree();
+    },
+
+    // ==================== CONTEST MODE EVENT LISTENERS ====================
+
+    /**
+     * Attach event listeners for contest-mode UI elements
+     */
+    attachContestEventListeners() {
+        if (this.displayMode !== 'contest') {
+            // Handle normal mode contest toggle button
+            const toggleBtn = this.elements.tree.querySelector('[data-action="toggle-contest-mode"]');
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    localStorage.setItem(`cp-mode:${this.currentFolder}`, 'contest');
+                    this.refreshTree();
+                });
+            }
+            return;
+        }
+
+        // Quick Status Bar chips
+        const chips = this.elements.tree.querySelectorAll('.cp-problem-chip');
+        chips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                const problemId = chip.dataset.problem;
+                // Find corresponding tree row and scroll to it
+                const row = this.elements.tree.querySelector(`[data-problem-id="${problemId}"]`);
+                if (row) {
+                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    row.classList.add('highlight-flash');
+                    setTimeout(() => row.classList.remove('highlight-flash'), 1000);
+                }
+                // Also open the file
+                const filePath = `${this.currentFolder}/${problemId}.cpp`.replace(/\\/g, '/');
+                this.openFile(filePath);
+                this.SessionTimer.onFileOpen(problemId);
+            });
+        });
+
+        // Contest header actions
+        const addProbBtn = this.elements.tree.querySelector('[data-action="add-problem"]');
+        if (addProbBtn) {
+            addProbBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.promptAddProblem();
+            });
+        }
+
+        const contestMenuBtn = this.elements.tree.querySelector('[data-action="contest-menu"]');
+        if (contestMenuBtn) {
+            contestMenuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.showContestSettingsMenu(e);
+            });
+        }
+
+        const normalModeBtn = this.elements.tree.querySelector('[data-action="toggle-normal-mode"]');
+        if (normalModeBtn) {
+            normalModeBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                localStorage.setItem(`cp-mode:${this.currentFolder}`, 'normal');
+                this.refreshTree();
+            });
+        }
+
+        // Contest name click to rename
+        const contestName = this.elements.tree.querySelector('.cp-contest-name');
+        if (contestName) {
+            contestName.addEventListener('dblclick', () => {
+                this.showInputDialog('Rename Contest', this.contestMeta.name, (newName) => {
+                    if (newName && newName.trim()) {
+                        this.contestMeta.name = newName.trim();
+                        this.saveContestMeta(this.contestFolder, this.contestMeta);
+                        this.renderTree();
+                    }
+                });
+            });
+        }
+    },
+
+    /**
+     * Show contest-mode context menu for .cpp files
+     */
+    showContestFileContextMenu(e, filePath, problemId) {
+        document.querySelectorAll('.explorer-context-menu, .context-submenu').forEach(el => el.remove());
+
+        const prob = this.getProblemMeta(problemId);
+        const currentStatus = prob ? prob.status : 'todo';
+        const hasNote = !!this.fileNotes[filePath];
+        const isPinned = this.pinnedItems.includes(filePath);
+
+        const menu = document.createElement('div');
+        menu.className = 'explorer-context-menu';
+
+        // Build CP status submenu
+        let statusSubmenu = '';
+        for (const [key, info] of Object.entries(this.CP_STATUSES)) {
+            const isActive = currentStatus === key;
+            const icon = this.STATUS_ICONS[key];
+            statusSubmenu += `
+                <div class="context-item ${isActive ? 'active' : ''}" data-action="cp-status" data-status="${key}">
+                    <span class="cp-menu-icon">${icon}</span> ${info.label}
+                    ${isActive ? ' ' + this.ICONS.check : ''}
+                </div>
+            `;
+        }
+
+        menu.innerHTML = `
+            <div class="context-item has-submenu" data-action="status-menu">
+                <span>Mark Status</span>
+                <span class="submenu-arrow">${this.ICONS.submenuArrow}</span>
+                <div class="context-submenu cp-status-submenu">
+                    ${statusSubmenu}
+                </div>
+            </div>
+            <div class="context-separator"></div>
+            <div class="context-item" data-action="save-approach-meta">
+                ${this.ICONS.approach} Save as New Approach
+            </div>
+            <div class="context-item" data-action="note">
+                ${this.ICONS.note} <span>${hasNote ? 'Edit Note' : 'Add Note'}</span>
+            </div>
+            <div class="context-separator"></div>
+            <div class="context-item" data-action="create-inp">Create .inp</div>
+            <div class="context-item" data-action="create-out">Create .out</div>
+            <div class="context-separator"></div>
+            <div class="context-item" data-action="${isPinned ? 'unpin' : 'pin'}">
+                ${isPinned ? this.ICONS.unpin + ' Unpin' : this.ICONS.pin + ' Pin to Top'}
+            </div>
+            <div class="context-item" data-action="copy-path">Copy Path</div>
+        `;
+
+        menu.style.left = e.pageX + 'px';
+        menu.style.top = e.pageY + 'px';
+        document.body.appendChild(menu);
+
+        // Status submenu hover
+        const statusMenuItem = menu.querySelector('[data-action="status-menu"]');
+        const statusSubmenuEl = menu.querySelector('.cp-status-submenu');
+        let submenuTimeout;
+
+        statusMenuItem.addEventListener('mouseenter', () => {
+            clearTimeout(submenuTimeout);
+            statusSubmenuEl.classList.add('visible');
+        });
+        statusMenuItem.addEventListener('mouseleave', () => {
+            submenuTimeout = setTimeout(() => {
+                if (!statusSubmenuEl.matches(':hover')) statusSubmenuEl.classList.remove('visible');
+            }, 200);
+        });
+        statusSubmenuEl.addEventListener('mouseenter', () => clearTimeout(submenuTimeout));
+        statusSubmenuEl.addEventListener('mouseleave', () => statusSubmenuEl.classList.remove('visible'));
+
+        // Status selection
+        statusSubmenuEl.querySelectorAll('[data-action="cp-status"]').forEach(item => {
+            item.onclick = () => {
+                this.setProblemStatus(problemId, item.dataset.status);
+                menu.remove();
+            };
+        });
+
+        // Save approach
+        menu.querySelector('[data-action="save-approach-meta"]').onclick = () => {
+            menu.remove();
+            this.showInputDialog('Save Approach', 'My Approach', (name) => {
+                if (name) this.saveApproachToMeta(problemId, name);
+            });
+        };
+
+        // Note
+        menu.querySelector('[data-action="note"]').onclick = () => {
+            menu.remove();
+            this.promptNote(filePath);
+        };
+
+        // Create companion files
+        menu.querySelector('[data-action="create-inp"]').onclick = () => {
+            this.createCompanionFile(filePath, '.inp');
+            menu.remove();
+        };
+        menu.querySelector('[data-action="create-out"]').onclick = () => {
+            this.createCompanionFile(filePath, '.out');
+            menu.remove();
+        };
+
+        // Pin/Unpin
+        const pinBtn = menu.querySelector('[data-action="pin"], [data-action="unpin"]');
+        if (pinBtn) {
+            pinBtn.onclick = () => {
+                if (this.pinnedItems.includes(filePath)) this.unpinItem(filePath);
+                else this.pinItem(filePath);
+                menu.remove();
+            };
+        }
+
+        // Copy path
+        menu.querySelector('[data-action="copy-path"]').onclick = () => {
+            navigator.clipboard.writeText(filePath);
+            menu.remove();
+        };
+
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu() {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            });
+        }, 10);
+    },
+
+    /**
+     * Show context menu for contest-mode approach items 
+     */
+    showContestApproachContextMenu(e, filePath, problemId, approachId) {
+        document.querySelectorAll('.explorer-context-menu').forEach(el => el.remove());
+
+        const prob = this.getProblemMeta(problemId);
+        if (!prob) return;
+        const approach = prob.approaches.find(a => a.id === approachId);
+        if (!approach) return;
+
+        const isActive = prob.activeApproach === approachId;
+        const menu = document.createElement('div');
+        menu.className = 'explorer-context-menu';
+
+        // Status submenu
+        let statusSubmenu = '';
+        for (const [key, info] of Object.entries(this.CP_STATUSES)) {
+            const isCurrentStatus = approach.status === key;
+            statusSubmenu += `
+                <div class="context-item ${isCurrentStatus ? 'active' : ''}" data-action="appr-status" data-status="${key}">
+                    <span class="cp-menu-icon">${this.STATUS_ICONS[key]}</span> ${info.label}
+                    ${isCurrentStatus ? ' ' + this.ICONS.check : ''}
+                </div>
+            `;
+        }
+
+        menu.innerHTML = `
+            ${!isActive ? '<div class="context-item" data-action="load-approach">Load this Approach</div><div class="context-separator"></div>' : ''}
+            <div class="context-item has-submenu" data-action="status-menu">
+                <span>Mark Status</span>
+                <span class="submenu-arrow">${this.ICONS.submenuArrow}</span>
+                <div class="context-submenu">${statusSubmenu}</div>
+            </div>
+            <div class="context-separator"></div>
+            <div class="context-item" data-action="rename-approach">Rename</div>
+            <div class="context-item" data-action="delete-approach">Delete</div>
+        `;
+
+        menu.style.left = e.pageX + 'px';
+        menu.style.top = e.pageY + 'px';
+        document.body.appendChild(menu);
+
+        // Submenu hover
+        const statusMenuItem = menu.querySelector('[data-action="status-menu"]');
+        const subEl = menu.querySelector('.context-submenu');
+        let subTimeout;
+        if (statusMenuItem && subEl) {
+            statusMenuItem.addEventListener('mouseenter', () => { clearTimeout(subTimeout); subEl.classList.add('visible'); });
+            statusMenuItem.addEventListener('mouseleave', () => { subTimeout = setTimeout(() => { if (!subEl.matches(':hover')) subEl.classList.remove('visible'); }, 200); });
+            subEl.addEventListener('mouseenter', () => clearTimeout(subTimeout));
+            subEl.addEventListener('mouseleave', () => subEl.classList.remove('visible'));
+
+            subEl.querySelectorAll('[data-action="appr-status"]').forEach(item => {
+                item.onclick = () => {
+                    approach.status = item.dataset.status;
+                    this.saveContestMeta(this.contestFolder, this.contestMeta);
+                    this.renderTree();
+                    menu.remove();
+                };
+            });
+        }
+
+        // Load approach
+        const loadBtn = menu.querySelector('[data-action="load-approach"]');
+        if (loadBtn) {
+            loadBtn.onclick = () => {
+                this.openFile(filePath);
+                setTimeout(() => this.loadApproachFromMeta(problemId, approachId), 300);
+                menu.remove();
+            };
+        }
+
+        // Rename
+        const renameBtn = menu.querySelector('[data-action="rename-approach"]');
+        if (renameBtn) {
+            renameBtn.onclick = () => {
+                menu.remove();
+                this.showInputDialog('Rename Approach', approach.name, (name) => {
+                    if (name) {
+                        approach.name = name.trim();
+                        this.saveContestMeta(this.contestFolder, this.contestMeta);
+                        this.renderTree();
+                    }
+                });
+            };
+        }
+
+        // Delete
+        const deleteBtn = menu.querySelector('[data-action="delete-approach"]');
+        if (deleteBtn) {
+            deleteBtn.onclick = () => {
+                if (confirm(`Delete approach "${approach.name}"?`)) {
+                    this.deleteApproachFromMeta(problemId, approachId);
+                }
+                menu.remove();
+            };
+        }
+
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu() {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            });
+        }, 10);
+    },
+
+    /**
+     * Show contest settings dropdown menu
+     */
+    showContestSettingsMenu(e) {
+        document.querySelectorAll('.explorer-context-menu').forEach(el => el.remove());
+
+        const menu = document.createElement('div');
+        menu.className = 'explorer-context-menu';
+        menu.innerHTML = `
+            <div class="context-item" data-action="rename-contest">Rename Contest</div>
+            <div class="context-item" data-action="set-platform">Set Platform</div>
+            <div class="context-separator"></div>
+            <div class="context-item" data-action="reset-all-status">Reset All Status</div>
+            <div class="context-item" data-action="remove-contest-marker">Remove Contest Marker</div>
+        `;
+
+        menu.style.left = e.pageX + 'px';
+        menu.style.top = e.pageY + 'px';
+        document.body.appendChild(menu);
+
+        menu.querySelector('[data-action="rename-contest"]').onclick = () => {
+            menu.remove();
+            this.showInputDialog('Rename Contest', this.contestMeta.name, (name) => {
+                if (name) {
+                    this.contestMeta.name = name.trim();
+                    this.saveContestMeta(this.contestFolder, this.contestMeta);
+                    this.renderTree();
+                }
+            });
+        };
+
+        menu.querySelector('[data-action="set-platform"]').onclick = () => {
+            menu.remove();
+            this.showInputDialog('Set Platform (CF, VNOJ, SPOJ, Other)', this.contestMeta.platform || 'Other', (val) => {
+                if (val) {
+                    this.contestMeta.platform = val.trim();
+                    this.saveContestMeta(this.contestFolder, this.contestMeta);
+                    this.renderTree();
+                }
+            });
+        };
+
+        menu.querySelector('[data-action="reset-all-status"]').onclick = () => {
+            menu.remove();
+            if (confirm('Reset all problem statuses to "Not Started"?')) {
+                for (const p of this.contestMeta.problems) {
+                    p.status = 'todo';
+                }
+                this.saveContestMeta(this.contestFolder, this.contestMeta);
+                this.renderTree();
+            }
+        };
+
+        menu.querySelector('[data-action="remove-contest-marker"]').onclick = () => {
+            menu.remove();
+            localStorage.setItem(`cp-mode:${this.currentFolder}`, 'normal');
+            this.refreshTree();
+        };
+
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu() {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            });
+        }, 10);
+    },
+
+    // ==================== NEW CONTEST WIZARD ====================
+
+    /**
+     * Prompt to add a new problem to current contest
+     */
+    promptAddProblem() {
+        this.showInputDialog('Add Problem ID (e.g. G, H)', '', (id) => {
+            if (!id || !id.trim()) return;
+            const problemId = id.trim().toUpperCase();
+
+            // Check if already exists
+            if (this.contestMeta.problems.find(p => p.id === problemId)) {
+                alert(`Problem ${problemId} already exists.`);
+                return;
+            }
+
+            // Create .cpp file
+            const filePath = `${this.contestFolder}/${problemId}.cpp`.replace(/\\/g, '/');
+            const template = `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // TODO: solve ${problemId}\n\n    return 0;\n}\n`;
+
+            if (window.electronAPI && window.electronAPI.saveFile) {
+                window.electronAPI.saveFile({ path: filePath, content: template }).then(() => {
+                    this.contestMeta.problems.push({
+                        id: problemId,
+                        label: '',
+                        status: 'todo',
+                        timeSpentMs: 0,
+                        activeApproach: null,
+                        approaches: []
+                    });
+                    this.contestMeta.problems.sort((a, b) => a.id.localeCompare(b.id));
+                    this.saveContestMeta(this.contestFolder, this.contestMeta);
+                    this.refreshTree();
+                });
+            }
+        });
+    },
+
+    /**
+     * Show New Contest Wizard inline dialog
+     */
+    showNewContestDialog() {
+        const overlay = document.createElement('div');
+        overlay.className = 'note-dialog-overlay';
+
+        overlay.innerHTML = `
+            <div class="note-dialog cp-wizard-dialog">
+                <div class="note-dialog-header">
+                    <h3>✦ New Contest</h3>
+                    <button class="note-dialog-close" title="Close">${this.ICONS.close}</button>
+                </div>
+                <div class="note-dialog-body">
+                    <div class="cp-wizard-field">
+                        <label>Contest Name</label>
+                        <input type="text" class="input-dialog-field" id="cp-wizard-name" placeholder="CF Round 1000" />
+                    </div>
+                    <div class="cp-wizard-field">
+                        <label>Problems (space-separated)</label>
+                        <input type="text" class="input-dialog-field" id="cp-wizard-problems" placeholder="A B C D E F" value="A B C D E F" />
+                    </div>
+                    <div class="cp-wizard-field">
+                        <label>Platform</label>
+                        <select class="input-dialog-field" id="cp-wizard-platform">
+                            <option value="CF">Codeforces</option>
+                            <option value="VNOJ">VNOJ</option>
+                            <option value="SPOJ">SPOJ</option>
+                            <option value="Atcoder">AtCoder</option>
+                            <option value="Other" selected>Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="note-dialog-footer">
+                    <button class="note-dialog-btn note-dialog-cancel">Cancel</button>
+                    <button class="note-dialog-btn note-dialog-save">Create →</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const nameInput = document.getElementById('cp-wizard-name');
+        const problemsInput = document.getElementById('cp-wizard-problems');
+        const platformSelect = document.getElementById('cp-wizard-platform');
+        const saveBtn = overlay.querySelector('.note-dialog-save');
+        const cancelBtn = overlay.querySelector('.note-dialog-cancel');
+        const closeBtn = overlay.querySelector('.note-dialog-close');
+
+        setTimeout(() => nameInput && nameInput.focus(), 50);
+
+        const closeDialog = () => overlay.remove();
+
+        const createContest = async () => {
+            const name = nameInput.value.trim();
+            const problemStr = problemsInput.value.trim();
+            const platform = platformSelect.value;
+
+            if (!name) { nameInput.focus(); return; }
+            if (!problemStr) { problemsInput.focus(); return; }
+
+            const problemIds = problemStr.split(/\s+/).map(s => s.toUpperCase());
+
+            if (!this.currentFolder) {
+                alert('Open a folder first.');
+                return;
+            }
+
+            if (window.electronAPI && window.electronAPI.createContest) {
+                const result = await window.electronAPI.createContest({
+                    parentDir: this.currentFolder,
+                    name,
+                    problemIds,
+                    platform
+                });
+
+                if (result.success) {
+                    // Navigate to the new contest folder
+                    this.currentFolder = result.contestDir;
+                    this.expandedFolders.clear();
+                    this.expandedFolders.add(result.contestDir);
+                    await this.refreshTree();
+                    this.saveState();
+                    closeDialog();
+                } else {
+                    alert('Failed to create contest: ' + (result.error || 'Unknown error'));
+                }
+            }
+        };
+
+        saveBtn.onclick = createContest;
+        cancelBtn.onclick = closeDialog;
+        closeBtn.onclick = closeDialog;
+        overlay.onclick = (e) => { if (e.target === overlay) closeDialog(); };
+
+        nameInput.onkeydown = (e) => {
+            if (e.key === 'Escape') closeDialog();
+            if (e.key === 'Enter') problemsInput.focus();
+        };
+        problemsInput.onkeydown = (e) => {
+            if (e.key === 'Escape') closeDialog();
+            if (e.key === 'Enter') createContest();
+        };
     }
 
 };

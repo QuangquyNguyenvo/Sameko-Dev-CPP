@@ -88,7 +88,8 @@ int main() {
         toggleProblems: 'Ctrl+J',
         settings: 'Ctrl+,',
         toggleSplit: 'Ctrl+\\',
-        formatCode: 'Ctrl+Shift+A'
+        formatCode: 'Ctrl+Shift+A',
+        toggleExplorer: 'Ctrl+E'
     },
     snippets: [
         { trigger: 'hello', name: 'Hello World', content: '#include <iostream>\nusing namespace std;\n\nint main() {\n\tcout << "Hello World!";\n\treturn 0;\n}', isBuiltin: true },
@@ -151,6 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     detectPortableVersion();
     validateCompilerOnStartup();
     updateUI();
+    if (typeof FileExplorer !== 'undefined') FileExplorer.init();
 
     let resizeRequestId = null;
     window.addEventListener('resize', () => {
@@ -2609,7 +2611,8 @@ const ACTION_HANDLERS = {
     'toggleProblems': () => toggleProblems(),
     'settings': () => openSettings(),
     'toggleSplit': () => toggleSplit(),
-    'formatCode': () => formatCode()
+    'formatCode': () => formatCode(),
+    'toggleExplorer': () => { if (window.FileExplorer) window.FileExplorer.toggle(); }
 };
 
 function normalizeKeyCombo(e) {

@@ -4408,6 +4408,8 @@ body.split-active .editor-pane {
 
 /* Explorer Folder Header */
 .explorer-folder-header {
+    display: flex;
+    align-items: center;
     padding: 6px 12px 8px;
     border-bottom: 1px solid var(--border, #e0f0ff);
     margin-bottom: 4px;
@@ -4520,10 +4522,10 @@ body.split-active .editor-pane {
     height: 18px;
 }
 
-/* Temporarily hide Explorer toggle due to bugs */
-/* Temporarily hide Explorer toggle due to bugs */
-.toggle-btn.explorer-toggle {
-    display: none !important;
+/* Explorer toggle - visible */
+.toggle-btn.explorer-toggle.active {
+    background: var(--bg-ocean-medium, rgba(188, 226, 245, 0.5));
+    color: var(--accent, #88c9ea);
 }
 
 /* ===== COMPACT DIFF VISUALIZATION ===== */
@@ -5382,6 +5384,392 @@ body.split-active .editor-pane {
     background: var(--bg-secondary, #2a2f3a);
     border-color: var(--border, rgba(255, 255, 255, 0.15));
 }
+
+/* ===== CP CONTEST MODE STYLES ===== */
+
+/* Contest Header */
+.cp-contest-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    background: var(--bg-panel, #e8f4fc);
+    border-bottom: 1px solid var(--border, #e0f0ff);
+    gap: 8px;
+}
+
+.cp-contest-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
+.cp-contest-name {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-primary, #2a5a75);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.cp-contest-name:hover {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+}
+
+.cp-platform-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: var(--accent, #88c9ea);
+    color: var(--btn-primary-text, white);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.cp-contest-actions {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.cp-action-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-secondary, #7eb8c5);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.cp-action-btn:hover {
+    background: var(--bg-ocean-light, #eff8fe);
+    color: var(--bg-ocean-dark, #3a7ca5);
+}
+
+/* Quick Status Bar */
+.cp-status-bar {
+    display: flex;
+    gap: 4px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border, #e0f0ff);
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+
+.cp-problem-chip {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: background 0.15s, border-color 0.2s, transform 0.1s;
+    min-width: 36px;
+    flex-shrink: 0;
+}
+
+.cp-problem-chip:hover {
+    background: var(--bg-ocean-light, rgba(188, 226, 245, 0.3));
+    transform: translateY(-1px);
+}
+
+.cp-problem-chip.active {
+    border-color: var(--accent, #88c9ea);
+    background: var(--bg-ocean-light, rgba(188, 226, 245, 0.5));
+}
+
+.cp-chip-label {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--text-primary, #2a5a75);
+}
+
+.cp-chip-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Status-specific chip backgrounds */
+.cp-problem-chip.cp-status-ac {
+    background: rgba(102, 187, 106, 0.1);
+}
+
+.cp-problem-chip.cp-status-wa {
+    background: rgba(239, 83, 80, 0.1);
+}
+
+.cp-problem-chip.cp-status-tle {
+    background: rgba(255, 167, 38, 0.1);
+}
+
+.cp-problem-chip.cp-status-re {
+    background: rgba(171, 71, 188, 0.1);
+}
+
+.cp-problem-chip.cp-status-coding {
+    background: rgba(100, 181, 246, 0.1);
+}
+
+.cp-problem-chip.cp-status-testing {
+    background: rgba(255, 183, 77, 0.1);
+}
+
+/* Progress Section */
+.cp-progress-section {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-bottom: 1px solid var(--border, #e0f0ff);
+}
+
+.cp-progress-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--border, rgba(0, 0, 0, 0.08));
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.cp-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #66bb6a, #43a047);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.cp-progress-text {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted, #8abac5);
+    white-space: nowrap;
+}
+
+/* CP Status Icon in tree row */
+.cp-status-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-right: 2px;
+}
+
+/* CP Time Display */
+.cp-time-display {
+    font-size: 10px;
+    color: var(--text-muted, #8abac5);
+    margin-left: auto;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+/* CP Status-based file row styling */
+.explorer-item.cp-status-ac {
+    background: rgba(102, 187, 106, 0.08);
+}
+
+.explorer-item.cp-status-wa {
+    background: rgba(239, 83, 80, 0.08);
+}
+
+.explorer-item.cp-status-tle {
+    background: rgba(255, 167, 38, 0.08);
+}
+
+.explorer-item.cp-status-re {
+    background: rgba(171, 71, 188, 0.08);
+}
+
+.explorer-item.cp-status-coding {
+    background: rgba(100, 181, 246, 0.08);
+}
+
+.explorer-item.cp-status-testing {
+    background: rgba(255, 183, 77, 0.08);
+}
+
+/* CP Approach Group & Companion Group */
+.cp-approach-group,
+.cp-companion-group {
+    margin-bottom: 2px;
+}
+
+.cp-group-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted, #8abac5);
+    padding: 4px 12px 2px;
+    opacity: 0.7;
+}
+
+.cp-approach-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    margin-right: 4px;
+}
+
+.cp-menu-icon {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 2px;
+}
+
+/* Mode toggle button in normal header */
+.cp-mode-toggle-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted, #8abac5);
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
+    margin-left: auto;
+}
+
+.cp-mode-toggle-btn:hover {
+    background: var(--bg-ocean-light, #eff8fe);
+    color: var(--accent, #88c9ea);
+}
+
+/* Tree row flash highlight animation */
+.highlight-flash {
+    animation: row-flash 1s ease;
+}
+
+@keyframes row-flash {
+    0% { background: rgba(136, 201, 234, 0.4); }
+    100% { background: transparent; }
+}
+
+/* CP Wizard Dialog Extra Styles */
+.cp-wizard-dialog {
+    min-width: 380px;
+}
+
+.cp-wizard-field {
+    margin-bottom: 12px;
+}
+
+.cp-wizard-field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-secondary, #7eb8c5);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.cp-wizard-field select {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    border: 2px solid var(--border, #e0f0ff);
+    border-radius: 10px;
+    background: var(--bg-button, #f5faff);
+    color: var(--text-primary, #2a5a75);
+    outline: none;
+    transition: border-color 0.2s;
+    cursor: pointer;
+}
+
+.cp-wizard-field select:focus {
+    border-color: var(--accent, #88c9ea);
+}
+
+/* Dark theme CP styles */
+[data-theme*="dark"] .cp-contest-header,
+[data-theme="dracula"] .cp-contest-header,
+[data-theme="nord"] .cp-contest-header,
+[data-theme="monokai"] .cp-contest-header {
+    background: var(--bg-primary, rgba(20, 25, 35, 0.9));
+    border-color: var(--border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme*="dark"] .cp-contest-name,
+[data-theme="dracula"] .cp-contest-name,
+[data-theme="nord"] .cp-contest-name,
+[data-theme="monokai"] .cp-contest-name {
+    color: var(--text-primary, #e0e0e0);
+}
+
+[data-theme*="dark"] .cp-status-bar,
+[data-theme="dracula"] .cp-status-bar,
+[data-theme="nord"] .cp-status-bar,
+[data-theme="monokai"] .cp-status-bar {
+    border-color: var(--border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme*="dark"] .cp-problem-chip:hover,
+[data-theme="dracula"] .cp-problem-chip:hover,
+[data-theme="nord"] .cp-problem-chip:hover,
+[data-theme="monokai"] .cp-problem-chip:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme*="dark"] .cp-problem-chip.active,
+[data-theme="dracula"] .cp-problem-chip.active,
+[data-theme="nord"] .cp-problem-chip.active,
+[data-theme="monokai"] .cp-problem-chip.active {
+    border-color: var(--accent, #88c9ea);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme*="dark"] .cp-chip-label,
+[data-theme="dracula"] .cp-chip-label,
+[data-theme="nord"] .cp-chip-label,
+[data-theme="monokai"] .cp-chip-label {
+    color: var(--text-primary, #e0e0e0);
+}
+
+[data-theme*="dark"] .cp-progress-section,
+[data-theme="dracula"] .cp-progress-section,
+[data-theme="nord"] .cp-progress-section,
+[data-theme="monokai"] .cp-progress-section {
+    border-color: var(--border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme*="dark"] .cp-progress-bar,
+[data-theme="dracula"] .cp-progress-bar,
+[data-theme="nord"] .cp-progress-bar,
+[data-theme="monokai"] .cp-progress-bar {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme*="dark"] .cp-wizard-field select,
+[data-theme="dracula"] .cp-wizard-field select,
+[data-theme="nord"] .cp-wizard-field select,
+[data-theme="monokai"] .cp-wizard-field select {
+    background: var(--bg-secondary, #2a2f3a);
+    border-color: var(--border, rgba(255, 255, 255, 0.15));
+    color: var(--text-primary, #e0e0e0);
+}
+
+/* ===== END CP CONTEST MODE STYLES ===== */
 
 .io-panel.io-panel-input {
     background: var(--bg-panel-input, var(--bg-panel, var(--bg-glass-heavy)));

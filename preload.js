@@ -115,6 +115,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     discordEnable: () => ipcRenderer.invoke('discord-enable'),
     discordDisable: () => ipcRenderer.invoke('discord-disable'),
 
+    // .sameko contest metadata
+    readSameko: (folderPath) => ipcRenderer.invoke('read-sameko', folderPath),
+    writeSameko: (folderPath, data) => ipcRenderer.invoke('write-sameko', { folderPath, data }),
+    createContest: (opts) => ipcRenderer.invoke('create-contest', opts),
+
     // System info
     getSystemVersions: () => process.versions
 });
