@@ -273,12 +273,23 @@ const FileExplorer = {
                 this.recentFiles = state.recentFiles || [];
             }
 
-            // Load categories from separate key
-            const catSaved = localStorage.getItem('explorerCategories');
-            if (catSaved) {
-                const catData = JSON.parse(catSaved);
-                this.categories = catData.categories || [];
-                this.collapsedCategories = new Set(catData.collapsedCategories || []);
+            // Load categories for the current folder (per-folder storage)
+            this.loadCategoriesForFolder(this.currentFolder);
+
+            // Migrate old global categories to current folder (one-time)
+            if (this.categories.length === 0 && this.currentFolder) {
+                try {
+                    const oldGlobal = localStorage.getItem('explorerCategories');
+                    if (oldGlobal) {
+                        const oldData = JSON.parse(oldGlobal);
+                        if (oldData.categories && oldData.categories.length > 0) {
+                            this.categories = oldData.categories;
+                            this.collapsedCategories = new Set(oldData.collapsedCategories || []);
+                            this.saveCategoriesForFolder(this.currentFolder);
+                            localStorage.removeItem('explorerCategories');
+                        }
+                    }
+                } catch (_) {}
             }
         } catch (e) {
             console.error('Failed to load explorer state:', e);
@@ -306,13 +317,46 @@ const FileExplorer = {
             };
             localStorage.setItem('explorerState', JSON.stringify(state));
 
-            // Save categories to separate key
-            localStorage.setItem('explorerCategories', JSON.stringify({
+            // Save categories for the current folder (per-folder storage)
+            this.saveCategoriesForFolder(this.currentFolder);
+        } catch (e) {
+            console.error('Failed to save explorer state:', e);
+        }
+    },
+
+    /**
+     * Load categories for a specific folder from localStorage
+     */
+    loadCategoriesForFolder(folderPath) {
+        this.categories = [];
+        this.collapsedCategories = new Set();
+        if (!folderPath) return;
+        try {
+            const key = 'explorerCategories:' + folderPath.replace(/\\/g, '/');
+            const catSaved = localStorage.getItem(key);
+            if (catSaved) {
+                const catData = JSON.parse(catSaved);
+                this.categories = catData.categories || [];
+                this.collapsedCategories = new Set(catData.collapsedCategories || []);
+            }
+        } catch (e) {
+            console.error('[FileExplorer] Failed to load categories:', e);
+        }
+    },
+
+    /**
+     * Save categories for the current folder to localStorage
+     */
+    saveCategoriesForFolder(folderPath) {
+        if (!folderPath) return;
+        try {
+            const key = 'explorerCategories:' + folderPath.replace(/\\/g, '/');
+            localStorage.setItem(key, JSON.stringify({
                 categories: this.categories,
                 collapsedCategories: Array.from(this.collapsedCategories),
             }));
         } catch (e) {
-            console.error('Failed to save explorer state:', e);
+            console.error('[FileExplorer] Failed to save categories:', e);
         }
     },
 
@@ -488,6 +532,7 @@ const FileExplorer = {
                     this.currentFolder = result.filePaths[0];
                     this.expandedFolders.clear();
                     this.expandedFolders.add(this.currentFolder);
+                    this.loadCategoriesForFolder(this.currentFolder);
                     await this.refreshTree();
                     this.saveState();
                 }
@@ -932,11 +977,13 @@ const FileExplorer = {
             const contestHeader = this.renderContestHeader();
             const quickStatusBar = this.renderQuickStatusBar();
             const progressBar = this.renderProgressBar();
+            const problemList = this.renderContestProblemList();
 
             this.elements.tree.innerHTML = `
                 ${contestHeader}
                 ${quickStatusBar}
                 ${progressBar}
+                ${problemList}
                 ${categoriesHtml}
                 ${recentHtml}
             `;
@@ -1058,6 +1105,100 @@ const FileExplorer = {
                 <span class="cp-progress-text">${solved} / ${total} solved</span>
             </div>
         `;
+    },
+
+    /**
+     * Render contest problem list — expandable cards for each problem
+     */
+    renderContestProblemList() {
+        if (!this.contestMeta || !this.contestMeta.problems) return '';
+        if (this.contestMeta.problems.length === 0) return '';
+
+        // Build a map from tree items for companion files
+        const treeFileMap = {};
+        if (this.tree) {
+            for (const item of this.tree) {
+                if (!item.isDirectory && /\.(cpp|c|cc|cxx)$/i.test(item.name)) {
+                    const key = item.name.replace(/\.[^.]+$/, '').toUpperCase();
+                    treeFileMap[key] = item;
+                }
+            }
+        }
+
+        let html = '<div class="cp-problem-list">';
+        html += '<div class="cp-list-label">PROBLEMS</div>';
+
+        for (const prob of this.contestMeta.problems) {
+            const statusInfo = this.CP_STATUSES[prob.status] || this.CP_STATUSES.todo;
+            const icon = this.STATUS_ICONS[prob.status] || this.STATUS_ICONS.todo;
+            const timeStr = this.SessionTimer.getDisplay(prob.id);
+            const isActive = this.isActiveProblem(prob.id);
+            const isExpanded = this.expandedFiles.has('contest-prob-' + prob.id);
+            const treeItem = treeFileMap[prob.id.toUpperCase()];
+            const filePath = treeItem ? treeItem.path : `${this.contestFolder}/${prob.id}.cpp`.replace(/\\/g, '/');
+            const note = this.fileNotes[filePath];
+            const approaches = prob.approaches || [];
+            const companions = treeItem && treeItem.companions ? treeItem.companions : [];
+            const hasChildren = approaches.length > 0 || companions.length > 0;
+
+            html += `
+                <div class="cp-prob-card ${isActive ? 'active' : ''} cp-status-${prob.status || 'todo'}" 
+                     data-problem="${prob.id}" data-path="${filePath}">
+                    <div class="cp-prob-row" data-problem="${prob.id}" data-path="${filePath}">
+                        ${hasChildren ? `
+                        <span class="cp-prob-arrow ${isExpanded ? 'expanded' : ''}" data-action="toggle-prob" data-prob-id="${prob.id}">
+                            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </span>` : '<span class="cp-prob-spacer"></span>'}
+                        <span class="cp-prob-status" title="${statusInfo.label}">${icon}</span>
+                        <span class="cp-prob-id">${prob.id}</span>
+                        ${prob.label ? `<span class="cp-prob-label">${prob.label}</span>` : ''}
+                        ${note ? `<span class="cp-prob-note-icon" title="${note.replace(/"/g, '&quot;')}">${this.ICONS.note}</span>` : ''}
+                        ${timeStr ? `<span class="cp-prob-time">${timeStr}</span>` : ''}
+                    </div>
+            `;
+
+            // Expanded details
+            if (isExpanded && hasChildren) {
+                html += '<div class="cp-prob-details">';
+
+                if (approaches.length > 0) {
+                    html += '<div class="cp-prob-group-label">Approaches</div>';
+                    for (const appr of approaches) {
+                        const isActiveAppr = prob.activeApproach === appr.id;
+                        const apprIcon = this.STATUS_ICONS[appr.status] || this.STATUS_ICONS.todo;
+                        html += `
+                            <div class="cp-prob-sub-item ${isActiveAppr ? 'current' : ''}" 
+                                 data-path="${filePath}" data-problem-id="${prob.id}" data-approach-id="${appr.id}">
+                                <span class="cp-prob-sub-icon">${apprIcon}</span>
+                                <span class="cp-prob-sub-name">${appr.name}</span>
+                                ${isActiveAppr ? `<span class="cp-prob-active-mark">${this.ICONS.check}</span>` : ''}
+                            </div>
+                        `;
+                    }
+                }
+
+                if (companions.length > 0) {
+                    html += '<div class="cp-prob-group-label">Test Files</div>';
+                    for (const comp of companions) {
+                        html += `
+                            <div class="cp-prob-sub-item" data-path="${comp.path}">
+                                ${this.getFileIcon(comp.name)}
+                                <span class="cp-prob-sub-name">${comp.name}</span>
+                            </div>
+                        `;
+                    }
+                }
+
+                html += '</div>';
+            }
+
+            html += '</div>';
+        }
+
+        html += '</div>';
+        return html;
     },
 
     /**
@@ -2541,8 +2682,8 @@ const FileExplorer = {
                 }
 
                 this.lastChipClickIdx = chipIdx;
-                // Find corresponding tree row and scroll to it
-                const row = this.elements.tree.querySelector(`[data-problem-id="${problemId}"]`);
+                // Find corresponding problem card and scroll to it
+                const row = this.elements.tree.querySelector(`.cp-prob-card[data-problem="${problemId}"]`);
                 if (row) {
                     row.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     row.classList.add('highlight-flash');
@@ -2623,6 +2764,51 @@ const FileExplorer = {
                 });
             });
         }
+
+        // Problem list: click to open, expand arrow, context menu
+        this.elements.tree.querySelectorAll('.cp-prob-row').forEach(row => {
+            row.addEventListener('click', (e) => {
+                if (e.target.closest('[data-action="toggle-prob"]')) return;
+                const problemId = row.dataset.problem;
+                const filePath = row.dataset.path;
+                if (filePath) {
+                    this.openFile(filePath);
+                    this.SessionTimer.onFileOpen(problemId);
+                }
+            });
+
+            row.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const problemId = row.dataset.problem;
+                const filePath = row.dataset.path;
+                this.showContestFileContextMenu(e, filePath, problemId);
+            });
+        });
+
+        // Problem expand/collapse arrows
+        this.elements.tree.querySelectorAll('[data-action="toggle-prob"]').forEach(arrow => {
+            arrow.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const probId = arrow.dataset.probId;
+                const key = 'contest-prob-' + probId;
+                if (this.expandedFiles.has(key)) {
+                    this.expandedFiles.delete(key);
+                } else {
+                    this.expandedFiles.add(key);
+                }
+                this.saveState();
+                this.renderTree();
+            });
+        });
+
+        // Sub-items (approaches, test files) click to open
+        this.elements.tree.querySelectorAll('.cp-prob-sub-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const path = item.dataset.path;
+                if (path) this.openFile(path);
+            });
+        });
     },
 
     /**
@@ -3191,6 +3377,7 @@ const FileExplorer = {
         this.contestMeta = null;
         this.selectedChips.clear();
         this.currentFolder = parentFolder || null;
+        this.loadCategoriesForFolder(this.currentFolder);
         this.saveState();
         this.refreshTree();
     },
@@ -3286,6 +3473,7 @@ const FileExplorer = {
                     this.currentFolder = result.contestDir;
                     this.expandedFolders.clear();
                     this.expandedFolders.add(result.contestDir);
+                    this.loadCategoriesForFolder(this.currentFolder);
                     await this.refreshTree();
                     this.saveState();
                     closeDialog();

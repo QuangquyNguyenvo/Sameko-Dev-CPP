@@ -5647,6 +5647,176 @@ body.split-active .editor-pane {
     white-space: nowrap;
 }
 
+/* ===== Contest Problem List ===== */
+.cp-problem-list {
+    padding: 4px 0;
+    border-bottom: 1px solid var(--border, #e0f0ff);
+}
+
+.cp-list-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text-muted, #8abac5);
+    padding: 6px 12px 4px;
+    opacity: 0.7;
+}
+
+.cp-prob-card {
+    border-left: 3px solid transparent;
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.cp-prob-card.active {
+    background: var(--bg-ocean-light, rgba(188, 226, 245, 0.3));
+    border-left-color: var(--accent, #88c9ea);
+}
+
+.cp-prob-card.cp-status-ac { border-left-color: #66bb6a; }
+.cp-prob-card.cp-status-wa { border-left-color: #ef5350; }
+.cp-prob-card.cp-status-tle { border-left-color: #ffa726; }
+.cp-prob-card.cp-status-re { border-left-color: #ab47bc; }
+.cp-prob-card.cp-status-coding { border-left-color: #64b5f6; }
+.cp-prob-card.cp-status-testing { border-left-color: #ffb74d; }
+
+.cp-prob-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 10px 6px 6px;
+    cursor: pointer;
+    transition: background 0.12s;
+    min-height: 28px;
+}
+
+.cp-prob-row:hover {
+    background: var(--bg-ocean-light, rgba(188, 226, 245, 0.18));
+}
+
+.cp-prob-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+    opacity: 0.6;
+    cursor: pointer;
+    border-radius: 3px;
+}
+
+.cp-prob-arrow:hover {
+    opacity: 1;
+    background: rgba(136, 201, 234, 0.15);
+}
+
+.cp-prob-arrow.expanded {
+    transform: rotate(90deg);
+}
+
+.cp-prob-spacer {
+    width: 16px;
+    flex-shrink: 0;
+}
+
+.cp-prob-status {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.cp-prob-id {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--text-primary, #2a5a75);
+    flex-shrink: 0;
+    min-width: 18px;
+}
+
+.cp-prob-label {
+    font-size: 11px;
+    color: var(--text-secondary, #7eb8c5);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.cp-prob-note-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    opacity: 0.5;
+}
+
+.cp-prob-time {
+    font-size: 10px;
+    color: var(--text-muted, #8abac5);
+    opacity: 0.7;
+    flex-shrink: 0;
+    margin-left: auto;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Problem detail sub-items */
+.cp-prob-details {
+    padding: 0 0 4px 0;
+}
+
+.cp-prob-group-label {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted, #8abac5);
+    padding: 4px 12px 2px 38px;
+    opacity: 0.6;
+}
+
+.cp-prob-sub-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px 3px 38px;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--text-secondary, #7eb8c5);
+    transition: background 0.12s;
+}
+
+.cp-prob-sub-item:hover {
+    background: var(--bg-ocean-light, rgba(188, 226, 245, 0.15));
+}
+
+.cp-prob-sub-item.current {
+    color: var(--text-primary, #2a5a75);
+    font-weight: 600;
+}
+
+.cp-prob-sub-icon {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.cp-prob-sub-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+.cp-prob-active-mark {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
 /* CP Status Icon in tree row */
 .cp-status-icon {
     display: flex;
@@ -5852,6 +6022,42 @@ body.split-active .editor-pane {
     background: var(--bg-secondary, #2a2f3a);
     border-color: var(--border, rgba(255, 255, 255, 0.15));
     color: var(--text-primary, #e0e0e0);
+}
+
+/* Dark theme problem list */
+[data-theme*="dark"] .cp-problem-list,
+[data-theme="dracula"] .cp-problem-list,
+[data-theme="nord"] .cp-problem-list,
+[data-theme="monokai"] .cp-problem-list {
+    border-color: var(--border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme*="dark"] .cp-prob-id,
+[data-theme="dracula"] .cp-prob-id,
+[data-theme="nord"] .cp-prob-id,
+[data-theme="monokai"] .cp-prob-id {
+    color: var(--text-primary, #e0e0e0);
+}
+
+[data-theme*="dark"] .cp-prob-card.active,
+[data-theme="dracula"] .cp-prob-card.active,
+[data-theme="nord"] .cp-prob-card.active,
+[data-theme="monokai"] .cp-prob-card.active {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme*="dark"] .cp-prob-row:hover,
+[data-theme="dracula"] .cp-prob-row:hover,
+[data-theme="nord"] .cp-prob-row:hover,
+[data-theme="monokai"] .cp-prob-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme*="dark"] .cp-prob-sub-item:hover,
+[data-theme="dracula"] .cp-prob-sub-item:hover,
+[data-theme="nord"] .cp-prob-sub-item:hover,
+[data-theme="monokai"] .cp-prob-sub-item:hover {
+    background: rgba(255, 255, 255, 0.04);
 }
 
 /* ===== END CP CONTEST MODE STYLES ===== */
