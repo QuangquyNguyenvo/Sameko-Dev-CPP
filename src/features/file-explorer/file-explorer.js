@@ -39,6 +39,11 @@ const FileExplorer = {
     selectedChips: new Set(),   // Set of problem IDs
     lastChipClickIdx: -1,       // For shift-range selection
 
+    // ==================== CATEGORIES (Collections) STATE ====================
+    categories: [],            // Array of category objects
+    collapsedCategories: new Set(), // Set of collapsed category IDs
+    dragState: null,           // { filePath, fileName } for drag-and-drop
+
     // ==================== CONTEST MODE STATE ====================
     displayMode: 'normal', // 'normal' | 'contest'
     contestMeta: null,     // Parsed .sameko data for current folder
@@ -216,8 +221,8 @@ const FileExplorer = {
         // Load saved state
         this.loadState();
 
-        // Welcome screen: stay closed when no folder is loaded
-        if (!this.currentFolder) this.isOpen = false;
+        // Welcome screen: stay closed when no folder AND no categories
+        if (!this.currentFolder && this.categories.length === 0) this.isOpen = false;
 
         // Setup event listeners
         this.setupEventListeners();
@@ -267,6 +272,14 @@ const FileExplorer = {
                 this.pinnedItems = state.pinnedItems || [];
                 this.recentFiles = state.recentFiles || [];
             }
+
+            // Load categories from separate key
+            const catSaved = localStorage.getItem('explorerCategories');
+            if (catSaved) {
+                const catData = JSON.parse(catSaved);
+                this.categories = catData.categories || [];
+                this.collapsedCategories = new Set(catData.collapsedCategories || []);
+            }
         } catch (e) {
             console.error('Failed to load explorer state:', e);
         }
@@ -292,6 +305,12 @@ const FileExplorer = {
                 recentFiles: this.recentFiles,
             };
             localStorage.setItem('explorerState', JSON.stringify(state));
+
+            // Save categories to separate key
+            localStorage.setItem('explorerCategories', JSON.stringify({
+                categories: this.categories,
+                collapsedCategories: Array.from(this.collapsedCategories),
+            }));
         } catch (e) {
             console.error('Failed to save explorer state:', e);
         }
@@ -513,6 +532,9 @@ const FileExplorer = {
                     this.contestMeta = null;
                     this.contestFolder = null;
                 }
+
+                // Sync collection folders with disk contents
+                await this.syncAllCategories();
 
                 this.renderTree();
             } else {
@@ -838,39 +860,46 @@ const FileExplorer = {
     renderTree() {
         if (!this.elements.tree) return;
 
-        if (!this.tree || this.tree.length === 0) {
+        if ((!this.tree || this.tree.length === 0) && !this.currentFolder) {
             this.renderEmptyState();
+            return;
+        }
+
+        // If folder is open but tree is empty, show folder header + categories + new file option
+        if ((!this.tree || this.tree.length === 0) && this.currentFolder) {
+            const folderName = this.currentFolder.split(/[/\\]/).pop();
+            const categoriesHtml = this.renderCategories();
+            this.elements.tree.innerHTML = `
+                ${categoriesHtml}
+                <div class="explorer-folder-header">
+                    <span class="explorer-folder-name" title="${this.currentFolder}">${folderName}</span>
+                    <div class="explorer-folder-actions">
+                        <button class="cp-mode-toggle-btn" data-action="new-file-here" title="New File">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div class="explorer-empty" style="padding:20px 16px">
+                    <p style="font-size:12px;opacity:0.6">Empty folder</p>
+                    <button class="explorer-open-btn" data-action="new-file-here" style="font-size:11px;padding:6px 12px">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        New File
+                    </button>
+                </div>
+            `;
+            // Attach new file action
+            this.elements.tree.querySelectorAll('[data-action="new-file-here"]').forEach(btn => {
+                btn.addEventListener('click', (e) => { e.stopPropagation(); this.promptNewFile(); });
+            });
+            this.attachCategoryEventListeners();
             return;
         }
 
         // Get folder name for header
         const folderName = this.currentFolder.split(/[/\\]/).pop();
 
-        // Build pinned section HTML
-        let pinnedHtml = '';
-        if (this.pinnedItems.length > 0) {
-            const validPins = this.pinnedItems.filter(p => {
-                return p.startsWith(this.currentFolder);
-            });
-            if (validPins.length > 0) {
-                pinnedHtml = `
-                    <div class="explorer-pinned-section">
-                        <div class="explorer-section-title">${this.ICONS.pin} PINNED</div>
-                        <div class="explorer-section-items">
-                            ${validPins.map(path => {
-                    const name = path.split(/[/\\]/).pop();
-                    return `
-                                    <div class="explorer-item file pinned-item" data-path="${path}" style="padding-left: 12px">
-                                        ${this.getFileIcon(name)}
-                                        <span class="explorer-item-name">${name}</span>
-                                    </div>
-                                `;
-                }).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-        }
+        // Build categories section (always shown)
+        const categoriesHtml = this.renderCategories();
 
         // Build recent section HTML
         let recentHtml = '';
@@ -908,20 +937,23 @@ const FileExplorer = {
                 ${contestHeader}
                 ${quickStatusBar}
                 ${progressBar}
-                <div class="explorer-items cp-tree-items">
-                    ${this.renderItems(this.tree, 0)}
-                </div>
+                ${categoriesHtml}
                 ${recentHtml}
             `;
         } else {
             // ==================== NORMAL MODE ====================
             this.elements.tree.innerHTML = `
-                ${pinnedHtml}
+                ${categoriesHtml}
                 <div class="explorer-folder-header">
                     <span class="explorer-folder-name" title="${this.currentFolder}">${folderName}</span>
-                    <button class="cp-mode-toggle-btn" data-action="toggle-contest-mode" title="Switch to Contest Mode">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                    </button>
+                    <div class="explorer-folder-actions">
+                        <button class="cp-mode-toggle-btn" data-action="new-file-here" title="New File">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                        </button>
+                        <button class="cp-mode-toggle-btn" data-action="toggle-contest-mode" title="Switch to Contest Mode">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        </button>
+                    </div>
                 </div>
                 <div class="explorer-items">
                     ${this.renderItems(this.tree, 0)}
@@ -933,6 +965,7 @@ const FileExplorer = {
         // Attach event listeners
         this.attachTreeEventListeners();
         this.attachContestEventListeners();
+        this.attachCategoryEventListeners();
     },
 
     /**
@@ -1233,18 +1266,27 @@ const FileExplorer = {
     },
 
     /**
-     * Render empty state
+     * Render empty state — now shows categories + actions even without a folder
      */
     renderEmptyState() {
         if (!this.elements.tree) return;
 
+        const categoriesHtml = this.renderCategories();
+
         this.elements.tree.innerHTML = `
+            ${categoriesHtml}
             <div class="explorer-empty">
-                <svg viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4">
                     <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
                 </svg>
-                <p>No folder opened</p>
-                <button class="explorer-open-btn" id="btn-explorer-open-empty">Open Folder</button>
+                <p style="font-size:12px;margin:8px 0">No folder opened</p>
+                <div class="explorer-empty-actions">
+                    <button class="explorer-open-btn" id="btn-explorer-open-empty">Open Folder</button>
+                    <button class="explorer-open-btn cat-new-btn-empty" id="btn-new-category-empty">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        New Collection
+                    </button>
+                </div>
             </div>
         `;
 
@@ -1253,6 +1295,13 @@ const FileExplorer = {
         if (openBtn) {
             openBtn.addEventListener('click', () => this.openFolderDialog());
         }
+        // Attach new category event
+        const newCatBtn = document.getElementById('btn-new-category-empty');
+        if (newCatBtn) {
+            newCatBtn.addEventListener('click', () => this.promptCreateCategory());
+        }
+        // Attach category event listeners
+        this.attachCategoryEventListeners();
     },
 
     /**
@@ -1480,6 +1529,19 @@ const FileExplorer = {
             <div class="context-item" data-action="${isPinned ? 'unpin' : 'pin'}">
                 ${isPinned ? this.ICONS.unpin : this.ICONS.pin} ${isPinned ? 'Unpin from Top' : 'Pin to Top'}
             </div>
+            ${this.categories.length > 0 ? `
+            <div class="context-item has-submenu" data-action="add-to-cat-menu">
+                <span>Add to Collection</span>
+                <span class="submenu-arrow">${this.ICONS.submenuArrow}</span>
+                <div class="context-submenu cat-target-submenu">
+                    ${this.categories.map(c => `
+                        <div class="context-item" data-action="add-to-cat" data-cat-id="${c.id}">
+                            <span class="cat-color-dot-mini" style="background: ${c.color}"></span>
+                            ${c.name}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>` : ''}
             <div class="context-separator"></div>
             <div class="context-item" data-action="copy-path">
                 Copy Path
@@ -1577,6 +1639,30 @@ const FileExplorer = {
                 }
                 menu.remove();
             };
+        }
+
+        // Add to Collection submenu
+        const addToCatMenu = menu.querySelector('[data-action="add-to-cat-menu"]');
+        const catTargetSubmenu = menu.querySelector('.cat-target-submenu');
+        if (addToCatMenu && catTargetSubmenu) {
+            let catSubTimeout;
+            addToCatMenu.addEventListener('mouseenter', () => { clearTimeout(catSubTimeout); catTargetSubmenu.classList.add('visible'); });
+            addToCatMenu.addEventListener('mouseleave', () => {
+                catSubTimeout = setTimeout(() => { if (!catTargetSubmenu.matches(':hover')) catTargetSubmenu.classList.remove('visible'); }, 200);
+            });
+            catTargetSubmenu.addEventListener('mouseenter', () => clearTimeout(catSubTimeout));
+            catTargetSubmenu.addEventListener('mouseleave', () => catTargetSubmenu.classList.remove('visible'));
+
+            catTargetSubmenu.querySelectorAll('[data-action="add-to-cat"]').forEach(el => {
+                el.onclick = () => {
+                    const catId = el.dataset.catId;
+                    const fileName = filePath.split(/[/\\]/).pop();
+                    const name = fileName.replace(/\.[^.]+$/, '');
+                    this.addFileToCategory(catId, filePath.replace(/\\/g, '/'), name);
+                    menu.remove();
+                    this.renderTree();
+                };
+            });
         }
 
         // Copy path handler
@@ -2515,6 +2601,15 @@ const FileExplorer = {
             });
         }
 
+        // New file button in normal mode
+        const newFileBtn = this.elements.tree.querySelector('[data-action="new-file-here"]');
+        if (newFileBtn) {
+            newFileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.promptNewFile();
+            });
+        }
+
         // Contest name click to rename
         const contestName = this.elements.tree.querySelector('.cp-contest-name');
         if (contestName) {
@@ -2579,6 +2674,19 @@ const FileExplorer = {
             <div class="context-item" data-action="${isPinned ? 'unpin' : 'pin'}">
                 ${isPinned ? this.ICONS.unpin + ' Unpin' : this.ICONS.pin + ' Pin to Top'}
             </div>
+            ${this.categories.length > 0 ? `
+            <div class="context-item has-submenu" data-action="add-to-cat-menu">
+                <span>Add to Collection</span>
+                <span class="submenu-arrow">${this.ICONS.submenuArrow}</span>
+                <div class="context-submenu cat-target-submenu">
+                    ${this.categories.map(c => `
+                        <div class="context-item" data-action="add-to-cat" data-cat-id="${c.id}">
+                            <span class="cat-color-dot-mini" style="background: ${c.color}"></span>
+                            ${c.name}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>` : ''}
             <div class="context-item" data-action="copy-path">Copy Path</div>
             <div class="context-separator"></div>
             <div class="context-item danger" data-action="delete-problem" style="color:#ef5350">
@@ -2653,6 +2761,29 @@ const FileExplorer = {
             navigator.clipboard.writeText(filePath);
             menu.remove();
         };
+
+        // Add to Collection submenu
+        const addToCatMenu = menu.querySelector('[data-action="add-to-cat-menu"]');
+        const catTargetSubmenu = menu.querySelector('.cat-target-submenu');
+        if (addToCatMenu && catTargetSubmenu) {
+            let catSubTimeout;
+            addToCatMenu.addEventListener('mouseenter', () => { clearTimeout(catSubTimeout); catTargetSubmenu.classList.add('visible'); });
+            addToCatMenu.addEventListener('mouseleave', () => {
+                catSubTimeout = setTimeout(() => { if (!catTargetSubmenu.matches(':hover')) catTargetSubmenu.classList.remove('visible'); }, 200);
+            });
+            catTargetSubmenu.addEventListener('mouseenter', () => clearTimeout(catSubTimeout));
+            catTargetSubmenu.addEventListener('mouseleave', () => catTargetSubmenu.classList.remove('visible'));
+
+            catTargetSubmenu.querySelectorAll('[data-action="add-to-cat"]').forEach(el => {
+                el.onclick = () => {
+                    const catId = el.dataset.catId;
+                    const name = problemId;
+                    this.addFileToCategory(catId, filePath.replace(/\\/g, '/'), name);
+                    menu.remove();
+                    this.renderTree();
+                };
+            });
+        }
 
         menu.querySelector('[data-action="delete-problem"]').onclick = () => {
             menu.remove();
@@ -3008,7 +3139,7 @@ const FileExplorer = {
         this.contestMeta.problems = this.contestMeta.problems.filter(p => p.id !== problemId);
         this.selectedChips.delete(problemId);
         await this.saveContestMeta(this.contestFolder, this.contestMeta);
-        this.refreshTree();
+        await this.refreshTree();
     },
 
     /**
@@ -3029,7 +3160,7 @@ const FileExplorer = {
         this.selectedChips.clear();
         this.lastChipClickIdx = -1;
         await this.saveContestMeta(this.contestFolder, this.contestMeta);
-        this.refreshTree();
+        await this.refreshTree();
     },
 
     /**
@@ -3204,6 +3335,1009 @@ const FileExplorer = {
             }
         }
         return problems;
+    },
+
+    // ==================== CATEGORIES (Collections) SYSTEM ====================
+
+    /**
+     * Category colors palette
+     */
+    CATEGORY_COLORS: [
+        '#64b5f6', '#66bb6a', '#ffa726', '#ef5350', '#ab47bc',
+        '#26c6da', '#ffca28', '#8d6e63', '#78909c', '#ec407a',
+        '#7e57c2', '#29b6f6', '#9ccc65', '#ff7043',
+    ],
+
+    /**
+     * Create a new category (folder-backed: creates a real folder on disk)
+     */
+    async createCategory(name, color) {
+        const id = 'cat-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+        const sanitizedName = name.trim().replace(/[<>:"/\\|?*]/g, '_');
+        
+        // Create folder on disk if we have a current folder
+        let folderPath = null;
+        if (this.currentFolder) {
+            folderPath = `${this.currentFolder}/${sanitizedName}`.replace(/\\/g, '/');
+            try {
+                if (window.electronAPI && window.electronAPI.createDirectory) {
+                    await window.electronAPI.createDirectory(folderPath);
+                }
+            } catch (err) {
+                console.warn('[FileExplorer] Could not create collection folder:', err);
+            }
+        }
+
+        const cat = {
+            id,
+            name: name.trim(),
+            color: color || this.CATEGORY_COLORS[this.categories.length % this.CATEGORY_COLORS.length],
+            items: [],
+            folderPath: folderPath,
+            createdAt: new Date().toISOString(),
+        };
+        this.categories.push(cat);
+        this.saveState();
+        if (folderPath) this.refreshTree();
+        return cat;
+    },
+
+    /**
+     * Rename a category (also renames folder on disk)
+     */
+    async renameCategory(catId, newName) {
+        const cat = this.categories.find(c => c.id === catId);
+        if (cat && newName && newName.trim()) {
+            const oldName = cat.name;
+            cat.name = newName.trim();
+
+            // Rename folder on disk if it exists
+            if (cat.folderPath && this.currentFolder) {
+                const sanitizedNew = newName.trim().replace(/[<>:"/\\|?*]/g, '_');
+                const newFolderPath = `${this.currentFolder}/${sanitizedNew}`.replace(/\\/g, '/');
+                if (cat.folderPath !== newFolderPath) {
+                    try {
+                        if (window.electronAPI && window.electronAPI.moveFile) {
+                            await window.electronAPI.moveFile(cat.folderPath, newFolderPath);
+                            // Update all item paths
+                            const oldPrefix = cat.folderPath.replace(/\\/g, '/');
+                            const newPrefix = newFolderPath;
+                            for (const item of cat.items) {
+                                if (item.filePath.replace(/\\/g, '/').startsWith(oldPrefix)) {
+                                    item.filePath = item.filePath.replace(/\\/g, '/').replace(oldPrefix, newPrefix);
+                                    item.fileName = item.filePath.split('/').pop();
+                                }
+                            }
+                            cat.folderPath = newFolderPath;
+                        }
+                    } catch (err) {
+                        console.warn('[FileExplorer] Could not rename collection folder:', err);
+                    }
+                }
+            }
+
+            this.saveState();
+        }
+    },
+
+    /**
+     * Change category color
+     */
+    setCategoryColor(catId, color) {
+        const cat = this.categories.find(c => c.id === catId);
+        if (cat) {
+            cat.color = color;
+            this.saveState();
+        }
+    },
+
+    /**
+     * Delete a category (does NOT delete the actual files)
+     */
+    deleteCategory(catId) {
+        this.categories = this.categories.filter(c => c.id !== catId);
+        this.collapsedCategories.delete(catId);
+        this.saveState();
+    },
+
+    /**
+     * Add file to a category
+     */
+    addFileToCategory(catId, filePath, displayName, status) {
+        const cat = this.categories.find(c => c.id === catId);
+        if (!cat) return;
+
+        // Don't add duplicates
+        if (cat.items.some(i => i.filePath === filePath)) return;
+
+        const fileName = filePath.split(/[/\\]/).pop();
+        cat.items.push({
+            filePath,
+            name: displayName || fileName.replace(/\.[^.]+$/, ''),
+            fileName,
+            status: status || 'todo',
+            addedAt: Date.now(),
+        });
+        this.saveState();
+    },
+
+    /**
+     * Create a new problem file inside a category's folder
+     */
+    async createProblemInCategory(catId, problemName) {
+        const cat = this.categories.find(c => c.id === catId);
+        if (!cat) return;
+
+        // Determine folder path
+        let folderPath = cat.folderPath;
+        if (!folderPath && this.currentFolder) {
+            const sanitizedName = cat.name.replace(/[<>:"/\\|?*]/g, '_');
+            folderPath = `${this.currentFolder}/${sanitizedName}`.replace(/\\/g, '/');
+            cat.folderPath = folderPath;
+        }
+        if (!folderPath) return;
+
+        // Ensure folder exists
+        try {
+            if (window.electronAPI && window.electronAPI.createDirectory) {
+                await window.electronAPI.createDirectory(folderPath);
+            }
+        } catch (_) {}
+
+        // Sanitize problem name for file
+        const safeName = problemName.trim().replace(/[<>:"/\\|?*]/g, '_');
+        const fileName = safeName.endsWith('.cpp') ? safeName : `${safeName}.cpp`;
+        const filePath = `${folderPath}/${fileName}`.replace(/\\/g, '/');
+
+        // Generate template
+        const baseName = fileName.replace(/\.[^.]+$/, '');
+        const template = `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // TODO: solve ${baseName}\n\n    return 0;\n}\n`;
+
+        // Create file
+        if (window.electronAPI && window.electronAPI.saveFile) {
+            const result = await window.electronAPI.saveFile({ path: filePath, content: template });
+            if (result && result.success !== false) {
+                // Add to category
+                this.addFileToCategory(catId, filePath, baseName, 'todo');
+                await this.refreshTree();
+                this.openFile(filePath);
+            }
+        }
+    },
+
+    /**
+     * Sync a category's items with the files actually present in its folder.
+     * Adds new files found on disk, removes items whose files no longer exist.
+     */
+    async syncCategoryWithFolder(catId) {
+        const cat = this.categories.find(c => c.id === catId);
+        if (!cat || !cat.folderPath) return;
+
+        try {
+            if (!window.electronAPI || !window.electronAPI.readDirectory) return;
+            const entries = await window.electronAPI.readDirectory(cat.folderPath);
+            if (!entries || !Array.isArray(entries)) return;
+
+            const files = entries.filter(e => e.isFile && /\.(cpp|c|cc|cxx|h|hpp|py|java)$/i.test(e.name));
+            const existingPaths = new Set(cat.items.map(i => i.filePath.replace(/\\/g, '/')));
+
+            let changed = false;
+            for (const file of files) {
+                const filePath = `${cat.folderPath}/${file.name}`.replace(/\\/g, '/');
+                if (!existingPaths.has(filePath)) {
+                    const baseName = file.name.replace(/\.[^.]+$/, '');
+                    cat.items.push({
+                        filePath,
+                        name: baseName,
+                        fileName: file.name,
+                        status: 'todo',
+                        addedAt: Date.now(),
+                    });
+                    changed = true;
+                }
+            }
+
+            // Remove items whose files no longer exist on disk
+            const diskPaths = new Set(files.map(f => `${cat.folderPath}/${f.name}`.replace(/\\/g, '/')));
+            const before = cat.items.length;
+            cat.items = cat.items.filter(item => {
+                const normalPath = item.filePath.replace(/\\/g, '/');
+                // Only remove if the file was in this category's folder (not external files)
+                if (normalPath.startsWith(cat.folderPath.replace(/\\/g, '/'))) {
+                    return diskPaths.has(normalPath);
+                }
+                return true; // keep external files
+            });
+            if (cat.items.length !== before) changed = true;
+
+            if (changed) this.saveState();
+        } catch (err) {
+            console.warn('[FileExplorer] syncCategoryWithFolder error:', err);
+        }
+    },
+
+    /**
+     * Sync ALL categories with their disk folders
+     */
+    async syncAllCategories() {
+        for (const cat of this.categories) {
+            if (cat.folderPath) {
+                await this.syncCategoryWithFolder(cat.id);
+            }
+        }
+    },
+
+    /**
+     * Remove file from a category
+     */
+    removeFileFromCategory(catId, filePath) {
+        const cat = this.categories.find(c => c.id === catId);
+        if (!cat) return;
+        cat.items = cat.items.filter(i => i.filePath !== filePath);
+        this.saveState();
+    },
+
+    /**
+     * Rename a file item within a category
+     */
+    renameCategoryItem(catId, filePath, newName) {
+        const cat = this.categories.find(c => c.id === catId);
+        if (!cat) return;
+        const item = cat.items.find(i => i.filePath === filePath);
+        if (item && newName && newName.trim()) {
+            item.name = newName.trim();
+            this.saveState();
+        }
+    },
+
+    /**
+     * Set status on a category item
+     */
+    setCategoryItemStatus(catId, filePath, status) {
+        const cat = this.categories.find(c => c.id === catId);
+        if (!cat) return;
+        const item = cat.items.find(i => i.filePath === filePath);
+        if (item) {
+            item.status = status;
+            this.saveState();
+        }
+    },
+
+    /**
+     * Toggle category collapse
+     */
+    toggleCategoryCollapse(catId) {
+        if (this.collapsedCategories.has(catId)) {
+            this.collapsedCategories.delete(catId);
+        } else {
+            this.collapsedCategories.add(catId);
+        }
+        this.saveState();
+    },
+
+    /**
+     * Move category up/down
+     */
+    moveCategoryOrder(catId, direction) {
+        const idx = this.categories.findIndex(c => c.id === catId);
+        if (idx < 0) return;
+        const newIdx = direction === 'up' ? idx - 1 : idx + 1;
+        if (newIdx < 0 || newIdx >= this.categories.length) return;
+        [this.categories[idx], this.categories[newIdx]] = [this.categories[newIdx], this.categories[idx]];
+        this.saveState();
+    },
+
+    /**
+     * Render categories section HTML
+     */
+    renderCategories() {
+        let html = '<div class="cat-section">';
+        html += `<div class="cat-section-header">
+            <span class="cat-section-title">COLLECTIONS</span>
+            <button class="cat-add-btn" data-action="new-category" title="New Collection">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+        </div>`;
+
+        if (this.categories.length === 0) {
+            html += `
+                <div class="cat-empty-hint">
+                    <span style="font-size:11px;opacity:0.5">Create a collection to organize problems</span>
+                </div>
+            `;
+            html += '</div>';
+            return html;
+        }
+
+        for (const cat of this.categories) {
+            const isCollapsed = this.collapsedCategories.has(cat.id);
+            const itemCount = cat.items.length;
+            const solvedCount = cat.items.filter(i => i.status === 'ac').length;
+            const pct = itemCount > 0 ? Math.round((solvedCount / itemCount) * 100) : 0;
+
+            html += `
+                <div class="cat-group ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${cat.id}"
+                     style="--cat-color: ${cat.color}">
+                    <div class="cat-header" data-cat-id="${cat.id}">
+                        <span class="cat-arrow">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </span>
+                        <span class="cat-color-dot" style="background: ${cat.color}"></span>
+                        <span class="cat-name">${cat.name}</span>
+                        <span class="cat-count">${solvedCount}/${itemCount}</span>
+                        <button class="cat-new-problem-btn" data-cat-id="${cat.id}" data-action="new-problem-quick" title="New Problem">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        </button>
+                    </div>
+            `;
+
+            if (!isCollapsed) {
+                // Mini progress bar
+                if (itemCount > 0) {
+                    html += `
+                        <div class="cat-progress">
+                            <div class="cat-progress-bar">
+                                <div class="cat-progress-fill" style="width: ${pct}%; background: ${cat.color}"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Items (chips style, like contest mode)
+                if (itemCount > 0) {
+                    html += '<div class="cat-items">';
+                    for (const item of cat.items) {
+                        const statusInfo = this.CP_STATUSES[item.status] || this.CP_STATUSES.todo;
+                        const statusIcon = this.STATUS_ICONS[item.status] || this.STATUS_ICONS.todo;
+                        const isActive = this.isActiveFile(item.filePath);
+                        html += `
+                            <div class="cat-item ${isActive ? 'active' : ''} cp-status-${item.status || 'todo'}"
+                                 data-cat-id="${cat.id}" data-file-path="${item.filePath}" 
+                                 draggable="true" title="${item.fileName}\n${statusInfo.label}">
+                                <span class="cat-item-status">${statusIcon}</span>
+                                <span class="cat-item-name">${item.name}</span>
+                            </div>
+                        `;
+                    }
+                    html += '</div>';
+                } else {
+                    html += `
+                        <div class="cat-empty-drop" data-cat-id="${cat.id}">
+                            <span>Drop files here or</span>
+                            <button class="cat-add-file-btn" data-cat-id="${cat.id}" data-action="new-problem-quick">+ New Problem</button>
+                        </div>
+                    `;
+                }
+
+                // Drop zone (visible during drag)
+                html += `<div class="cat-drop-zone" data-cat-id="${cat.id}">Drop here to add</div>`;
+            }
+
+            html += '</div>';
+        }
+
+        html += '</div>';
+        return html;
+    },
+
+    /**
+     * Check if a file path matches the currently open file
+     */
+    isActiveFile(filePath) {
+        const currentPath = window.App?.currentFilePath || window.currentFilePath;
+        if (!currentPath) return false;
+        return currentPath.replace(/\\/g, '/') === filePath.replace(/\\/g, '/');
+    },
+
+    /**
+     * Attach event listeners for category UI
+     */
+    attachCategoryEventListeners() {
+        // New category button
+        const newCatBtn = this.elements.tree.querySelector('[data-action="new-category"]');
+        if (newCatBtn) {
+            newCatBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.promptCreateCategory();
+            });
+        }
+
+        // Category headers (collapse toggle)
+        this.elements.tree.querySelectorAll('.cat-header').forEach(header => {
+            header.addEventListener('click', (e) => {
+                if (e.target.closest('[data-action]')) return;
+                const catId = header.dataset.catId;
+                this.toggleCategoryCollapse(catId);
+                this.renderTree ? this.renderTree() : this.renderEmptyState();
+            });
+
+            // Right-click context menu on category header
+            header.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.showCategoryContextMenu(e, header.dataset.catId);
+            });
+        });
+
+        // Category items (click to open, right-click for menu)
+        this.elements.tree.querySelectorAll('.cat-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                const filePath = item.dataset.filePath;
+                if (filePath) {
+                    this.openFile(filePath);
+                }
+            });
+
+            item.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.showCategoryItemContextMenu(e, item.dataset.catId, item.dataset.filePath);
+            });
+
+            // Drag start from category item (to move between categories)
+            item.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/cat-item', JSON.stringify({
+                    catId: item.dataset.catId,
+                    filePath: item.dataset.filePath,
+                }));
+                e.dataTransfer.effectAllowed = 'move';
+                item.classList.add('dragging');
+            });
+
+            item.addEventListener('dragend', () => {
+                item.classList.remove('dragging');
+            });
+        });
+
+        // Add file buttons in empty categories
+        this.elements.tree.querySelectorAll('[data-action="add-file-to-cat"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.promptAddFileToCategory(btn.dataset.catId);
+            });
+        });
+
+        // New problem quick buttons (header + and empty state)
+        this.elements.tree.querySelectorAll('[data-action="new-problem-quick"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const catId = btn.dataset.catId;
+                this.showInputDialog('New Problem Name', '', async (name) => {
+                    if (name && name.trim()) {
+                        await this.createProblemInCategory(catId, name.trim());
+                        this.renderTree ? this.renderTree() : this.renderEmptyState();
+                    }
+                });
+            });
+        });
+
+        // Drop zones for categories
+        this.elements.tree.querySelectorAll('.cat-group').forEach(group => {
+            const catId = group.dataset.catId;
+
+            group.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+                group.classList.add('drag-over');
+                const dropZone = group.querySelector('.cat-drop-zone');
+                if (dropZone) dropZone.classList.add('visible');
+            });
+
+            group.addEventListener('dragleave', (e) => {
+                // Only remove if leaving the group entirely
+                if (!group.contains(e.relatedTarget)) {
+                    group.classList.remove('drag-over');
+                    const dropZone = group.querySelector('.cat-drop-zone');
+                    if (dropZone) dropZone.classList.remove('visible');
+                }
+            });
+
+            group.addEventListener('drop', (e) => {
+                e.preventDefault();
+                group.classList.remove('drag-over');
+                const dropZone = group.querySelector('.cat-drop-zone');
+                if (dropZone) dropZone.classList.remove('visible');
+
+                // Handle drop from category item (move between categories)
+                const catItemData = e.dataTransfer.getData('text/cat-item');
+                if (catItemData) {
+                    try {
+                        const { catId: fromCatId, filePath } = JSON.parse(catItemData);
+                        if (fromCatId !== catId) {
+                            // Get item info from source category
+                            const fromCat = this.categories.find(c => c.id === fromCatId);
+                            const itemData = fromCat?.items.find(i => i.filePath === filePath);
+                            if (itemData) {
+                                this.addFileToCategory(catId, itemData.filePath, itemData.name, itemData.status);
+                                this.removeFileFromCategory(fromCatId, filePath);
+                                this.renderTree ? this.renderTree() : this.renderEmptyState();
+                            }
+                        }
+                    } catch (_) {}
+                    return;
+                }
+
+                // Handle drop from file tree item
+                const filePath = e.dataTransfer.getData('text/explorer-path');
+                if (filePath) {
+                    const fileName = filePath.split(/[/\\]/).pop();
+                    const name = fileName.replace(/\.[^.]+$/, '');
+                    this.addFileToCategory(catId, filePath, name);
+                    this.renderTree ? this.renderTree() : this.renderEmptyState();
+                    return;
+                }
+
+                // Handle external file drop (from OS)
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                    for (const file of e.dataTransfer.files) {
+                        const path = file.path || file.name;
+                        if (path) {
+                            const name = path.split(/[/\\]/).pop().replace(/\.[^.]+$/, '');
+                            this.addFileToCategory(catId, path.replace(/\\/g, '/'), name);
+                        }
+                    }
+                    this.renderTree ? this.renderTree() : this.renderEmptyState();
+                }
+            });
+        });
+
+        // Make tree items draggable into categories
+        this.elements.tree.querySelectorAll('.explorer-item.file').forEach(item => {
+            if (!item.getAttribute('draggable')) {
+                item.setAttribute('draggable', 'true');
+                item.addEventListener('dragstart', (e) => {
+                    const path = item.dataset.path;
+                    if (path) {
+                        e.dataTransfer.setData('text/explorer-path', path);
+                        e.dataTransfer.effectAllowed = 'copyMove';
+                        item.classList.add('dragging');
+                    }
+                });
+                item.addEventListener('dragend', () => {
+                    item.classList.remove('dragging');
+                });
+            }
+        });
+    },
+
+    /**
+     * Show context menu for a category header
+     */
+    showCategoryContextMenu(e, catId) {
+        document.querySelectorAll('.explorer-context-menu').forEach(el => el.remove());
+
+        const cat = this.categories.find(c => c.id === catId);
+        if (!cat) return;
+
+        const menu = document.createElement('div');
+        menu.className = 'explorer-context-menu';
+
+        // Build color submenu
+        const colorsHtml = this.CATEGORY_COLORS.map(color => 
+            `<span class="cat-color-option ${cat.color === color ? 'active' : ''}" 
+                   data-color="${color}" style="background: ${color}"></span>`
+        ).join('');
+
+        const catIdx = this.categories.indexOf(cat);
+
+        menu.innerHTML = `
+            <div class="context-item" data-action="new-problem">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                New Problem
+            </div>
+            <div class="context-item" data-action="add-file">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add Existing File
+            </div>
+            <div class="context-item" data-action="add-current-file">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                Add Current File
+            </div>
+            ${cat.folderPath ? `
+            <div class="context-item" data-action="open-folder">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                Open Folder
+            </div>` : ''}
+            <div class="context-separator"></div>
+            <div class="context-item" data-action="rename">
+                Rename
+            </div>
+            <div class="context-item has-submenu" data-action="color-menu">
+                <span>Change Color</span>
+                <span class="submenu-arrow">${this.ICONS.submenuArrow}</span>
+                <div class="context-submenu cat-color-submenu">
+                    <div class="cat-color-grid">${colorsHtml}</div>
+                </div>
+            </div>
+            <div class="context-separator"></div>
+            ${catIdx > 0 ? '<div class="context-item" data-action="move-up">Move Up</div>' : ''}
+            ${catIdx < this.categories.length - 1 ? '<div class="context-item" data-action="move-down">Move Down</div>' : ''}
+            ${catIdx > 0 || catIdx < this.categories.length - 1 ? '<div class="context-separator"></div>' : ''}
+            <div class="context-item" data-action="delete" style="color:#ef5350">
+                Delete Collection
+            </div>
+        `;
+
+        this.positionMenu(menu, e.clientX, e.clientY);
+
+        // Color submenu hover
+        const colorMenuItem = menu.querySelector('[data-action="color-menu"]');
+        const colorSubmenu = menu.querySelector('.cat-color-submenu');
+        if (colorMenuItem && colorSubmenu) {
+            let subTimeout;
+            colorMenuItem.addEventListener('mouseenter', () => { clearTimeout(subTimeout); colorSubmenu.classList.add('visible'); });
+            colorMenuItem.addEventListener('mouseleave', () => {
+                subTimeout = setTimeout(() => { if (!colorSubmenu.matches(':hover')) colorSubmenu.classList.remove('visible'); }, 200);
+            });
+            colorSubmenu.addEventListener('mouseenter', () => clearTimeout(subTimeout));
+            colorSubmenu.addEventListener('mouseleave', () => colorSubmenu.classList.remove('visible'));
+
+            colorSubmenu.querySelectorAll('.cat-color-option').forEach(opt => {
+                opt.onclick = () => {
+                    this.setCategoryColor(catId, opt.dataset.color);
+                    menu.remove();
+                    this.renderTree ? this.renderTree() : this.renderEmptyState();
+                };
+            });
+        }
+
+        menu.querySelector('[data-action="add-file"]').onclick = () => {
+            menu.remove();
+            this.promptAddFileToCategory(catId);
+        };
+
+        menu.querySelector('[data-action="new-problem"]').onclick = () => {
+            menu.remove();
+            this.showInputDialog('New Problem Name', '', async (name) => {
+                if (name && name.trim()) {
+                    await this.createProblemInCategory(catId, name.trim());
+                    this.renderTree ? this.renderTree() : this.renderEmptyState();
+                }
+            });
+        };
+
+        const openFolderBtn = menu.querySelector('[data-action="open-folder"]');
+        if (openFolderBtn) {
+            openFolderBtn.onclick = () => {
+                menu.remove();
+                if (cat.folderPath && window.electronAPI && window.electronAPI.showItemInFolder) {
+                    window.electronAPI.showItemInFolder(cat.folderPath);
+                }
+            };
+        }
+
+        menu.querySelector('[data-action="add-current-file"]').onclick = () => {
+            menu.remove();
+            const currentPath = window.App?.currentFilePath || window.currentFilePath;
+            if (currentPath) {
+                const name = currentPath.split(/[/\\]/).pop().replace(/\.[^.]+$/, '');
+                this.addFileToCategory(catId, currentPath.replace(/\\/g, '/'), name);
+                this.renderTree ? this.renderTree() : this.renderEmptyState();
+            }
+        };
+
+        menu.querySelector('[data-action="rename"]').onclick = () => {
+            menu.remove();
+            this.showInputDialog('Rename Collection', cat.name, async (newName) => {
+                if (newName) {
+                    await this.renameCategory(catId, newName);
+                    this.renderTree ? this.renderTree() : this.renderEmptyState();
+                }
+            });
+        };
+
+        const moveUpBtn = menu.querySelector('[data-action="move-up"]');
+        if (moveUpBtn) {
+            moveUpBtn.onclick = () => {
+                this.moveCategoryOrder(catId, 'up');
+                menu.remove();
+                this.renderTree ? this.renderTree() : this.renderEmptyState();
+            };
+        }
+
+        const moveDownBtn = menu.querySelector('[data-action="move-down"]');
+        if (moveDownBtn) {
+            moveDownBtn.onclick = () => {
+                this.moveCategoryOrder(catId, 'down');
+                menu.remove();
+                this.renderTree ? this.renderTree() : this.renderEmptyState();
+            };
+        }
+
+        menu.querySelector('[data-action="delete"]').onclick = () => {
+            menu.remove();
+            if (confirm(`Delete collection "${cat.name}"? Files will not be deleted.`)) {
+                this.deleteCategory(catId);
+                this.renderTree ? this.renderTree() : this.renderEmptyState();
+            }
+        };
+
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu() {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            });
+        }, 10);
+    },
+
+    /**
+     * Show context menu for a category item
+     */
+    showCategoryItemContextMenu(e, catId, filePath) {
+        document.querySelectorAll('.explorer-context-menu').forEach(el => el.remove());
+
+        const cat = this.categories.find(c => c.id === catId);
+        if (!cat) return;
+        const item = cat.items.find(i => i.filePath === filePath);
+        if (!item) return;
+
+        const menu = document.createElement('div');
+        menu.className = 'explorer-context-menu';
+
+        // Status submenu
+        let statusHtml = '';
+        for (const [key, info] of Object.entries(this.CP_STATUSES)) {
+            const isActive = item.status === key;
+            statusHtml += `
+                <div class="context-item ${isActive ? 'active' : ''}" data-action="set-status" data-status="${key}">
+                    <span class="cp-menu-icon">${this.STATUS_ICONS[key]}</span> ${info.label}
+                    ${isActive ? ' ' + this.ICONS.check : ''}
+                </div>
+            `;
+        }
+
+        // Other categories submenu for moving
+        let moveHtml = '';
+        const otherCats = this.categories.filter(c => c.id !== catId);
+        if (otherCats.length > 0) {
+            moveHtml = otherCats.map(c =>
+                `<div class="context-item" data-action="move-to" data-target-cat="${c.id}">
+                    <span class="cat-color-dot-mini" style="background: ${c.color}"></span>
+                    ${c.name}
+                </div>`
+            ).join('');
+        }
+
+        menu.innerHTML = `
+            <div class="context-item" data-action="open">Open File</div>
+            <div class="context-separator"></div>
+            <div class="context-item has-submenu" data-action="status-menu">
+                <span>Set Status</span>
+                <span class="submenu-arrow">${this.ICONS.submenuArrow}</span>
+                <div class="context-submenu cat-status-submenu">${statusHtml}</div>
+            </div>
+            <div class="context-separator"></div>
+            <div class="context-item" data-action="rename-item">Rename Label</div>
+            ${otherCats.length > 0 ? `
+                <div class="context-item has-submenu" data-action="move-menu">
+                    <span>Move to</span>
+                    <span class="submenu-arrow">${this.ICONS.submenuArrow}</span>
+                    <div class="context-submenu cat-move-submenu">${moveHtml}</div>
+                </div>
+            ` : ''}
+            <div class="context-separator"></div>
+            <div class="context-item" data-action="copy-path">Copy Path</div>
+            <div class="context-item" data-action="remove" style="color:#ef5350">Remove from Collection</div>
+        `;
+
+        this.positionMenu(menu, e.clientX, e.clientY);
+
+        // Status submenu hover
+        const statusMenuItem = menu.querySelector('[data-action="status-menu"]');
+        const statusSubmenu = menu.querySelector('.cat-status-submenu');
+        if (statusMenuItem && statusSubmenu) {
+            let subTimeout;
+            statusMenuItem.addEventListener('mouseenter', () => { clearTimeout(subTimeout); statusSubmenu.classList.add('visible'); });
+            statusMenuItem.addEventListener('mouseleave', () => {
+                subTimeout = setTimeout(() => { if (!statusSubmenu.matches(':hover')) statusSubmenu.classList.remove('visible'); }, 200);
+            });
+            statusSubmenu.addEventListener('mouseenter', () => clearTimeout(subTimeout));
+            statusSubmenu.addEventListener('mouseleave', () => statusSubmenu.classList.remove('visible'));
+
+            statusSubmenu.querySelectorAll('[data-action="set-status"]').forEach(el => {
+                el.onclick = () => {
+                    this.setCategoryItemStatus(catId, filePath, el.dataset.status);
+                    menu.remove();
+                    this.renderTree ? this.renderTree() : this.renderEmptyState();
+                };
+            });
+        }
+
+        // Move submenu hover
+        const moveMenuItem = menu.querySelector('[data-action="move-menu"]');
+        const moveSubmenu = menu.querySelector('.cat-move-submenu');
+        if (moveMenuItem && moveSubmenu) {
+            let subTimeout;
+            moveMenuItem.addEventListener('mouseenter', () => { clearTimeout(subTimeout); moveSubmenu.classList.add('visible'); });
+            moveMenuItem.addEventListener('mouseleave', () => {
+                subTimeout = setTimeout(() => { if (!moveSubmenu.matches(':hover')) moveSubmenu.classList.remove('visible'); }, 200);
+            });
+            moveSubmenu.addEventListener('mouseenter', () => clearTimeout(subTimeout));
+            moveSubmenu.addEventListener('mouseleave', () => moveSubmenu.classList.remove('visible'));
+
+            moveSubmenu.querySelectorAll('[data-action="move-to"]').forEach(el => {
+                el.onclick = () => {
+                    const targetCat = el.dataset.targetCat;
+                    this.addFileToCategory(targetCat, item.filePath, item.name, item.status);
+                    this.removeFileFromCategory(catId, filePath);
+                    menu.remove();
+                    this.renderTree ? this.renderTree() : this.renderEmptyState();
+                };
+            });
+        }
+
+        menu.querySelector('[data-action="open"]').onclick = () => {
+            menu.remove();
+            this.openFile(filePath);
+        };
+
+        menu.querySelector('[data-action="rename-item"]').onclick = () => {
+            menu.remove();
+            this.showInputDialog('Rename Label', item.name, (newName) => {
+                if (newName) {
+                    this.renameCategoryItem(catId, filePath, newName);
+                    this.renderTree ? this.renderTree() : this.renderEmptyState();
+                }
+            });
+        };
+
+        menu.querySelector('[data-action="copy-path"]').onclick = () => {
+            navigator.clipboard.writeText(filePath);
+            menu.remove();
+        };
+
+        menu.querySelector('[data-action="remove"]').onclick = () => {
+            this.removeFileFromCategory(catId, filePath);
+            menu.remove();
+            this.renderTree ? this.renderTree() : this.renderEmptyState();
+        };
+
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu() {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            });
+        }, 10);
+    },
+
+    /**
+     * Prompt to create a new category
+     */
+    promptCreateCategory() {
+        this.showInputDialog('New Collection Name', '', async (name) => {
+            if (name && name.trim()) {
+                await this.createCategory(name);
+                this.renderTree ? this.renderTree() : this.renderEmptyState();
+            }
+        });
+    },
+
+    /**
+     * Prompt to add file to a specific category (shows dialog to choose from current folder or type path)
+     */
+    promptAddFileToCategory(catId) {
+        const cat = this.categories.find(c => c.id === catId);
+        if (!cat) return;
+
+        // If current file is open, offer to add it directly
+        const currentPath = window.App?.currentFilePath || window.currentFilePath;
+        
+        // Show file picker dialog
+        if (currentPath) {
+            const fileName = currentPath.split(/[/\\]/).pop();
+            const name = fileName.replace(/\.[^.]+$/, '');
+            // Ask if they want to add the current file
+            const overlay = document.createElement('div');
+            overlay.className = 'note-dialog-overlay';
+            overlay.innerHTML = `
+                <div class="note-dialog input-dialog">
+                    <div class="note-dialog-header">
+                        <h3>Add to "${cat.name}"</h3>
+                        <button class="note-dialog-close" title="Close">${this.ICONS.close}</button>
+                    </div>
+                    <div class="note-dialog-body">
+                        <p style="font-size:12px;margin-bottom:12px;color:var(--text-secondary)">Add the currently open file, or browse for a file.</p>
+                        <div class="cat-add-option" data-action="add-current" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:2px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:8px;transition:border-color 0.15s;">
+                            ${this.getFileIcon(fileName)}
+                            <div>
+                                <div style="font-weight:600;font-size:13px">${fileName}</div>
+                                <div style="font-size:10px;opacity:0.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:250px">${currentPath}</div>
+                            </div>
+                        </div>
+                        <div class="cat-add-option" data-action="browse" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color 0.15s;">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                            <span style="font-weight:600;font-size:13px">Browse for File...</span>
+                        </div>
+                        <div style="margin-top:12px">
+                            <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px">Display Name</label>
+                            <input type="text" class="input-dialog-field" id="cat-add-name" value="${name}" placeholder="Problem name..." />
+                        </div>
+                    </div>
+                    <div class="note-dialog-footer">
+                        <button class="note-dialog-btn note-dialog-cancel">Cancel</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            const closeDialog = () => overlay.remove();
+            overlay.querySelector('.note-dialog-close').onclick = closeDialog;
+            overlay.querySelector('.note-dialog-cancel').onclick = closeDialog;
+            overlay.onclick = (e) => { if (e.target === overlay) closeDialog(); };
+
+            overlay.querySelector('[data-action="add-current"]').onclick = () => {
+                const displayName = document.getElementById('cat-add-name').value.trim() || name;
+                this.addFileToCategory(catId, currentPath.replace(/\\/g, '/'), displayName);
+                closeDialog();
+                this.renderTree ? this.renderTree() : this.renderEmptyState();
+            };
+
+            overlay.querySelector('[data-action="browse"]').onclick = async () => {
+                closeDialog();
+                await this.browseAndAddToCategory(catId);
+            };
+
+            setTimeout(() => document.getElementById('cat-add-name')?.focus(), 50);
+        } else {
+            // No file open, just browse
+            this.browseAndAddToCategory(catId);
+        }
+    },
+
+    /**
+     * Browse for a file and add it to a category
+     */
+    async browseAndAddToCategory(catId) {
+        try {
+            if (window.electronAPI && window.electronAPI.showOpenDialog) {
+                const result = await window.electronAPI.showOpenDialog({
+                    properties: ['openFile', 'multiSelections'],
+                    filters: [
+                        { name: 'Source Files', extensions: ['cpp', 'c', 'cc', 'cxx', 'h', 'hpp', 'py', 'java'] },
+                        { name: 'All Files', extensions: ['*'] }
+                    ]
+                });
+
+                if (!result.canceled && result.filePaths.length > 0) {
+                    for (const filePath of result.filePaths) {
+                        const normalizedPath = filePath.replace(/\\/g, '/');
+                        const fileName = normalizedPath.split('/').pop();
+                        const name = fileName.replace(/\.[^.]+$/, '');
+                        this.addFileToCategory(catId, normalizedPath, name);
+                    }
+                    this.renderTree ? this.renderTree() : this.renderEmptyState();
+                }
+            }
+        } catch (e) {
+            console.error('[FileExplorer] Browse failed:', e);
+        }
+    },
+
+    /**
+     * Prompt to create a new file in the current folder
+     */
+    promptNewFile() {
+        if (!this.currentFolder) return;
+        this.showInputDialog('New File Name', 'solution.cpp', (fileName) => {
+            if (!fileName || !fileName.trim()) return;
+            const filePath = `${this.currentFolder}/${fileName.trim()}`.replace(/\\/g, '/');
+
+            let template = '';
+            if (/\.(cpp|c|cc|cxx)$/i.test(fileName)) {
+                const baseName = fileName.replace(/\.[^.]+$/, '');
+                template = `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // TODO: solve ${baseName}\n\n    return 0;\n}\n`;
+            }
+
+            if (window.electronAPI && window.electronAPI.saveFile) {
+                window.electronAPI.saveFile({ path: filePath, content: template }).then(() => {
+                    this.refreshTree();
+                    this.openFile(filePath);
+                });
+            }
+        });
     },
 
 };

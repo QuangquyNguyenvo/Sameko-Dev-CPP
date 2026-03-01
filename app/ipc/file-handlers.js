@@ -100,6 +100,11 @@ function registerHandlers() {
 
     ipcMain.handle(IPC.FILE.SAVE, async (event, { path: filePath, content }) => {
         try {
+            // Ensure parent directory exists
+            const dir = path.dirname(filePath);
+            if (!fs.existsSync(dir)) {
+                fs.mkdirSync(dir, { recursive: true });
+            }
             fs.writeFileSync(filePath, content, 'utf-8');
             currentFile = filePath;
             updateFileWatcherMtime(filePath);
@@ -195,6 +200,15 @@ function registerHandlers() {
             return { success: true };
         } catch (error) {
             throw new Error(`Cannot delete folder: ${error.message}`);
+        }
+    });
+
+    ipcMain.handle('create-directory', async (event, dirPath) => {
+        try {
+            fs.mkdirSync(dirPath, { recursive: true });
+            return { success: true, path: dirPath };
+        } catch (error) {
+            throw new Error(`Cannot create directory: ${error.message}`);
         }
     });
 

@@ -32,6 +32,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     copyFile: (src, dest) => ipcRenderer.invoke('copy-file', { src, dest }),
     moveFile: (src, dest) => ipcRenderer.invoke('move-file', { src, dest }),
     deleteFolder: (folderPath) => ipcRenderer.invoke('delete-folder', folderPath),
+    createDirectory: (dirPath) => ipcRenderer.invoke('create-directory', dirPath),
     showItemInFolder: (filePath) => ipcRenderer.invoke('show-item-in-folder', filePath),
 
     // Settings operations
