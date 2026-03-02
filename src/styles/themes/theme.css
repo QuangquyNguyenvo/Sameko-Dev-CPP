@@ -5418,6 +5418,23 @@ body.split-active .editor-pane {
     min-width: 0;
 }
 
+.cp-contest-collapse {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.15s, transform 0.15s;
+    padding: 2px;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.cp-contest-collapse:hover {
+    opacity: 1;
+    background: var(--bg-hover, rgba(0,0,0,0.05));
+}
+
 .cp-contest-name {
     font-family: 'Fredoka', sans-serif;
     font-weight: 600;
@@ -5444,6 +5461,22 @@ body.split-active .editor-pane {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     flex-shrink: 0;
+}
+
+/* No-contest placeholder header (normal mode) */
+.cp-contest-header.cp-no-contest {
+    background: var(--bg-secondary, #f5f5f5);
+    border-bottom: 1px solid var(--border, #e0e0e0);
+    opacity: 0.85;
+}
+
+/* Contest sub-categories section */
+.cp-sub-contest-section {
+    margin-bottom: 2px;
+}
+
+.cp-sub-contest-section .cat-section-header {
+    background: var(--bg-panel, #f0f7fd);
 }
 
 .cp-contest-actions {
@@ -5651,6 +5684,13 @@ body.split-active .editor-pane {
 .cp-problem-list {
     padding: 4px 0;
     border-bottom: 1px solid var(--border, #e0f0ff);
+}
+
+.cp-problem-chips-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px 10px 8px;
 }
 
 .cp-list-label {

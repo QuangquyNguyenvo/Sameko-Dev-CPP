@@ -43,6 +43,7 @@ const FileExplorer = {
     categories: [],            // Array of category objects
     collapsedCategories: new Set(), // Set of collapsed category IDs
     dragState: null,           // { filePath, fileName } for drag-and-drop
+    contestCollapsed: false,   // Whether contest problem list is collapsed
 
     // ==================== CONTEST MODE STATE ====================
     displayMode: 'normal', // 'normal' | 'contest'
@@ -221,8 +222,8 @@ const FileExplorer = {
         // Load saved state
         this.loadState();
 
-        // Welcome screen: stay closed when no folder AND no categories
-        if (!this.currentFolder && this.categories.length === 0) this.isOpen = false;
+        // Always start closed for a clean welcome screen
+        this.isOpen = false;
 
         // Setup event listeners
         this.setupEventListeners();
@@ -386,14 +387,7 @@ const FileExplorer = {
             });
         }
 
-        const refreshBtn = document.getElementById('btn-refresh-explorer');
-        if (refreshBtn) {
-            refreshBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.refreshTree();
-            });
-        }
+        // Refresh handled automatically — no separate button needed
 
         // Keyboard shortcuts when explorer is open and a file is selected
         document.addEventListener('keydown', (e) => {
@@ -910,20 +904,13 @@ const FileExplorer = {
             return;
         }
 
-        // If folder is open but tree is empty, show folder header + categories + new file option
+        // If folder is open but tree is empty, show contest section + categories + new file option
         if ((!this.tree || this.tree.length === 0) && this.currentFolder) {
-            const folderName = this.currentFolder.split(/[/\\]/).pop();
+            const contestSectionHtml = this.renderContestSection();
             const categoriesHtml = this.renderCategories();
             this.elements.tree.innerHTML = `
+                ${contestSectionHtml}
                 ${categoriesHtml}
-                <div class="explorer-folder-header">
-                    <span class="explorer-folder-name" title="${this.currentFolder}">${folderName}</span>
-                    <div class="explorer-folder-actions">
-                        <button class="cp-mode-toggle-btn" data-action="new-file-here" title="New File">
-                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-                        </button>
-                    </div>
-                </div>
                 <div class="explorer-empty" style="padding:20px 16px">
                     <p style="font-size:12px;opacity:0.6">Empty folder</p>
                     <button class="explorer-open-btn" data-action="new-file-here" style="font-size:11px;padding:6px 12px">
@@ -936,14 +923,15 @@ const FileExplorer = {
             this.elements.tree.querySelectorAll('[data-action="new-file-here"]').forEach(btn => {
                 btn.addEventListener('click', (e) => { e.stopPropagation(); this.promptNewFile(); });
             });
+            this.attachContestEventListeners();
             this.attachCategoryEventListeners();
             return;
         }
 
-        // Get folder name for header
-        const folderName = this.currentFolder.split(/[/\\]/).pop();
+        // Build contest sub-categories section
+        const contestSectionHtml = this.renderContestSection();
 
-        // Build categories section (always shown)
+        // Build categories section (collections only)
         const categoriesHtml = this.renderCategories();
 
         // Build recent section HTML
@@ -975,36 +963,22 @@ const FileExplorer = {
         // ==================== CONTEST MODE RENDERING ====================
         if (this.displayMode === 'contest' && this.contestMeta) {
             const contestHeader = this.renderContestHeader();
-            const quickStatusBar = this.renderQuickStatusBar();
-            const progressBar = this.renderProgressBar();
+            const progressBar = this.contestCollapsed ? '' : this.renderProgressBar();
             const problemList = this.renderContestProblemList();
 
             this.elements.tree.innerHTML = `
                 ${contestHeader}
-                ${quickStatusBar}
                 ${progressBar}
                 ${problemList}
+                ${contestSectionHtml}
                 ${categoriesHtml}
                 ${recentHtml}
             `;
         } else {
             // ==================== NORMAL MODE ====================
             this.elements.tree.innerHTML = `
+                ${contestSectionHtml}
                 ${categoriesHtml}
-                <div class="explorer-folder-header">
-                    <span class="explorer-folder-name" title="${this.currentFolder}">${folderName}</span>
-                    <div class="explorer-folder-actions">
-                        <button class="cp-mode-toggle-btn" data-action="new-file-here" title="New File">
-                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
-                        </button>
-                        <button class="cp-mode-toggle-btn" data-action="toggle-contest-mode" title="Switch to Contest Mode">
-                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                        </button>
-                    </div>
-                </div>
-                <div class="explorer-items">
-                    ${this.renderItems(this.tree, 0)}
-                </div>
                 ${recentHtml}
             `;
         }
@@ -1022,12 +996,16 @@ const FileExplorer = {
         const meta = this.contestMeta;
         const platformBadge = meta.platform && meta.platform !== 'Other'
             ? `<span class="cp-platform-badge">${meta.platform}</span>` : '';
+        const collapseIcon = this.contestCollapsed
+            ? '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>'
+            : '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>';
 
         return `
             <div class="cp-contest-header">
                 <div class="cp-contest-info">
+                    <span class="cp-contest-collapse" data-action="toggle-contest-collapse" title="${this.contestCollapsed ? 'Expand' : 'Collapse'}">${collapseIcon}</span>
                     <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                    <span class="cp-contest-name" title="Click to rename">${meta.name || 'Contest'}</span>
+                    <span class="cp-contest-name" title="Double-click to rename">${meta.name || 'Contest'}</span>
                     ${platformBadge}
                 </div>
                 <div class="cp-contest-actions">
@@ -1036,9 +1014,6 @@ const FileExplorer = {
                     </button>
                     <button class="cp-action-btn" data-action="contest-menu" title="Contest Settings">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
-                    </button>
-                    <button class="cp-action-btn" data-action="toggle-normal-mode" title="Switch to Tree Mode">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
                     </button>
                 </div>
             </div>
@@ -1108,93 +1083,54 @@ const FileExplorer = {
     },
 
     /**
-     * Render contest problem list — expandable cards for each problem
+     * Render contest problem list — inline chip blocks for each problem
      */
     renderContestProblemList() {
         if (!this.contestMeta || !this.contestMeta.problems) return '';
         if (this.contestMeta.problems.length === 0) return '';
 
-        // Build a map from tree items for companion files
-        const treeFileMap = {};
-        if (this.tree) {
-            for (const item of this.tree) {
-                if (!item.isDirectory && /\.(cpp|c|cc|cxx)$/i.test(item.name)) {
-                    const key = item.name.replace(/\.[^.]+$/, '').toUpperCase();
-                    treeFileMap[key] = item;
-                }
-            }
-        }
+        // If contest is collapsed, don't render problem list
+        if (this.contestCollapsed) return '';
 
         let html = '<div class="cp-problem-list">';
         html += '<div class="cp-list-label">PROBLEMS</div>';
+        html += '<div class="cp-problem-chips-grid">';
 
-        for (const prob of this.contestMeta.problems) {
+        this.contestMeta.problems.forEach((prob, idx) => {
             const statusInfo = this.CP_STATUSES[prob.status] || this.CP_STATUSES.todo;
             const icon = this.STATUS_ICONS[prob.status] || this.STATUS_ICONS.todo;
-            const timeStr = this.SessionTimer.getDisplay(prob.id);
             const isActive = this.isActiveProblem(prob.id);
-            const isExpanded = this.expandedFiles.has('contest-prob-' + prob.id);
-            const treeItem = treeFileMap[prob.id.toUpperCase()];
-            const filePath = treeItem ? treeItem.path : `${this.contestFolder}/${prob.id}.cpp`.replace(/\\/g, '/');
-            const note = this.fileNotes[filePath];
-            const approaches = prob.approaches || [];
-            const companions = treeItem && treeItem.companions ? treeItem.companions : [];
-            const hasChildren = approaches.length > 0 || companions.length > 0;
+            const isSelected = this.selectedChips.has(prob.id);
+            const filePath = `${this.contestFolder}/${prob.id}.cpp`.replace(/\\/g, '/');
+            const shortLabel = prob.label ? (prob.label.length > 8 ? prob.label.slice(0, 7) + '…' : prob.label) : '';
+            const tooltip = `${prob.id}${prob.label ? ' · ' + prob.label : ''} · ${statusInfo.label}\nClick to open · Right-click for options\nCtrl+click to select · Shift+click for range`;
 
             html += `
-                <div class="cp-prob-card ${isActive ? 'active' : ''} cp-status-${prob.status || 'todo'}" 
-                     data-problem="${prob.id}" data-path="${filePath}">
-                    <div class="cp-prob-row" data-problem="${prob.id}" data-path="${filePath}">
-                        ${hasChildren ? `
-                        <span class="cp-prob-arrow ${isExpanded ? 'expanded' : ''}" data-action="toggle-prob" data-prob-id="${prob.id}">
-                            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5">
-                                <polyline points="9 18 15 12 9 6"/>
-                            </svg>
-                        </span>` : '<span class="cp-prob-spacer"></span>'}
-                        <span class="cp-prob-status" title="${statusInfo.label}">${icon}</span>
-                        <span class="cp-prob-id">${prob.id}</span>
-                        ${prob.label ? `<span class="cp-prob-label">${prob.label}</span>` : ''}
-                        ${note ? `<span class="cp-prob-note-icon" title="${note.replace(/"/g, '&quot;')}">${this.ICONS.note}</span>` : ''}
-                        ${timeStr ? `<span class="cp-prob-time">${timeStr}</span>` : ''}
-                    </div>
+                <div class="cp-problem-chip ${isActive ? 'active' : ''} ${isSelected ? 'cp-chip-selected' : ''} cp-status-${prob.status || 'todo'}"
+                     data-problem="${prob.id}" data-chip-idx="${idx}" data-path="${filePath}" title="${tooltip}">
+                    <span class="cp-chip-label">${prob.id}</span>
+                    ${shortLabel ? `<span class="cp-chip-sublabel">${shortLabel}</span>` : ''}
+                    <span class="cp-chip-icon">${icon}</span>
+                </div>
             `;
+        });
 
-            // Expanded details
-            if (isExpanded && hasChildren) {
-                html += '<div class="cp-prob-details">';
+        html += '</div>';
 
-                if (approaches.length > 0) {
-                    html += '<div class="cp-prob-group-label">Approaches</div>';
-                    for (const appr of approaches) {
-                        const isActiveAppr = prob.activeApproach === appr.id;
-                        const apprIcon = this.STATUS_ICONS[appr.status] || this.STATUS_ICONS.todo;
-                        html += `
-                            <div class="cp-prob-sub-item ${isActiveAppr ? 'current' : ''}" 
-                                 data-path="${filePath}" data-problem-id="${prob.id}" data-approach-id="${appr.id}">
-                                <span class="cp-prob-sub-icon">${apprIcon}</span>
-                                <span class="cp-prob-sub-name">${appr.name}</span>
-                                ${isActiveAppr ? `<span class="cp-prob-active-mark">${this.ICONS.check}</span>` : ''}
-                            </div>
-                        `;
-                    }
-                }
-
-                if (companions.length > 0) {
-                    html += '<div class="cp-prob-group-label">Test Files</div>';
-                    for (const comp of companions) {
-                        html += `
-                            <div class="cp-prob-sub-item" data-path="${comp.path}">
-                                ${this.getFileIcon(comp.name)}
-                                <span class="cp-prob-sub-name">${comp.name}</span>
-                            </div>
-                        `;
-                    }
-                }
-
-                html += '</div>';
-            }
-
-            html += '</div>';
+        // Selection action bar
+        const selCount = this.selectedChips.size;
+        if (selCount > 0) {
+            html += `
+                <div class="cp-chip-selbar">
+                    <span class="cp-chip-selcount">${selCount} selected</span>
+                    <button class="cp-chip-del-btn" data-action="delete-selected-problems" title="Delete selected problems">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                        Delete ${selCount}
+                    </button>
+                    <button class="cp-chip-clear-btn" data-action="clear-chip-selection" title="Clear selection">
+                        <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </div>`;
         }
 
         html += '</div>';
@@ -2627,17 +2563,36 @@ const FileExplorer = {
      * Attach event listeners for contest-mode UI elements
      */
     attachContestEventListeners() {
+        // "New Contest" button (navigates into new contest folder)
+        const newContestBtn = this.elements.tree.querySelector('[data-action="new-contest"]');
+        if (newContestBtn) {
+            newContestBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.showNewContestDialog();
+            });
+        }
+
+        // "New Sub-Contest" button in CONTEST section (creates sub-contest, stays in current view)
+        const newSubContestBtn = this.elements.tree.querySelector('[data-action="new-sub-contest"]');
+        if (newSubContestBtn) {
+            newSubContestBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.promptAddProblem();
+            });
+        }
+
         if (this.displayMode !== 'contest') {
-            // Handle normal mode contest toggle button
-            const toggleBtn = this.elements.tree.querySelector('[data-action="toggle-contest-mode"]');
-            if (toggleBtn) {
-                toggleBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    localStorage.setItem(`cp-mode:${this.currentFolder}`, 'contest');
-                    this.refreshTree();
-                });
-            }
             return;
+        }
+
+        // Contest collapse toggle
+        const collapseBtn = this.elements.tree.querySelector('[data-action="toggle-contest-collapse"]');
+        if (collapseBtn) {
+            collapseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.contestCollapsed = !this.contestCollapsed;
+                this.renderTree();
+            });
         }
 
         // Quick Status Bar chips
@@ -2682,15 +2637,8 @@ const FileExplorer = {
                 }
 
                 this.lastChipClickIdx = chipIdx;
-                // Find corresponding problem card and scroll to it
-                const row = this.elements.tree.querySelector(`.cp-prob-card[data-problem="${problemId}"]`);
-                if (row) {
-                    row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    row.classList.add('highlight-flash');
-                    setTimeout(() => row.classList.remove('highlight-flash'), 1000);
-                }
                 // Open the file
-                const filePath = `${this.currentFolder}/${problemId}.cpp`.replace(/\\/g, '/');
+                const filePath = chip.dataset.path || `${this.currentFolder}/${problemId}.cpp`.replace(/\\/g, '/');
                 this.openFile(filePath);
                 this.SessionTimer.onFileOpen(problemId);
             });
@@ -2698,7 +2646,8 @@ const FileExplorer = {
             chip.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                this.showQuickStatusMenu(e, chip.dataset.problem);
+                const filePath = chip.dataset.path || `${this.currentFolder}/${chip.dataset.problem}.cpp`.replace(/\\/g, '/');
+                this.showContestFileContextMenu(e, filePath, chip.dataset.problem);
             });
         });
 
@@ -2733,15 +2682,6 @@ const FileExplorer = {
             });
         }
 
-        const normalModeBtn = this.elements.tree.querySelector('[data-action="toggle-normal-mode"]');
-        if (normalModeBtn) {
-            normalModeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                localStorage.setItem(`cp-mode:${this.currentFolder}`, 'normal');
-                this.refreshTree();
-            });
-        }
-
         // New file button in normal mode
         const newFileBtn = this.elements.tree.querySelector('[data-action="new-file-here"]');
         if (newFileBtn) {
@@ -2764,43 +2704,6 @@ const FileExplorer = {
                 });
             });
         }
-
-        // Problem list: click to open, expand arrow, context menu
-        this.elements.tree.querySelectorAll('.cp-prob-row').forEach(row => {
-            row.addEventListener('click', (e) => {
-                if (e.target.closest('[data-action="toggle-prob"]')) return;
-                const problemId = row.dataset.problem;
-                const filePath = row.dataset.path;
-                if (filePath) {
-                    this.openFile(filePath);
-                    this.SessionTimer.onFileOpen(problemId);
-                }
-            });
-
-            row.addEventListener('contextmenu', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const problemId = row.dataset.problem;
-                const filePath = row.dataset.path;
-                this.showContestFileContextMenu(e, filePath, problemId);
-            });
-        });
-
-        // Problem expand/collapse arrows
-        this.elements.tree.querySelectorAll('[data-action="toggle-prob"]').forEach(arrow => {
-            arrow.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const probId = arrow.dataset.probId;
-                const key = 'contest-prob-' + probId;
-                if (this.expandedFiles.has(key)) {
-                    this.expandedFiles.delete(key);
-                } else {
-                    this.expandedFiles.add(key);
-                }
-                this.saveState();
-                this.renderTree();
-            });
-        });
 
         // Sub-items (approaches, test files) click to open
         this.elements.tree.querySelectorAll('.cp-prob-sub-item').forEach(item => {
@@ -2847,6 +2750,10 @@ const FileExplorer = {
                 </div>
             </div>
             <div class="context-separator"></div>
+            <div class="context-item" data-action="rename-problem">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                Rename / Set Label
+            </div>
             <div class="context-item" data-action="save-approach-meta">
                 ${this.ICONS.approach} Save as New Approach
             </div>
@@ -2857,9 +2764,6 @@ const FileExplorer = {
             <div class="context-item" data-action="create-inp">Create .inp</div>
             <div class="context-item" data-action="create-out">Create .out</div>
             <div class="context-separator"></div>
-            <div class="context-item" data-action="${isPinned ? 'unpin' : 'pin'}">
-                ${isPinned ? this.ICONS.unpin + ' Unpin' : this.ICONS.pin + ' Pin to Top'}
-            </div>
             ${this.categories.length > 0 ? `
             <div class="context-item has-submenu" data-action="add-to-cat-menu">
                 <span>Add to Collection</span>
@@ -2916,6 +2820,20 @@ const FileExplorer = {
             });
         };
 
+        // Rename / Set label
+        menu.querySelector('[data-action="rename-problem"]').onclick = () => {
+            menu.remove();
+            const prob = this.getProblemMeta(problemId);
+            const currentLabel = prob?.label || '';
+            this.showInputDialog(`Label for Problem ${problemId}`, currentLabel, (newLabel) => {
+                if (newLabel !== null && prob) {
+                    prob.label = newLabel.trim();
+                    this.saveContestMeta(this.contestFolder, this.contestMeta);
+                    this.renderTree();
+                }
+            });
+        };
+
         // Note
         menu.querySelector('[data-action="note"]').onclick = () => {
             menu.remove();
@@ -2931,16 +2849,6 @@ const FileExplorer = {
             this.createCompanionFile(filePath, '.out');
             menu.remove();
         };
-
-        // Pin/Unpin
-        const pinBtn = menu.querySelector('[data-action="pin"], [data-action="unpin"]');
-        if (pinBtn) {
-            pinBtn.onclick = () => {
-                if (this.pinnedItems.includes(filePath)) this.unpinItem(filePath);
-                else this.pinItem(filePath);
-                menu.remove();
-            };
-        }
 
         // Copy path
         menu.querySelector('[data-action="copy-path"]').onclick = () => {
@@ -3147,7 +3055,10 @@ const FileExplorer = {
 
         menu.querySelector('[data-action="remove-contest-marker"]').onclick = () => {
             menu.remove();
-            localStorage.setItem(`cp-mode:${this.currentFolder}`, 'normal');
+            localStorage.removeItem(`cp-mode:${this.currentFolder}`);
+            this.displayMode = 'normal';
+            this.contestMeta = null;
+            this.contestFolder = null;
             this.refreshTree();
         };
 
@@ -3167,36 +3078,161 @@ const FileExplorer = {
     // ==================== NEW CONTEST WIZARD ====================
 
     /**
-     * Prompt to add a new problem to current contest
+     * Prompt to add a new sub-contest (category) within the current contest folder.
+     * Creates a subfolder with .sameko and problem files A..Z based on last ID.
      */
     promptAddProblem() {
-        if (!this.contestMeta) return;
-        // Auto-generate the next sequential letter ID: A→B→C→…→Z→AA→AB…
-        const count = this.contestMeta.problems.length;
-        const nextId = count < 26
-            ? String.fromCharCode(65 + count)
-            : String.fromCharCode(65 + Math.floor((count - 26) / 26)) + String.fromCharCode(65 + (count - 26) % 26);
-        const problemId = nextId;
+        if (!this.contestFolder && !this.currentFolder) return;
+        const parentFolder = this.contestFolder || this.currentFolder;
 
-        // Create .cpp file
-        const filePath = `${this.contestFolder}/${problemId}.cpp`.replace(/\\/g, '/');
-        const template = `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // TODO: solve ${problemId}\n\n    return 0;\n}\n`;
+        const overlay = document.createElement('div');
+        overlay.className = 'note-dialog-overlay';
 
-        if (window.electronAPI && window.electronAPI.saveFile) {
-            window.electronAPI.saveFile({ path: filePath, content: template }).then(() => {
-                this.contestMeta.problems.push({
-                    id: problemId,
-                    label: '',
-                    status: 'todo',
-                    timeSpentMs: 0,
-                    activeApproach: null,
-                    approaches: []
+        overlay.innerHTML = `
+            <div class="note-dialog cp-wizard-dialog" style="max-width:360px">
+                <div class="note-dialog-header">
+                    <h3>+ New Contest Category</h3>
+                    <button class="note-dialog-close" title="Close">${this.ICONS.close}</button>
+                </div>
+                <div class="note-dialog-body">
+                    <div class="cp-wizard-field">
+                        <label>Category / Contest Name</label>
+                        <input type="text" class="input-dialog-field" id="cp-add-name" placeholder="e.g. CF-Round-1000" autofocus />
+                    </div>
+                    <div class="cp-wizard-field">
+                        <label>Last Problem ID <span style="opacity:.55;font-size:11px">(optional, e.g. F → A B C D E F)</span></label>
+                        <input type="text" class="input-dialog-field" id="cp-add-last-id" placeholder="F" value="F" maxlength="2" style="text-transform:uppercase;letter-spacing:2px" />
+                    </div>
+                    <div id="cp-add-preview" style="font-size:11px;opacity:.7;padding:4px 2px"></div>
+                </div>
+                <div class="note-dialog-footer">
+                    <button class="note-dialog-btn note-dialog-cancel">Cancel</button>
+                    <button class="note-dialog-btn note-dialog-save">Create</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const nameInput = document.getElementById('cp-add-name');
+        const lastIdInput = document.getElementById('cp-add-last-id');
+        const preview = document.getElementById('cp-add-preview');
+        const saveBtn = overlay.querySelector('.note-dialog-save');
+        const cancelBtn = overlay.querySelector('.note-dialog-cancel');
+        const closeBtn = overlay.querySelector('.note-dialog-close');
+
+        const updatePreview = () => {
+            const val = lastIdInput.value.trim().toUpperCase();
+            const ids = this._idsUpTo(val);
+            preview.textContent = ids.length ? 'Will create: ' + ids.join(', ') : '';
+        };
+
+        lastIdInput.oninput = updatePreview;
+        updatePreview();
+        setTimeout(() => nameInput && nameInput.focus(), 50);
+
+        const closeDialog = () => overlay.remove();
+
+        const createSubContest = async () => {
+            const name = nameInput.value.trim();
+            if (!name) { nameInput.focus(); return; }
+
+            const lastIdRaw = lastIdInput.value.trim().toUpperCase();
+            const problemIds = lastIdRaw ? this._idsUpTo(lastIdRaw) : ['A'];
+
+            // Create subfolder
+            const safeName = name.replace(/[<>:"/\\|?*]/g, '_');
+            const subFolder = `${parentFolder}/${safeName}`.replace(/\\/g, '/');
+
+            if (window.electronAPI && window.electronAPI.createContest) {
+                const result = await window.electronAPI.createContest({
+                    parentDir: parentFolder,
+                    name: safeName,
+                    problemIds,
+                    platform: this.contestMeta?.platform || 'Other'
                 });
-                this.contestMeta.problems.sort((a, b) => a.id.localeCompare(b.id));
-                this.saveContestMeta(this.contestFolder, this.contestMeta);
-                this.refreshTree();
-            });
-        }
+
+                if (result.success) {
+                    // Add as a contest sub-category (separate from collections)
+                    const color = this.CATEGORY_COLORS[this.categories.length % this.CATEGORY_COLORS.length];
+                    const catId = 'cat-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+                    const newCat = {
+                        id: catId,
+                        name: name,
+                        color: color,
+                        type: 'contest',
+                        folderPath: result.contestDir,
+                        items: [],
+                    };
+
+                    // Add the created problem files to the category
+                    for (const pid of problemIds) {
+                        const filePath = `${result.contestDir}/${pid}.cpp`.replace(/\\/g, '/');
+                        newCat.items.push({
+                            filePath,
+                            name: pid,
+                            fileName: `${pid}.cpp`,
+                            status: 'todo',
+                            addedAt: Date.now(),
+                        });
+                    }
+
+                    this.categories.push(newCat);
+                    this.saveState();
+                    await this.refreshTree();
+                    closeDialog();
+                } else {
+                    alert('Failed: ' + (result.error || 'Unknown error'));
+                }
+            } else {
+                // Fallback: create folder and files manually
+                try {
+                    if (window.electronAPI && window.electronAPI.createDirectory) {
+                        await window.electronAPI.createDirectory(subFolder);
+                    }
+
+                    const color = this.CATEGORY_COLORS[this.categories.length % this.CATEGORY_COLORS.length];
+                    const catId = 'cat-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+                    const newCat = { id: catId, name, color, type: 'contest', folderPath: subFolder, items: [] };
+
+                    for (const pid of problemIds) {
+                        const filePath = `${subFolder}/${pid}.cpp`.replace(/\\/g, '/');
+                        const template = `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // TODO: solve ${pid}\n\n    return 0;\n}\n`;
+                        if (window.electronAPI && window.electronAPI.saveFile) {
+                            await window.electronAPI.saveFile({ path: filePath, content: template });
+                        }
+                        newCat.items.push({
+                            filePath,
+                            name: pid,
+                            fileName: `${pid}.cpp`,
+                            status: 'todo',
+                            addedAt: Date.now(),
+                        });
+                    }
+
+                    this.categories.push(newCat);
+                    this.saveState();
+                    await this.refreshTree();
+                    closeDialog();
+                } catch (err) {
+                    alert('Failed: ' + (err.message || err));
+                }
+            }
+        };
+
+        saveBtn.onclick = createSubContest;
+        cancelBtn.onclick = closeDialog;
+        closeBtn.onclick = closeDialog;
+        overlay.onclick = (e) => { if (e.target === overlay) closeDialog(); };
+
+        nameInput.onkeydown = (e) => {
+            if (e.key === 'Escape') closeDialog();
+            if (e.key === 'Enter') lastIdInput.focus();
+        };
+        lastIdInput.onkeydown = (e) => {
+            if (e.key === 'Escape') closeDialog();
+            if (e.key === 'Enter') createSubContest();
+        };
     },
 
     /**
@@ -3371,10 +3407,15 @@ const FileExplorer = {
             return;
         }
 
+        // Clear contest mode override from localStorage
+        localStorage.removeItem(`cp-mode:${this.contestFolder}`);
+        localStorage.removeItem(`cp-mode:${this.currentFolder}`);
+
         // Navigate up to parent folder
         const parentFolder = this.contestFolder.replace(/[/\\][^/\\]+$/, '');
         this.contestFolder = null;
         this.contestMeta = null;
+        this.displayMode = 'normal';
         this.selectedChips.clear();
         this.currentFolder = parentFolder || null;
         this.loadCategoriesForFolder(this.currentFolder);
@@ -3704,7 +3745,7 @@ const FileExplorer = {
         try {
             if (!window.electronAPI || !window.electronAPI.readDirectory) return;
             const entries = await window.electronAPI.readDirectory(cat.folderPath);
-            if (!entries || !Array.isArray(entries)) return;
+            if (!entries || !Array.isArray(entries) || entries.length === 0) return;
 
             const files = entries.filter(e => e.isFile && /\.(cpp|c|cc|cxx|h|hpp|py|java)$/i.test(e.name));
             const existingPaths = new Set(cat.items.map(i => i.filePath.replace(/\\/g, '/')));
@@ -3816,9 +3857,112 @@ const FileExplorer = {
     },
 
     /**
-     * Render categories section HTML
+     * Render the CONTEST sub-categories section (type === 'contest')
+     * Shows contest sub-folders as collapsible items separate from COLLECTIONS
+     */
+    renderContestSection() {
+        const contestCats = this.categories.filter(c => c.type === 'contest');
+
+        let html = '<div class="cp-sub-contest-section">';
+        html += `<div class="cat-section-header">
+            <span class="cat-section-title">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>CONTEST
+            </span>
+            <button class="cat-add-btn" data-action="new-sub-contest" title="New Contest">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            </button>
+        </div>`;
+
+        if (contestCats.length === 0) {
+            html += `
+                <div class="cat-empty-hint">
+                    <span style="font-size:11px;opacity:0.5">No contests — click + to create one</span>
+                </div>
+            `;
+            html += '</div>';
+            return html;
+        }
+
+        for (const cat of contestCats) {
+            const isCollapsed = this.collapsedCategories.has(cat.id);
+            const itemCount = cat.items.length;
+            const solvedCount = cat.items.filter(i => i.status === 'ac').length;
+            const pct = itemCount > 0 ? Math.round((solvedCount / itemCount) * 100) : 0;
+
+            html += `
+                <div class="cat-group ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${cat.id}"
+                     style="--cat-color: ${cat.color}">
+                    <div class="cat-header" data-cat-id="${cat.id}">
+                        <span class="cat-arrow">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </span>
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        <span class="cat-name">${cat.name}</span>
+                        <span class="cat-count">${solvedCount}/${itemCount}</span>
+                        <button class="cat-new-problem-btn" data-cat-id="${cat.id}" data-action="new-problem-quick" title="New Problem">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        </button>
+                    </div>
+            `;
+
+            if (!isCollapsed) {
+                // Mini progress bar
+                if (itemCount > 0) {
+                    html += `
+                        <div class="cat-progress">
+                            <div class="cat-progress-bar">
+                                <div class="cat-progress-fill" style="width: ${pct}%; background: ${cat.color}"></div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Problem items (chip style)
+                if (itemCount > 0) {
+                    const sortedItems = [...cat.items].sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
+                    html += '<div class="cat-items">';
+                    for (const item of sortedItems) {
+                        const statusInfo = this.CP_STATUSES[item.status] || this.CP_STATUSES.todo;
+                        const statusIcon = this.STATUS_ICONS[item.status] || this.STATUS_ICONS.todo;
+                        const isActive = this.isActiveFile(item.filePath);
+                        html += `
+                            <div class="cat-item ${isActive ? 'active' : ''} cp-status-${item.status || 'todo'}"
+                                 data-cat-id="${cat.id}" data-file-path="${item.filePath}"
+                                 draggable="true" title="${item.fileName}\n${statusInfo.label}">
+                                <span class="cat-item-status">${statusIcon}</span>
+                                <span class="cat-item-name">${item.name}</span>
+                            </div>
+                        `;
+                    }
+                    html += '</div>';
+                } else {
+                    html += `
+                        <div class="cat-empty-drop" data-cat-id="${cat.id}">
+                            <span>No problems yet</span>
+                            <button class="cat-add-file-btn" data-cat-id="${cat.id}" data-action="new-problem-quick">+ New Problem</button>
+                        </div>
+                    `;
+                }
+
+                // Drop zone
+                html += `<div class="cat-drop-zone" data-cat-id="${cat.id}">Drop here to add</div>`;
+            }
+
+            html += '</div>';
+        }
+
+        html += '</div>';
+        return html;
+    },
+
+    /**
+     * Render COLLECTIONS section HTML (type !== 'contest')
      */
     renderCategories() {
+        const collectionCats = this.categories.filter(c => c.type !== 'contest');
+
         let html = '<div class="cat-section">';
         html += `<div class="cat-section-header">
             <span class="cat-section-title">COLLECTIONS</span>
@@ -3827,7 +3971,7 @@ const FileExplorer = {
             </button>
         </div>`;
 
-        if (this.categories.length === 0) {
+        if (collectionCats.length === 0) {
             html += `
                 <div class="cat-empty-hint">
                     <span style="font-size:11px;opacity:0.5">Create a collection to organize problems</span>
@@ -3837,7 +3981,7 @@ const FileExplorer = {
             return html;
         }
 
-        for (const cat of this.categories) {
+        for (const cat of collectionCats) {
             const isCollapsed = this.collapsedCategories.has(cat.id);
             const itemCount = cat.items.length;
             const solvedCount = cat.items.filter(i => i.status === 'ac').length;
@@ -3875,8 +4019,10 @@ const FileExplorer = {
 
                 // Items (chips style, like contest mode)
                 if (itemCount > 0) {
+                    // Sort items by addedAt descending (newest first)
+                    const sortedItems = [...cat.items].sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
                     html += '<div class="cat-items">';
-                    for (const item of cat.items) {
+                    for (const item of sortedItems) {
                         const statusInfo = this.CP_STATUSES[item.status] || this.CP_STATUSES.todo;
                         const statusIcon = this.STATUS_ICONS[item.status] || this.STATUS_ICONS.todo;
                         const isActive = this.isActiveFile(item.filePath);
@@ -4055,6 +4201,25 @@ const FileExplorer = {
                     this.addFileToCategory(catId, filePath, name);
                     this.renderTree ? this.renderTree() : this.renderEmptyState();
                     return;
+                }
+
+                // Handle drop from editor tab (including untitled files)
+                const tabId = e.dataTransfer.getData('application/x-sameko-tab');
+                if (tabId && window.App && window.App.tabs) {
+                    const tab = window.App.tabs.find(t => t.id === tabId);
+                    if (tab) {
+                        if (tab.path) {
+                            // Saved file — just add to category
+                            const fName = tab.path.split(/[/\\]/).pop();
+                            const dName = fName.replace(/\.[^.]+$/, '');
+                            this.addFileToCategory(catId, tab.path.replace(/\\/g, '/'), dName);
+                            this.renderTree ? this.renderTree() : this.renderEmptyState();
+                        } else {
+                            // Untitled file — prompt for name and save
+                            this.promptSaveUntitledToCategory(catId, tab);
+                        }
+                        return;
+                    }
                 }
 
                 // Handle external file drop (from OS)
@@ -4524,6 +4689,62 @@ const FileExplorer = {
                     this.refreshTree();
                     this.openFile(filePath);
                 });
+            }
+        });
+    },
+
+    /**
+     * Prompt user to save an untitled tab into a category folder
+     */
+    promptSaveUntitledToCategory(catId, tab) {
+        const cat = this.categories.find(c => c.id === catId);
+        if (!cat) return;
+
+        // Determine the folder to save into
+        let folderPath = cat.folderPath;
+        if (!folderPath && this.currentFolder) {
+            const sanitizedName = cat.name.replace(/[<>:"/\\|?*]/g, '_');
+            folderPath = `${this.currentFolder}/${sanitizedName}`.replace(/\\/g, '/');
+            cat.folderPath = folderPath;
+        }
+        if (!folderPath) {
+            folderPath = this.currentFolder;
+        }
+        if (!folderPath) return;
+
+        const defaultName = tab.name || 'solution.cpp';
+        this.showInputDialog(`Save to "${cat.name}"`, defaultName, async (fileName) => {
+            if (!fileName || !fileName.trim()) return;
+            fileName = fileName.trim();
+            if (!/\.[^.]+$/.test(fileName)) fileName += '.cpp';
+
+            const filePath = `${folderPath}/${fileName}`.replace(/\\/g, '/');
+            const content = tab.content || '';
+
+            // Ensure folder exists
+            try {
+                if (window.electronAPI && window.electronAPI.createDirectory) {
+                    await window.electronAPI.createDirectory(folderPath);
+                }
+            } catch (_) {}
+
+            // Save file
+            if (window.electronAPI && window.electronAPI.saveFile) {
+                const result = await window.electronAPI.saveFile({ path: filePath, content });
+                if (result && result.success !== false) {
+                    const baseName = fileName.replace(/\.[^.]+$/, '');
+                    this.addFileToCategory(catId, filePath, baseName, 'todo');
+
+                    // Update the tab to point to the saved file
+                    tab.path = filePath;
+                    tab.name = fileName;
+                    tab.modified = false;
+                    if (window.App && window.App.renderTabs) window.App.renderTabs();
+                    if (window.App && window.App.updateTitle) window.App.updateTitle();
+
+                    await this.refreshTree();
+                    this.openFile(filePath);
+                }
             }
         });
     },
