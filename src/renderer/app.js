@@ -4215,6 +4215,9 @@ async function compileOnly() {
         log('Compiling...', 'info');
         setStatus('Compiling...', 'building');
 
+        // Notify explorer: compile started
+        if (window.FileExplorer) window.FileExplorer.notifyBuildEvent(tab.path, 'compile-start');
+
         const t0 = Date.now();
 
         const flags = [];
@@ -4240,6 +4243,7 @@ async function compileOnly() {
                 parseProblems(r.warnings, 'warning');
             }
             setStatus(`Compile: ${ms}ms`, 'success');
+            if (window.FileExplorer) window.FileExplorer.notifyBuildEvent(tab.path, 'compile-ok');
         } else {
             log('Compile failed', 'error');
             log(r.error, 'error');
@@ -4303,6 +4307,9 @@ async function buildRun() {
         log('Building...', 'info');
         setStatus('Building...', 'building');
 
+        // Notify explorer: compile started
+        if (window.FileExplorer) window.FileExplorer.notifyBuildEvent(tab.path, 'compile-start');
+
         const t0 = Date.now();
 
         const flags = [];
@@ -4330,6 +4337,7 @@ async function buildRun() {
                 parseProblems(r.warnings, 'warning');
             }
             setStatus(`Build: ${ms}ms`, 'success');
+            if (window.FileExplorer) window.FileExplorer.notifyBuildEvent(tab.path, 'compile-ok');
 
             // Unlock before running so stop button works
             setBuildingState(false);
@@ -4376,6 +4384,10 @@ async function run(clearTerminal = true) {
     log('--- Running ---', 'system');
     setStatus('Running...', '');
     setRunning(true);
+
+    // Notify explorer: run started
+    const _runTab = App.tabs.find(t => t.id === (App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId));
+    if (window.FileExplorer && _runTab) window.FileExplorer.notifyBuildEvent(_runTab.path, 'run-start');
 
 
     if (DockingState.terminalDocked) {
@@ -4807,6 +4819,7 @@ function compareOutput() {
 
 
     let html = '';
+    let allMatch = true;
 
     // Inline Compact Diff Visualization
     // Focus on minimal space usage
@@ -4832,6 +4845,7 @@ function compareOutput() {
             html += `<div class="diff-line match-compact">${escapeHtml(expLine)}</div>`;
         } else {
             // MISMATCH
+            allMatch = false;
             html += `<div class="diff-line mismatch-compact">`;
 
             if (actLine !== null && expLine !== null) {
@@ -4857,6 +4871,14 @@ function compareOutput() {
     diffDisplay.innerHTML = html;
     diffDisplay.style.display = 'block';
     textarea.style.display = 'none';
+
+    // Notify FileExplorer of judge verdict (AC / WA)
+    if (window.FileExplorer) {
+        const judgeTab = App.tabs.find(t => t.id === (App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId));
+        if (judgeTab && judgeTab.path) {
+            window.FileExplorer.notifyBuildEvent(judgeTab.path, allMatch ? 'judge-ac' : 'judge-wa');
+        }
+    }
 
     // Update Docked View if exists
     if (dockedDiffDisplay && dockedTextarea) {
@@ -4985,6 +5007,10 @@ if (window.electronAPI) {
         if (memStr) statusParts.push(memStr);
         setStatus(code === 0 ? (statusParts.join(' | ') || 'Done') : `Exit: ${code}`, code === 0 ? 'success' : '');
         if (code === 0) setTimeout(compareOutput, 100);
+
+        // Notify explorer: run finished
+        const _exitTab = App.tabs.find(t => t.id === (App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId));
+        if (window.FileExplorer && _exitTab) window.FileExplorer.notifyBuildEvent(_exitTab.path, code === 0 ? 'run-exit-0' : 'run-exit-fail');
     });
     window.electronAPI.onProcessStopped?.(() => {
         if (App.runTimeout) {

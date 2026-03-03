@@ -5702,13 +5702,12 @@ body.split-active .editor-pane {
     border-radius: 8px;
     cursor: pointer;
     border: 1.5px solid transparent;
-    transition: background 0.12s, border-color 0.15s, transform 0.1s;
+    transition: background 0.12s, border-color 0.15s;
     min-height: 30px;
 }
 
 .cp-problem-row-item:hover {
     background: var(--bg-ocean-light, rgba(188, 226, 245, 0.25));
-    transform: translateX(2px);
 }
 
 .cp-problem-row-item.active {
@@ -6616,14 +6615,13 @@ body.split-active .editor-pane {
     border-radius: 6px;
     cursor: pointer;
     border: 1.5px solid transparent;
-    transition: background 0.12s, border-color 0.15s, transform 0.1s, opacity 0.15s;
+    transition: background 0.12s, border-color 0.15s, opacity 0.15s;
     font-size: 12px;
     min-height: 28px;
 }
 
 .cat-list-item:hover {
     background: var(--bg-ocean-light, rgba(188, 226, 245, 0.25));
-    transform: translateX(2px);
 }
 
 .cat-list-item.active {

@@ -146,6 +146,9 @@ function registerHandlers() {
 
     ipcMain.handle(IPC.FILE.READ_DIR, async (event, dirPath) => {
         try {
+            if (!fs.existsSync(dirPath)) {
+                return [];
+            }
             const entries = fs.readdirSync(dirPath, { withFileTypes: true });
             return entries.map(entry => ({
                 name: entry.name,
@@ -153,7 +156,10 @@ function registerHandlers() {
                 isFile: entry.isFile()
             }));
         } catch (error) {
-            console.error('[FileExplorer] read-directory error:', error);
+            // Only log unexpected errors, not missing directories
+            if (error.code !== 'ENOENT') {
+                console.error('[FileExplorer] read-directory error:', error);
+            }
             return [];
         }
     });

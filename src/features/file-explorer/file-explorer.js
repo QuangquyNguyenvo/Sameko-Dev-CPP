@@ -762,6 +762,82 @@ const FileExplorer = {
     },
 
     /**
+     * Auto-update problem/category item status based on build/run events.
+     * Called from app.js when compiling/running files.
+     * @param {string} filePath - The file being compiled/run
+     * @param {'compile-start'|'compile-ok'|'compile-fail'|'run-start'|'run-exit-0'|'run-exit-fail'} event
+     */
+    notifyBuildEvent(filePath, event) {
+        if (!filePath) return;
+        const normalizedPath = filePath.replace(/\\/g, '/');
+        const fileName = normalizedPath.split('/').pop();
+        const problemId = fileName.replace(/\.[^.]+$/, '').toUpperCase();
+
+        // Determine new status from event, considering current status
+        const getNewStatus = (currentStatus) => {
+            switch (event) {
+                case 'compile-start':
+                    // Only upgrade from todo
+                    return currentStatus === 'todo' ? 'coding' : null;
+                case 'compile-ok':
+                    return currentStatus === 'todo' ? 'coding' : null;
+                case 'compile-fail':
+                    // Compile error = still coding
+                    return currentStatus === 'todo' ? 'coding' : null;
+                case 'run-start':
+                    // Running = testing (from coding or todo)
+                    return (currentStatus === 'todo' || currentStatus === 'coding') ? 'testing' : null;
+                case 'run-exit-0':
+                    // Clean exit — keep testing, compareOutput will determine AC/WA later
+                    return null;
+                case 'run-exit-fail':
+                    // Non-zero exit = RE (unless already AC)
+                    return (currentStatus !== 'ac') ? 're' : null;
+                case 'judge-ac':
+                    return 'ac';
+                case 'judge-wa':
+                    return (currentStatus !== 'ac') ? 'wa' : null;
+                default:
+                    return null;
+            }
+        };
+
+        let changed = false;
+
+        // 1) Update contest problem (main contest mode)
+        if (this.contestMeta && this.contestMeta.problems) {
+            const prob = this.contestMeta.problems.find(p => p.id === problemId || p.id === problemId.toLowerCase());
+            if (prob) {
+                const ns = getNewStatus(prob.status);
+                if (ns) {
+                    prob.status = ns;
+                    this.saveContestMeta(this.contestFolder, this.contestMeta);
+                    changed = true;
+                }
+            }
+        }
+
+        // 2) Update category items that reference this file
+        for (const cat of this.categories) {
+            for (const item of cat.items) {
+                const itemPath = (item.filePath || '').replace(/\\/g, '/');
+                if (itemPath === normalizedPath) {
+                    const ns = getNewStatus(item.status);
+                    if (ns) {
+                        item.status = ns;
+                        changed = true;
+                    }
+                }
+            }
+        }
+
+        if (changed) {
+            this.saveState();
+            this.renderTree();
+        }
+    },
+
+    /**
      * Save current editor content as a new approach in .sameko
      */
     async saveApproachToMeta(problemId, name) {
@@ -2017,13 +2093,6 @@ const FileExplorer = {
         cancelBtn.onclick = closeDialog;
         closeBtn.onclick = closeDialog;
 
-        // Close on overlay click
-        overlay.onclick = (e) => {
-            if (e.target === overlay) {
-                closeDialog();
-            }
-        };
-
         // Keyboard shortcuts
         textarea.onkeydown = (e) => {
             if (e.key === 'Escape') {
@@ -2069,10 +2138,16 @@ const FileExplorer = {
         const cancelBtn = overlay.querySelector('.note-dialog-cancel');
         const closeBtn = overlay.querySelector('.note-dialog-close');
 
+        // Blur Monaco editor to prevent it from stealing focus
+        if (window.App && window.App.editor) {
+            try { document.activeElement?.blur(); } catch (_) {}
+        }
+
         setTimeout(() => {
+            window.focus();
             input.focus();
             input.select();
-        }, 50);
+        }, 80);
 
         const closeDialog = () => {
             overlay.remove();
@@ -2089,9 +2164,6 @@ const FileExplorer = {
         saveBtn.onclick = submit;
         cancelBtn.onclick = closeDialog;
         closeBtn.onclick = closeDialog;
-        overlay.onclick = (e) => {
-            if (e.target === overlay) closeDialog();
-        };
 
         input.onkeydown = (e) => {
             if (e.key === 'Escape') {
@@ -3232,7 +3304,7 @@ const FileExplorer = {
                     </div>
                     <div class="cp-wizard-field">
                         <label>Last Problem ID <span style="opacity:.55;font-size:11px">(optional, e.g. F → A B C D E F)</span></label>
-                        <input type="text" class="input-dialog-field" id="cp-add-last-id" placeholder="F" value="F" maxlength="2" style="text-transform:uppercase;letter-spacing:2px" />
+                        <input type="text" class="input-dialog-field" id="cp-add-last-id" placeholder="e.g. F" value="" maxlength="2" style="text-transform:uppercase;letter-spacing:2px" />
                     </div>
                     <div id="cp-add-preview" style="font-size:11px;opacity:.7;padding:4px 2px"></div>
                 </div>
@@ -3269,7 +3341,7 @@ const FileExplorer = {
             if (!name) { nameInput.focus(); return; }
 
             const lastIdRaw = lastIdInput.value.trim().toUpperCase();
-            const problemIds = lastIdRaw ? this._idsUpTo(lastIdRaw) : ['A'];
+            const problemIds = lastIdRaw ? this._idsUpTo(lastIdRaw) : [];
 
             // Create subfolder
             const safeName = name.replace(/[<>:"/\\|?*]/g, '_');
@@ -3294,6 +3366,7 @@ const FileExplorer = {
                         type: 'contest',
                         folderPath: result.contestDir,
                         items: [],
+                        createdAt: new Date().toISOString(),
                     };
 
                     // Add the created problem files to the category
@@ -3324,7 +3397,7 @@ const FileExplorer = {
 
                     const color = this.CATEGORY_COLORS[this.categories.length % this.CATEGORY_COLORS.length];
                     const catId = 'cat-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
-                    const newCat = { id: catId, name, color, type: 'contest', folderPath: subFolder, items: [] };
+                    const newCat = { id: catId, name, color, type: 'contest', folderPath: subFolder, items: [], createdAt: new Date().toISOString() };
 
                     for (const pid of problemIds) {
                         const filePath = `${subFolder}/${pid}.cpp`.replace(/\\/g, '/');
@@ -3354,7 +3427,6 @@ const FileExplorer = {
         saveBtn.onclick = createSubContest;
         cancelBtn.onclick = closeDialog;
         closeBtn.onclick = closeDialog;
-        overlay.onclick = (e) => { if (e.target === overlay) closeDialog(); };
 
         nameInput.onkeydown = (e) => {
             if (e.key === 'Escape') closeDialog();
@@ -3658,7 +3730,6 @@ const FileExplorer = {
         saveBtn.onclick = createContest;
         cancelBtn.onclick = closeDialog;
         closeBtn.onclick = closeDialog;
-        overlay.onclick = (e) => { if (e.target === overlay) closeDialog(); };
 
         nameInput.onkeydown = (e) => {
             if (e.key === 'Escape') closeDialog();
@@ -4317,7 +4388,12 @@ const FileExplorer = {
 
             group.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                e.dataTransfer.dropEffect = 'copy';
+                // Use 'move' for tab drags (effectAllowed='move'), 'copy' for file drags
+                if (e.dataTransfer.types.includes('application/x-sameko-tab') || e.dataTransfer.types.includes('text/cat-item')) {
+                    e.dataTransfer.dropEffect = 'move';
+                } else {
+                    e.dataTransfer.dropEffect = 'copy';
+                }
                 group.classList.add('drag-over');
                 const dropZone = group.querySelector('.cat-drop-zone');
                 if (dropZone) dropZone.classList.add('visible');
@@ -4863,7 +4939,6 @@ const FileExplorer = {
             const closeDialog = () => overlay.remove();
             overlay.querySelector('.note-dialog-close').onclick = closeDialog;
             overlay.querySelector('.note-dialog-cancel').onclick = closeDialog;
-            overlay.onclick = (e) => { if (e.target === overlay) closeDialog(); };
 
             overlay.querySelector('[data-action="add-current"]').onclick = () => {
                 const displayName = document.getElementById('cat-add-name').value.trim() || name;
