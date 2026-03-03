@@ -847,6 +847,30 @@ const FileExplorer = {
     },
 
     /**
+     * Format a date string to a relative label (e.g. "today", "3d ago", "Jan 15")
+     */
+    _formatRelativeDate(dateStr) {
+        try {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diffMs = now - date;
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+            if (diffDays === 0) return 'today';
+            if (diffDays === 1) return 'yesterday';
+            if (diffDays < 7) return `${diffDays}d ago`;
+            if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const sameYear = date.getFullYear() === now.getFullYear();
+            if (sameYear) return `${months[date.getMonth()]} ${date.getDate()}`;
+            return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+        } catch (_) {
+            return '';
+        }
+    },
+
+    /**
      * Group companion files (.inp, .out, .txt) with their parent .cpp files
      */
     groupCompanionFiles(items) {
@@ -1094,7 +1118,7 @@ const FileExplorer = {
 
         let html = '<div class="cp-problem-list">';
         html += '<div class="cp-list-label">PROBLEMS</div>';
-        html += '<div class="cp-problem-chips-grid">';
+        html += '<div class="cp-problem-rows">';
 
         this.contestMeta.problems.forEach((prob, idx) => {
             const statusInfo = this.CP_STATUSES[prob.status] || this.CP_STATUSES.todo;
@@ -1102,15 +1126,17 @@ const FileExplorer = {
             const isActive = this.isActiveProblem(prob.id);
             const isSelected = this.selectedChips.has(prob.id);
             const filePath = `${this.contestFolder}/${prob.id}.cpp`.replace(/\\/g, '/');
-            const shortLabel = prob.label ? (prob.label.length > 8 ? prob.label.slice(0, 7) + '…' : prob.label) : '';
-            const tooltip = `${prob.id}${prob.label ? ' · ' + prob.label : ''} · ${statusInfo.label}\nClick to open · Right-click for options\nCtrl+click to select · Shift+click for range`;
+            const timeStr = this.SessionTimer.getDisplay(prob.id);
+            const tooltip = `Click to open · Right-click for options\nCtrl+click to select · Shift+click for range`;
 
             html += `
-                <div class="cp-problem-chip ${isActive ? 'active' : ''} ${isSelected ? 'cp-chip-selected' : ''} cp-status-${prob.status || 'todo'}"
+                <div class="cp-problem-row-item ${isActive ? 'active' : ''} ${isSelected ? 'cp-chip-selected' : ''} cp-status-${prob.status || 'todo'}"
                      data-problem="${prob.id}" data-chip-idx="${idx}" data-path="${filePath}" title="${tooltip}">
-                    <span class="cp-chip-label">${prob.id}</span>
-                    ${shortLabel ? `<span class="cp-chip-sublabel">${shortLabel}</span>` : ''}
-                    <span class="cp-chip-icon">${icon}</span>
+                    <span class="cp-row-status">${icon}</span>
+                    <span class="cp-row-id">${prob.id}</span>
+                    <span class="cp-row-label">${prob.label || ''}</span>
+                    <span class="cp-row-badge cp-badge-${prob.status || 'todo'}">${statusInfo.label}</span>
+                    ${timeStr ? `<span class="cp-row-time">${timeStr}</span>` : ''}
                 </div>
             `;
         });
@@ -1460,6 +1486,11 @@ const FileExplorer = {
                     } else {
                         this.showSimpleContextMenu(e, path);
                     }
+                });
+            } else if (item.classList.contains('folder')) {
+                item.addEventListener('contextmenu', (e) => {
+                    e.preventDefault();
+                    this.showFolderContextMenu(e, item.dataset.path);
                 });
             } else if (item.classList.contains('approach')) {
                 item.addEventListener('contextmenu', (e) => {
@@ -1818,6 +1849,106 @@ const FileExplorer = {
         menu.querySelector('[data-action="open-folder"]').onclick = () => {
             this.openContainingFolder(filePath);
             menu.remove();
+        };
+
+        setTimeout(() => {
+            document.addEventListener('click', function closeMenu() {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            });
+        }, 10);
+    },
+
+    /**
+     * Show context menu for folders
+     */
+    showFolderContextMenu(e, folderPath) {
+        document.querySelectorAll('.explorer-context-menu').forEach(el => el.remove());
+
+        const folderName = folderPath.split(/[/\\]/).pop();
+        const menu = document.createElement('div');
+        menu.className = 'explorer-context-menu';
+
+        menu.innerHTML = `
+            <div class="context-item" data-action="new-file">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+                New File Here
+            </div>
+            <div class="context-item" data-action="new-subfolder">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg>
+                New Subfolder
+            </div>
+            <div class="context-separator"></div>
+            <div class="context-item" data-action="open-in-explorer">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+                Show in Explorer
+            </div>
+            <div class="context-item" data-action="copy-path">
+                Copy Path
+            </div>
+            <div class="context-separator"></div>
+            <div class="context-item" data-action="set-as-root">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                Open as Root Folder
+            </div>
+        `;
+
+        this.positionMenu(menu, e.clientX, e.clientY);
+
+        menu.querySelector('[data-action="new-file"]').onclick = () => {
+            menu.remove();
+            this.showInputDialog('New File in ' + folderName, 'solution.cpp', (fileName) => {
+                if (!fileName || !fileName.trim()) return;
+                const filePath = `${folderPath}/${fileName.trim()}`.replace(/\\/g, '/');
+
+                let template = '';
+                if (/\.(cpp|c|cc|cxx)$/i.test(fileName)) {
+                    const baseName = fileName.replace(/\.[^.]+$/, '');
+                    template = `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // TODO: solve ${baseName}\n\n    return 0;\n}\n`;
+                }
+
+                if (window.electronAPI && window.electronAPI.saveFile) {
+                    window.electronAPI.saveFile({ path: filePath, content: template }).then(() => {
+                        this.refreshTree();
+                        this.openFile(filePath);
+                    });
+                }
+            });
+        };
+
+        menu.querySelector('[data-action="new-subfolder"]').onclick = () => {
+            menu.remove();
+            this.showInputDialog('New Subfolder in ' + folderName, '', async (name) => {
+                if (!name || !name.trim()) return;
+                const newPath = `${folderPath}/${name.trim()}`.replace(/\\/g, '/');
+                if (window.electronAPI && window.electronAPI.createDirectory) {
+                    await window.electronAPI.createDirectory(newPath);
+                    this.expandedFolders.add(folderPath);
+                    await this.refreshTree();
+                }
+            });
+        };
+
+        menu.querySelector('[data-action="open-in-explorer"]').onclick = () => {
+            menu.remove();
+            if (window.electronAPI && window.electronAPI.showItemInFolder) {
+                window.electronAPI.showItemInFolder(folderPath);
+            }
+        };
+
+        menu.querySelector('[data-action="copy-path"]').onclick = () => {
+            navigator.clipboard.writeText(folderPath);
+            menu.remove();
+        };
+
+        menu.querySelector('[data-action="set-as-root"]').onclick = () => {
+            menu.remove();
+            this.currentFolder = folderPath;
+            this.expandedFolders.clear();
+            this.expandedFolders.add(folderPath);
+            this.loadCategoriesForFolder(this.currentFolder);
+            this.refreshTree();
+            this.saveState();
         };
 
         setTimeout(() => {
@@ -2595,8 +2726,8 @@ const FileExplorer = {
             });
         }
 
-        // Quick Status Bar chips
-        const chips = this.elements.tree.querySelectorAll('.cp-problem-chip');
+        // Quick Status Bar chips & problem row items
+        const chips = this.elements.tree.querySelectorAll('.cp-problem-chip, .cp-problem-row-item');
         chips.forEach(chip => {
             chip.addEventListener('click', (e) => {
                 const problemId = chip.dataset.problem;
@@ -3861,7 +3992,13 @@ const FileExplorer = {
      * Shows contest sub-folders as collapsible items separate from COLLECTIONS
      */
     renderContestSection() {
-        const contestCats = this.categories.filter(c => c.type === 'contest');
+        const contestCats = this.categories
+            .filter(c => c.type === 'contest')
+            .sort((a, b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dateB - dateA; // newest first
+            });
 
         let html = '<div class="cp-sub-contest-section">';
         html += `<div class="cat-section-header">
@@ -3889,6 +4026,8 @@ const FileExplorer = {
             const solvedCount = cat.items.filter(i => i.status === 'ac').length;
             const pct = itemCount > 0 ? Math.round((solvedCount / itemCount) * 100) : 0;
 
+            const dateLabel = cat.createdAt ? this._formatRelativeDate(cat.createdAt) : '';
+
             html += `
                 <div class="cat-group ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${cat.id}"
                      style="--cat-color: ${cat.color}">
@@ -3900,6 +4039,7 @@ const FileExplorer = {
                         </span>
                         <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                         <span class="cat-name">${cat.name}</span>
+                        ${dateLabel ? `<span class="cat-date">${dateLabel}</span>` : ''}
                         <span class="cat-count">${solvedCount}/${itemCount}</span>
                         <button class="cat-new-problem-btn" data-cat-id="${cat.id}" data-action="new-problem-quick" title="New Problem">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -3919,20 +4059,21 @@ const FileExplorer = {
                     `;
                 }
 
-                // Problem items (chip style)
+                // Problem items (list style for better readability)
                 if (itemCount > 0) {
                     const sortedItems = [...cat.items].sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-                    html += '<div class="cat-items">';
+                    html += '<div class="cat-items-list">';
                     for (const item of sortedItems) {
                         const statusInfo = this.CP_STATUSES[item.status] || this.CP_STATUSES.todo;
                         const statusIcon = this.STATUS_ICONS[item.status] || this.STATUS_ICONS.todo;
                         const isActive = this.isActiveFile(item.filePath);
                         html += `
-                            <div class="cat-item ${isActive ? 'active' : ''} cp-status-${item.status || 'todo'}"
+                            <div class="cat-list-item ${isActive ? 'active' : ''} cp-status-${item.status || 'todo'}"
                                  data-cat-id="${cat.id}" data-file-path="${item.filePath}"
-                                 draggable="true" title="${item.fileName}\n${statusInfo.label}">
-                                <span class="cat-item-status">${statusIcon}</span>
-                                <span class="cat-item-name">${item.name}</span>
+                                 draggable="true" title="${item.fileName}">
+                                <span class="cat-list-item-status">${statusIcon}</span>
+                                <span class="cat-list-item-name">${item.name}</span>
+                                <span class="cat-list-item-badge cp-badge-${item.status || 'todo'}">${statusInfo.label}</span>
                             </div>
                         `;
                     }
@@ -3961,7 +4102,13 @@ const FileExplorer = {
      * Render COLLECTIONS section HTML (type !== 'contest')
      */
     renderCategories() {
-        const collectionCats = this.categories.filter(c => c.type !== 'contest');
+        const collectionCats = this.categories
+            .filter(c => c.type !== 'contest')
+            .sort((a, b) => {
+                const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                return dateB - dateA; // newest first
+            });
 
         let html = '<div class="cat-section">';
         html += `<div class="cat-section-header">
@@ -4017,21 +4164,22 @@ const FileExplorer = {
                     `;
                 }
 
-                // Items (chips style, like contest mode)
+                // Items (list style for better readability)
                 if (itemCount > 0) {
                     // Sort items by addedAt descending (newest first)
                     const sortedItems = [...cat.items].sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-                    html += '<div class="cat-items">';
+                    html += '<div class="cat-items-list">';
                     for (const item of sortedItems) {
                         const statusInfo = this.CP_STATUSES[item.status] || this.CP_STATUSES.todo;
                         const statusIcon = this.STATUS_ICONS[item.status] || this.STATUS_ICONS.todo;
                         const isActive = this.isActiveFile(item.filePath);
                         html += `
-                            <div class="cat-item ${isActive ? 'active' : ''} cp-status-${item.status || 'todo'}"
+                            <div class="cat-list-item ${isActive ? 'active' : ''} cp-status-${item.status || 'todo'}"
                                  data-cat-id="${cat.id}" data-file-path="${item.filePath}" 
-                                 draggable="true" title="${item.fileName}\n${statusInfo.label}">
-                                <span class="cat-item-status">${statusIcon}</span>
-                                <span class="cat-item-name">${item.name}</span>
+                                 draggable="true" title="${item.fileName}">
+                                <span class="cat-list-item-status">${statusIcon}</span>
+                                <span class="cat-list-item-name">${item.name}</span>
+                                <span class="cat-list-item-badge cp-badge-${item.status || 'todo'}">${statusInfo.label}</span>
                             </div>
                         `;
                     }
@@ -4095,8 +4243,8 @@ const FileExplorer = {
             });
         });
 
-        // Category items (click to open, right-click for menu)
-        this.elements.tree.querySelectorAll('.cat-item').forEach(item => {
+        // Category items (click to open, right-click for menu) - supports both .cat-item and .cat-list-item
+        this.elements.tree.querySelectorAll('.cat-item, .cat-list-item').forEach(item => {
             item.addEventListener('click', (e) => {
                 const filePath = item.dataset.filePath;
                 if (filePath) {
@@ -4118,10 +4266,26 @@ const FileExplorer = {
                 }));
                 e.dataTransfer.effectAllowed = 'move';
                 item.classList.add('dragging');
+
+                // Create custom drag preview
+                const ghost = this._createDragGhost(item);
+                document.body.appendChild(ghost);
+                e.dataTransfer.setDragImage(ghost, 12, 12);
+                setTimeout(() => ghost.remove(), 0);
+
+                // Show target hints on other categories
+                this.elements.tree.querySelectorAll('.cat-group').forEach(g => {
+                    if (g.dataset.catId !== item.dataset.catId) {
+                        g.classList.add('drag-target-hint');
+                    }
+                });
             });
 
             item.addEventListener('dragend', () => {
                 item.classList.remove('dragging');
+                // Hide all drop zone hints
+                this.elements.tree.querySelectorAll('.cat-group').forEach(g => g.classList.remove('drag-target-hint'));
+                this.elements.tree.querySelectorAll('.cat-drop-zone').forEach(z => z.classList.remove('visible'));
             });
         });
 
@@ -4236,7 +4400,7 @@ const FileExplorer = {
             });
         });
 
-        // Make tree items draggable into categories
+        // Make tree items draggable into categories with custom drag preview
         this.elements.tree.querySelectorAll('.explorer-item.file').forEach(item => {
             if (!item.getAttribute('draggable')) {
                 item.setAttribute('draggable', 'true');
@@ -4246,13 +4410,93 @@ const FileExplorer = {
                         e.dataTransfer.setData('text/explorer-path', path);
                         e.dataTransfer.effectAllowed = 'copyMove';
                         item.classList.add('dragging');
+
+                        // Create custom drag preview
+                        const ghost = this._createDragGhost(item);
+                        document.body.appendChild(ghost);
+                        e.dataTransfer.setDragImage(ghost, 12, 12);
+                        setTimeout(() => ghost.remove(), 0);
+
+                        // Show all drop zones
+                        this.elements.tree.querySelectorAll('.cat-group').forEach(g => g.classList.add('drag-target-hint'));
                     }
                 });
                 item.addEventListener('dragend', () => {
                     item.classList.remove('dragging');
+                    // Hide all drop zone hints
+                    this.elements.tree.querySelectorAll('.cat-group').forEach(g => g.classList.remove('drag-target-hint'));
+                    this.elements.tree.querySelectorAll('.cat-drop-zone').forEach(z => z.classList.remove('visible'));
                 });
             }
         });
+
+        // Reorder support within categories (drag between list items)
+        this.elements.tree.querySelectorAll('.cat-items-list').forEach(list => {
+            list.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const dragging = list.querySelector('.dragging');
+                if (!dragging) return;
+
+                const siblings = [...list.querySelectorAll('.cat-list-item:not(.dragging)')];
+                const afterElement = siblings.reduce((closest, child) => {
+                    const box = child.getBoundingClientRect();
+                    const offset = e.clientY - box.top - box.height / 2;
+                    if (offset < 0 && offset > closest.offset) {
+                        return { offset, element: child };
+                    }
+                    return closest;
+                }, { offset: Number.NEGATIVE_INFINITY }).element;
+
+                if (afterElement) {
+                    list.insertBefore(dragging, afterElement);
+                } else {
+                    list.appendChild(dragging);
+                }
+            });
+
+            list.addEventListener('drop', (e) => {
+                // After reorder, save the new ordering
+                const catId = list.closest('.cat-group')?.dataset.catId;
+                if (!catId) return;
+
+                const cat = this.categories.find(c => c.id === catId);
+                if (!cat) return;
+
+                // Read new order from DOM
+                const newOrder = [];
+                list.querySelectorAll('.cat-list-item').forEach(el => {
+                    const filePath = el.dataset.filePath;
+                    const item = cat.items.find(i => i.filePath === filePath);
+                    if (item) newOrder.push(item);
+                });
+
+                if (newOrder.length === cat.items.length) {
+                    cat.items = newOrder;
+                    this.saveState();
+                }
+            });
+        });
+    },
+
+    /**
+     * Create a lightweight drag ghost element for better drag UX
+     */
+    _createDragGhost(sourceEl) {
+        const ghost = document.createElement('div');
+        ghost.className = 'explorer-drag-ghost';
+        const name = sourceEl.querySelector('.explorer-item-name, .cat-list-item-name, .cat-item-name');
+        ghost.innerHTML = `
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+            </svg>
+            <span>${name ? name.textContent : 'File'}</span>
+        `;
+        // Position offscreen so it doesn't flash
+        ghost.style.position = 'fixed';
+        ghost.style.left = '-9999px';
+        ghost.style.top = '-9999px';
+        return ghost;
     },
 
     /**
