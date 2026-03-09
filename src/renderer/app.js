@@ -153,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     validateCompilerOnStartup();
     updateUI();
     if (typeof FileExplorer !== 'undefined') FileExplorer.init();
+    initSessionPersistence();
 
     let resizeRequestId = null;
     window.addEventListener('resize', () => {
@@ -518,6 +519,7 @@ function createEditor(containerId) {
 
 
         scheduleAutoSave();
+        scheduleSessionSave();
 
 
         scheduleLiveCheck();
@@ -2291,6 +2293,256 @@ async function autoSaveCurrentFile() {
 }
 
 // ============================================================================
+// SESSION PERSISTENCE (Checkpoint for unsaved files)
+// ============================================================================
+const SESSION_STORAGE_KEY = 'ide-session-checkpoint';
+const SESSION_SAVE_DEBOUNCE = 5000; // 5 seconds debounce
+const SESSION_PERIODIC_INTERVAL = 30000; // 30 seconds periodic save
+let sessionSaveTimer = null;
+let sessionPeriodicTimer = null;
+let sessionRestored = false;
+
+/**
+ * Save the current session (all open tabs including unsaved ones) to localStorage.
+ * This ensures unsaved work survives accidental app closure.
+ */
+function saveSession() {
+    try {
+        // Sync current editor content to active tab
+        if (App.activeTabId && App.editor && App.ready) {
+            const activeTab = App.tabs.find(t => t.id === App.activeTabId);
+            if (activeTab) activeTab.content = App.editor.getValue();
+        }
+        if (App.splitTabId && App.editor2 && App.ready) {
+            const splitTab = App.tabs.find(t => t.id === App.splitTabId);
+            if (splitTab) splitTab.content = App.editor2.getValue();
+        }
+
+        const session = {
+            tabs: App.tabs.map(t => ({
+                id: t.id,
+                name: t.name,
+                path: t.path || null,
+                // Always save content for unsaved/modified tabs; for saved unmodified tabs, skip content (re-read from disk)
+                content: (!t.path || t.modified) ? (t.content || '') : null,
+                original: t.original || '',
+                modified: t.modified || false,
+            })),
+            activeTabId: App.activeTabId,
+            splitTabId: App.splitTabId,
+            isSplit: App.isSplit,
+            timestamp: Date.now(),
+        };
+
+        localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+    } catch (e) {
+        console.warn('[Session] Failed to save session checkpoint:', e);
+    }
+}
+
+/**
+ * Schedule a debounced session save (called on every content change)
+ */
+function scheduleSessionSave() {
+    if (sessionSaveTimer) clearTimeout(sessionSaveTimer);
+    sessionSaveTimer = setTimeout(() => {
+        saveSession();
+    }, SESSION_SAVE_DEBOUNCE);
+}
+
+/**
+ * Start periodic session saves
+ */
+function startSessionPeriodicSave() {
+    if (sessionPeriodicTimer) clearInterval(sessionPeriodicTimer);
+    sessionPeriodicTimer = setInterval(() => {
+        saveSession();
+    }, SESSION_PERIODIC_INTERVAL);
+}
+
+/**
+ * Clear saved session (called after successful restore or when user explicitly closes all tabs)
+ */
+function clearSession() {
+    try {
+        localStorage.removeItem(SESSION_STORAGE_KEY);
+    } catch (_) {}
+}
+
+/**
+ * Restore session from localStorage on app startup.
+ * Recovers all open tabs including unsaved files with their content.
+ */
+async function restoreSession() {
+    if (sessionRestored) return;
+    sessionRestored = true;
+
+    try {
+        const saved = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (!saved) return;
+
+        const session = JSON.parse(saved);
+        if (!session || !session.tabs || session.tabs.length === 0) {
+            clearSession();
+            return;
+        }
+
+        // Check if session is too old (> 7 days)
+        if (session.timestamp && (Date.now() - session.timestamp) > 7 * 24 * 60 * 60 * 1000) {
+            clearSession();
+            return;
+        }
+
+        // Determine which tabs have unsaved content that would be lost
+        const unsavedTabs = session.tabs.filter(t => !t.path || t.modified);
+        if (unsavedTabs.length === 0 && session.tabs.every(t => t.path)) {
+            // All tabs were saved files with no modifications — just reopen them silently
+            for (const tabData of session.tabs) {
+                if (tabData.path) {
+                    const normalizedPath = tabData.path.replace(/\\/g, '/');
+                    const existing = App.tabs.find(t => t.path && t.path.replace(/\\/g, '/') === normalizedPath);
+                    if (!existing) {
+                        try {
+                            let content = '';
+                            if (window.electronAPI && window.electronAPI.readFile) {
+                                content = await window.electronAPI.readFile(tabData.path);
+                            }
+                            const id = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+                            App.tabs.push({
+                                id,
+                                name: tabData.name,
+                                path: tabData.path,
+                                content,
+                                original: content,
+                                modified: false,
+                            });
+                        } catch (_) {
+                            // File no longer exists, skip
+                        }
+                    }
+                }
+            }
+
+            if (App.tabs.length > 0 && !App.activeTabId) {
+                const restoreActiveId = session.activeTabId;
+                const matchTab = App.tabs.find(t => {
+                    const sessionTab = session.tabs.find(st => st.id === restoreActiveId);
+                    return sessionTab && t.path === sessionTab.path;
+                });
+                setActive(matchTab ? matchTab.id : App.tabs[0].id);
+            }
+            updateUI();
+            clearSession();
+            return;
+        }
+
+        // There are unsaved tabs — show restore prompt
+        const hasUntitled = unsavedTabs.some(t => !t.path);
+        const hasModified = unsavedTabs.some(t => t.path && t.modified);
+        let message = 'Phiên làm việc trước có ';
+        const parts = [];
+        if (hasUntitled) parts.push(`${unsavedTabs.filter(t => !t.path).length} file chưa lưu`);
+        if (hasModified) parts.push(`${unsavedTabs.filter(t => t.path && t.modified).length} file đã chỉnh sửa`);
+        message += parts.join(' và ') + '. Khôi phục?';
+
+        const confirmed = await showConfirmDialog({
+            title: 'Khôi phục phiên làm việc',
+            message,
+            confirmText: 'Khôi phục',
+            cancelText: 'Bỏ qua',
+            danger: false,
+        });
+
+        if (!confirmed) {
+            clearSession();
+            return;
+        }
+
+        // Restore all tabs
+        for (const tabData of session.tabs) {
+            // Skip if already open
+            if (tabData.path) {
+                const normalizedPath = tabData.path.replace(/\\/g, '/');
+                const existing = App.tabs.find(t => t.path && t.path.replace(/\\/g, '/') === normalizedPath);
+                if (existing) continue;
+            }
+
+            if (tabData.path) {
+                // Saved file — try to read from disk, then apply modifications if any
+                try {
+                    let diskContent = '';
+                    if (window.electronAPI && window.electronAPI.readFile) {
+                        diskContent = await window.electronAPI.readFile(tabData.path);
+                    }
+                    const id = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+                    const isModified = tabData.modified && tabData.content != null;
+                    App.tabs.push({
+                        id,
+                        name: tabData.name,
+                        path: tabData.path,
+                        content: isModified ? tabData.content : diskContent,
+                        original: diskContent,
+                        modified: isModified,
+                    });
+                } catch (_) {
+                    // File no longer exists, skip if no content
+                    if (tabData.content != null) {
+                        const id = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+                        App.tabs.push({
+                            id,
+                            name: tabData.name,
+                            path: null,
+                            content: tabData.content,
+                            original: '',
+                            modified: true,
+                        });
+                    }
+                }
+            } else {
+                // Untitled/unsaved file — restore with content
+                const id = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+                App.tabs.push({
+                    id,
+                    name: tabData.name,
+                    path: null,
+                    content: tabData.content || '',
+                    original: tabData.original || '',
+                    modified: tabData.modified ?? true,
+                });
+            }
+        }
+
+        // Set active tab
+        if (App.tabs.length > 0 && !App.activeTabId) {
+            setActive(App.tabs[0].id);
+        }
+        updateUI();
+        log('Đã khôi phục phiên làm việc trước ✓', 'success');
+
+        clearSession();
+    } catch (e) {
+        console.error('[Session] Failed to restore session:', e);
+        clearSession();
+    }
+}
+
+/**
+ * Initialize session persistence system
+ */
+function initSessionPersistence() {
+    // Start periodic saves
+    startSessionPeriodicSave();
+
+    // Save session before window unloads
+    window.addEventListener('beforeunload', () => {
+        saveSession();
+    });
+
+    // Restore previous session if any (delayed to ensure Monaco is ready)
+    setTimeout(() => restoreSession(), 300);
+}
+
+// ============================================================================
 // LIVE SYNTAX CHECKING
 // ============================================================================
 let liveCheckTimer = null;
@@ -3855,6 +4107,7 @@ function newFile() {
     App.tabs.push(tab);
     setActive(id);
     updateUI();
+    scheduleSessionSave();
 }
 
 function setActive(id) {
@@ -3926,6 +4179,11 @@ async function closeTab(id) {
     }
     renderTabs();
     updateUI();
+    if (App.tabs.length === 0) {
+        clearSession();
+    } else {
+        scheduleSessionSave();
+    }
 }
 
 /**
@@ -3969,6 +4227,7 @@ async function openFileFromPath(filePath) {
         App.tabs.push(tab);
         setActive(id);
         updateUI();
+        scheduleSessionSave();
 
         // Hide welcome screen
         const welcome = document.getElementById('welcome');
@@ -4124,7 +4383,7 @@ async function save() {
         }
 
         const r = await window.electronAPI.saveFile({ path: tab.path, content: tab.content });
-        if (r.success) { tab.original = tab.content; tab.modified = false; renderTabs(); setStatus(`Saved ${tab.name}`, 'success'); }
+        if (r.success) { tab.original = tab.content; tab.modified = false; renderTabs(); setStatus(`Saved ${tab.name}`, 'success'); scheduleSessionSave(); }
     } else await saveAs(tabId);
 }
 
@@ -4144,6 +4403,7 @@ async function saveAs(tabIdOverride = null) {
         tab.modified = false;
         renderTabs();
         setStatus('Saved', 'success');
+        scheduleSessionSave();
     }
 }
 

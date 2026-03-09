@@ -331,9 +331,11 @@ const FileExplorer = {
     loadCategoriesForFolder(folderPath) {
         this.categories = [];
         this.collapsedCategories = new Set();
-        if (!folderPath) return;
+        // Use a global fallback key when no folder is open
+        const key = folderPath
+            ? 'explorerCategories:' + folderPath.replace(/\\/g, '/')
+            : 'explorerCategories:__global__';
         try {
-            const key = 'explorerCategories:' + folderPath.replace(/\\/g, '/');
             const catSaved = localStorage.getItem(key);
             if (catSaved) {
                 const catData = JSON.parse(catSaved);
@@ -349,9 +351,11 @@ const FileExplorer = {
      * Save categories for the current folder to localStorage
      */
     saveCategoriesForFolder(folderPath) {
-        if (!folderPath) return;
+        // Use a global fallback key when no folder is open
+        const key = folderPath
+            ? 'explorerCategories:' + folderPath.replace(/\\/g, '/')
+            : 'explorerCategories:__global__';
         try {
-            const key = 'explorerCategories:' + folderPath.replace(/\\/g, '/');
             localStorage.setItem(key, JSON.stringify({
                 categories: this.categories,
                 collapsedCategories: Array.from(this.collapsedCategories),
@@ -523,10 +527,25 @@ const FileExplorer = {
                 });
 
                 if (!result.canceled && result.filePaths.length > 0) {
+                    // Migrate global categories to the new folder if needed
+                    const globalCats = this.categories.filter(c => !c.folderPath);
                     this.currentFolder = result.filePaths[0];
                     this.expandedFolders.clear();
                     this.expandedFolders.add(this.currentFolder);
                     this.loadCategoriesForFolder(this.currentFolder);
+
+                    // Merge in any orphaned global categories
+                    if (globalCats.length > 0 && this.categories.length === 0) {
+                        for (const cat of globalCats) {
+                            const sanitizedName = cat.name.replace(/[<>:"/\\|?*]/g, '_');
+                            cat.folderPath = `${this.currentFolder}/${sanitizedName}`.replace(/\\/g, '/');
+                            this.categories.push(cat);
+                        }
+                        this.saveCategoriesForFolder(this.currentFolder);
+                        // Clear global storage
+                        try { localStorage.removeItem('explorerCategories:__global__'); } catch (_) {}
+                    }
+
                     await this.refreshTree();
                     this.saveState();
                 }
@@ -4447,19 +4466,39 @@ const FileExplorer = {
                 const tabId = e.dataTransfer.getData('application/x-sameko-tab');
                 if (tabId && window.App && window.App.tabs) {
                     const tab = window.App.tabs.find(t => t.id === tabId);
-                    if (tab) {
-                        if (tab.path) {
-                            // Saved file — just add to category
-                            const fName = tab.path.split(/[/\\]/).pop();
-                            const dName = fName.replace(/\.[^.]+$/, '');
-                            this.addFileToCategory(catId, tab.path.replace(/\\/g, '/'), dName);
-                            this.renderTree ? this.renderTree() : this.renderEmptyState();
-                        } else {
-                            // Untitled file — prompt for name and save
-                            this.promptSaveUntitledToCategory(catId, tab);
-                        }
+                    if (!tab) {
+                        console.warn('[FileExplorer] Drop: tab not found for id:', tabId);
                         return;
                     }
+
+                    // Validate category still exists
+                    const targetCat = this.categories.find(c => c.id === catId);
+                    if (!targetCat) {
+                        console.warn('[FileExplorer] Drop: category not found:', catId);
+                        if (typeof log === 'function') log('Collection không tồn tại. Hãy tạo mới.', 'warning');
+                        this.renderTree ? this.renderTree() : this.renderEmptyState();
+                        return;
+                    }
+
+                    // Sync editor content to tab before processing
+                    if (tab.id === window.App.activeTabId && window.App.editor) {
+                        tab.content = window.App.editor.getValue();
+                    } else if (tab.id === window.App.splitTabId && window.App.editor2) {
+                        tab.content = window.App.editor2.getValue();
+                    }
+
+                    if (tab.path) {
+                        // Saved file — just add to category
+                        const fName = tab.path.split(/[/\\]/).pop();
+                        const dName = fName.replace(/\.[^.]+$/, '');
+                        this.addFileToCategory(catId, tab.path.replace(/\\/g, '/'), dName);
+                        this.renderTree ? this.renderTree() : this.renderEmptyState();
+                    } else {
+                        // Untitled file — prompt for name and save
+                        console.log('[FileExplorer] Drop untitled tab into category:', catId, 'content length:', (tab.content || '').length);
+                        this.promptSaveUntitledToCategory(catId, tab);
+                    }
+                    return;
                 }
 
                 // Handle external file drop (from OS)
@@ -5013,11 +5052,15 @@ const FileExplorer = {
     },
 
     /**
-     * Prompt user to save an untitled tab into a category folder
+     * Prompt user to save an untitled tab into a category folder.
+     * Supports both folder-based and no-folder mode (uses Save As dialog fallback).
      */
     promptSaveUntitledToCategory(catId, tab) {
         const cat = this.categories.find(c => c.id === catId);
-        if (!cat) return;
+        if (!cat) {
+            console.warn('[FileExplorer] promptSaveUntitled: category not found:', catId);
+            return;
+        }
 
         // Determine the folder to save into
         let folderPath = cat.folderPath;
@@ -5029,7 +5072,13 @@ const FileExplorer = {
         if (!folderPath) {
             folderPath = this.currentFolder;
         }
-        if (!folderPath) return;
+
+        // No folder available — use Save As dialog as fallback
+        if (!folderPath) {
+            console.log('[FileExplorer] No folder path available, using Save As dialog');
+            this._saveUntitledViaSaveAs(catId, tab);
+            return;
+        }
 
         const defaultName = tab.name || 'solution.cpp';
         this.showInputDialog(`Save to "${cat.name}"`, defaultName, async (fileName) => {
@@ -5045,27 +5094,67 @@ const FileExplorer = {
                 if (window.electronAPI && window.electronAPI.createDirectory) {
                     await window.electronAPI.createDirectory(folderPath);
                 }
-            } catch (_) {}
+            } catch (err) {
+                console.warn('[FileExplorer] Failed to create directory:', folderPath, err);
+            }
 
             // Save file
-            if (window.electronAPI && window.electronAPI.saveFile) {
-                const result = await window.electronAPI.saveFile({ path: filePath, content });
-                if (result && result.success !== false) {
+            try {
+                if (window.electronAPI && window.electronAPI.saveFile) {
+                    const result = await window.electronAPI.saveFile({ path: filePath, content });
+                    if (result && result.success !== false) {
+                        const baseName = fileName.replace(/\.[^.]+$/, '');
+                        this.addFileToCategory(catId, filePath, baseName, 'todo');
+
+                        // Update the tab to point to the saved file
+                        tab.path = filePath;
+                        tab.name = fileName;
+                        tab.modified = false;
+                        if (window.App && window.App.renderTabs) window.App.renderTabs();
+                        if (window.App && window.App.updateTitle) window.App.updateTitle();
+
+                        await this.refreshTree();
+                        this.openFile(filePath);
+                    } else {
+                        console.error('[FileExplorer] saveFile returned failure:', result);
+                    }
+                }
+            } catch (err) {
+                console.error('[FileExplorer] Failed to save untitled file:', err);
+            }
+        });
+    },
+
+    /**
+     * Fallback: save untitled file via system Save As dialog, then add to category.
+     * Used when no currentFolder is available.
+     */
+    async _saveUntitledViaSaveAs(catId, tab) {
+        const content = tab.content || '';
+        try {
+            if (window.electronAPI && window.electronAPI.saveFileDialog) {
+                const result = await window.electronAPI.saveFileDialog(content);
+                if (result && result.success && result.path) {
+                    const savedPath = result.path.replace(/\\/g, '/');
+                    const fileName = savedPath.split(/[/\\]/).pop();
                     const baseName = fileName.replace(/\.[^.]+$/, '');
-                    this.addFileToCategory(catId, filePath, baseName, 'todo');
+
+                    // Add to category
+                    this.addFileToCategory(catId, savedPath, baseName, 'todo');
 
                     // Update the tab to point to the saved file
-                    tab.path = filePath;
+                    tab.path = savedPath;
                     tab.name = fileName;
                     tab.modified = false;
                     if (window.App && window.App.renderTabs) window.App.renderTabs();
                     if (window.App && window.App.updateTitle) window.App.updateTitle();
 
-                    await this.refreshTree();
-                    this.openFile(filePath);
+                    this.renderTree ? this.renderTree() : this.renderEmptyState();
                 }
             }
-        });
+        } catch (err) {
+            console.error('[FileExplorer] Save As dialog failed:', err);
+        }
     },
 
 };
