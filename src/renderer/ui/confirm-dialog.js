@@ -14,6 +14,7 @@ class ConfirmDialog {
         
         this.resolver = null;
         this.isOpen = false;
+        this.previouslyFocusedEl = null;
         
         this.initializeEvents();
     }
@@ -61,8 +62,14 @@ class ConfirmDialog {
         this.overlay.classList.add('active');
         this.dialog.classList.add('active');
         this.isOpen = true;
-        
-        this.confirmBtn.focus();
+
+        this.previouslyFocusedEl = document.activeElement;
+        try { this.previouslyFocusedEl?.blur?.(); } catch (_) {}
+
+        setTimeout(() => {
+            window.focus();
+            this.confirmBtn.focus();
+        }, 30);
         
         return new Promise((resolve) => {
             this.resolver = resolve;
@@ -73,6 +80,14 @@ class ConfirmDialog {
         this.overlay.classList.remove('active');
         this.dialog.classList.remove('active');
         this.isOpen = false;
+
+        const restoreTarget = this.previouslyFocusedEl;
+        this.previouslyFocusedEl = null;
+        if (restoreTarget && typeof restoreTarget.focus === 'function') {
+            setTimeout(() => {
+                try { restoreTarget.focus(); } catch (_) {}
+            }, 30);
+        }
         
         if (this.resolver) {
             this.resolver(result);

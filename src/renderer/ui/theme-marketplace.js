@@ -334,34 +334,36 @@ const ThemeMarketplace = {
      */
     _deleteTheme(themeId) {
         if (ThemeManager.builtinThemeIds.includes(themeId)) {
-            alert('Cannot delete built-in theme');
+            this._notify('Cannot delete built-in theme', 'warning');
             return;
         }
 
         const theme = ThemeManager.themes.get(themeId);
         if (!theme) {
-            alert('Theme not found');
+            this._notify('Theme not found', 'warning');
             return;
         }
 
-        if (!confirm(`Delete theme "${theme.name || themeId}"?`)) return;
+        this._confirm(`Delete theme "${theme.name || themeId}"?`, 'Delete theme', 'Delete', true).then((confirmed) => {
+            if (!confirmed) return;
 
-        const isCurrentTheme = App?.settings?.appearance?.theme === themeId;
+            const isCurrentTheme = App?.settings?.appearance?.theme === themeId;
 
-        const result = ThemeManager.deleteTheme(themeId);
-        if (result.success) {
-            if (isCurrentTheme) {
-                const themes = ThemeManager.getThemeList();
-                if (themes.length > 0) {
-                    const firstTheme = themes[0].id;
-                    this._selectTheme(firstTheme);
+            const result = ThemeManager.deleteTheme(themeId);
+            if (result.success) {
+                if (isCurrentTheme) {
+                    const themes = ThemeManager.getThemeList();
+                    if (themes.length > 0) {
+                        const firstTheme = themes[0].id;
+                        this._selectTheme(firstTheme);
+                    }
                 }
+                this.renderCarousel();
+                this._renderMarketplaceContent();
+            } else {
+                this._notify(result.message || 'Failed to delete theme', 'error');
             }
-            this.renderCarousel();
-            this._renderMarketplaceContent();
-        } else {
-            alert(result.message || 'Failed to delete theme');
-        }
+        });
     },
 
     /**
@@ -382,12 +384,12 @@ const ThemeMarketplace = {
                     if (result.success) {
                         this.renderCarousel();
                         this._renderMarketplaceContent();
-                        alert(`Imported: ${result.message}`);
+                        this._notify(`Imported: ${result.message}`, 'success');
                     } else {
-                        alert(`Import failed: ${result.message}`);
+                        this._notify(`Import failed: ${result.message}`, 'error');
                     }
                 } catch (err) {
-                    alert(`Import error: ${err.message}`);
+                    this._notify(`Import error: ${err.message}`, 'error');
                 }
             };
             reader.readAsText(file);
@@ -399,12 +401,12 @@ const ThemeMarketplace = {
      * Import from GitHub Gist
      */
     async _importGist() {
-        const url = prompt('Enter GitHub Gist URL or ID:');
+        const url = await this._promptText('Import from GitHub Gist', 'Enter GitHub Gist URL or ID:');
         if (!url) return;
 
         const match = url.match(/gist\.github\.com\/[\w-]+\/([\w]+)/) || url.match(/^([\w]+)$/);
         if (!match) {
-            alert('Invalid Gist URL or ID');
+            this._notify('Invalid Gist URL or ID', 'warning');
             return;
         }
 
@@ -419,15 +421,80 @@ const ThemeMarketplace = {
                     if (result.success) {
                         this.renderCarousel();
                         this._renderMarketplaceContent();
-                        alert(`Imported: ${result.message}`);
+                        this._notify(`Imported: ${result.message}`, 'success');
                         return;
                     }
                 }
             }
-            alert('No valid theme found in Gist');
+            this._notify('No valid theme found in Gist', 'warning');
         } catch (err) {
-            alert(`Gist import failed: ${err.message}`);
+            this._notify(`Gist import failed: ${err.message}`, 'error');
         }
+    },
+
+    async _confirm(message, title = 'Confirm', confirmText = 'OK', danger = false) {
+        if (typeof window.showConfirmDialog === 'function') {
+            return !!(await window.showConfirmDialog({
+                title,
+                message,
+                confirmText,
+                cancelText: 'Cancel',
+                danger
+            }));
+        }
+        return window.confirm(message);
+    },
+
+    _notify(message, type = 'info') {
+        if (typeof log === 'function') {
+            log(message, type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'success');
+            return;
+        }
+        console[type === 'error' ? 'error' : 'log']('[ThemeMarketplace]', message);
+    },
+
+    _promptText(title, placeholder = '') {
+        return new Promise((resolve) => {
+            const overlay = document.createElement('div');
+            overlay.className = 'note-dialog-overlay';
+            overlay.innerHTML = `
+                <div class="note-dialog input-dialog">
+                    <div class="note-dialog-header">
+                        <h3>${title}</h3>
+                        <button class="note-dialog-close" title="Close">×</button>
+                    </div>
+                    <div class="note-dialog-body">
+                        <input type="text" class="input-dialog-field" value="" placeholder="${placeholder}" />
+                    </div>
+                    <div class="note-dialog-footer">
+                        <button class="note-dialog-btn note-dialog-cancel">Cancel</button>
+                        <button class="note-dialog-btn note-dialog-save">OK</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+            const input = overlay.querySelector('.input-dialog-field');
+            try { document.activeElement?.blur?.(); } catch (_) {}
+            const close = (value = null) => {
+                overlay.remove();
+                resolve(value);
+            };
+
+            overlay.querySelector('.note-dialog-close').onclick = () => close(null);
+            overlay.querySelector('.note-dialog-cancel').onclick = () => close(null);
+            overlay.querySelector('.note-dialog-save').onclick = () => close(input.value.trim() || null);
+            input.onkeydown = (e) => {
+                if (e.key === 'Escape') close(null);
+                if (e.key === 'Enter') close(input.value.trim() || null);
+            };
+
+            setTimeout(() => {
+                window.focus();
+                input.focus();
+                input.select();
+            }, 50);
+        });
     },
 
     /**

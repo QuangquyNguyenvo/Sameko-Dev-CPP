@@ -2471,7 +2471,7 @@ const ThemeCustomizer = {
         const appBgDrag = container.querySelector('#tc6-app-bg-drag');
         appBgDrag?.addEventListener('click', () => {
             if (!this.workingTheme?.colors?.appBackground) {
-                alert('Please upload an app background first!');
+                this._notify('Please upload an app background first!', 'warning');
                 return;
             }
             this.bgDragMode = true;
@@ -2502,7 +2502,7 @@ const ThemeCustomizer = {
         const editorBgDrag = container.querySelector('#tc6-editor-bg-drag');
         editorBgDrag?.addEventListener('click', () => {
             if (!this.workingTheme?.colors?.editorBackground) {
-                alert('Please upload an editor background first!');
+                this._notify('Please upload an editor background first!', 'warning');
                 return;
             }
             this.bgDragMode = true;
@@ -3003,12 +3003,17 @@ const ThemeCustomizer = {
     /**
      * Handle file upload
      */
-    _handleFileUpload(e, key) {
+    async _handleFileUpload(e, key) {
         const file = e.target.files?.[0];
         if (!file) return;
 
         if (file.type === 'image/gif') {
-            const confirmed = confirm('Warning: Using GIF backgrounds may cause the app to run slowly and consume more memory (RAM).\n\nYou should use Video format for the smoothest experience. Do you still want to continue with this file?');
+            const confirmed = await this._confirm(
+                'Using GIF backgrounds may cause the app to run slowly and consume more memory (RAM).\n\nYou should use video format for the smoothest experience. Do you still want to continue with this file?',
+                'Use GIF background?',
+                'Use GIF',
+                true
+            );
             if (!confirmed) {
                 e.target.value = '';
                 return;
@@ -4245,8 +4250,8 @@ const ThemeCustomizer = {
     /**
      * Reset theme
      */
-    _reset() {
-        if (!confirm('Reset all changes?')) return;
+    async _reset() {
+        if (!await this._confirm('Reset all changes?', 'Reset changes', 'Reset', true)) return;
 
         if (this.sourceThemeId && ThemeManager.themes.has(this.sourceThemeId)) {
             this.workingTheme = this._deepClone(ThemeManager.themes.get(this.sourceThemeId));
@@ -4261,7 +4266,7 @@ const ThemeCustomizer = {
     _saveAsNew() {
         const name = this.popup?.querySelector('#tc6-name')?.value?.trim();
         if (!name) {
-            alert('Please enter a theme name');
+            this._notify('Please enter a theme name', 'warning');
             return;
         }
 
@@ -4332,7 +4337,7 @@ const ThemeCustomizer = {
             this.sourceThemeId = id;
             this._refreshHeaderButtons();
         } else {
-            alert('Failed to save theme');
+            this._notify('Failed to save theme', 'error');
         }
     },
 
@@ -4341,7 +4346,7 @@ const ThemeCustomizer = {
      */
     _saveOverwrite() {
         if (!this.sourceThemeId || ThemeManager.builtinThemeIds.includes(this.sourceThemeId)) {
-            alert('Cannot overwrite built-in themes');
+            this._notify('Cannot overwrite built-in themes', 'warning');
             return;
         }
 
@@ -4419,7 +4424,7 @@ const ThemeCustomizer = {
             // Close customizer after save (Save & Close behavior)
             this.close();
         } else {
-            alert('Failed to save theme');
+            this._notify('Failed to save theme', 'error');
         }
     },
 
@@ -4480,7 +4485,7 @@ const ThemeCustomizer = {
             this.close();
         } catch (e) {
             console.error('[Customizer] Failed to save background:', e);
-            alert('Failed to save background settings');
+            this._notify('Failed to save background settings', 'error');
         }
     },
 
@@ -4503,8 +4508,8 @@ const ThemeCustomizer = {
      * - For built-in themes: Clears saved background from localStorage and restores hardcoded theme
      * - For custom themes: Resets to the last saved state
      */
-    _reset() {
-        if (!confirm('Reset to defaults? All unsaved changes will be lost.')) {
+    async _reset() {
+        if (!await this._confirm('Reset to defaults? All unsaved changes will be lost.', 'Reset to defaults', 'Reset', true)) {
             return;
         }
 
@@ -4669,14 +4674,14 @@ const ThemeCustomizer = {
     /**
      * Delete current custom theme
      */
-    _deleteTheme() {
+    async _deleteTheme() {
         if (!this.sourceThemeId || ThemeManager.builtinThemeIds.includes(this.sourceThemeId)) {
-            alert('Cannot delete built-in themes');
+            this._notify('Cannot delete built-in themes', 'warning');
             return;
         }
 
         const themeName = this.workingTheme?.name || this.sourceThemeId;
-        if (!confirm(`Delete theme "${themeName}"? This cannot be undone.`)) {
+        if (!await this._confirm(`Delete theme "${themeName}"? This cannot be undone.`, 'Delete theme', 'Delete', true)) {
             return;
         }
 
@@ -4690,7 +4695,7 @@ const ThemeCustomizer = {
 
             this.close();
         } else {
-            alert(result.message || 'Failed to delete theme');
+            this._notify(result.message || 'Failed to delete theme', 'error');
         }
     },
 
@@ -5066,6 +5071,33 @@ const ThemeCustomizer = {
         const div = document.createElement('div');
         div.textContent = str || '';
         return div.innerHTML;
+    },
+
+    async _confirm(message, title = 'Confirm', confirmText = 'OK', danger = false) {
+        if (typeof window.showConfirmDialog === 'function') {
+            return !!(await window.showConfirmDialog({
+                title,
+                message,
+                confirmText,
+                cancelText: 'Cancel',
+                danger
+            }));
+        }
+        return window.confirm(message);
+    },
+
+    _notify(message, type = 'info') {
+        if (type === 'success') {
+            this._showSaveNotification(message);
+            return;
+        }
+
+        if (typeof log === 'function') {
+            log(message, type === 'error' ? 'error' : type === 'warning' ? 'warning' : 'info');
+            return;
+        }
+
+        console[type === 'error' ? 'error' : 'log']('[Customizer]', message);
     },
 
     /**
