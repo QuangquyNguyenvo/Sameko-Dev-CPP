@@ -124,6 +124,29 @@ const App = {
     runTimeout: null
 };
 
+function createUntitledHistoryKey() {
+    return 'untitled_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+}
+
+if (typeof window !== 'undefined') {
+    window.App = App;
+
+    Object.defineProperties(App, {
+        currentFilePath: {
+            get() {
+                const activeId = App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId;
+                return App.tabs.find(t => t.id === activeId)?.path || null;
+            }
+        },
+        renderTabs: {
+            value: () => renderTabs()
+        },
+        updateTitle: {
+            value: () => {}
+        }
+    });
+}
+
 const DEFAULT_CODE = `#include<bits/stdc++.h>
 #define ll long long
 using namespace std;
@@ -508,10 +531,14 @@ function createEditor(containerId) {
         if (tabId) {
             const tab = App.tabs.find(t => t.id === tabId);
             if (tab) {
-                const modified = editor.getValue() !== tab.original;
+                tab.content = editor.getValue();
+                const modified = tab.content !== tab.original;
                 if (tab.modified !== modified) {
                     tab.modified = modified;
                     renderTabs();
+                }
+                if (!tab.path && typeof LocalHistory !== 'undefined') {
+                    LocalHistory.scheduleUntitledBackup(tab, tab.content);
                 }
             }
         }
@@ -2323,6 +2350,7 @@ function saveSession() {
                 id: t.id,
                 name: t.name,
                 path: t.path || null,
+                untitledHistoryKey: t.untitledHistoryKey || null,
                 // Always save content for unsaved/modified tabs; for saved unmodified tabs, skip content (re-read from disk)
                 content: (!t.path || t.modified) ? (t.content || '') : null,
                 original: t.original || '',
@@ -2369,6 +2397,47 @@ function clearSession() {
     } catch (_) {}
 }
 
+function showSessionRestoreNotification(summary) {
+    return new Promise((resolve) => {
+        const existing = document.getElementById('session-restore-notification');
+        if (existing) existing.remove();
+
+        const notification = document.createElement('div');
+        notification.id = 'session-restore-notification';
+        notification.className = 'session-restore-notification';
+        notification.innerHTML = `
+            <div class="session-restore-content">
+                <div class="session-restore-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                        <path d="M3 3v5h5"></path>
+                    </svg>
+                </div>
+                <div class="session-restore-text">
+                    <div class="session-restore-title">Khôi phục phiên trước</div>
+                    <div class="session-restore-desc">${summary}</div>
+                </div>
+                <div class="session-restore-actions">
+                    <button class="session-restore-btn secondary" data-action="dismiss">Bỏ qua</button>
+                    <button class="session-restore-btn primary" data-action="restore">Khôi phục</button>
+                </div>
+            </div>
+        `;
+
+        const cleanup = (result) => {
+            notification.classList.remove('show');
+            setTimeout(() => notification.remove(), 180);
+            resolve(result);
+        };
+
+        notification.querySelector('[data-action="dismiss"]').onclick = () => cleanup(false);
+        notification.querySelector('[data-action="restore"]').onclick = () => cleanup(true);
+
+        document.body.appendChild(notification);
+        requestAnimationFrame(() => notification.classList.add('show'));
+    });
+}
+
 /**
  * Restore session from localStorage on app startup.
  * Recovers all open tabs including unsaved files with their content.
@@ -2412,6 +2481,7 @@ async function restoreSession() {
                                 id,
                                 name: tabData.name,
                                 path: tabData.path,
+                                untitledHistoryKey: tabData.untitledHistoryKey || null,
                                 content,
                                 original: content,
                                 modified: false,
@@ -2445,13 +2515,7 @@ async function restoreSession() {
         if (hasModified) parts.push(`${unsavedTabs.filter(t => t.path && t.modified).length} file đã chỉnh sửa`);
         message += parts.join(' và ') + '. Khôi phục?';
 
-        const confirmed = await showConfirmDialog({
-            title: 'Khôi phục phiên làm việc',
-            message,
-            confirmText: 'Khôi phục',
-            cancelText: 'Bỏ qua',
-            danger: false,
-        });
+        const confirmed = await showSessionRestoreNotification(message);
 
         if (!confirmed) {
             clearSession();
@@ -2480,6 +2544,7 @@ async function restoreSession() {
                         id,
                         name: tabData.name,
                         path: tabData.path,
+                        untitledHistoryKey: tabData.untitledHistoryKey || null,
                         content: isModified ? tabData.content : diskContent,
                         original: diskContent,
                         modified: isModified,
@@ -2492,6 +2557,7 @@ async function restoreSession() {
                             id,
                             name: tabData.name,
                             path: null,
+                            untitledHistoryKey: tabData.untitledHistoryKey || createUntitledHistoryKey(),
                             content: tabData.content,
                             original: '',
                             modified: true,
@@ -2505,6 +2571,7 @@ async function restoreSession() {
                     id,
                     name: tabData.name,
                     path: null,
+                    untitledHistoryKey: tabData.untitledHistoryKey || createUntitledHistoryKey(),
                     content: tabData.content || '',
                     original: tabData.original || '',
                     modified: tabData.modified ?? true,
@@ -4103,7 +4170,7 @@ function newFile() {
     const id = 'tab_' + Date.now();
 
     const templateCode = App.settings.template?.code || DEFAULT_CODE;
-    const tab = { id, name: 'untitled.cpp', path: null, content: templateCode, original: '', modified: true };
+    const tab = { id, name: 'untitled.cpp', path: null, untitledHistoryKey: createUntitledHistoryKey(), content: templateCode, original: '', modified: true };
     App.tabs.push(tab);
     setActive(id);
     updateUI();
@@ -4220,6 +4287,7 @@ async function openFileFromPath(filePath) {
             id,
             name: fileName,
             path: filePath,
+            untitledHistoryKey: null,
             content: content,
             original: content,
             modified: false
@@ -4345,11 +4413,14 @@ function doAction(action) {
         closesplit: closeSplit,
         settings: openSettings,
         localhistory: () => {
-            const tab = App.tabs.find(t => t.id === App.activeTabId);
-            if (tab?.path && typeof LocalHistory !== 'undefined') {
-                LocalHistory.showHistoryModal(tab.path);
-            } else if (!tab?.path) {
-                log('Save the file first to access Checkpoints', 'warning');
+            const activeTabId = App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId;
+            const tab = App.tabs.find(t => t.id === activeTabId);
+            if (tab && typeof LocalHistory !== 'undefined') {
+                if (tab.path) {
+                    LocalHistory.showHistoryModal(tab.path);
+                } else {
+                    LocalHistory.showUntitledHistoryModal(tab);
+                }
             }
         }
     };
@@ -5189,7 +5260,7 @@ if (window.electronAPI) {
         else {
 
             const id = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
-            App.tabs.push({ id, name: data.path.split(/[/\\]/).pop(), path: data.path, content: data.content, original: data.content, modified: false });
+            App.tabs.push({ id, name: data.path.split(/[/\\]/).pop(), path: data.path, untitledHistoryKey: null, content: data.content, original: data.content, modified: false });
             setActive(id);
             updateUI();
 
@@ -5594,6 +5665,7 @@ function handleProblemReceived(problem) {
         id,
         name: fileName,
         path: null,
+        untitledHistoryKey: createUntitledHistoryKey(),
         content: template,
         original: '',
         modified: true
@@ -6825,13 +6897,16 @@ function showTabContextMenu(e, tab) {
             icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
             label: 'Checkpoints',
             action: () => {
-                if (tab.path && typeof LocalHistory !== 'undefined') {
-                    LocalHistory.showHistoryModal(tab.path);
-                } else if (!tab.path) {
-                    log('Save file first to access Checkpoints', 'warning');
+                if (typeof LocalHistory !== 'undefined') {
+                    setActive(tab.id);
+                    if (tab.path) {
+                        LocalHistory.showHistoryModal(tab.path);
+                    } else {
+                        LocalHistory.showUntitledHistoryModal(tab);
+                    }
                 }
             },
-            disabled: !tab.path
+            disabled: false
         },
         { divider: true },
         {

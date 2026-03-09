@@ -3612,6 +3612,97 @@ body.split-active .editor-pane {
     color: var(--text-secondary);
 }
 
+/* ===== SESSION RESTORE NOTIFICATION ===== */
+.session-restore-notification {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 3100;
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.session-restore-notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.session-restore-content {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 360px;
+    max-width: 460px;
+    padding: 16px 18px;
+    background: var(--bg-glass-heavy);
+    border: 2px solid var(--bg-ocean-medium);
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.session-restore-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: var(--bg-ocean-light);
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+.session-restore-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.session-restore-title {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.session-restore-desc {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.45;
+}
+
+.session-restore-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.session-restore-btn {
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.15s ease, filter 0.15s ease, background 0.15s ease;
+}
+
+.session-restore-btn:hover {
+    transform: translateY(-1px);
+}
+
+.session-restore-btn.primary {
+    border: 0;
+    background: var(--accent);
+    color: var(--button-text-on-accent, #fff);
+}
+
+.session-restore-btn.secondary {
+    border: 1px solid var(--border-color, var(--bg-ocean-medium));
+    background: transparent;
+    color: var(--text-secondary);
+}
+
 .reload-notification-actions {
     display: flex;
     flex-direction: column;
