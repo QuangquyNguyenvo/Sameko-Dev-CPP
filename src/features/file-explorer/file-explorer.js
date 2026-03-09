@@ -44,6 +44,8 @@ const FileExplorer = {
     collapsedCategories: new Set(), // Set of collapsed category IDs
     dragState: null,           // { filePath, fileName } for drag-and-drop
     contestCollapsed: false,   // Whether contest problem list is collapsed
+    contestSectionCollapsed: false,
+    collectionsSectionCollapsed: false,
 
     // ==================== CONTEST MODE STATE ====================
     displayMode: 'normal', // 'normal' | 'contest'
@@ -160,6 +162,9 @@ const FileExplorer = {
         // Recent icon (history)
         recent: '<svg class="icon-recent" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 10"/><path d="M2 12h2M20 12h2"/></svg>',
 
+        // Collection icon
+        collection: '<svg class="icon-collection" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg>',
+
         // Submenu arrow
         submenuArrow: '<svg class="icon-submenu" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>',
 
@@ -272,6 +277,8 @@ const FileExplorer = {
                 this.expandedFiles = new Set(state.expandedFiles || []);
                 this.pinnedItems = state.pinnedItems || [];
                 this.recentFiles = state.recentFiles || [];
+                this.contestSectionCollapsed = !!state.contestSectionCollapsed;
+                this.collectionsSectionCollapsed = !!state.collectionsSectionCollapsed;
             }
 
             // Load categories for the current folder (per-folder storage)
@@ -315,6 +322,8 @@ const FileExplorer = {
                 expandedFiles: Array.from(this.expandedFiles),
                 pinnedItems: this.pinnedItems,
                 recentFiles: this.recentFiles,
+                contestSectionCollapsed: this.contestSectionCollapsed,
+                collectionsSectionCollapsed: this.collectionsSectionCollapsed,
             };
             localStorage.setItem('explorerState', JSON.stringify(state));
 
@@ -802,16 +811,19 @@ const FileExplorer = {
                     return currentStatus === 'todo' ? 'coding' : null;
                 case 'compile-fail':
                     // Compile error = still coding
-                    return currentStatus === 'todo' ? 'coding' : null;
+                    return currentStatus === 'todo' ? 'coding' : currentStatus === 'testing' ? 'coding' : null;
                 case 'run-start':
-                    // Running = testing (from coding or todo)
-                    return (currentStatus === 'todo' || currentStatus === 'coding') ? 'testing' : null;
+                    // Running = testing for any non-testing state
+                    return currentStatus === 'testing' ? null : 'testing';
                 case 'run-exit-0':
                     // Clean exit — keep testing, compareOutput will determine AC/WA later
                     return null;
                 case 'run-exit-fail':
                     // Non-zero exit = RE (unless already AC)
                     return (currentStatus !== 'ac') ? 're' : null;
+                case 'edit':
+                    // Editing means back to in-progress
+                    return currentStatus === 'todo' ? 'coding' : currentStatus === 'coding' ? null : 'coding';
                 case 'judge-ac':
                     return 'ac';
                 case 'judge-wa':
@@ -4092,6 +4104,9 @@ const FileExplorer = {
 
         let html = '<div class="cp-sub-contest-section">';
         html += `<div class="cat-section-header">
+            <button class="cat-section-toggle ${this.contestSectionCollapsed ? 'collapsed' : ''}" data-action="toggle-section" data-section="contest" title="${this.contestSectionCollapsed ? 'Expand' : 'Collapse'} Contest section">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
             <span class="cat-section-title">
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>CONTEST
             </span>
@@ -4099,6 +4114,11 @@ const FileExplorer = {
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
         </div>`;
+
+        if (this.contestSectionCollapsed) {
+            html += '</div>';
+            return html;
+        }
 
         if (contestCats.length === 0) {
             html += `
@@ -4202,11 +4222,19 @@ const FileExplorer = {
 
         let html = '<div class="cat-section">';
         html += `<div class="cat-section-header">
-            <span class="cat-section-title">COLLECTIONS</span>
+            <button class="cat-section-toggle ${this.collectionsSectionCollapsed ? 'collapsed' : ''}" data-action="toggle-section" data-section="collections" title="${this.collectionsSectionCollapsed ? 'Expand' : 'Collapse'} Collections section">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <span class="cat-section-title">${this.ICONS.collection} COLLECTIONS</span>
             <button class="cat-add-btn" data-action="new-category" title="New Collection">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
             </button>
         </div>`;
+
+        if (this.collectionsSectionCollapsed) {
+            html += '</div>';
+            return html;
+        }
 
         if (collectionCats.length === 0) {
             html += `
@@ -4233,6 +4261,7 @@ const FileExplorer = {
                                 <polyline points="9 18 15 12 9 6"/>
                             </svg>
                         </span>
+                        <span class="cat-kind-icon" title="Collection">${this.ICONS.collection}</span>
                         <span class="cat-color-dot" style="background: ${cat.color}"></span>
                         <span class="cat-name">${cat.name}</span>
                         <span class="cat-count">${solvedCount}/${itemCount}</span>
@@ -4307,6 +4336,20 @@ const FileExplorer = {
      * Attach event listeners for category UI
      */
     attachCategoryEventListeners() {
+        this.elements.tree.querySelectorAll('[data-action="toggle-section"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const section = btn.dataset.section;
+                if (section === 'contest') {
+                    this.contestSectionCollapsed = !this.contestSectionCollapsed;
+                } else if (section === 'collections') {
+                    this.collectionsSectionCollapsed = !this.collectionsSectionCollapsed;
+                }
+                this.saveState();
+                this.renderTree ? this.renderTree() : this.renderEmptyState();
+            });
+        });
+
         // New category button
         const newCatBtn = this.elements.tree.querySelector('[data-action="new-category"]');
         if (newCatBtn) {
@@ -4667,8 +4710,13 @@ const FileExplorer = {
             ${catIdx > 0 ? '<div class="context-item" data-action="move-up">Move Up</div>' : ''}
             ${catIdx < this.categories.length - 1 ? '<div class="context-item" data-action="move-down">Move Down</div>' : ''}
             ${catIdx > 0 || catIdx < this.categories.length - 1 ? '<div class="context-separator"></div>' : ''}
-            <div class="context-item" data-action="delete" style="color:#ef5350">
-                Delete Collection
+            <div class="context-item has-submenu danger" data-action="delete-menu">
+                <span>Delete Collection</span>
+                <span class="submenu-arrow">${this.ICONS.submenuArrow}</span>
+                <div class="context-submenu delete-submenu">
+                    <div class="context-item danger" data-action="delete-collection-only">Remove collection only</div>
+                    ${cat.folderPath ? '<div class="context-item danger" data-action="delete-collection-folder">Delete folder on disk</div>' : ''}
+                </div>
             </div>
         `;
 
@@ -4693,6 +4741,18 @@ const FileExplorer = {
                     this.renderTree ? this.renderTree() : this.renderEmptyState();
                 };
             });
+        }
+
+        const deleteMenuItem = menu.querySelector('[data-action="delete-menu"]');
+        const deleteSubmenu = menu.querySelector('.delete-submenu');
+        if (deleteMenuItem && deleteSubmenu) {
+            let deleteTimeout;
+            deleteMenuItem.addEventListener('mouseenter', () => { clearTimeout(deleteTimeout); deleteSubmenu.classList.add('visible'); });
+            deleteMenuItem.addEventListener('mouseleave', () => {
+                deleteTimeout = setTimeout(() => { if (!deleteSubmenu.matches(':hover')) deleteSubmenu.classList.remove('visible'); }, 200);
+            });
+            deleteSubmenu.addEventListener('mouseenter', () => clearTimeout(deleteTimeout));
+            deleteSubmenu.addEventListener('mouseleave', () => deleteSubmenu.classList.remove('visible'));
         }
 
         menu.querySelector('[data-action="add-file"]').onclick = () => {
@@ -4758,13 +4818,32 @@ const FileExplorer = {
             };
         }
 
-        menu.querySelector('[data-action="delete"]').onclick = () => {
-            menu.remove();
-            if (confirm(`Delete collection "${cat.name}"? Files will not be deleted.`)) {
+        const deleteOnlyBtn = menu.querySelector('[data-action="delete-collection-only"]');
+        if (deleteOnlyBtn) {
+            deleteOnlyBtn.onclick = () => {
                 this.deleteCategory(catId);
+                menu.remove();
                 this.renderTree ? this.renderTree() : this.renderEmptyState();
-            }
-        };
+            };
+        }
+
+        const deleteFolderBtn = menu.querySelector('[data-action="delete-collection-folder"]');
+        if (deleteFolderBtn) {
+            deleteFolderBtn.onclick = async () => {
+                if (cat.folderPath && window.electronAPI?.deleteFolder) {
+                    try {
+                        await window.electronAPI.deleteFolder(cat.folderPath);
+                    } catch (err) {
+                        console.warn('[FileExplorer] Could not delete collection folder:', err);
+                    }
+                }
+                this.deleteCategory(catId);
+                menu.remove();
+                this.renderTree ? this.renderTree() : this.renderEmptyState();
+            };
+        }
+
+        /* legacy single-action delete removed in favor of submenu choices */
 
         setTimeout(() => {
             document.addEventListener('click', function closeMenu() {

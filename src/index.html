@@ -80,6 +80,7 @@
                         <circle cx="12" cy="12" r="10" />
                         <path d="M12 8v4M12 16h.01" />
                     </svg>
+                    <span class="toggle-badge hidden" id="btn-problems-badge">0</span>
                 </button>
                 <button class="toggle-btn" id="btn-cc" title="Get test cases from Online Judge">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
@@ -1257,6 +1258,11 @@
                 <span class="status-item" id="status"><span class="dot"></span>Ready</span>
             </div>
             <div class="status-right">
+                <span class="status-item live-check-state" id="live-check-state">Live off</span>
+                <span class="status-item diagnostics-summary" id="status-diagnostics">
+                    <span class="status-badge error hidden" id="status-errors-count">0E</span>
+                    <span class="status-badge warning hidden" id="status-warnings-count">0W</span>
+                </span>
                 <span class="status-item" id="cursor-pos">Ln 1, Col 1</span>
                 <span class="status-item">C++</span>
             </div>

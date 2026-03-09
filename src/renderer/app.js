@@ -117,6 +117,7 @@ const App = {
     showTerm: true,
     showProblems: false,
     problems: [],
+    tabDiagnostics: {},
     inputLines: [],
     inputIndex: 0,
     settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
@@ -126,6 +127,35 @@ const App = {
 
 function createUntitledHistoryKey() {
     return 'untitled_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+}
+
+function getPreferredTabId() {
+    return App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId;
+}
+
+function summarizeDiagnostics(diagnostics = []) {
+    return diagnostics.reduce((summary, item) => {
+        const severity = String(item?.severity || item?.type || 'info').toLowerCase();
+        if (severity === 'error') summary.errors += 1;
+        else if (severity === 'warning') summary.warnings += 1;
+        else summary.info += 1;
+        return summary;
+    }, { errors: 0, warnings: 0, info: 0 });
+}
+
+function setTabDiagnostics(tabId, diagnostics = []) {
+    if (!tabId) return;
+    const summary = summarizeDiagnostics(diagnostics);
+    if ((summary.errors + summary.warnings + summary.info) === 0) {
+        delete App.tabDiagnostics[tabId];
+    } else {
+        App.tabDiagnostics[tabId] = summary;
+    }
+    renderTabs();
+}
+
+function setActiveTabDiagnostics(diagnostics = []) {
+    setTabDiagnostics(getPreferredTabId(), diagnostics);
 }
 
 if (typeof window !== 'undefined') {
@@ -175,6 +205,9 @@ document.addEventListener('DOMContentLoaded', () => {
     detectPortableVersion();
     validateCompilerOnStartup();
     updateUI();
+    updateProblemSummaryUI();
+    setLiveCheckUIState(App.settings.editor.liveCheck ? 'idle' : 'disabled');
+    setStatus('Ready', 'ready');
     if (typeof FileExplorer !== 'undefined') FileExplorer.init();
     initSessionPersistence();
 
@@ -536,6 +569,9 @@ function createEditor(containerId) {
                 if (tab.modified !== modified) {
                     tab.modified = modified;
                     renderTabs();
+                }
+                if (tab.path && window.FileExplorer?.notifyBuildEvent) {
+                    window.FileExplorer.notifyBuildEvent(tab.path, 'edit');
                 }
                 if (!tab.path && typeof LocalHistory !== 'undefined') {
                     LocalHistory.scheduleUntitledBackup(tab, tab.content);
@@ -2615,48 +2651,187 @@ function initSessionPersistence() {
 let liveCheckTimer = null;
 let isLiveChecking = false;
 let hasBuildProblems = false; // Prevents live-check from overwriting build errors
+let liveCheckQueued = false;
+let liveCheckRevision = 0;
+let liveCheckUIState = 'disabled';
+
+const STATUS_TYPES = new Set(['ready', 'success', 'warning', 'error', 'building', 'checking', 'running', 'formatting']);
+
+function pluralizeIssue(count, word) {
+    return `${count} ${word}${count === 1 ? '' : 's'}`;
+}
+
+function getProblemSummary() {
+    return App.problems.reduce((summary, problem) => {
+        const type = (problem?.type || problem?.severity || 'info').toLowerCase();
+        if (type === 'error') summary.errors += 1;
+        else if (type === 'warning') summary.warnings += 1;
+        else summary.info += 1;
+        return summary;
+    }, { errors: 0, warnings: 0, info: 0 });
+}
+
+function updateProblemSummaryUI() {
+    const summary = getProblemSummary();
+    const errorsBadge = document.getElementById('status-errors-count');
+    const warningsBadge = document.getElementById('status-warnings-count');
+    const problemsBtn = document.getElementById('btn-toggle-problems');
+    const problemsBadge = document.getElementById('btn-problems-badge');
+    const totalVisible = summary.errors + summary.warnings;
+
+    if (errorsBadge) {
+        errorsBadge.textContent = `${summary.errors}E`;
+        errorsBadge.classList.toggle('hidden', summary.errors === 0);
+    }
+    if (warningsBadge) {
+        warningsBadge.textContent = `${summary.warnings}W`;
+        warningsBadge.classList.toggle('hidden', summary.warnings === 0);
+    }
+
+    if (problemsBtn) {
+        problemsBtn.classList.toggle('has-errors', summary.errors > 0);
+        problemsBtn.classList.toggle('has-warnings', summary.warnings > 0);
+    }
+
+    if (problemsBadge) {
+        problemsBadge.textContent = totalVisible > 99 ? '99+' : String(totalVisible);
+        problemsBadge.classList.toggle('hidden', totalVisible === 0);
+        problemsBadge.classList.toggle('warning', summary.errors === 0 && summary.warnings > 0);
+    }
+}
+
+function setLiveCheckUIState(state) {
+    liveCheckUIState = state;
+
+    const liveState = document.getElementById('live-check-state');
+    const problemsBtn = document.getElementById('btn-toggle-problems');
+    if (!liveState) return;
+
+    const summary = getProblemSummary();
+    let text = 'Live off';
+    let tone = '';
+
+    if (App.settings.editor.liveCheck) {
+        switch (state) {
+            case 'pending':
+                text = 'Typing…';
+                tone = 'checking';
+                break;
+            case 'checking':
+                text = 'Checking…';
+                tone = 'checking';
+                break;
+            case 'issues':
+                text = summary.errors > 0
+                    ? `${summary.errors} error${summary.errors === 1 ? '' : 's'}`
+                    : `${summary.warnings} warning${summary.warnings === 1 ? '' : 's'}`;
+                tone = summary.errors > 0 ? 'error' : 'warning';
+                break;
+            case 'clean':
+                text = 'No issues';
+                tone = 'success';
+                break;
+            default:
+                text = 'Live ready';
+                break;
+        }
+    }
+
+    liveState.className = 'status-item live-check-state' + (tone ? ' ' + tone : '');
+    liveState.textContent = text;
+
+    if (problemsBtn) {
+        problemsBtn.classList.toggle('checking', state === 'pending' || state === 'checking');
+    }
+}
 
 function scheduleLiveCheck() {
     if (!App.settings.editor.liveCheck || !window.electronAPI?.syntaxCheck) {
+        setLiveCheckUIState('disabled');
         return;
     }
+
+    liveCheckRevision += 1;
 
     if (liveCheckTimer) {
         clearTimeout(liveCheckTimer);
     }
 
+    if (!isBuilding && !App.isRunning) {
+        setLiveCheckUIState('pending');
+        setStatus('Typing…', 'checking');
+    }
+
     const delay = App.settings.editor.liveCheckDelay || 1000;
-    liveCheckTimer = setTimeout(doLiveCheck, delay);
+    const targetRevision = liveCheckRevision;
+    liveCheckTimer = setTimeout(() => doLiveCheck(targetRevision), delay);
 }
 
-async function doLiveCheck() {
-    if (isLiveChecking || isBuilding || !App.editor) return;
+async function doLiveCheck(targetRevision = liveCheckRevision) {
+    if (isBuilding || !App.editor) return;
+    if (isLiveChecking) {
+        liveCheckQueued = true;
+        return;
+    }
 
     const editor = App.activeEditor === 2 && App.editor2 ? App.editor2 : App.editor;
     const tabId = App.activeEditor === 2 ? App.splitTabId : App.activeTabId;
     const tab = App.tabs.find(t => t.id === tabId);
+    const model = editor?.getModel?.();
+    if (!editor || !model) return;
 
     const code = editor.getValue();
     if (!code || !code.trim()) {
         clearLiveCheckMarkers();
+        if (!hasBuildProblems) {
+            App.problems = [];
+            renderProblems();
+        }
+        setLiveCheckUIState('idle');
+        if (!isBuilding && !App.isRunning) {
+            setStatus('Ready', 'ready');
+        }
         return;
     }
 
     isLiveChecking = true;
+    liveCheckQueued = false;
+    setLiveCheckUIState('checking');
+    if (!isBuilding && !App.isRunning) {
+        setStatus('Checking syntax...', 'checking');
+    }
 
     try {
         const result = await window.electronAPI.syntaxCheck(code, tab?.path || null);
+        const isStale = targetRevision !== liveCheckRevision || editor.getModel() !== model;
+        if (isStale) {
+            liveCheckQueued = true;
+            return;
+        }
 
         if (result && result.diagnostics && result.diagnostics.length > 0) {
             applyLiveCheckMarkers(editor, result.diagnostics);
         } else if (result && result.success) {
             // No errors - clear markers silently
             clearLiveCheckMarkers();
+            if (!hasBuildProblems) {
+                App.problems = [];
+                renderProblems();
+            }
+            setLiveCheckUIState('clean');
+            if (!isBuilding && !App.isRunning) {
+                setStatus('No issues', 'success');
+            }
         }
     } catch (e) {
         // Silent fail - don't spam terminal
     } finally {
         isLiveChecking = false;
+        if (liveCheckQueued || targetRevision !== liveCheckRevision) {
+            const queuedRevision = liveCheckRevision;
+            liveCheckQueued = false;
+            setTimeout(() => doLiveCheck(queuedRevision), 0);
+        }
     }
 }
 
@@ -2690,6 +2865,18 @@ function applyLiveCheckMarkers(editor, diagnostics) {
             message: d.message
         }));
         renderProblems();
+
+        const summary = getProblemSummary();
+        setLiveCheckUIState((summary.errors + summary.warnings) > 0 ? 'issues' : 'clean');
+        if (!isBuilding && !App.isRunning) {
+            if (summary.errors > 0) {
+                setStatus(`${pluralizeIssue(summary.errors, 'error')}${summary.warnings ? ` · ${pluralizeIssue(summary.warnings, 'warning')}` : ''}`, 'error');
+            } else if (summary.warnings > 0) {
+                setStatus(pluralizeIssue(summary.warnings, 'warning'), 'warning');
+            } else {
+                setStatus('No issues', 'success');
+            }
+        }
     }
 }
 
@@ -2761,6 +2948,8 @@ function applySettings() {
 
     // Apply Discord RPC enabled/disabled state
     applyDiscordSetting();
+    updateProblemSummaryUI();
+    setLiveCheckUIState(App.settings.editor.liveCheck ? (App.problems.length > 0 ? 'issues' : 'idle') : 'disabled');
 }
 
 /**
@@ -2768,6 +2957,7 @@ function applySettings() {
  * Safe to call multiple times — it compares against the previously applied state.
  */
 let _discordAppliedEnabled = true; // matches the service default (enabled at startup)
+    hasBuildProblems = false;
 
 function applyDiscordSetting() {
     const shouldBeEnabled = App.settings?.discord?.enabled !== false;
@@ -4231,6 +4421,8 @@ async function closeTab(id) {
 
     if (tab.path) stopFileWatch(tab.path);
 
+    delete App.tabDiagnostics[id];
+
     App.tabs.splice(idx, 1);
 
 
@@ -4317,6 +4509,9 @@ function renderTabs() {
         const isActiveTab = t.id === App.activeTabId;
         const isSplitTab = App.isSplit && t.id === App.splitTabId;
         const isFocused = (App.activeEditor === 1 && isActiveTab) || (App.activeEditor === 2 && isSplitTab);
+        const diagnostics = App.tabDiagnostics[t.id] || null;
+        const tabHasErrors = !!diagnostics?.errors;
+        const tabHasWarnings = !tabHasErrors && !!diagnostics?.warnings;
 
         const el = document.createElement('div');
         let className = 'tab';
@@ -4324,11 +4519,16 @@ function renderTabs() {
         if (isSplitTab) className += ' split';
         if (isFocused) className += ' focused';
         if (t.modified) className += ' modified';
+        if (tabHasErrors) className += ' has-errors';
+        else if (tabHasWarnings) className += ' has-warnings';
 
         el.className = className;
         el.dataset.id = t.id;
         el.draggable = true;
-        el.innerHTML = `<span class="tab-name">${t.name}</span><span class="tab-dot"></span><span class="tab-x">×</span>`;
+        const diagnosticsBadge = diagnostics && (diagnostics.errors || diagnostics.warnings)
+            ? `<span class="tab-diagnostics ${tabHasErrors ? 'error' : 'warning'}" title="${diagnostics.errors || 0} errors, ${diagnostics.warnings || 0} warnings">${tabHasErrors ? diagnostics.errors : diagnostics.warnings}${tabHasErrors ? 'E' : 'W'}</span>`
+            : '';
+        el.innerHTML = `<span class="tab-name">${t.name}</span>${diagnosticsBadge}<span class="tab-dot"></span><span class="tab-x">×</span>`;
         el.onclick = e => {
             if (!e.target.classList.contains('tab-x')) {
                 if (App.isSplit && isSplitTab) {
@@ -4503,6 +4703,10 @@ function setBuildingState(building) {
             btnBuildRun.classList.remove('building');
         }
     }
+
+    if (!building && App.settings.editor.liveCheck) {
+        setLiveCheckUIState(App.problems.length > 0 ? 'issues' : 'idle');
+    }
 }
 
 
@@ -4583,6 +4787,7 @@ async function compileOnly() {
             highlightErrorLines();
             setStatus('Compile failed', 'error');
             App.exePath = null;
+            if (window.FileExplorer) window.FileExplorer.notifyBuildEvent(tab.path, 'compile-fail');
 
             if (DockingState.terminalDocked) {
                 switchDockedPanel('problems');
@@ -4681,6 +4886,7 @@ async function buildRun() {
             highlightErrorLines();
             setStatus('Build failed', 'error');
             App.exePath = null;
+            if (window.FileExplorer) window.FileExplorer.notifyBuildEvent(tab.path, 'compile-fail');
             setBuildingState(false);
         }
     } catch (e) {
@@ -4852,6 +5058,8 @@ function renderProblems() {
 
     count.textContent = App.problems.length;
     list.innerHTML = '';
+    updateProblemSummaryUI();
+    setActiveTabDiagnostics(App.problems);
 
     App.problems.forEach(p => {
         const el = document.createElement('div');
@@ -5081,6 +5289,9 @@ function setRunning(v) {
     document.getElementById('btn-stop').disabled = !v;
     document.getElementById('terminal-in').disabled = !v;
     document.getElementById('btn-send').disabled = !v;
+    document.getElementById('btn-buildrun')?.classList.toggle('running', v);
+    document.getElementById('btn-run-only')?.classList.toggle('running', v);
+    document.getElementById('btn-stop')?.classList.toggle('running', v);
 
     const dockedTermIn = document.getElementById('docked-terminal-in');
     const dockedSendBtn = document.getElementById('docked-send-btn');
@@ -5105,9 +5316,23 @@ async function sendInput() {
 }
 
 function setStatus(msg, type) {
+    if (STATUS_TYPES.has(msg) && typeof type === 'string' && !STATUS_TYPES.has(type)) {
+        const temp = msg;
+        msg = type;
+        type = temp;
+    }
+
     const bar = document.getElementById('status-bar');
     bar.className = 'status-bar' + (type ? ' ' + type : '');
-    document.getElementById('status').innerHTML = `<span class="dot"></span> ${msg}`;
+    const statusEl = document.getElementById('status');
+    if (!statusEl) return;
+
+    statusEl.textContent = '';
+    const dot = document.createElement('span');
+    dot.className = 'dot';
+    const label = document.createElement('span');
+    label.textContent = msg;
+    statusEl.append(dot, label);
 }
 
 function compareOutput() {
