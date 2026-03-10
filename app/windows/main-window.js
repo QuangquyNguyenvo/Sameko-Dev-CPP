@@ -1,6 +1,6 @@
 'use strict';
 
-const { BrowserWindow, Menu, app } = require('electron');
+const { BrowserWindow, Menu, app, screen } = require('electron');
 const path = require('path');
 const http = require('http');
 const fs = require('fs');
@@ -23,6 +23,115 @@ function loadWindowBounds() {
         console.error('[Window] Failed to load window bounds:', error);
     }
     return null;
+}
+
+function clamp(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+}
+
+function getIntersectionArea(boundsA, boundsB) {
+    const left = Math.max(boundsA.x, boundsB.x);
+    const top = Math.max(boundsA.y, boundsB.y);
+    const right = Math.min(boundsA.x + boundsA.width, boundsB.x + boundsB.width);
+    const bottom = Math.min(boundsA.y + boundsA.height, boundsB.y + boundsB.height);
+
+    const width = Math.max(0, right - left);
+    const height = Math.max(0, bottom - top);
+
+    return width * height;
+}
+
+function centerBoundsInArea(bounds, area) {
+    const width = Math.min(bounds.width, area.width);
+    const height = Math.min(bounds.height, area.height);
+
+    return {
+        ...bounds,
+        width,
+        height,
+        x: area.x + Math.round((area.width - width) / 2),
+        y: area.y + Math.round((area.height - height) / 2)
+    };
+}
+
+function getSafeWindowBounds(savedBounds) {
+    const primaryWorkArea = screen.getPrimaryDisplay().workArea;
+    const baseBounds = {
+        width: savedBounds?.width || WINDOW.DEFAULT_WIDTH,
+        height: savedBounds?.height || WINDOW.DEFAULT_HEIGHT,
+        isMaximized: savedBounds?.isMaximized === true
+    };
+
+    if (!savedBounds || typeof savedBounds.x !== 'number' || typeof savedBounds.y !== 'number') {
+        return centerBoundsInArea(baseBounds, primaryWorkArea);
+    }
+
+    const requestedBounds = {
+        x: savedBounds.x,
+        y: savedBounds.y,
+        width: baseBounds.width,
+        height: baseBounds.height
+    };
+
+    let bestDisplay = null;
+    let bestIntersection = 0;
+
+    for (const display of screen.getAllDisplays()) {
+        const intersection = getIntersectionArea(requestedBounds, display.workArea);
+        if (intersection > bestIntersection) {
+            bestIntersection = intersection;
+            bestDisplay = display;
+        }
+    }
+
+    if (!bestDisplay || bestIntersection === 0) {
+        return centerBoundsInArea(baseBounds, primaryWorkArea);
+    }
+
+    const workArea = bestDisplay.workArea;
+    const width = Math.min(baseBounds.width, workArea.width);
+    const height = Math.min(baseBounds.height, workArea.height);
+
+    return {
+        ...baseBounds,
+        width,
+        height,
+        x: clamp(savedBounds.x, workArea.x, workArea.x + Math.max(workArea.width - width, 0)),
+        y: clamp(savedBounds.y, workArea.y, workArea.y + Math.max(workArea.height - height, 0))
+    };
+}
+
+function ensureWindowIsVisible(window) {
+    if (!window || window.isDestroyed()) return;
+
+    const wasMaximized = window.isMaximized();
+    const currentBounds = window.getBounds();
+    const safeBounds = getSafeWindowBounds({
+        ...currentBounds,
+        isMaximized: wasMaximized
+    });
+
+    const boundsChanged = currentBounds.x !== safeBounds.x
+        || currentBounds.y !== safeBounds.y
+        || currentBounds.width !== safeBounds.width
+        || currentBounds.height !== safeBounds.height;
+
+    if (!boundsChanged) return;
+
+    if (wasMaximized) {
+        window.unmaximize();
+    }
+
+    window.setBounds({
+        x: safeBounds.x,
+        y: safeBounds.y,
+        width: safeBounds.width,
+        height: safeBounds.height
+    });
+
+    if (wasMaximized) {
+        window.maximize();
+    }
 }
 
 function saveWindowBounds() {
@@ -127,7 +236,7 @@ function createMainWindow() {
     const appRoot = getAppRoot();
 
     // Load saved window bounds
-    const savedBounds = loadWindowBounds();
+    const savedBounds = getSafeWindowBounds(loadWindowBounds());
     const windowOptions = {
         width: savedBounds?.width || WINDOW.DEFAULT_WIDTH,
         height: savedBounds?.height || WINDOW.DEFAULT_HEIGHT,
@@ -237,6 +346,18 @@ function getMainWindow() {
     return mainWindow;
 }
 
+function restoreAndFocusWindow() {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+
+    if (mainWindow.isMinimized()) {
+        mainWindow.restore();
+    }
+
+    ensureWindowIsVisible(mainWindow);
+    mainWindow.show();
+    mainWindow.focus();
+}
+
 function minimizeWindow() {
     if (mainWindow) {
         mainWindow.minimize();
@@ -272,6 +393,7 @@ function sendToRenderer(channel, data) {
 module.exports = {
     createMainWindow,
     getMainWindow,
+    restoreAndFocusWindow,
     getBasePath,
     getAppRoot,
     minimizeWindow,

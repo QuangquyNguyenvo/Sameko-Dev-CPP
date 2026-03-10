@@ -85,12 +85,11 @@ function cleanupBeforeQuit() {
 
 function setupAppEvents() {
     app.on('second-instance', (event, commandLine, workingDirectory) => {
-        const { getMainWindow } = require('../windows/main-window');
+        const { getMainWindow, restoreAndFocusWindow } = require('../windows/main-window');
         const mainWindow = getMainWindow();
 
         if (mainWindow) {
-            if (mainWindow.isMinimized()) mainWindow.restore();
-            mainWindow.focus();
+            restoreAndFocusWindow();
         }
     });
 
