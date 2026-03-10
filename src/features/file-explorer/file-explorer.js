@@ -65,13 +65,13 @@ const FileExplorer = {
 
     // Lucide-based SVG icon strings for CP statuses
     STATUS_ICONS: {
-        todo: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#555" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/></svg>',
-        coding: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#64b5f6" stroke-width="2" stroke-linecap="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
-        testing: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffb74d" stroke-width="2" stroke-linecap="round"><path d="M14 2v6l3 9H7l3-9V2"/><line x1="8.5" y1="2" x2="15.5" y2="2"/></svg>',
-        ac: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#66bb6a" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>',
-        wa: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ef5350" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
-        tle: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round"><path d="M10 2h4"/><path d="M12 14l-4-4"/><circle cx="12" cy="14" r="8"/></svg>',
-        re: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ab47bc" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+        todo: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#555" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8" stroke-dasharray="5 5"/></svg>',
+        coding: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#64b5f6" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>',
+        testing: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffb74d" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31M14 9.3V1.99M8.5 2h7"/><path d="M14 9.3a6.5 6.5 0 1 1-4 0"/><circle cx="12" cy="16" r="1" fill="#ffb74d" stroke="none"/></svg>',
+        ac: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#66bb6a" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="5 13 10 18 19 7"/></svg>',
+        wa: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ef5350" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+        tle: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffa726" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/></svg>',
+        re: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ab47bc" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 20h20L12 2z"/><line x1="12" y1="9" x2="12" y2="14"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>',
     },
 
     // Session Timer — on-demand, no setInterval
@@ -127,49 +127,49 @@ const FileExplorer = {
     // SVG Icons - no emojis, all inline SVGs
     ICONS: {
         // Note icon (pencil)
-        note: '<svg class="icon-note" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
+        note: '<svg class="icon-note" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>',
 
         // Pin icon
-        pin: '<svg class="icon-pin" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5M9 10.76V6l-3-3h12l-3 3v4.76l3 3.24H6l3-3.24z"/></svg>',
+        pin: '<svg class="icon-pin" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M9 10.76V6l-3-3h12l-3 3v4.76l3 3.24H6l3-3.24z"/></svg>',
 
         // Unpin icon (pin with slash)
-        unpin: '<svg class="icon-unpin" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 17v5M9 10.76V6l-3-3h12l-3 3v4.76l3 3.24H6l3-3.24z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>',
+        unpin: '<svg class="icon-unpin" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5M9 10.76V6l-3-3h12l-3 3v4.76l3 3.24H6l3-3.24z"/><line x1="2" y1="2" x2="22" y2="22"/></svg>',
 
         // Save/Approach icon (branch/git)
-        approach: '<svg class="icon-approach" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M6 9v6M18 15V6h-9"/></svg>',
+        approach: '<svg class="icon-approach" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M6 9v6M18 15V6h-9"/></svg>',
 
         // Checkmark icon
-        check: '<svg class="icon-check" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>',
+        check: '<svg class="icon-check" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>',
 
         // X mark icon
-        cross: '<svg class="icon-cross" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+        cross: '<svg class="icon-cross" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
 
         // Clock icon (for working status)
-        clock: '<svg class="icon-clock" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+        clock: '<svg class="icon-clock" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
 
         // Timer icon (for TLE)
-        timer: '<svg class="icon-timer" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M5 3l2 2M19 3l-2 2M12 2v2"/></svg>',
+        timer: '<svg class="icon-timer" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M5 3l2 2M19 3l-2 2M12 2v2"/></svg>',
 
         // Memory icon (for MLE)
-        memory: '<svg class="icon-memory" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/></svg>',
+        memory: '<svg class="icon-memory" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="1" x2="9" y2="4"/><line x1="15" y1="1" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="23"/><line x1="15" y1="20" x2="15" y2="23"/></svg>',
 
         // Warning icon (for RTE)
-        warning: '<svg class="icon-warning" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+        warning: '<svg class="icon-warning" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
 
         // Expand arrow
-        arrow: '<svg class="icon-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>',
+        arrow: '<svg class="icon-arrow" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
 
         // Recent icon (history)
-        recent: '<svg class="icon-recent" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 10"/><path d="M2 12h2M20 12h2"/></svg>',
+        recent: '<svg class="icon-recent" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 10"/><path d="M2 12h2M20 12h2"/></svg>',
 
         // Collection icon
-        collection: '<svg class="icon-collection" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 10h18"/></svg>',
+        collection: '<svg class="icon-collection" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>',
 
         // Submenu arrow
-        submenuArrow: '<svg class="icon-submenu" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>',
+        submenuArrow: '<svg class="icon-submenu" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>',
 
         // Close button (X)
-        close: '<svg class="icon-close" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
+        close: '<svg class="icon-close" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>',
     },
 
     // Status definitions (colored dots)
@@ -297,7 +297,7 @@ const FileExplorer = {
                             localStorage.removeItem('explorerCategories');
                         }
                     }
-                } catch (_) {}
+                } catch (_) { }
             }
         } catch (e) {
             console.error('Failed to load explorer state:', e);
@@ -552,7 +552,7 @@ const FileExplorer = {
                         }
                         this.saveCategoriesForFolder(this.currentFolder);
                         // Clear global storage
-                        try { localStorage.removeItem('explorerCategories:__global__'); } catch (_) {}
+                        try { localStorage.removeItem('explorerCategories:__global__'); } catch (_) { }
                     }
 
                     await this.refreshTree();
@@ -2171,7 +2171,7 @@ const FileExplorer = {
 
         // Blur Monaco editor to prevent it from stealing focus
         if (window.App && window.App.editor) {
-            try { document.activeElement?.blur(); } catch (_) {}
+            try { document.activeElement?.blur(); } catch (_) { }
         }
 
         setTimeout(() => {
@@ -2373,12 +2373,13 @@ const FileExplorer = {
      */
     getFolderIcon(isOpen) {
         if (isOpen) {
-            return `<svg class="explorer-icon folder-open" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                <path d="M20 19a2 2 0 01-2 2H6a2 2 0 01-2-2V5a2 2 0 012-2h4l2 2h6a2 2 0 012 2v2H6v10h14v-5h2v5z"/>
+            return `<svg class="explorer-icon folder-open" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
+                <path d="M2 10h20"/>
             </svg>`;
         }
-        return `<svg class="explorer-icon folder-closed" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-            <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+        return `<svg class="explorer-icon folder-closed" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/>
         </svg>`;
     },
 
@@ -2434,18 +2435,18 @@ const FileExplorer = {
         const config = iconMap[ext] || { color: '#6d8086', icon: 'file' };
 
         if (config.icon === 'code') {
-            return `<svg class="explorer-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${config.color}" stroke-width="2">
+            return `<svg class="explorer-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${config.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="16 18 22 12 16 6"/>
                 <polyline points="8 6 2 12 8 18"/>
             </svg>`;
         } else if (config.icon === 'braces') {
-            return `<svg class="explorer-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${config.color}" stroke-width="2">
+            return `<svg class="explorer-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${config.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M8 3H7a2 2 0 00-2 2v5a2 2 0 01-2 2 2 2 0 012 2v5c0 1.1.9 2 2 2h1"/>
                 <path d="M16 21h1a2 2 0 002-2v-5c0-1.1.9-2 2-2a2 2 0 01-2-2V5a2 2 0 00-2-2h-1"/>
             </svg>`;
         }
 
-        return `<svg class="explorer-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${config.color}" stroke-width="2">
+        return `<svg class="explorer-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${config.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
         </svg>`;
@@ -3589,7 +3590,7 @@ const FileExplorer = {
         // Remove the .cpp file
         const filePath = `${this.contestFolder}/${problemId}.cpp`.replace(/\\/g, '/');
         if (window.electronAPI && window.electronAPI.deleteFile) {
-            try { await window.electronAPI.deleteFile(filePath); } catch (_) {}
+            try { await window.electronAPI.deleteFile(filePath); } catch (_) { }
         }
         // Remove from .sameko
         this.contestMeta.problems = this.contestMeta.problems.filter(p => p.id !== problemId);
@@ -3609,7 +3610,7 @@ const FileExplorer = {
         for (const problemId of ids) {
             const filePath = `${this.contestFolder}/${problemId}.cpp`.replace(/\\/g, '/');
             if (window.electronAPI && window.electronAPI.deleteFile) {
-                try { await window.electronAPI.deleteFile(filePath); } catch (_) {}
+                try { await window.electronAPI.deleteFile(filePath); } catch (_) { }
             }
         }
         this.contestMeta.problems = this.contestMeta.problems.filter(p => !ids.includes(p.id));
@@ -3816,7 +3817,7 @@ const FileExplorer = {
     async createCategory(name, color) {
         const id = 'cat-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
         const sanitizedName = name.trim().replace(/[<>:"/\\|?*]/g, '_');
-        
+
         // Create folder on disk if we have a current folder
         let folderPath = null;
         if (this.currentFolder) {
@@ -3944,7 +3945,7 @@ const FileExplorer = {
             if (window.electronAPI && window.electronAPI.createDirectory) {
                 await window.electronAPI.createDirectory(folderPath);
             }
-        } catch (_) {}
+        } catch (_) { }
 
         // Sanitize problem name for file
         const safeName = problemName.trim().replace(/[<>:"/\\|?*]/g, '_');
@@ -4491,7 +4492,7 @@ const FileExplorer = {
                                 this.renderTree ? this.renderTree() : this.renderEmptyState();
                             }
                         }
-                    } catch (_) {}
+                    } catch (_) { }
                     return;
                 }
 
@@ -4670,7 +4671,7 @@ const FileExplorer = {
         menu.className = 'explorer-context-menu';
 
         // Build color submenu
-        const colorsHtml = this.CATEGORY_COLORS.map(color => 
+        const colorsHtml = this.CATEGORY_COLORS.map(color =>
             `<span class="cat-color-option ${cat.color === color ? 'active' : ''}" 
                    data-color="${color}" style="background: ${color}"></span>`
         ).join('');
@@ -5014,7 +5015,7 @@ const FileExplorer = {
 
         // If current file is open, offer to add it directly
         const currentPath = window.App?.currentFilePath || window.currentFilePath;
-        
+
         // Show file picker dialog
         if (currentPath) {
             const fileName = currentPath.split(/[/\\]/).pop();
