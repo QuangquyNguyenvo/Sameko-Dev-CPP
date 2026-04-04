@@ -10,6 +10,7 @@ let mainWindow = null;
 let devServer = null;
 let devServerPort = null;
 let saveTimeout = null;
+let displayListenersAttached = false;
 
 const settingsPath = path.join(app.getPath('userData'), 'settings.json');
 
@@ -232,6 +233,21 @@ function getAppRoot() {
     return path.join(__dirname, '..', '..');
 }
 
+function attachDisplaySafetyListeners() {
+    if (displayListenersAttached) return;
+
+    const handleDisplayChange = () => {
+        if (!mainWindow || mainWindow.isDestroyed()) return;
+        ensureWindowIsVisible(mainWindow);
+    };
+
+    screen.on('display-added', handleDisplayChange);
+    screen.on('display-removed', handleDisplayChange);
+    screen.on('display-metrics-changed', handleDisplayChange);
+
+    displayListenersAttached = true;
+}
+
 function createMainWindow() {
     const appRoot = getAppRoot();
 
@@ -253,6 +269,7 @@ function createMainWindow() {
     };
 
     mainWindow = new BrowserWindow(windowOptions);
+    attachDisplaySafetyListeners();
 
     // Restore maximized state
     if (savedBounds?.isMaximized) {

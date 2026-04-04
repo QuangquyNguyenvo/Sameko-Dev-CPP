@@ -1320,6 +1320,22 @@ function initSettings() {
         document.getElementById('val-fontSize').textContent = fontSizeSlider.value + 'px';
     };
 
+    const fontFamilySelect = document.getElementById('set-fontFamily');
+    const fontFamilyCustom = document.getElementById('set-fontFamilyCustom');
+    if (fontFamilySelect && fontFamilyCustom) {
+        fontFamilySelect.onchange = () => {
+            const isCustom = fontFamilySelect.value === 'custom';
+            fontFamilyCustom.style.display = isCustom ? 'block' : 'none';
+            if (isCustom) {
+                if (!fontFamilyCustom.value.trim()) {
+                    fontFamilyCustom.value = App.settings.editor.fontFamily || DEFAULT_SETTINGS.editor.fontFamily;
+                }
+                fontFamilyCustom.focus();
+                fontFamilyCustom.select();
+            }
+        };
+    }
+
     // Live Background Opacity (optional - may not exist if Background section removed)
     const bgOpacitySlider = document.getElementById('set-bgOpacity');
     if (bgOpacitySlider) {
@@ -1917,6 +1933,43 @@ function updateThemePreview() {
     }
 }
 
+function normalizeFontFamilyInput(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return DEFAULT_SETTINGS.editor.fontFamily;
+    return raw;
+}
+
+function setFontFamilyInputs(fontFamily) {
+    const selectEl = document.getElementById('set-fontFamily');
+    const customEl = document.getElementById('set-fontFamilyCustom');
+    if (!selectEl || !customEl) return;
+
+    const normalized = normalizeFontFamilyInput(fontFamily);
+    const isBuiltIn = BUILTIN_FONT_FAMILIES.has(normalized);
+
+    if (isBuiltIn) {
+        selectEl.value = normalized;
+        customEl.value = '';
+        customEl.style.display = 'none';
+    } else {
+        selectEl.value = 'custom';
+        customEl.value = normalized;
+        customEl.style.display = 'block';
+    }
+}
+
+function getSelectedFontFamily() {
+    const selectEl = document.getElementById('set-fontFamily');
+    const customEl = document.getElementById('set-fontFamilyCustom');
+    if (!selectEl) return DEFAULT_SETTINGS.editor.fontFamily;
+
+    if (selectEl.value === 'custom') {
+        return normalizeFontFamilyInput(customEl?.value || '');
+    }
+
+    return normalizeFontFamilyInput(selectEl.value);
+}
+
 function openSettings() {
     // Populate theme dropdowns dynamically from ThemeManager first
     populateThemeDropdowns();
@@ -1928,7 +1981,7 @@ function openSettings() {
 
     document.getElementById('set-fontSize').value = App.settings.editor.fontSize;
     document.getElementById('val-fontSize').textContent = App.settings.editor.fontSize + 'px';
-    document.getElementById('set-fontFamily').value = App.settings.editor.fontFamily;
+    setFontFamilyInputs(App.settings.editor.fontFamily);
     document.getElementById('set-tabSize').value = App.settings.editor.tabSize;
     document.getElementById('set-minimap').checked = App.settings.editor.minimap;
     document.getElementById('set-wordWrap').checked = App.settings.editor.wordWrap;
@@ -2032,7 +2085,7 @@ function closeSettings() {
 
 function saveSettingsAndClose() {
     App.settings.editor.fontSize = parseInt(document.getElementById('set-fontSize').value);
-    App.settings.editor.fontFamily = document.getElementById('set-fontFamily').value;
+    App.settings.editor.fontFamily = normalizeFontFamilyInput(getSelectedFontFamily());
     App.settings.editor.tabSize = parseInt(document.getElementById('set-tabSize').value);
     App.settings.editor.minimap = document.getElementById('set-minimap').checked;
     App.settings.editor.wordWrap = document.getElementById('set-wordWrap').checked;
@@ -2389,6 +2442,13 @@ const STARTUP_BEHAVIORS = Object.freeze({
     REOPEN_SAVED: 'reopen-saved-tabs',
     RESTORE_PREVIOUS: 'restore-previous-session'
 });
+
+const BUILTIN_FONT_FAMILIES = new Set([
+    "'JetBrains Mono', monospace",
+    "'Fira Code', monospace",
+    'Consolas, monospace',
+    "'Cascadia Code', monospace"
+]);
 let sessionSaveTimer = null;
 let sessionPeriodicTimer = null;
 let sessionRestored = false;
@@ -2431,16 +2491,16 @@ function getStoredSession() {
 
 function buildSessionRestoreSummary(session) {
     const unsavedTabs = session.tabs.filter(t => !t.path || t.modified);
-    const hasUntitled = unsavedTabs.some(t => !t.path);
-    const hasModified = unsavedTabs.some(t => t.path && t.modified);
+    const untitledCount = unsavedTabs.filter(t => !t.path).length;
+    const modifiedCount = unsavedTabs.filter(t => t.path && t.modified).length;
     const parts = [];
 
-    if (hasUntitled) parts.push(`${unsavedTabs.filter(t => !t.path).length} file chưa lưu`);
-    if (hasModified) parts.push(`${unsavedTabs.filter(t => t.path && t.modified).length} file đã chỉnh sửa`);
+    if (untitledCount > 0) parts.push(`${untitledCount} unsaved file${untitledCount > 1 ? 's' : ''}`);
+    if (modifiedCount > 0) parts.push(`${modifiedCount} modified file${modifiedCount > 1 ? 's' : ''}`);
 
     return parts.length > 0
-        ? `Phiên làm việc trước có ${parts.join(' và ')}. Khôi phục?`
-        : 'Khôi phục phiên làm việc trước?';
+        ? `Your previous session contains ${parts.join(' and ')}. Restore now?`
+        : 'Restore previous session?';
 }
 
 async function reopenSessionTabs(session, { includeUnsaved }) {
@@ -2609,12 +2669,12 @@ function showSessionRestoreNotification(summary) {
                     </svg>
                 </div>
                 <div class="session-restore-text">
-                    <div class="session-restore-title">Khôi phục phiên trước</div>
+                    <div class="session-restore-title">Restore previous session</div>
                     <div class="session-restore-desc">${summary}</div>
                 </div>
                 <div class="session-restore-actions">
-                    <button class="session-restore-btn secondary" data-action="dismiss">Bỏ qua</button>
-                    <button class="session-restore-btn primary" data-action="restore">Khôi phục</button>
+                    <button class="session-restore-btn secondary" data-action="dismiss">Dismiss</button>
+                    <button class="session-restore-btn primary" data-action="restore">Restore</button>
                 </div>
             </div>
         `;
@@ -2656,7 +2716,7 @@ async function restoreSession() {
             const reopenedCount = await reopenSessionTabs(session, { includeUnsaved: false });
             clearSession();
             if (reopenedCount > 0) {
-                log(`Đã mở lại ${reopenedCount} file từ phiên trước ✓`, 'success');
+                log(`Reopened ${reopenedCount} file(s) from previous session ✓`, 'success');
             }
             return;
         }
@@ -2673,7 +2733,7 @@ async function restoreSession() {
 
         const restoredCount = await reopenSessionTabs(session, { includeUnsaved: true });
         if (restoredCount > 0) {
-            log('Đã khôi phục phiên làm việc trước ✓', 'success');
+            log('Previous session restored ✓', 'success');
         }
 
         clearSession();
@@ -3202,11 +3262,14 @@ function normalizeKeyCombo(e) {
     return parts.join('+');
 }
 
+function getEffectiveKeybindings() {
+    return { ...DEFAULT_SETTINGS.keybindings, ...(App.settings.keybindings || {}) };
+}
+
 function updateShortcutMap() {
     currentShortcutMap.clear();
-    const bindings = { ...DEFAULT_SETTINGS.keybindings, ...(App.settings.keybindings || {}) };
+    const bindings = getEffectiveKeybindings();
 
-    // Reverse map: "Ctrl+S" -> "save"
     for (const [action, combo] of Object.entries(bindings)) {
         if (combo) {
             currentShortcutMap.set(combo, action);
@@ -3214,7 +3277,6 @@ function updateShortcutMap() {
     }
     console.log('[Shortcuts] Updated map:', currentShortcutMap);
 
-    // Sync menu dropdown shortcut labels
     updateMenuShortcutLabels();
 }
 
@@ -3235,7 +3297,7 @@ function updateMenuShortcutLabels() {
         'spliteditor': 'toggleSplit',
     };
 
-    const bindings = App.settings.keybindings || DEFAULT_SETTINGS.keybindings;
+    const bindings = getEffectiveKeybindings();
 
     document.querySelectorAll('.dropdown-item[data-action]').forEach(item => {
         const action = item.dataset.action;

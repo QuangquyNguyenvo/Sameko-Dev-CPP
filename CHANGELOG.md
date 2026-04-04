@@ -10,19 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Run All diagnostics metadata**: Added per-test debug metadata for `Run All` failures (exit/signal, timeout flag, stderr preview, and output hashes) to help investigate intermittent verdict issues.
 - **Shared judge utility module**: Added `app/shared/judge.js` as a single source of truth for output normalization and output comparison.
+- **[[FEATURE] Allow users to customize the editor font (Fixes #28)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/28)**:
+  - Added clean support for both built-in font options and custom font-family input.
+  - Normalized font-family persistence so custom values apply consistently across sessions.
 - **Editor productivity shortcuts (VS Code-style, tier 1)**: Added default keybindings for `Ctrl+/`, `Ctrl+D`, `Ctrl+Shift+L`, `Alt+Up/Down`, and `Shift+Alt+Up/Down`.
 
 ### Fixed
-- **[[BUG] Random runtime errors / inconsistent Run All verdicts](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues)**:
+- **[[BUG] Random "RTE" (Runtime Error) when using the "Run All" feature for Test Cases (Fixes #27)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/27)**:
   - Unified output normalization/comparison rules between normal run comparison and batch `Run All` judging.
   - Fixed expected-output comparison guard so empty expected output is still judged correctly.
   - Improved runtime error details to include exit signal/code and stderr preview.
 - **Preload reliability regression**: Prevented preload startup failure from breaking `window.electronAPI` exposure when optional judge import is unavailable.
 - **[[BUG] Editor does not support multi-cursor selection with modifier-click (Fixes #31)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/31)**: Enabled configurable Monaco `multiCursorModifier` with clean platform-aware fallback.
+- **[[BUG] Window reopens off-screen after disconnecting a secondary monitor (Fixes #30)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/30)**: Added display-change safety checks to revalidate and reposition the main window when monitor topology changes.
+- **[[FEATURE] Improve startup session restore behavior with configurable On Startup options (Fixes #32)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/32)**:
+  - Unified startup restore messaging and behavior with the configured `On Startup` option.
+  - Improved restore notification copy and session summary clarity for safer restore decisions.
 
 ### Improved
 - **Run All timing stability**: Added warm-up execution before measured test loop to reduce first-test cold-start skew.
 - **Shortcut map behavior**: Shortcut mapping now merges saved keybindings with defaults, so newly added defaults stay available without forcing users to reset settings.
+- **[[FEATURE] Improve Checkpoint recovery for unsaved files (Fixes #29)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/29)**:
+  - Kept checkpoint persistence flow centralized and startup-aware to avoid stale or conflicting restores.
+  - Improved session restore summary to clearly distinguish unsaved and modified files before recovery.
 
 
 ## [1.0.4] - 2026-02-15

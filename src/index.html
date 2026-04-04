@@ -407,12 +407,16 @@
                             </div>
                             <div class="setting-row">
                                 <label>Font Family</label>
-                                <select id="set-fontFamily">
-                                    <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
-                                    <option value="'Fira Code', monospace">Fira Code</option>
-                                    <option value="Consolas, monospace" selected>Consolas</option>
-                                    <option value="'Cascadia Code', monospace">Cascadia Code</option>
-                                </select>
+                                <div class="setting-control" style="display:flex;gap:8px;align-items:center;">
+                                    <select id="set-fontFamily" style="min-width:180px;">
+                                        <option value="'JetBrains Mono', monospace">JetBrains Mono</option>
+                                        <option value="'Fira Code', monospace">Fira Code</option>
+                                        <option value="Consolas, monospace" selected>Consolas</option>
+                                        <option value="'Cascadia Code', monospace">Cascadia Code</option>
+                                        <option value="custom">Custom...</option>
+                                    </select>
+                                    <input type="text" id="set-fontFamilyCustom" placeholder="e.g. 'Source Code Pro', monospace" style="flex:1;min-width:220px;display:none;" />
+                                </div>
                             </div>
                             <div class="setting-row">
                                 <label>Tab Size</label>
