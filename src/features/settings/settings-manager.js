@@ -33,6 +33,9 @@ const DEFAULT_SETTINGS = {
     appearance: {
         theme: 'monokai'
     },
+    startup: {
+        behavior: 'restore-previous-session'
+    },
     history: {
         enabled: true,
         maxVersions: 20,

@@ -16,6 +16,15 @@
 
 const { contextBridge, ipcRenderer } = require('electron');
 
+let judge = null;
+try {
+    judge = require('./app/shared/judge');
+} catch (err) {
+    // Do not crash preload if optional/shared judge module fails to load.
+    // Core APIs (compile/run/...) must still be exposed.
+    console.warn('[preload] Failed to load shared judge module:', err?.message || err);
+}
+
 contextBridge.exposeInMainWorld('electronAPI', {
     // File operations
     openFile: () => ipcRenderer.invoke('open-file-dialog'),
@@ -88,6 +97,43 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Batch testing - run single test case
     runTest: (data) => ipcRenderer.invoke('run-test', data),
+
+    // Shared judge utils (same rules as main process batch judge)
+    judgeNormalizeOutput: (text) => {
+        const fallback = String(text ?? '')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .split('\n')
+            .map(l => l.trimEnd())
+            .join('\n')
+            .trim();
+
+        if (judge && typeof judge.normalizeOutput === 'function') {
+            return judge.normalizeOutput(text);
+        }
+        return fallback;
+    },
+    judgeCompareOutputs: (actual, expected) => {
+        if (judge && typeof judge.compareOutputs === 'function') {
+            return judge.compareOutputs(actual, expected);
+        }
+
+        const normalize = (value) => String(value ?? '')
+            .replace(/\r\n/g, '\n')
+            .replace(/\r/g, '\n')
+            .split('\n')
+            .map(l => l.trimEnd())
+            .join('\n')
+            .trim();
+
+        const actualNorm = normalize(actual);
+        const expectedNorm = normalize(expected);
+        return {
+            matched: actualNorm === expectedNorm,
+            actualNorm,
+            expectedNorm,
+        };
+    },
 
     // Auto-update
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),

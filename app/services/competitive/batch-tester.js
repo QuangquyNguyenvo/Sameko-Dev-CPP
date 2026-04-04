@@ -10,6 +10,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawn, exec } = require('child_process');
 const { getCompilerEnv } = require('../compiler/detector');
+const { normalizeOutput, compareOutputs } = require('../../shared/judge');
 
 /**
  * Run a single test case
@@ -86,7 +87,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd }
             errorOutput += data.toString();
         });
 
-        testProcess.on('close', (code) => {
+        testProcess.on('close', (code, signal) => {
             clearTimeout(timeout);
             if (memoryPollInterval) clearInterval(memoryPollInterval);
 
@@ -101,15 +102,18 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd }
                 details = 'Time limit exceeded';
             } else if (code !== 0) {
                 status = 'RE';
-                details = `Runtime error (exit code: ${code})`;
-            } else if (expectedOutput) {
-                // Compare output (flexible: ignore trailing whitespace)
-                const actualNorm = normalizeOutput(output);
-                const expectedNorm = normalizeOutput(expectedOutput);
+                const reason = signal
+                    ? `signal: ${signal}`
+                    : `exit code: ${code}`;
+                const errPreview = truncate(normalizeOutput(errorOutput || ''), 160);
+                details = `Runtime error (${reason})${errPreview ? `\nStderr: ${errPreview}` : ''}`;
+            } else if (expectedOutput !== undefined && expectedOutput !== null) {
+                // Compare output using shared judge rules
+                const compared = compareOutputs(output, expectedOutput);
 
-                if (actualNorm !== expectedNorm) {
+                if (!compared.matched) {
                     status = 'WA';
-                    details = `Expected: ${truncate(expectedNorm, 100)}\nGot: ${truncate(actualNorm, 100)}`;
+                    details = `Expected: ${truncate(compared.expectedNorm, 100)}\nGot: ${truncate(compared.actualNorm, 100)}`;
                 }
             }
 
@@ -170,15 +174,6 @@ async function runBatchTests({ exePath, tests, timeLimit = 3000, cwd, onProgress
 }
 
 /**
- * Normalize output for comparison
- * @param {string} s
- * @returns {string}
- */
-function normalizeOutput(s) {
-    return s.split('\n').map(l => l.trimEnd()).join('\n').trim();
-}
-
-/**
  * Truncate string
  * @param {string} s
  * @param {number} maxLen
@@ -193,4 +188,5 @@ module.exports = {
     runTest,
     runBatchTests,
     normalizeOutput,
+    compareOutputs,
 };

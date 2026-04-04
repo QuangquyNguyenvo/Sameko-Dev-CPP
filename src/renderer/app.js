@@ -50,6 +50,9 @@ const DEFAULT_SETTINGS = {
         bgUrl: '',
         performanceMode: true
     },
+    startup: {
+        behavior: 'restore-previous-session'
+    },
     terminal: {
         colorScheme: 'ansi-16'
     },
@@ -1140,6 +1143,7 @@ function loadSettings() {
                     ...saved.appearance,
                     perTheme: saved.appearance?.perTheme || {}
                 }),
+                startup: { ...DEFAULT_SETTINGS.startup, ...saved.startup },
                 terminal: { ...DEFAULT_SETTINGS.terminal, ...saved.terminal },
                 panels: { ...DEFAULT_SETTINGS.panels, ...saved.panels },
                 oj: { ...DEFAULT_SETTINGS.oj, ...saved.oj },
@@ -1913,6 +1917,7 @@ function openSettings() {
     document.getElementById('set-tabSize').value = App.settings.editor.tabSize;
     document.getElementById('set-minimap').checked = App.settings.editor.minimap;
     document.getElementById('set-wordWrap').checked = App.settings.editor.wordWrap;
+    document.getElementById('set-startupBehavior').value = App.settings.startup?.behavior || DEFAULT_SETTINGS.startup.behavior;
     const autoSaveEnabled = App.settings.editor.autoSave || false;
     document.getElementById('set-autoSave').checked = autoSaveEnabled;
     const autoSaveDelayInput = document.getElementById('set-autoSaveDelay');
@@ -2016,6 +2021,8 @@ function saveSettingsAndClose() {
     App.settings.editor.tabSize = parseInt(document.getElementById('set-tabSize').value);
     App.settings.editor.minimap = document.getElementById('set-minimap').checked;
     App.settings.editor.wordWrap = document.getElementById('set-wordWrap').checked;
+    if (!App.settings.startup) App.settings.startup = {};
+    App.settings.startup.behavior = document.getElementById('set-startupBehavior').value;
     App.settings.editor.colorScheme = document.getElementById('set-editorColorScheme').value;
     App.settings.editor.autoSave = document.getElementById('set-autoSave').checked;
 
@@ -2361,9 +2368,141 @@ async function autoSaveCurrentFile() {
 const SESSION_STORAGE_KEY = 'ide-session-checkpoint';
 const SESSION_SAVE_DEBOUNCE = 5000; // 5 seconds debounce
 const SESSION_PERIODIC_INTERVAL = 30000; // 30 seconds periodic save
+const SESSION_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+const STARTUP_BEHAVIORS = Object.freeze({
+    EMPTY: 'empty',
+    REOPEN_SAVED: 'reopen-saved-tabs',
+    RESTORE_PREVIOUS: 'restore-previous-session'
+});
 let sessionSaveTimer = null;
 let sessionPeriodicTimer = null;
 let sessionRestored = false;
+
+function normalizeTabPath(filePath) {
+    return filePath ? filePath.replace(/\\/g, '/') : null;
+}
+
+function createRestoredTabId() {
+    return 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
+}
+
+function getStartupBehavior() {
+    return App.settings?.startup?.behavior || DEFAULT_SETTINGS.startup.behavior;
+}
+
+function getStoredSession() {
+    try {
+        const saved = localStorage.getItem(SESSION_STORAGE_KEY);
+        if (!saved) return null;
+
+        const session = JSON.parse(saved);
+        if (!session || !Array.isArray(session.tabs) || session.tabs.length === 0) {
+            clearSession();
+            return null;
+        }
+
+        if (session.timestamp && (Date.now() - session.timestamp) > SESSION_MAX_AGE) {
+            clearSession();
+            return null;
+        }
+
+        return session;
+    } catch (e) {
+        console.error('[Session] Failed to parse stored session:', e);
+        clearSession();
+        return null;
+    }
+}
+
+function buildSessionRestoreSummary(session) {
+    const unsavedTabs = session.tabs.filter(t => !t.path || t.modified);
+    const hasUntitled = unsavedTabs.some(t => !t.path);
+    const hasModified = unsavedTabs.some(t => t.path && t.modified);
+    const parts = [];
+
+    if (hasUntitled) parts.push(`${unsavedTabs.filter(t => !t.path).length} file chưa lưu`);
+    if (hasModified) parts.push(`${unsavedTabs.filter(t => t.path && t.modified).length} file đã chỉnh sửa`);
+
+    return parts.length > 0
+        ? `Phiên làm việc trước có ${parts.join(' và ')}. Khôi phục?`
+        : 'Khôi phục phiên làm việc trước?';
+}
+
+async function reopenSessionTabs(session, { includeUnsaved }) {
+    const restoredIds = new Map();
+
+    for (const tabData of session.tabs) {
+        const normalizedPath = normalizeTabPath(tabData.path);
+
+        if (normalizedPath) {
+            const existing = App.tabs.find(t => normalizeTabPath(t.path) === normalizedPath);
+            if (existing) {
+                restoredIds.set(tabData.id, existing.id);
+                continue;
+            }
+
+            try {
+                let diskContent = '';
+                if (window.electronAPI?.readFile) {
+                    diskContent = await window.electronAPI.readFile(tabData.path);
+                }
+
+                const isModified = includeUnsaved && tabData.modified && tabData.content != null;
+                const restoredTab = {
+                    id: createRestoredTabId(),
+                    name: tabData.name,
+                    path: tabData.path,
+                    untitledHistoryKey: tabData.untitledHistoryKey || null,
+                    content: isModified ? tabData.content : diskContent,
+                    original: diskContent,
+                    modified: isModified,
+                };
+
+                App.tabs.push(restoredTab);
+                restoredIds.set(tabData.id, restoredTab.id);
+            } catch (_) {
+                if (!includeUnsaved || tabData.content == null) continue;
+
+                const fallbackTab = {
+                    id: createRestoredTabId(),
+                    name: tabData.name,
+                    path: null,
+                    untitledHistoryKey: tabData.untitledHistoryKey || createUntitledHistoryKey(),
+                    content: tabData.content,
+                    original: '',
+                    modified: true,
+                };
+
+                App.tabs.push(fallbackTab);
+                restoredIds.set(tabData.id, fallbackTab.id);
+            }
+            continue;
+        }
+
+        if (!includeUnsaved) continue;
+
+        const restoredTab = {
+            id: createRestoredTabId(),
+            name: tabData.name,
+            path: null,
+            untitledHistoryKey: tabData.untitledHistoryKey || createUntitledHistoryKey(),
+            content: tabData.content || '',
+            original: tabData.original || '',
+            modified: tabData.modified ?? true,
+        };
+
+        App.tabs.push(restoredTab);
+        restoredIds.set(tabData.id, restoredTab.id);
+    }
+
+    const preferredActiveId = restoredIds.get(session.activeTabId) || App.tabs[0]?.id || null;
+    if (preferredActiveId) {
+        setActive(preferredActiveId);
+    }
+
+    updateUI();
+    return restoredIds.size;
+}
 
 /**
  * Save the current session (all open tabs including unsaved ones) to localStorage.
@@ -2371,6 +2510,11 @@ let sessionRestored = false;
  */
 function saveSession() {
     try {
+        if (App.tabs.length === 0) {
+            clearSession();
+            return;
+        }
+
         // Sync current editor content to active tab
         if (App.activeTabId && App.editor && App.ready) {
             const activeTab = App.tabs.find(t => t.id === App.activeTabId);
@@ -2482,145 +2626,40 @@ async function restoreSession() {
     if (sessionRestored) return;
     sessionRestored = true;
 
+    const behavior = getStartupBehavior();
+    const session = getStoredSession();
+
+    if (!session) return;
+
+    if (behavior === STARTUP_BEHAVIORS.EMPTY) {
+        clearSession();
+        return;
+    }
+
     try {
-        const saved = localStorage.getItem(SESSION_STORAGE_KEY);
-        if (!saved) return;
-
-        const session = JSON.parse(saved);
-        if (!session || !session.tabs || session.tabs.length === 0) {
+        if (behavior === STARTUP_BEHAVIORS.REOPEN_SAVED) {
+            const reopenedCount = await reopenSessionTabs(session, { includeUnsaved: false });
             clearSession();
+            if (reopenedCount > 0) {
+                log(`Đã mở lại ${reopenedCount} file từ phiên trước ✓`, 'success');
+            }
             return;
         }
 
-        // Check if session is too old (> 7 days)
-        if (session.timestamp && (Date.now() - session.timestamp) > 7 * 24 * 60 * 60 * 1000) {
-            clearSession();
-            return;
-        }
-
-        // Determine which tabs have unsaved content that would be lost
         const unsavedTabs = session.tabs.filter(t => !t.path || t.modified);
-        if (unsavedTabs.length === 0 && session.tabs.every(t => t.path)) {
-            // All tabs were saved files with no modifications — just reopen them silently
-            for (const tabData of session.tabs) {
-                if (tabData.path) {
-                    const normalizedPath = tabData.path.replace(/\\/g, '/');
-                    const existing = App.tabs.find(t => t.path && t.path.replace(/\\/g, '/') === normalizedPath);
-                    if (!existing) {
-                        try {
-                            let content = '';
-                            if (window.electronAPI && window.electronAPI.readFile) {
-                                content = await window.electronAPI.readFile(tabData.path);
-                            }
-                            const id = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-                            App.tabs.push({
-                                id,
-                                name: tabData.name,
-                                path: tabData.path,
-                                untitledHistoryKey: tabData.untitledHistoryKey || null,
-                                content,
-                                original: content,
-                                modified: false,
-                            });
-                        } catch (_) {
-                            // File no longer exists, skip
-                        }
-                    }
-                }
-            }
+        if (unsavedTabs.length > 0) {
+            const confirmed = await showSessionRestoreNotification(buildSessionRestoreSummary(session));
 
-            if (App.tabs.length > 0 && !App.activeTabId) {
-                const restoreActiveId = session.activeTabId;
-                const matchTab = App.tabs.find(t => {
-                    const sessionTab = session.tabs.find(st => st.id === restoreActiveId);
-                    return sessionTab && t.path === sessionTab.path;
-                });
-                setActive(matchTab ? matchTab.id : App.tabs[0].id);
-            }
-            updateUI();
-            clearSession();
-            return;
-        }
-
-        // There are unsaved tabs — show restore prompt
-        const hasUntitled = unsavedTabs.some(t => !t.path);
-        const hasModified = unsavedTabs.some(t => t.path && t.modified);
-        let message = 'Phiên làm việc trước có ';
-        const parts = [];
-        if (hasUntitled) parts.push(`${unsavedTabs.filter(t => !t.path).length} file chưa lưu`);
-        if (hasModified) parts.push(`${unsavedTabs.filter(t => t.path && t.modified).length} file đã chỉnh sửa`);
-        message += parts.join(' và ') + '. Khôi phục?';
-
-        const confirmed = await showSessionRestoreNotification(message);
-
-        if (!confirmed) {
-            clearSession();
-            return;
-        }
-
-        // Restore all tabs
-        for (const tabData of session.tabs) {
-            // Skip if already open
-            if (tabData.path) {
-                const normalizedPath = tabData.path.replace(/\\/g, '/');
-                const existing = App.tabs.find(t => t.path && t.path.replace(/\\/g, '/') === normalizedPath);
-                if (existing) continue;
-            }
-
-            if (tabData.path) {
-                // Saved file — try to read from disk, then apply modifications if any
-                try {
-                    let diskContent = '';
-                    if (window.electronAPI && window.electronAPI.readFile) {
-                        diskContent = await window.electronAPI.readFile(tabData.path);
-                    }
-                    const id = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-                    const isModified = tabData.modified && tabData.content != null;
-                    App.tabs.push({
-                        id,
-                        name: tabData.name,
-                        path: tabData.path,
-                        untitledHistoryKey: tabData.untitledHistoryKey || null,
-                        content: isModified ? tabData.content : diskContent,
-                        original: diskContent,
-                        modified: isModified,
-                    });
-                } catch (_) {
-                    // File no longer exists, skip if no content
-                    if (tabData.content != null) {
-                        const id = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-                        App.tabs.push({
-                            id,
-                            name: tabData.name,
-                            path: null,
-                            untitledHistoryKey: tabData.untitledHistoryKey || createUntitledHistoryKey(),
-                            content: tabData.content,
-                            original: '',
-                            modified: true,
-                        });
-                    }
-                }
-            } else {
-                // Untitled/unsaved file — restore with content
-                const id = 'tab_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4);
-                App.tabs.push({
-                    id,
-                    name: tabData.name,
-                    path: null,
-                    untitledHistoryKey: tabData.untitledHistoryKey || createUntitledHistoryKey(),
-                    content: tabData.content || '',
-                    original: tabData.original || '',
-                    modified: tabData.modified ?? true,
-                });
+            if (!confirmed) {
+                clearSession();
+                return;
             }
         }
 
-        // Set active tab
-        if (App.tabs.length > 0 && !App.activeTabId) {
-            setActive(App.tabs[0].id);
+        const restoredCount = await reopenSessionTabs(session, { includeUnsaved: true });
+        if (restoredCount > 0) {
+            log('Đã khôi phục phiên làm việc trước ✓', 'success');
         }
-        updateUI();
-        log('Đã khôi phục phiên làm việc trước ✓', 'success');
 
         clearSession();
     } catch (e) {
@@ -5335,10 +5374,23 @@ function setStatus(msg, type) {
     statusEl.append(dot, label);
 }
 
-function compareOutput() {
-    const expectedText = document.getElementById('expected-area').value.trim();
-    if (!expectedText) return;
+function normalizeJudgeOutput(text) {
+    if (window.electronAPI?.judgeNormalizeOutput) {
+        return window.electronAPI.judgeNormalizeOutput(text);
+    }
 
+    // Fallback in case preload API is unavailable
+    return String(text ?? '')
+        .replace(/\r\n/g, '\n')
+        .replace(/\r/g, '\n')
+        .split('\n')
+        .map(l => l.trimEnd())
+        .join('\n')
+        .trim();
+}
+
+function compareOutput() {
+    const expectedRaw = document.getElementById('expected-area').value;
 
     const terminalEl = document.getElementById('terminal');
     const lines = Array.from(terminalEl.querySelectorAll('pre, .line'));
@@ -5363,11 +5415,12 @@ function compareOutput() {
     const diffDisplay = document.getElementById('expected-diff');
     const textarea = document.getElementById('expected-area');
 
+    const expectedNorm = normalizeJudgeOutput(expectedRaw);
+    const actualNorm = normalizeJudgeOutput(actualText);
 
-    const expectedLines = expectedText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    const actualLines = actualText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-
-
+    // Keep per-line visualization, but from the same normalized representation used by batch judge.
+    const expectedLines = expectedNorm.length > 0 ? expectedNorm.split('\n') : [];
+    const actualLines = actualNorm.length > 0 ? actualNorm.split('\n') : [];
 
     let startIdx = 0;
 
@@ -6325,12 +6378,30 @@ async function runAllTests() {
         const totalTests = ccProblem.tests.length;
         let passedCount = 0;
 
+        const lastSlash = tab.path ? Math.max(tab.path.lastIndexOf('/'), tab.path.lastIndexOf('\\')) : -1;
+        const sourceDir = lastSlash !== -1 ? tab.path.substring(0, lastSlash) : null;
+
+        // Warm-up run (not counted) to reduce first-test cold-start skew on Windows.
+        // This improves consistency of displayed timings between test cases.
+        if (totalTests > 0) {
+            try {
+                setStatus('Warming up...', '');
+                const warmupTest = ccProblem.tests[0] || { input: '' };
+                await window.electronAPI.runTest({
+                    exePath: App.exePath,
+                    input: warmupTest.input || '',
+                    expectedOutput: null,
+                    timeLimit: timeLimit,
+                    cwd: sourceDir
+                });
+            } catch (_) {
+                // Ignore warm-up failures and continue with actual judged runs.
+            }
+        }
+
         for (let i = 0; i < totalTests; i++) {
             const test = ccProblem.tests[i];
             setStatus(`Testing ${i + 1}/${totalTests}...`, '');
-
-            const lastSlash = tab.path ? Math.max(tab.path.lastIndexOf('/'), tab.path.lastIndexOf('\\')) : -1;
-            const sourceDir = lastSlash !== -1 ? tab.path.substring(0, lastSlash) : null;
 
             const result = await window.electronAPI.runTest({
                 exePath: App.exePath,
