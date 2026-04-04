@@ -2,8 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachang28 p/spec/v2.0.0.html).
 
 ## [Unreleased]
 
@@ -26,6 +25,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **[[FEATURE] Improve startup session restore behavior with configurable On Startup options (Fixes #32)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/32)**:
   - Unified startup restore messaging and behavior with the configured `On Startup` option.
   - Improved restore notification copy and session summary clarity for safer restore decisions.
+- **[[BUG] Input/Expected panel state is shared across tabs (Fixes #33)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/33)**: Input/Expected data is now persisted per-tab and restored on tab switch, preventing cross-tab overwrite.
+- **[[BUG] Terminal log severity classes become inconsistent with aliases (Fixes #34)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/34)**: Normalized log type aliases (`warn`/`ok`) before applying classes and color mapping to keep terminal status styling consistent.
 
 ### Improved
 - **Run All timing stability**: Added warm-up execution before measured test loop to reduce first-test cold-start skew.

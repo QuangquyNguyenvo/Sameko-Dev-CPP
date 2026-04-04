@@ -137,7 +137,8 @@ const App = {
     inputIndex: 0,
     settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
     errorDecorations: [],
-    runTimeout: null
+    runTimeout: null,
+    ioByTab: {}
 };
 
 function createUntitledHistoryKey() {
@@ -4531,6 +4532,35 @@ function newFile() {
     scheduleSessionSave();
 }
 
+function persistCurrentTabIO() {
+    const tabId = getPreferredTabId();
+    if (!tabId) return;
+
+    const inputArea = document.getElementById('input-area');
+    const expectedArea = document.getElementById('expected-area');
+    if (!inputArea || !expectedArea) return;
+
+    App.ioByTab[tabId] = {
+        input: inputArea.value || '',
+        expected: expectedArea.value || ''
+    };
+}
+
+function restoreTabIO(tabId) {
+    const inputArea = document.getElementById('input-area');
+    const expectedArea = document.getElementById('expected-area');
+    if (!inputArea || !expectedArea) return;
+
+    const ioState = App.ioByTab[tabId] || { input: '', expected: '' };
+    inputArea.value = ioState.input || '';
+    expectedArea.value = ioState.expected || '';
+
+    const dockedInput = document.getElementById('docked-input');
+    const dockedExpected = document.getElementById('docked-expected');
+    if (dockedInput) dockedInput.value = inputArea.value;
+    if (dockedExpected) dockedExpected.value = expectedArea.value;
+}
+
 function setActive(id) {
     const tab = App.tabs.find(t => t.id === id);
     if (!tab) return;
@@ -4539,6 +4569,7 @@ function setActive(id) {
     if (App.activeTabId && App.editor && App.ready) {
         const cur = App.tabs.find(t => t.id === App.activeTabId);
         if (cur) cur.content = App.editor.getValue();
+        persistCurrentTabIO();
     }
 
     App.activeTabId = id;
@@ -4547,6 +4578,7 @@ function setActive(id) {
         App.editor.setValue(tab.content);
         App.isSettingValue = false;
     }
+    restoreTabIO(id);
     clearErrorDecorations();
     renderTabs();
     // Reset cursor tracker so presence shows Ln 1, Col 1 for the new tab
@@ -4588,6 +4620,7 @@ async function closeTab(id) {
     delete App.tabDiagnostics[id];
 
     App.tabs.splice(idx, 1);
+    delete App.ioByTab[id];
 
 
     if (App.splitTabId === id) closeSplit();
@@ -5408,27 +5441,32 @@ function applyAnsiStyle(text, fg, bg, bold, underline) {
     return `<span style="${style}">${text}</span>`;
 }
 
+function normalizeLogType(type) {
+    if (!type) return '';
+    if (type === 'warn') return 'warning';
+    if (type === 'ok') return 'success';
+    return type;
+}
+
 function log(msg, type = '') {
     const t = document.getElementById('terminal');
+    const normalizedType = normalizeLogType(type);
     const l = document.createElement('pre');
-    l.className = 'line' + (type ? ' ' + type : '');
+    l.className = 'line' + (normalizedType ? ' ' + normalizedType : '');
     l.style.margin = '0';
     l.style.fontFamily = 'inherit';
 
-    // Parse ANSI codes and render with colors
     const colorScheme = App.settings?.terminal?.colorScheme || 'ansi-16';
     if (colorScheme !== 'disabled' && msg.includes('\x1b[')) {
         l.innerHTML = parseAnsiToHtml(msg);
     } else {
-
         l.textContent = msg.replace(/\x1b\[[0-9;]*m/g, '');
     }
 
-
-    if (type && colorScheme !== 'disabled') {
+    if (normalizedType && colorScheme !== 'disabled') {
         const messageColors = TERMINAL_MESSAGE_COLORS[colorScheme] || TERMINAL_MESSAGE_COLORS['ansi-16'];
-        if (messageColors[type]) {
-            l.style.color = messageColors[type];
+        if (messageColors[normalizedType]) {
+            l.style.color = messageColors[normalizedType];
         }
     }
 
