@@ -22,6 +22,7 @@ const DEFAULT_SETTINGS = {
         tabSize: 4,
         minimap: true,
         wordWrap: false,
+        multiCursorModifier: 'ctrlCmd',
         colorScheme: 'auto',
         autoSave: true,
         autoSaveDelay: 30,  // seconds
@@ -92,7 +93,14 @@ int main() {
         settings: 'Ctrl+,',
         toggleSplit: 'Ctrl+\\',
         formatCode: 'Ctrl+Shift+A',
-        toggleExplorer: 'Ctrl+E'
+        toggleExplorer: 'Ctrl+E',
+        commentLine: 'Ctrl+/',
+        selectNextOccurrence: 'Ctrl+D',
+        selectAllOccurrences: 'Ctrl+Shift+L',
+        moveLineUp: 'Alt+Up',
+        moveLineDown: 'Alt+Down',
+        copyLineUp: 'Shift+Alt+Up',
+        copyLineDown: 'Shift+Alt+Down'
     },
     snippets: [
         { trigger: 'hello', name: 'Hello World', content: '#include <iostream>\nusing namespace std;\n\nint main() {\n\tcout << "Hello World!";\n\treturn 0;\n}', isBuiltin: true },
@@ -480,6 +488,12 @@ function initCtrlWheelZoom() {
 // ============================================================================
 
 
+function resolveMultiCursorModifier() {
+    const configured = App.settings?.editor?.multiCursorModifier;
+    if (configured === 'alt' || configured === 'ctrlCmd') return configured;
+    return navigator.platform?.toLowerCase().includes('mac') ? 'alt' : 'ctrlCmd';
+}
+
 function createEditor(containerId) {
     const editor = monaco.editor.create(document.getElementById(containerId), {
         value: '',
@@ -489,6 +503,7 @@ function createEditor(containerId) {
         fontFamily: App.settings.editor.fontFamily,
         fontLigatures: true,
         wordWrap: App.settings.editor.wordWrap ? 'on' : 'off',
+        multiCursorModifier: resolveMultiCursorModifier(),
         scrollBeyondLastLine: false,
         automaticLayout: true,
         tabSize: App.settings.editor.tabSize,
@@ -2937,6 +2952,7 @@ function applySettings() {
         tabSize: App.settings.editor.tabSize,
         minimap: { enabled: App.settings.editor.minimap },
         wordWrap: App.settings.editor.wordWrap ? 'on' : 'off',
+        multiCursorModifier: resolveMultiCursorModifier(),
         quickSuggestions: {
             other: (App.settings.editor.intellisense !== false || App.settings.editor.snippets !== false),
             comments: false,
@@ -3160,7 +3176,14 @@ const ACTION_HANDLERS = {
     'settings': () => openSettings(),
     'toggleSplit': () => toggleSplit(),
     'formatCode': () => formatCode(),
-    'toggleExplorer': () => { if (window.FileExplorer) window.FileExplorer.toggle(); }
+    'toggleExplorer': () => { if (window.FileExplorer) window.FileExplorer.toggle(); },
+    'commentLine': () => getActiveEditor()?.getAction('editor.action.commentLine')?.run(),
+    'selectNextOccurrence': () => getActiveEditor()?.getAction('editor.action.addSelectionToNextFindMatch')?.run(),
+    'selectAllOccurrences': () => getActiveEditor()?.getAction('editor.action.selectHighlights')?.run(),
+    'moveLineUp': () => getActiveEditor()?.getAction('editor.action.moveLinesUpAction')?.run(),
+    'moveLineDown': () => getActiveEditor()?.getAction('editor.action.moveLinesDownAction')?.run(),
+    'copyLineUp': () => getActiveEditor()?.getAction('editor.action.copyLinesUpAction')?.run(),
+    'copyLineDown': () => getActiveEditor()?.getAction('editor.action.copyLinesDownAction')?.run(),
 };
 
 function normalizeKeyCombo(e) {
@@ -3181,7 +3204,7 @@ function normalizeKeyCombo(e) {
 
 function updateShortcutMap() {
     currentShortcutMap.clear();
-    const bindings = App.settings.keybindings || DEFAULT_SETTINGS.keybindings;
+    const bindings = { ...DEFAULT_SETTINGS.keybindings, ...(App.settings.keybindings || {}) };
 
     // Reverse map: "Ctrl+S" -> "save"
     for (const [action, combo] of Object.entries(bindings)) {

@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **Run All diagnostics metadata**: Added per-test debug metadata for `Run All` failures (exit/signal, timeout flag, stderr preview, and output hashes) to help investigate intermittent verdict issues.
+- **Shared judge utility module**: Added `app/shared/judge.js` as a single source of truth for output normalization and output comparison.
+- **Editor productivity shortcuts (VS Code-style, tier 1)**: Added default keybindings for `Ctrl+/`, `Ctrl+D`, `Ctrl+Shift+L`, `Alt+Up/Down`, and `Shift+Alt+Up/Down`.
+
+### Fixed
+- **[[BUG] Random runtime errors / inconsistent Run All verdicts](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues)**:
+  - Unified output normalization/comparison rules between normal run comparison and batch `Run All` judging.
+  - Fixed expected-output comparison guard so empty expected output is still judged correctly.
+  - Improved runtime error details to include exit signal/code and stderr preview.
+- **Preload reliability regression**: Prevented preload startup failure from breaking `window.electronAPI` exposure when optional judge import is unavailable.
+- **[[BUG] Editor does not support multi-cursor selection with modifier-click (Fixes #31)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/31)**: Enabled configurable Monaco `multiCursorModifier` with clean platform-aware fallback.
+
+### Improved
+- **Run All timing stability**: Added warm-up execution before measured test loop to reduce first-test cold-start skew.
+- **Shortcut map behavior**: Shortcut mapping now merges saved keybindings with defaults, so newly added defaults stay available without forcing users to reset settings.
+
 
 ## [1.0.4] - 2026-02-15
 
