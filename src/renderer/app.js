@@ -6408,7 +6408,9 @@ async function runAllTests() {
                 input: test.input || '',
                 expectedOutput: test.output || '',
                 timeLimit: timeLimit,
-                cwd: sourceDir
+                cwd: sourceDir,
+                debug: true,
+                testMeta: { index: i, name: `Test ${i + 1}` }
             });
 
             result.testIndex = i;
@@ -6421,6 +6423,20 @@ async function runAllTests() {
             } else {
                 log(`  Test ${i + 1}: ${result.status} (${result.executionTime}ms)`,
                     result.status === 'WA' ? 'error' : 'warning');
+
+                if (result.debug) {
+                    const dbg = result.debug;
+                    const dbgLine = [
+                        `pid=${dbg.pid ?? 'n/a'}`,
+                        `exit=${dbg.exitCode ?? 'n/a'}`,
+                        `signal=${dbg.signal ?? 'none'}`,
+                        `timeout=${dbg.timeoutKilled ? 'yes' : 'no'}`,
+                        `in#${dbg.inputHash || 'n/a'}`,
+                        `exp#${dbg.expectedNormHash || dbg.expectedHash || 'n/a'}`,
+                        `act#${dbg.actualNormHash || dbg.actualHash || 'n/a'}`,
+                    ].join(' | ');
+                    log(`    debug: ${dbgLine}`, 'info');
+                }
             }
         }
 

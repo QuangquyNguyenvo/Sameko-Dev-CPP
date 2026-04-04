@@ -8,6 +8,7 @@
 
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 const { spawn, exec } = require('child_process');
 const { getCompilerEnv } = require('../compiler/detector');
 const { normalizeOutput, compareOutputs } = require('../../shared/judge');
@@ -23,12 +24,28 @@ const { normalizeOutput, compareOutputs } = require('../../shared/judge');
  * @param {string} [options.cwd] - Working directory
  * @returns {Promise<import('../../../shared/types').BatchTestResult>}
  */
-async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd }) {
+async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, debug = false, testMeta = null }) {
     return new Promise((resolve) => {
         if (!exePath || !fs.existsSync(exePath)) {
             resolve({ status: 'CE', error: 'Executable not found' });
             return;
         }
+
+        const debugInfo = {
+            enabled: !!debug,
+            testMeta,
+            pid: null,
+            exitCode: null,
+            signal: null,
+            timeoutKilled: false,
+            inputHash: hashText(input || ''),
+            expectedHash: expectedOutput !== undefined && expectedOutput !== null ? hashText(expectedOutput) : null,
+            actualHash: null,
+            expectedNormHash: null,
+            actualNormHash: null,
+            hadStderr: false,
+            stderrPreview: '',
+        };
 
         const workingDir = cwd || path.dirname(exePath);
         let output = '';
@@ -45,6 +62,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd }
         });
 
         const pid = testProcess.pid;
+        debugInfo.pid = pid || null;
 
         // Memory polling (Windows)
         const pollMemory = () => {
@@ -68,6 +86,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd }
         // Set timeout
         const timeout = setTimeout(() => {
             killed = true;
+            debugInfo.timeoutKilled = true;
             testProcess.kill();
         }, timeLimit);
 
@@ -93,6 +112,10 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd }
 
             const executionTime = Date.now() - startTime;
 
+            debugInfo.exitCode = code;
+            debugInfo.signal = signal || null;
+            debugInfo.actualHash = hashText(output || '');
+
             // Determine status
             let status = 'AC';
             let details = '';
@@ -106,10 +129,14 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd }
                     ? `signal: ${signal}`
                     : `exit code: ${code}`;
                 const errPreview = truncate(normalizeOutput(errorOutput || ''), 160);
+                debugInfo.hadStderr = !!(errorOutput && errorOutput.length > 0);
+                debugInfo.stderrPreview = errPreview;
                 details = `Runtime error (${reason})${errPreview ? `\nStderr: ${errPreview}` : ''}`;
             } else if (expectedOutput !== undefined && expectedOutput !== null) {
                 // Compare output using shared judge rules
                 const compared = compareOutputs(output, expectedOutput);
+                debugInfo.expectedNormHash = hashText(compared.expectedNorm);
+                debugInfo.actualNormHash = hashText(compared.actualNorm);
 
                 if (!compared.matched) {
                     status = 'WA';
@@ -117,20 +144,40 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd }
                 }
             }
 
-            resolve({
+            const response = {
                 status,
                 output: output,
                 error: errorOutput,
                 executionTime,
                 peakMemoryKB,
                 details
-            });
+            };
+
+            if (debugInfo.enabled) {
+                response.debug = {
+                    ...debugInfo,
+                    status,
+                    executionTime,
+                    peakMemoryKB,
+                };
+            }
+
+            resolve(response);
         });
 
         testProcess.on('error', (err) => {
             clearTimeout(timeout);
             if (memoryPollInterval) clearInterval(memoryPollInterval);
-            resolve({ status: 'RE', error: err.message, executionTime: 0 });
+
+            const response = { status: 'RE', error: err.message, executionTime: 0 };
+            if (debugInfo.enabled) {
+                response.debug = {
+                    ...debugInfo,
+                    status: 'RE',
+                    spawnError: err.message,
+                };
+            }
+            resolve(response);
         });
     });
 }
@@ -146,7 +193,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd }
  * @param {Function} [options.onProgress] - Progress callback
  * @returns {Promise<import('../../../shared/types').BatchTestResult[]>}
  */
-async function runBatchTests({ exePath, tests, timeLimit = 3000, cwd, onProgress }) {
+async function runBatchTests({ exePath, tests, timeLimit = 3000, cwd, onProgress, debug = false }) {
     const results = [];
 
     for (let i = 0; i < tests.length; i++) {
@@ -161,7 +208,9 @@ async function runBatchTests({ exePath, tests, timeLimit = 3000, cwd, onProgress
             input: test.input,
             expectedOutput: test.expectedOutput,
             timeLimit,
-            cwd
+            cwd,
+            debug,
+            testMeta: { index: i, id: test.id || String(i) },
         });
 
         results.push({
@@ -182,6 +231,14 @@ async function runBatchTests({ exePath, tests, timeLimit = 3000, cwd, onProgress
 function truncate(s, maxLen) {
     if (s.length <= maxLen) return s;
     return s.substring(0, maxLen) + '...';
+}
+
+function hashText(text) {
+    return crypto
+        .createHash('sha256')
+        .update(String(text ?? ''), 'utf8')
+        .digest('hex')
+        .slice(0, 12);
 }
 
 module.exports = {
