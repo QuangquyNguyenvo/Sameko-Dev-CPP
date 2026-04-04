@@ -227,9 +227,6 @@ const FileExplorer = {
         // Load saved state
         this.loadState();
 
-        // Always start closed for a clean welcome screen
-        this.isOpen = false;
-
         // Setup event listeners
         this.setupEventListeners();
 
@@ -265,7 +262,7 @@ const FileExplorer = {
             const saved = localStorage.getItem('explorerState');
             if (saved) {
                 const state = JSON.parse(saved);
-                this.width = state.width || 200;
+                this.width = Math.max(150, Math.min(400, state.width || 200));
                 this.currentFolder = state.currentFolder || null;
                 this.expandedFolders = new Set(state.expandedFolders || []);
                 this.fileStatuses = state.fileStatuses || {};
@@ -1677,6 +1674,46 @@ const FileExplorer = {
     },
 
     /**
+     * Close menu when clicking outside (single-use listener)
+     */
+    bindCloseOnOutsideClick(menu) {
+        setTimeout(() => {
+            const closeMenu = () => {
+                menu.remove();
+                document.removeEventListener('click', closeMenu);
+            };
+            document.addEventListener('click', closeMenu, { once: true });
+        }, 10);
+    },
+
+    /**
+     * Safe clipboard helper with fallback
+     */
+    async copyText(text) {
+        try {
+            if (navigator.clipboard?.writeText) {
+                await navigator.clipboard.writeText(text);
+                return true;
+            }
+        } catch (_) { }
+
+        try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.style.position = 'fixed';
+            ta.style.left = '-9999px';
+            document.body.appendChild(ta);
+            ta.focus();
+            ta.select();
+            const ok = document.execCommand('copy');
+            ta.remove();
+            return !!ok;
+        } catch (_) {
+            return false;
+        }
+    },
+
+    /**
      * Show context menu for file
      */
     showContextMenu(e, filePath) {
@@ -1881,8 +1918,8 @@ const FileExplorer = {
         }
 
         // Copy path handler
-        menu.querySelector('[data-action="copy-path"]').onclick = () => {
-            navigator.clipboard.writeText(filePath);
+        menu.querySelector('[data-action="copy-path"]').onclick = async () => {
+            await this.copyText(filePath);
             menu.remove();
         };
 
@@ -1893,12 +1930,7 @@ const FileExplorer = {
         };
 
         // Close on click outside
-        setTimeout(() => {
-            document.addEventListener('click', function closeMenu() {
-                menu.remove();
-                document.removeEventListener('click', closeMenu);
-            });
-        }, 10);
+        this.bindCloseOnOutsideClick(menu);
     },
 
     /**
@@ -1948,8 +1980,8 @@ const FileExplorer = {
             this.confirmDelete(filePath);
         };
 
-        menu.querySelector('[data-action="copy-path"]').onclick = () => {
-            navigator.clipboard.writeText(filePath);
+        menu.querySelector('[data-action="copy-path"]').onclick = async () => {
+            await this.copyText(filePath);
             menu.remove();
         };
 
@@ -2018,6 +2050,9 @@ const FileExplorer = {
                     window.electronAPI.saveFile({ path: filePath, content: template }).then(() => {
                         this.refreshTree();
                         this.openFile(filePath);
+                    }).catch((err) => {
+                        console.error('[FileExplorer] Failed to create file in folder:', err);
+                        alert('Failed to create file: ' + (err?.message || err));
                     });
                 }
             });
@@ -2043,8 +2078,8 @@ const FileExplorer = {
             }
         };
 
-        menu.querySelector('[data-action="copy-path"]').onclick = () => {
-            navigator.clipboard.writeText(folderPath);
+        menu.querySelector('[data-action="copy-path"]').onclick = async () => {
+            await this.copyText(folderPath);
             menu.remove();
         };
 
@@ -2222,7 +2257,9 @@ const FileExplorer = {
      */
     async renameFile(oldPath, newName) {
         const dir = oldPath.substring(0, oldPath.lastIndexOf('/'));
-        const newPath = dir + '/' + newName;
+        const sanitizedName = String(newName || '').trim().replace(/[<>:"/\\|?*]/g, '_');
+        if (!sanitizedName) return;
+        const newPath = dir + '/' + sanitizedName;
 
         try {
             if (window.electronAPI && window.electronAPI.renameFile) {
@@ -3086,8 +3123,8 @@ const FileExplorer = {
         };
 
         // Copy path
-        menu.querySelector('[data-action="copy-path"]').onclick = () => {
-            navigator.clipboard.writeText(filePath);
+        menu.querySelector('[data-action="copy-path"]').onclick = async () => {
+            await this.copyText(filePath);
             menu.remove();
         };
 
@@ -3390,7 +3427,7 @@ const FileExplorer = {
                 if (result.success) {
                     // Add as a contest sub-category (separate from collections)
                     const color = this.CATEGORY_COLORS[this.categories.length % this.CATEGORY_COLORS.length];
-                    const catId = 'cat-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+                    const catId = 'cat-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
                     const newCat = {
                         id: catId,
                         name: name,
@@ -4975,8 +5012,8 @@ const FileExplorer = {
             });
         };
 
-        menu.querySelector('[data-action="copy-path"]').onclick = () => {
-            navigator.clipboard.writeText(filePath);
+        menu.querySelector('[data-action="copy-path"]').onclick = async () => {
+            await this.copyText(filePath);
             menu.remove();
         };
 
@@ -5126,6 +5163,9 @@ const FileExplorer = {
                 window.electronAPI.saveFile({ path: filePath, content: template }).then(() => {
                     this.refreshTree();
                     this.openFile(filePath);
+                }).catch((err) => {
+                    console.error('[FileExplorer] Failed to create new file:', err);
+                    alert('Failed to create file: ' + (err?.message || err));
                 });
             }
         });
