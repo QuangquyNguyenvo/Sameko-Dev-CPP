@@ -43,7 +43,8 @@ const DEFAULT_SETTINGS = {
         clearTerminal: true,
         autoSendInput: true,
         useExternalTerminal: false,
-        panelFontSize: 13
+        panelFontSize: 13,
+        noBuildCache: false
     },
     appearance: {
         theme: 'kawaii-light',
@@ -60,7 +61,10 @@ const DEFAULT_SETTINGS = {
     panels: {
         showIO: false,
         showTerm: true,
-        showProblems: false
+        showProblems: false,
+        ioWidth: null,
+        termWidth: null,
+        problemsHeight: null
     },
     oj: {
         verified: false
@@ -1131,6 +1135,7 @@ function setupSplitResizer() {
             dragging = false;
             resizer.classList.remove('dragging');
             document.body.style.cursor = '';
+            persistPanelSize(targetId, target.offsetWidth);
         }
     });
 }
@@ -4348,7 +4353,40 @@ function refreshEditorLayout() {
 // ============================================================================
 // RESIZERS
 // ============================================================================
+function applySavedPanelSizes() {
+    const panelSettings = App.settings.panels || {};
+
+    const ioSection = document.getElementById('io-section');
+    const termSection = document.getElementById('terminal-section');
+    const problemsPanel = document.getElementById('problems-panel');
+
+    if (ioSection && Number.isFinite(panelSettings.ioWidth) && panelSettings.ioWidth > 0) {
+        ioSection.style.width = panelSettings.ioWidth + 'px';
+    }
+    if (termSection && Number.isFinite(panelSettings.termWidth) && panelSettings.termWidth > 0) {
+        termSection.style.width = panelSettings.termWidth + 'px';
+    }
+    if (problemsPanel && Number.isFinite(panelSettings.problemsHeight) && panelSettings.problemsHeight > 0) {
+        problemsPanel.style.height = panelSettings.problemsHeight + 'px';
+    }
+}
+
+function persistPanelSize(targetId, sizeValue) {
+    if (!App.settings.panels) App.settings.panels = {};
+
+    if (targetId === 'io-section') {
+        App.settings.panels.ioWidth = sizeValue;
+    } else if (targetId === 'terminal-section') {
+        App.settings.panels.termWidth = sizeValue;
+    } else if (targetId === 'problems-panel') {
+        App.settings.panels.problemsHeight = sizeValue;
+    }
+
+    saveSettings();
+}
+
 function initResizers() {
+    applySavedPanelSizes();
     setupResizer('resizer-io', 'io-section', 180, 500);
     setupResizer('resizer-term', 'terminal-section', 200, 600);
     setupResizerH('resizer-problems', 'problems-panel', 80, 400);
@@ -4381,6 +4419,7 @@ function setupResizer(resizerId, targetId, min, max) {
             dragging = false;
             resizer.classList.remove('dragging');
             document.body.style.cursor = '';
+            persistPanelSize(targetId, target.offsetWidth);
         }
     });
 }
@@ -4412,6 +4451,7 @@ function setupResizerH(resizerId, targetId, min, max) {
             dragging = false;
             resizer.classList.remove('dragging');
             document.body.style.cursor = '';
+            persistPanelSize(targetId, target.offsetHeight);
         }
     });
 }
@@ -4887,7 +4927,8 @@ async function compileOnly() {
         const r = await window.electronAPI.compile({
             filePath: tab.path,
             content: tab.content,
-            flags: flags.join(' ')
+            flags: flags.join(' '),
+            noBuildCache: App.settings.execution.noBuildCache === true
         });
         const ms = Date.now() - t0;
 
@@ -4981,7 +5022,8 @@ async function buildRun() {
             filePath: tab.path,
             content: tab.content,
             flags: flags.join(' '),
-            useLLD: App.settings.compiler.useLLD !== false
+            useLLD: App.settings.compiler.useLLD !== false,
+            noBuildCache: App.settings.execution.noBuildCache === true
         });
         const ms = Date.now() - t0;
 

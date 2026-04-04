@@ -56,7 +56,7 @@ function sendToRenderer(channel, data) {
  * @param {string} [options.flags] - Compiler flags
  * @returns {Promise<import('../../../shared/types').CompileResult>}
  */
-async function compile({ filePath, content, flags, useLLD }) {
+async function compile({ filePath, content, flags, useLLD, noBuildCache = false }) {
     const startTime = Date.now();
 
     if (activeCompilerProcess) {
@@ -170,7 +170,7 @@ async function compile({ filePath, content, flags, useLLD }) {
     }
 
     // PCH optimization - use resolvedFlags so PCH matches actual compilation
-    const pch = (content.includes('bits/stdc++.h'))
+    const pch = (!noBuildCache && content.includes('bits/stdc++.h'))
         ? await ensurePCH(resolvedFlags, (msg) => sendToRenderer('system-message', msg))
         : { ready: false };
 

@@ -7303,6 +7303,249 @@ body.split-active .editor-pane {
     background-color: var(--accent, #88c9ea);
 }
 
+/* ===== GLOBAL RESPONSIVE TUNING ===== */
+.io-section {
+    width: clamp(170px, 18vw, 320px);
+    min-width: 130px;
+    max-width: 34vw;
+}
+
+.terminal-section {
+    width: clamp(210px, 24vw, 420px);
+    min-width: 150px;
+    max-width: 42vw;
+}
+
+.explorer-sidebar {
+    width: clamp(180px, 22vw, 360px);
+    min-width: 140px;
+    max-width: 38vw;
+}
+
+.settings-popup {
+    width: min(980px, 96vw);
+    height: min(720px, 92vh);
+    border-radius: 28px;
+}
+
+.settings-container {
+    min-height: 0;
+}
+
+.settings-content,
+.settings-sidebar {
+    min-height: 0;
+}
+
+@media (max-width: 1280px) {
+    .main {
+        gap: 8px;
+        padding: 8px;
+    }
+
+    .editor-section {
+        min-width: 220px;
+    }
+
+    .tab-name {
+        max-width: 90px;
+    }
+
+    .status-right {
+        gap: 10px;
+    }
+}
+
+@media (max-width: 1024px) {
+    .status-bar {
+        padding: 0 8px;
+        font-size: 11px;
+    }
+
+    .status-left,
+    .status-right {
+        gap: 8px;
+    }
+
+    .session-restore-content {
+        min-width: 300px;
+        max-width: min(460px, calc(100vw - 24px));
+    }
+
+    .reload-notification {
+        right: 12px;
+        bottom: 60px;
+    }
+
+    .reload-notification-content {
+        max-width: min(380px, calc(100vw - 24px));
+    }
+}
+
+@media (max-width: 840px) {
+    .content-wrapper {
+        position: relative;
+    }
+
+    .explorer-sidebar.visible {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 120;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24);
+    }
+
+    .explorer-resizer.visible {
+        display: none;
+    }
+
+    .main {
+        padding: 6px;
+        gap: 6px;
+    }
+
+    .io-section {
+        width: clamp(130px, 26vw, 200px);
+        min-width: 110px;
+    }
+
+    .terminal-section {
+        width: clamp(150px, 30vw, 240px);
+        min-width: 120px;
+    }
+
+    .settings-popup {
+        width: min(960px, 98vw);
+        height: min(760px, 96vh);
+    }
+
+    .settings-container {
+        padding: 10px;
+        gap: 10px;
+    }
+
+    .settings-sidebar {
+        width: 150px;
+        padding: 10px 8px;
+    }
+
+    .settings-content {
+        padding: 14px;
+    }
+
+    .appearance-layout {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .appearance-preview {
+        width: 100%;
+    }
+}
+
+@media (max-width: 640px) {
+    .main {
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .editor-section {
+        min-width: 0;
+        min-height: 45vh;
+    }
+
+    .io-section,
+    .terminal-section {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        min-height: 140px;
+    }
+
+    .resizer,
+    .resizer-split,
+    #resizer-split {
+        display: none !important;
+    }
+
+    .status-bar {
+        height: auto;
+        min-height: var(--statusbar-height);
+        padding: 4px 8px;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .status-left,
+    .status-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .session-restore-notification {
+        left: 8px;
+        right: 8px;
+        bottom: 8px;
+    }
+
+    .session-restore-content {
+        min-width: 0;
+        max-width: 100%;
+        padding: 12px;
+        gap: 10px;
+    }
+
+    .session-restore-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}
+
+@media (max-height: 760px) {
+    .header-bar {
+        height: 48px;
+    }
+
+    .win-btn {
+        height: 48px;
+    }
+
+    .settings-popup {
+        height: min(680px, 94vh);
+    }
+
+    .settings-header {
+        padding: 12px 18px;
+    }
+
+    .settings-footer {
+        padding: 10px 16px;
+    }
+
+    .panel-head {
+        min-height: 30px;
+        padding-top: 4px;
+        padding-bottom: 4px;
+    }
+}
+
+@media (max-height: 620px) {
+    .problems-panel {
+        min-height: 64px;
+        height: 110px;
+        max-height: 200px;
+    }
+
+    .terminal-input textarea {
+        max-height: 64px;
+    }
+
+    .settings-popup {
+        height: 96vh;
+    }
+}
+
 /* ===== CONFIRM POPUP ===== */
 .confirm-overlay {
     position: fixed;
