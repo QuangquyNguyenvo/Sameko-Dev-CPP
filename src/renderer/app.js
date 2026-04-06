@@ -7471,16 +7471,13 @@ function handleUpdateStatus(data) {
                 if (headerText) headerText.textContent = percent + '%';
             }
 
-            // If reached 100% but update-downloaded not triggered yet, wait and check
+            // At 100%, keep waiting for a real update-downloaded event.
+            // This avoids showing "Restart to Update" too early while updater is still finalizing.
             if (percent >= 100 && !updateDownloaded) {
-                console.log('[Update] Download reached 100%, waiting for update-downloaded event...');
-                setTimeout(() => {
-                    if (!updateDownloaded) {
-                        console.warn('[Update] update-downloaded event not received, manually triggering UI update');
-                        // Manually trigger the downloaded state
-                        handleUpdateStatus({ status: 'update-downloaded', data: updateData });
-                    }
-                }, 2000);
+                if (progressText) progressText.textContent = 'Verifying update package...';
+
+                const headerTextVerifying = document.getElementById('header-progress-text');
+                if (headerTextVerifying) headerTextVerifying.textContent = 'Verifying...';
             }
             break;
 

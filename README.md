@@ -97,6 +97,22 @@
 
 <br />
 
+## 🆕 What's New in v1.1.0
+
+- Faster real-world compile flow with startup warm-up + default PCH prebuild.
+- New **Single-file Compile Mode** (default ON) for faster CP-style builds.
+- Smarter linker guidance: if a build needs multi-file linking, Sameko now shows a hint.
+- More reliable external terminal run completion reporting (with time + memory summary).
+- Auto-update UX stability improvements to avoid premature "Restart to Update" state.
+
+### Multi-file project note
+
+If your project is split across multiple `.cpp` files and you see linker errors like `undefined reference`, open:
+
+- `Settings > Compiler > Single-file Compile Mode`
+
+Then turn it **OFF** and build again.
+
 ## 📥 Download
 
 ### Windows (Portable)
@@ -128,8 +144,8 @@ npm install
 # Run in development mode
 npm start
 
-# Build for Windows
-npm run build:win
+# Build for Windows (NSIS installer + update metadata)
+npm run build
 ```
 
 <br />
