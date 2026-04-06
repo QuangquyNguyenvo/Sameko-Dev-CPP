@@ -130,3 +130,23 @@
         scroll-behavior: auto !important;
     }
 }
+
+/* App-level reduced animation mode (Settings > Reduce Animations) */
+body.performance-mode {
+    --duration-instant: 0ms;
+    --duration-fast: 0ms;
+    --duration-medium: 0ms;
+    --duration-slow: 0ms;
+    --duration-page: 0ms;
+}
+
+body.performance-mode *,
+body.performance-mode *::before,
+body.performance-mode *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
+}

@@ -4362,14 +4362,23 @@ function applySavedPanelSizes() {
     const termSection = document.getElementById('terminal-section');
     const problemsPanel = document.getElementById('problems-panel');
 
+    const clamp = (v, min, max) => Math.min(max, Math.max(min, v));
+
+    // Keep enough room for Monaco editor on small/odd aspect ratios.
+    const viewportWidth = window.innerWidth || 1280;
+    const minEditorWidth = 420;
+    const reserved = 120; // header paddings/gaps/safety
+    const maxPanelWidth = Math.max(150, Math.floor((viewportWidth - minEditorWidth - reserved) / 2));
+
     if (ioSection && Number.isFinite(panelSettings.ioWidth) && panelSettings.ioWidth > 0) {
-        ioSection.style.width = panelSettings.ioWidth + 'px';
+        ioSection.style.width = clamp(panelSettings.ioWidth, 150, maxPanelWidth) + 'px';
     }
     if (termSection && Number.isFinite(panelSettings.termWidth) && panelSettings.termWidth > 0) {
-        termSection.style.width = panelSettings.termWidth + 'px';
+        termSection.style.width = clamp(panelSettings.termWidth, 150, maxPanelWidth) + 'px';
     }
     if (problemsPanel && Number.isFinite(panelSettings.problemsHeight) && panelSettings.problemsHeight > 0) {
-        problemsPanel.style.height = panelSettings.problemsHeight + 'px';
+        const maxProblemsHeight = Math.max(120, Math.floor((window.innerHeight || 800) * 0.55));
+        problemsPanel.style.height = clamp(panelSettings.problemsHeight, 80, maxProblemsHeight) + 'px';
     }
 }
 
@@ -4389,9 +4398,13 @@ function persistPanelSize(targetId, sizeValue) {
 
 function initResizers() {
     applySavedPanelSizes();
-    setupResizer('resizer-io', 'io-section', 180, 500);
-    setupResizer('resizer-term', 'terminal-section', 200, 600);
+    setupResizer('resizer-io', 'io-section', 150, 500);
+    setupResizer('resizer-term', 'terminal-section', 150, 600);
     setupResizerH('resizer-problems', 'problems-panel', 80, 400);
+
+    window.addEventListener('resize', () => {
+        applySavedPanelSizes();
+    });
 }
 
 function setupResizer(resizerId, targetId, min, max) {
@@ -4399,6 +4412,14 @@ function setupResizer(resizerId, targetId, min, max) {
     const target = document.getElementById(targetId);
     let dragging = false;
     let startX, startW;
+
+    const getDynamicMax = () => {
+        const viewportWidth = window.innerWidth || 1280;
+        const minEditorWidth = 420;
+        const reserved = 120;
+        const computedMax = Math.max(min, Math.floor((viewportWidth - minEditorWidth - reserved) / 2));
+        return Math.min(max, computedMax);
+    };
 
     resizer.onmousedown = e => {
         dragging = true;
@@ -4412,7 +4433,8 @@ function setupResizer(resizerId, targetId, min, max) {
     document.addEventListener('mousemove', e => {
         if (!dragging) return;
         const dx = startX - e.clientX;
-        const newW = Math.min(max, Math.max(min, startW + dx));
+        const dynamicMax = getDynamicMax();
+        const newW = Math.min(dynamicMax, Math.max(min, startW + dx));
         target.style.width = newW + 'px';
     });
 

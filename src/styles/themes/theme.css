@@ -224,6 +224,7 @@ body.customizer-open::before {
     display: flex;
     flex: 1;
     overflow: hidden;
+    min-width: 0;
 }
 
 /* Scrollbar Styling */
@@ -705,6 +706,8 @@ body.customizer-open::before {
     gap: 12px;
     padding: 12px;
     position: relative;
+    min-width: 0;
+    min-height: 0;
     /* Ensure flex context for children */
 }
 
@@ -713,7 +716,8 @@ body.customizer-open::before {
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-width: 300px;
+    min-width: 0;
+    min-height: 0;
     background: var(--bg-glass);
     border: 2px solid var(--border);
     border-radius: var(--radius);
@@ -726,12 +730,16 @@ body.customizer-open::before {
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    min-height: 0;
 }
 
 .editor-area {
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-width: 0;
+    min-height: 0;
     background: var(--editor-bg, #1a2530);
     border-radius: var(--radius-sm);
     margin: 6px;
@@ -741,12 +749,14 @@ body.customizer-open::before {
 #editor-container,
 #editor-container-2 {
     flex: 1;
-    min-height: 100px;
+    min-width: 0;
+    min-height: 0;
 }
 
 .editors-container {
     display: flex;
     flex: 1;
+    min-width: 0;
     min-height: 0;
 }
 
@@ -2109,9 +2119,9 @@ input[type="color"] {
 /* ===== IO SECTION - FIXED WIDTH ===== */
 .io-section {
     width: 220px;
-    min-width: 180px;
-    max-width: 350px;
-    flex-shrink: 0;
+    min-width: 150px;
+    max-width: 42vw;
+    flex-shrink: 1;
     gap: 10px;
     padding: 2px;
 }
@@ -2165,8 +2175,8 @@ input[type="color"] {
 .terminal-section {
     width: 280px;
     min-width: 150px;
-    max-width: 450px;
-    flex-shrink: 0;
+    max-width: 50vw;
+    flex-shrink: 1;
 }
 
 /* Split editor active - compact panels to give more space to editors */
