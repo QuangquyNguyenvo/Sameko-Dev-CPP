@@ -46,6 +46,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Improved session restore summary to clearly distinguish unsaved and modified files before recovery.
 - **Responsive behavior and layout consistency**: Improved responsive handling across panels/layout breakpoints for better usability on different window sizes.
 - **Performance mode animation behavior**: `Reduce Animations` now disables UI transitions/animations globally for a clearly smoother low-motion mode.
+- **Compile speed workflow**:
+  - Added startup background compiler warm-up + default PCH prebuild to reduce first-run compile latency.
+  - Added `Single-file Compile Mode` (default ON, configurable in Compiler settings) for faster CP-style builds.
+  - Added linker-error hint when single-file mode is ON, suggesting multi-file mode for project-style builds.
+  - Improved multi-file auto-linking strategy by resolving only include-related source candidates instead of scanning the full folder.
+  - Reduced compile pipeline overhead by trimming unnecessary pre-compile waits and keeping debug builds lightweight by default.
+- **External terminal reliability**:
+  - Fixed premature "process finished" notifications in external terminal mode.
+  - External run summary now reports completion timing and peak memory after the external CMD session actually exits.
 - **Startup compiler preparation**: Compiler warmup + default PCH are now prepared in background after app launch to reduce first Build/Run latency.
 - **Debug-build compile speed**: `-s` stripping is skipped for non-optimized builds (`-O0`) to reduce compile overhead in normal coding workflow.
 

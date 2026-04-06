@@ -35,7 +35,11 @@ const DEFAULT_SETTINGS = {
         cppStandard: '',
         optimization: '',
         warnings: false,
-        useLLD: true
+        useLLD: true,
+        singleFileMode: true,
+        fastDebugMode: true,
+        disableExceptions: false,
+        disableRTTI: false
     },
     execution: {
         timeLimitEnabled: false,
@@ -2010,6 +2014,8 @@ function openSettings() {
     document.getElementById('set-warnings').checked = App.settings.compiler.warnings;
     const lldToggle = document.getElementById('set-useLLD');
     if (lldToggle) lldToggle.checked = App.settings.compiler.useLLD !== false;
+    const singleFileToggle = document.getElementById('set-singleFileMode');
+    if (singleFileToggle) singleFileToggle.checked = App.settings.compiler.singleFileMode !== false;
 
     document.getElementById('set-timeLimitEnabled').checked = App.settings.execution.timeLimitEnabled;
     document.getElementById('set-timeLimitSeconds').value = App.settings.execution.timeLimitSeconds;
@@ -2118,6 +2124,8 @@ function saveSettingsAndClose() {
     App.settings.compiler.warnings = document.getElementById('set-warnings').checked;
     const lldToggle = document.getElementById('set-useLLD');
     if (lldToggle) App.settings.compiler.useLLD = lldToggle.checked;
+    const singleFileToggle = document.getElementById('set-singleFileMode');
+    if (singleFileToggle) App.settings.compiler.singleFileMode = singleFileToggle.checked;
 
     App.settings.execution.timeLimitEnabled = document.getElementById('set-timeLimitEnabled').checked;
     App.settings.execution.timeLimitSeconds = parseInt(document.getElementById('set-timeLimitSeconds').value);
@@ -4980,15 +4988,13 @@ async function compileOnly() {
 
         const t0 = Date.now();
 
-        const flags = [];
-        if (App.settings.compiler.cppStandard) flags.push(`-std=${App.settings.compiler.cppStandard}`);
-        if (App.settings.compiler.optimization) flags.push(App.settings.compiler.optimization);
-        if (App.settings.compiler.warnings) flags.push('-Wall', '-Wextra');
+        const flags = buildCompileFlags();
 
         const r = await window.electronAPI.compile({
             filePath: tab.path,
             content: tab.content,
-            flags: flags.join(' '),
+            flags,
+            singleFileMode: App.settings.compiler.singleFileMode !== false,
             noBuildCache: App.settings.execution.noBuildCache === true
         });
         const ms = Date.now() - t0;
@@ -5008,6 +5014,12 @@ async function compileOnly() {
         } else {
             log('Compile failed', 'error');
             log(r.error, 'error');
+
+            const linkerLikeError = /undefined reference|ld returned|collect2\.exe: error/i.test(String(r.error || ''));
+            if ((App.settings.compiler.singleFileMode !== false) && linkerLikeError) {
+                log('Hint: This may require multi-file linking. Retry with Single-file mode OFF in Compiler settings.', 'warning');
+            }
+
             parseProblems(r.error, 'error');
             hasBuildProblems = true; // Lock problems list from live-check overwrite
             highlightErrorLines();
@@ -5074,15 +5086,13 @@ async function buildRun() {
 
         const t0 = Date.now();
 
-        const flags = [];
-        if (App.settings.compiler.cppStandard) flags.push(`-std=${App.settings.compiler.cppStandard}`);
-        if (App.settings.compiler.optimization) flags.push(App.settings.compiler.optimization);
-        if (App.settings.compiler.warnings) flags.push('-Wall', '-Wextra');
+        const flags = buildCompileFlags();
 
         const r = await window.electronAPI.compile({
             filePath: tab.path,
             content: tab.content,
-            flags: flags.join(' '),
+            flags,
+            singleFileMode: App.settings.compiler.singleFileMode !== false,
             useLLD: App.settings.compiler.useLLD !== false,
             noBuildCache: App.settings.execution.noBuildCache === true
         });
@@ -5108,6 +5118,12 @@ async function buildRun() {
         } else {
             log('Build failed', 'error');
             log(r.error, 'error');
+
+            const linkerLikeError = /undefined reference|ld returned|collect2\.exe: error/i.test(String(r.error || ''));
+            if ((App.settings.compiler.singleFileMode !== false) && linkerLikeError) {
+                log('Hint: This may require multi-file linking. Retry with Single-file mode OFF in Compiler settings.', 'warning');
+            }
+
             parseProblems(r.error, 'error');
             hasBuildProblems = true; // Lock problems list from live-check overwrite
             highlightErrorLines();
@@ -5786,11 +5802,14 @@ if (window.electronAPI) {
 
     window.electronAPI.onProcessStarted?.(() => setRunning(true));
     window.electronAPI.onProcessExternalStarted?.(() => {
-        log('[Running in external CMD window]', 'system');
+        log('External CMD launched — running...', 'info');
+        setStatus('External run...', 'running');
         setRunning(false); // Not tracking external process
     });
     window.electronAPI.onProcessExternalExit?.(data => {
         const execTime = data?.executionTime;
+        const peakMemKB = data?.peakMemoryKB;
+
         let timeStr = '';
         if (execTime !== null && execTime !== undefined) {
             if (execTime >= 1000) {
@@ -5798,7 +5817,26 @@ if (window.electronAPI) {
             } else {
                 timeStr = execTime + 'ms';
             }
-            log(`[External process finished - Time: ${timeStr}]`, 'system');
+        }
+
+        let memStr = '';
+        if (peakMemKB && peakMemKB > 0) {
+            if (peakMemKB >= 1024) {
+                memStr = (peakMemKB / 1024).toFixed(1) + 'MB';
+            } else {
+                memStr = peakMemKB + 'KB';
+            }
+        }
+
+        if (timeStr || memStr) {
+            const parts = [];
+            if (timeStr) parts.push('Time: ' + timeStr);
+            if (memStr) parts.push('Memory: ' + memStr);
+            log(`External process finished - ${parts.join(' | ')}`, 'system');
+            setStatus(parts.join(' | '), 'success');
+        } else {
+            log('External process finished', 'system');
+            setStatus('Done', 'success');
         }
     });
     window.electronAPI.onProcessOutput?.(d => log(d));
@@ -6576,7 +6614,8 @@ async function runAllTests() {
         const compileResult = await window.electronAPI.compile({
             filePath: tab.path,
             content: content,
-            flags: compileFlags
+            flags: compileFlags,
+            singleFileMode: App.settings.compiler.singleFileMode !== false
         });
 
         if (!compileResult.success) {
@@ -6706,7 +6745,8 @@ async function runSingleTestByIndex(testIndex) {
         const compileResult = await window.electronAPI.compile({
             filePath: tab.path,
             content: content,
-            flags: compileFlags
+            flags: compileFlags,
+            singleFileMode: App.settings.compiler.singleFileMode !== false
         });
 
         if (!compileResult.success) {
@@ -6951,12 +6991,25 @@ function buildCompileFlags() {
     if (App.settings.compiler.cppStandard) {
         flags.push(`-std=${App.settings.compiler.cppStandard}`);
     }
-    if (App.settings.compiler.optimization) {
+
+    const fastDebugMode = App.settings.compiler.fastDebugMode !== false;
+    const hasUserOptimization = !!App.settings.compiler.optimization;
+
+    if (hasUserOptimization) {
         flags.push(App.settings.compiler.optimization);
+    } else if (fastDebugMode) {
+        flags.push('-O0', '-g0');
     }
+
     if (App.settings.compiler.warnings) {
         flags.push('-Wall', '-Wextra');
     }
+
+    if (fastDebugMode) {
+        if (App.settings.compiler.disableExceptions) flags.push('-fno-exceptions');
+        if (App.settings.compiler.disableRTTI) flags.push('-fno-rtti');
+    }
+
     return flags.join(' ');
 }
 

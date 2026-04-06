@@ -100,7 +100,7 @@ function sendToRenderer(channel, data) {
  * @param {string} [options.flags] - Compiler flags
  * @returns {Promise<import('../../../shared/types').CompileResult>}
  */
-async function compile({ filePath, content, flags, useLLD, noBuildCache = false }) {
+async function compile({ filePath, content, flags, useLLD, noBuildCache = false, singleFileMode = false }) {
     const startTime = Date.now();
 
     if (activeCompilerProcess) {
@@ -169,11 +169,11 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false 
 
     const outputPath = path.join(buildsDir, baseName + '.exe');
 
-    // ===== MULTI-FILE PROJECT SUPPORT =====
+    // ===== MULTI-FILE PROJECT SUPPORT (fast lookup) =====
     let sourceFiles = [actualFilePath];
     let linkedFiles = [];
 
-    if (!usingTempFile) {
+    if (!usingTempFile && !singleFileMode) {
         try {
             if (content.includes('#include "')) {
                 const includeRegex = /#include\s*"([^"]+)"/g;
@@ -181,19 +181,26 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false 
                 const includedHeaders = new Set();
                 while ((match = includeRegex.exec(content)) !== null) {
                     const headerBase = path.basename(match[1], path.extname(match[1])).toLowerCase();
-                    includedHeaders.add(headerBase);
+                    if (headerBase) includedHeaders.add(headerBase);
                 }
 
                 if (includedHeaders.size > 0) {
-                    const allFiles = fs.readdirSync(dir);
-                    for (const file of allFiles) {
-                        const ext = path.extname(file).toLowerCase();
-                        if ((ext === '.cpp' || ext === '.c' || ext === '.cc' || ext === '.cxx') &&
-                            file.toLowerCase() !== path.basename(actualFilePath).toLowerCase()) {
-                            const cppBase = path.basename(file, ext).toLowerCase();
-                            if (includedHeaders.has(cppBase)) {
-                                sourceFiles.push(path.join(dir, file));
-                                linkedFiles.push(file);
+                    const currentBase = path.basename(actualFilePath).toLowerCase();
+                    const sourceExts = ['.cpp', '.c', '.cc', '.cxx'];
+                    const seen = new Set();
+
+                    for (const base of includedHeaders) {
+                        for (const ext of sourceExts) {
+                            const candidate = path.join(dir, base + ext);
+                            const candidateName = (base + ext).toLowerCase();
+                            if (candidateName === currentBase) continue;
+                            if (seen.has(candidateName)) continue;
+
+                            if (fs.existsSync(candidate)) {
+                                sourceFiles.push(candidate);
+                                linkedFiles.push(path.basename(candidate));
+                                seen.add(candidateName);
+                                break;
                             }
                         }
                     }
@@ -358,10 +365,10 @@ async function runExternal({ exePath, cwd }) {
     const env = getCompilerEnv();
     const exeName = path.basename(exePath);
     const startTime = Date.now();
+    let peakMemoryKB = 0;
+    let memoryPollInterval = null;
 
-    // Simple CMD output with separator
-    const title = `C++ Program - ${exeName}`;
-    const innerCommand = [
+    const commandParts = [
         `@echo off`,
         `cls`,
         `"${exePath}"`,
@@ -370,16 +377,61 @@ async function runExternal({ exePath, cwd }) {
         `echo --------------------------------`,
         `echo Program finished. Press any key to close...`,
         `pause >nul`
-    ].join(" & ");
-    const command = `start "${title}" /D "${workingDir}" cmd /c "${innerCommand}"`;
-    exec(command, {
+    ];
+
+    const shellCommand = commandParts.join(' & ');
+    // Open in a dedicated external CMD window and wait for it to fully close.
+    const waitCommand = `start "" /wait cmd /c "${shellCommand}"`;
+    const externalShell = exec(waitCommand, {
         cwd: workingDir,
-        env: env,
+        env,
         windowsHide: false
-    }, () => {
-        // Callback when CMD window closes
+    });
+
+    const pollExternalMemory = () => {
+        if (process.platform !== 'win32') return;
+        exec(`tasklist /FI "IMAGENAME eq ${exeName}" /FO CSV /NH`, (err, stdout) => {
+            if (err || !stdout) return;
+
+            const rows = String(stdout)
+                .split(/\r?\n/)
+                .map((r) => r.trim())
+                .filter((r) => r && !/^INFO:/i.test(r));
+
+            for (const row of rows) {
+                const match = row.match(/"([0-9][0-9.,\s]*)\s*K"/i);
+                if (!match) continue;
+                const memKB = parseInt(match[1].replace(/[,\.\s]/g, ''), 10);
+                if (!Number.isNaN(memKB) && memKB > peakMemoryKB) {
+                    peakMemoryKB = memKB;
+                }
+            }
+        });
+    };
+
+    if (process.platform === 'win32') {
+        pollExternalMemory();
+        memoryPollInterval = setInterval(pollExternalMemory, 500);
+    }
+
+    externalShell.on('exit', () => {
+        if (memoryPollInterval) {
+            clearInterval(memoryPollInterval);
+            memoryPollInterval = null;
+        }
+
         const execTime = Date.now() - startTime;
-        sendToRenderer('process-external-exit', { executionTime: execTime });
+        sendToRenderer('process-external-exit', {
+            executionTime: execTime,
+            peakMemoryKB
+        });
+    });
+
+    externalShell.on('error', () => {
+        if (memoryPollInterval) {
+            clearInterval(memoryPollInterval);
+            memoryPollInterval = null;
+        }
     });
 
     sendToRenderer('process-external-started');
