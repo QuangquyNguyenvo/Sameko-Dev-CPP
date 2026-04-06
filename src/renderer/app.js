@@ -138,7 +138,8 @@ const App = {
     settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
     errorDecorations: [],
     runTimeout: null,
-    ioByTab: {}
+    ioByTab: {},
+    isSettingValue: false
 };
 
 function createUntitledHistoryKey() {
@@ -451,7 +452,7 @@ function initCtrlWheelZoom() {
         if (!e.ctrlKey) return;
 
         const editorContainer = e.target.closest('#editor-container, #editor-container-2');
-        const panelContainer = e.target.closest('.terminal-body, .terminal-input, .panel-textarea, .docked-io-textarea, .io-section, .terminal-section');
+        const panelContainer = e.target.closest('.terminal-body, .terminal-input, .panel-textarea, .docked-io-textarea, .diff-display, #expected-diff, #docked-expected-diff, .io-section, .terminal-section');
 
         if (!editorContainer && !panelContainer) return;
 
@@ -593,7 +594,7 @@ function createEditor(containerId) {
                     tab.modified = modified;
                     renderTabs();
                 }
-                if (tab.path && window.FileExplorer?.notifyBuildEvent) {
+                if (!App.isSettingValue && tab.path && window.FileExplorer?.notifyBuildEvent) {
                     window.FileExplorer.notifyBuildEvent(tab.path, 'edit');
                 }
                 if (!tab.path && typeof LocalHistory !== 'undefined') {
@@ -5554,6 +5555,84 @@ function normalizeJudgeOutput(text) {
         .trim();
 }
 
+function buildInlineCharDiff(actualLine, expectedLine) {
+    const actual = String(actualLine ?? '');
+    const expected = String(expectedLine ?? '');
+
+    let start = 0;
+    while (start < actual.length && start < expected.length && actual[start] === expected[start]) {
+        start += 1;
+    }
+
+    let endActual = actual.length - 1;
+    let endExpected = expected.length - 1;
+    while (endActual >= start && endExpected >= start && actual[endActual] === expected[endExpected]) {
+        endActual -= 1;
+        endExpected -= 1;
+    }
+
+    const actualPrefix = actual.slice(0, start);
+    const expectedPrefix = expected.slice(0, start);
+    const actualDiff = actual.slice(start, endActual + 1);
+    const expectedDiff = expected.slice(start, endExpected + 1);
+    const actualSuffix = actual.slice(endActual + 1);
+    const expectedSuffix = expected.slice(endExpected + 1);
+
+    const actualDiffHtml = actualDiff
+        ? `<span class="diff-char-wrong">${escapeHtml(actualDiff)}</span>`
+        : '<span class="diff-char-placeholder">∅</span>';
+    const expectedDiffHtml = expectedDiff
+        ? `<span class="diff-char-right">${escapeHtml(expectedDiff)}</span>`
+        : '<span class="diff-char-placeholder">∅</span>';
+
+    return {
+        actualHtml: `${escapeHtml(actualPrefix)}${actualDiffHtml}${escapeHtml(actualSuffix)}`,
+        expectedHtml: `${escapeHtml(expectedPrefix)}${expectedDiffHtml}${escapeHtml(expectedSuffix)}`
+    };
+}
+
+function buildCompactDiffHtml(expectedRaw, actualRaw, { normalize = true } = {}) {
+    const expectedText = normalize ? normalizeJudgeOutput(expectedRaw) : String(expectedRaw ?? '');
+    const actualText = normalize ? normalizeJudgeOutput(actualRaw) : String(actualRaw ?? '');
+
+    const expectedLines = expectedText.length > 0 ? expectedText.split('\n') : [];
+    const actualLines = actualText.length > 0 ? actualText.split('\n') : [];
+
+    const maxLen = Math.max(expectedLines.length, actualLines.length);
+    let allMatch = true;
+    let mismatchCount = 0;
+    let html = '';
+
+    for (let i = 0; i < maxLen; i++) {
+        const expLine = i < expectedLines.length ? expectedLines[i] : null;
+        const actLine = i < actualLines.length ? actualLines[i] : null;
+
+        if (expLine !== null && actLine !== null && expLine === actLine) {
+            html += `<div class="diff-line match-compact">${escapeHtml(expLine)}</div>`;
+            continue;
+        }
+
+        allMatch = false;
+        mismatchCount += 1;
+        html += `<div class="diff-line mismatch-compact">`;
+
+        if (actLine !== null && expLine !== null) {
+            const { actualHtml, expectedHtml } = buildInlineCharDiff(actLine, expLine);
+            html += `<span class="diff-wrong" title="Actual">${actualHtml}</span>
+                     <span class="diff-arrow">→</span>
+                     <span class="diff-right" title="Expected">${expectedHtml}</span>`;
+        } else if (actLine !== null && expLine === null) {
+            html += `<span class="diff-extra" title="Extra output">[Extra] ${escapeHtml(actLine)}</span>`;
+        } else if (actLine === null && expLine !== null) {
+            html += `<span class="diff-missing" title="Missing output">Missing: ${escapeHtml(expLine)}</span>`;
+        }
+
+        html += `</div>`;
+    }
+
+    return { html, allMatch, mismatchCount, expectedLines, actualLines };
+}
+
 function compareOutput() {
     const expectedRaw = document.getElementById('expected-area').value;
 
@@ -5571,7 +5650,6 @@ function compareOutput() {
         if (text.includes('--- Exit') || text.includes('--- Stopped')) {
             break;
         }
-        // Skip input lines (they have .input class), system and info messages
         if (capturing && !line.classList.contains('input') && !line.classList.contains('system') && !line.classList.contains('info')) {
             actualText += (actualText ? '\n' : '') + text;
         }
@@ -5579,84 +5657,26 @@ function compareOutput() {
 
     const diffDisplay = document.getElementById('expected-diff');
     const textarea = document.getElementById('expected-area');
-
-    const expectedNorm = normalizeJudgeOutput(expectedRaw);
-    const actualNorm = normalizeJudgeOutput(actualText);
-
-    // Keep per-line visualization, but from the same normalized representation used by batch judge.
-    const expectedLines = expectedNorm.length > 0 ? expectedNorm.split('\n') : [];
-    const actualLines = actualNorm.length > 0 ? actualNorm.split('\n') : [];
-
-    let startIdx = 0;
-
-    // Heuristic disabled: searching for an expected subsequence inside actual output caused incorrect shifts and hidden mismatches. Keep direct line-by-line comparison.
-
-
-    let html = '';
-    let allMatch = true;
-
-    // Inline Compact Diff Visualization
-    // Focus on minimal space usage
-
-    const maxLen = Math.max(expectedLines.length, actualLines.length - startIdx);
-
-    for (let i = 0; i < maxLen; i++) {
-        const expLine = i < expectedLines.length ? expectedLines[i] : null;
-        let actLine = null;
-
-        // Correctly calculate index in actualLines
-        // If we have output "A\nB\nC" and start matching at line 0, actualIndex is 0+0, 0+1, 0+2
-        // We need to be careful not to access out of bounds
-        const actualIndex = startIdx + i;
-
-        if (actualIndex < actualLines.length) {
-            actLine = actualLines[actualIndex];
-        }
-
-        // Logic check
-        if (expLine !== null && actLine !== null && expLine === actLine) {
-            // MATCH
-            html += `<div class="diff-line match-compact">${escapeHtml(expLine)}</div>`;
-        } else {
-            // MISMATCH
-            allMatch = false;
-            html += `<div class="diff-line mismatch-compact">`;
-
-            if (actLine !== null && expLine !== null) {
-                // Wrong value
-                html += `<span class="diff-wrong" title="Actual">${escapeHtml(actLine)}</span> 
-                         <span class="diff-arrow">→</span> 
-                         <span class="diff-right" title="Expected">${escapeHtml(expLine)}</span>`;
-            } else if (actLine !== null && expLine === null) {
-                // Extra value (Trailing junk)
-                html += `<span class="diff-extra" title="Extra output">[Extra] ${escapeHtml(actLine)}</span>`;
-            } else if (actLine === null && expLine !== null) {
-                // Missing value (Expected has line but Actual ended)
-                html += `<span class="diff-missing" title="Missing output">Missing: ${escapeHtml(expLine)}</span>`;
-            }
-
-            html += `</div>`;
-        }
-    }
-
     const dockedDiffDisplay = document.getElementById('docked-expected-diff');
     const dockedTextarea = document.getElementById('docked-expected');
 
-    diffDisplay.innerHTML = html;
-    diffDisplay.style.display = 'block';
-    textarea.style.display = 'none';
+    const diff = buildCompactDiffHtml(expectedRaw, actualText, { normalize: true });
 
-    // Notify FileExplorer of judge verdict (AC / WA)
+    if (diffDisplay && textarea) {
+        diffDisplay.innerHTML = diff.html;
+        diffDisplay.style.display = 'block';
+        textarea.style.display = 'none';
+    }
+
     if (window.FileExplorer) {
         const judgeTab = App.tabs.find(t => t.id === (App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId));
         if (judgeTab && judgeTab.path) {
-            window.FileExplorer.notifyBuildEvent(judgeTab.path, allMatch ? 'judge-ac' : 'judge-wa');
+            window.FileExplorer.notifyBuildEvent(judgeTab.path, diff.allMatch ? 'judge-ac' : 'judge-wa');
         }
     }
 
-    // Update Docked View if exists
     if (dockedDiffDisplay && dockedTextarea) {
-        dockedDiffDisplay.innerHTML = html;
+        dockedDiffDisplay.innerHTML = diff.html;
         dockedDiffDisplay.style.display = 'block';
         dockedTextarea.style.display = 'none';
     }
@@ -6271,46 +6291,21 @@ function showTestResultDiff(expectedText, actualText) {
     const dockedDiffDisplay = document.getElementById('docked-expected-diff');
     const dockedTextarea = document.getElementById('docked-expected');
 
-    if (!expectedText.trim() && !actualText.trim()) {
+    if (!String(expectedText || '').trim() && !String(actualText || '').trim()) {
         switchToExpectedEdit();
         return;
     }
 
-    const expectedLines = expectedText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    const actualLines = actualText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-
-    let html = '';
-    const maxLen = Math.max(expectedLines.length, actualLines.length);
-
-    for (let i = 0; i < maxLen; i++) {
-        const expLine = i < expectedLines.length ? expectedLines[i] : null;
-        const actLine = i < actualLines.length ? actualLines[i] : null;
-
-        if (expLine !== null && actLine !== null && expLine === actLine) {
-            html += `<div class="diff-line match-compact">${escapeHtml(expLine)}</div>`;
-        } else {
-            html += `<div class="diff-line mismatch-compact">`;
-            if (actLine !== null && expLine !== null) {
-                html += `<span class="diff-wrong" title="Actual">${escapeHtml(actLine)}</span> 
-                         <span class="diff-arrow">→</span> 
-                         <span class="diff-right" title="Expected">${escapeHtml(expLine)}</span>`;
-            } else if (actLine !== null && expLine === null) {
-                html += `<span class="diff-extra" title="Extra output">[Extra] ${escapeHtml(actLine)}</span>`;
-            } else if (actLine === null && expLine !== null) {
-                html += `<span class="diff-missing" title="Missing output">Missing: ${escapeHtml(expLine)}</span>`;
-            }
-            html += `</div>`;
-        }
-    }
+    const diff = buildCompactDiffHtml(expectedText, actualText, { normalize: true });
 
     if (diffDisplay && textarea) {
-        diffDisplay.innerHTML = html;
+        diffDisplay.innerHTML = diff.html;
         diffDisplay.style.display = 'block';
         textarea.style.display = 'none';
     }
 
     if (dockedDiffDisplay && dockedTextarea) {
-        dockedDiffDisplay.innerHTML = html;
+        dockedDiffDisplay.innerHTML = diff.html;
         dockedDiffDisplay.style.display = 'block';
         dockedTextarea.style.display = 'none';
     }
@@ -6623,6 +6618,90 @@ async function runAllTests() {
     }
 }
 
+async function runSingleTestByIndex(testIndex) {
+    if (!ccProblem || !ccProblem.tests || !ccProblem.tests[testIndex]) {
+        log('Test case không tồn tại.', 'warning');
+        return;
+    }
+
+    if (isBatchTesting) {
+        log('Đang chạy batch test, vui lòng đợi xong.', 'warning');
+        return;
+    }
+
+    const test = ccProblem.tests[testIndex];
+    const tab = App.tabs.find(t => t.id === App.activeTabId);
+    if (!tab) {
+        log('No file is currently open!', 'error');
+        return;
+    }
+
+    const runBtn = document.querySelector(`.test-run-btn[data-run-index="${testIndex}"]`);
+    if (runBtn) runBtn.classList.add('running');
+
+    try {
+        setStatus(`Single test ${testIndex + 1}: compiling...`, '');
+
+        const content = App.editor ? App.editor.getValue() : tab.content;
+        const compileFlags = buildCompileFlags();
+        const compileResult = await window.electronAPI.compile({
+            filePath: tab.path,
+            content: content,
+            flags: compileFlags
+        });
+
+        if (!compileResult.success) {
+            log('Compile Error!', 'error');
+            log(compileResult.error, 'error');
+            setStatus('Compile Error', 'error');
+            return;
+        }
+
+        App.exePath = compileResult.outputPath;
+        const timeLimit = ccProblem.timeLimit || (App.settings.execution.timeLimitSeconds * 1000) || 3000;
+        const lastSlash = tab.path ? Math.max(tab.path.lastIndexOf('/'), tab.path.lastIndexOf('\\')) : -1;
+        const sourceDir = lastSlash !== -1 ? tab.path.substring(0, lastSlash) : null;
+
+        setStatus(`Running test ${testIndex + 1}...`, '');
+        const result = await window.electronAPI.runTest({
+            exePath: App.exePath,
+            input: test.input || '',
+            expectedOutput: test.output || '',
+            timeLimit: timeLimit,
+            cwd: sourceDir,
+            debug: true,
+            testMeta: { index: testIndex, name: `Test ${testIndex + 1}` }
+        });
+
+        result.testIndex = testIndex;
+        result.testName = `Test ${testIndex + 1}`;
+
+        const existingIdx = batchTestResults.findIndex(r => r.testIndex === testIndex);
+        if (existingIdx >= 0) batchTestResults.splice(existingIdx, 1, result);
+        else batchTestResults.push(result);
+
+        renderTestResults();
+        switchTestCase(testIndex);
+
+        const timeStr = result.executionTime >= 1000
+            ? (result.executionTime / 1000).toFixed(2) + 's'
+            : result.executionTime + 'ms';
+
+        if (result.status === 'AC') {
+            log(`Single Test ${testIndex + 1}: AC (${timeStr})`, 'success');
+            setStatus(`Test ${testIndex + 1}: AC`, 'success');
+        } else {
+            log(`Single Test ${testIndex + 1}: ${result.status} (${timeStr})`, result.status === 'WA' ? 'error' : 'warning');
+            setStatus(`Test ${testIndex + 1}: ${result.status}`, 'warning');
+        }
+    } catch (e) {
+        log(`Single test error: ${e.message}`, 'error');
+        setStatus('Single Test Error', 'error');
+    } finally {
+        if (runBtn) runBtn.classList.remove('running');
+    }
+}
+
 function renderTestResults() {
     const container = document.getElementById('tests-results-list');
     const countEl = document.getElementById('test-results-count');
@@ -6709,6 +6788,11 @@ function renderTestResults() {
                         <span class="test-result-details">${details}</span>
                     </div>
                     <span class="test-result-time">${timeStr}</span>
+                    <button class="test-run-btn" data-run-index="${idx}" title="Run test case này">
+                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <polygon points="8 5 19 12 8 19 8 5"></polygon>
+                        </svg>
+                    </button>
                     <button class="test-delete-btn" data-delete-index="${idx}" title="Xóa test case này">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
@@ -6745,6 +6829,14 @@ function renderTestResults() {
                     if (!App.showIO) toggleIO();
                 }
             }
+        });
+    });
+
+    container.querySelectorAll('.test-run-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const idx = parseInt(btn.dataset.runIndex);
+            await runSingleTestByIndex(idx);
         });
     });
 

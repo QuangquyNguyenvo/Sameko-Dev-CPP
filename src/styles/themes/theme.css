@@ -4285,21 +4285,39 @@ body.split-active .editor-pane {
     transform: translateX(4px);
 }
 
-.test-result-item:hover .test-delete-btn {
+.test-result-item:hover .test-delete-btn,
+.test-result-item:hover .test-run-btn {
     opacity: 1;
 }
 
+.test-run-btn,
 .test-delete-btn {
     opacity: 0;
     background: transparent;
     border: none;
     padding: 4px;
     cursor: pointer;
-    color: var(--error, #e74c3c);
     border-radius: 4px;
     transition: opacity 0.15s, background 0.15s;
-    margin-left: auto;
     flex-shrink: 0;
+}
+
+.test-run-btn {
+    color: var(--accent, #5eb7e0);
+    margin-left: auto;
+}
+
+.test-run-btn:hover {
+    background: color-mix(in srgb, var(--accent, #5eb7e0) 16%, transparent);
+}
+
+.test-run-btn.running {
+    opacity: 1;
+    background: color-mix(in srgb, var(--warning, #fcd5ce) 28%, transparent);
+}
+
+.test-delete-btn {
+    color: var(--error, #e74c3c);
 }
 
 .test-delete-btn:hover {
@@ -4795,21 +4813,15 @@ body.split-active .editor-pane {
 
 /* ===== COMPACT DIFF VISUALIZATION ===== */
 .diff-line {
-    padding: 2px 4px;
-    /* Reduced padding */
-    border-radius: 4px;
-    margin-bottom: 0px;
-    /* Reduced margin */
+    padding: 3px 6px;
+    border-radius: 6px;
+    margin-bottom: 2px;
     font-family: 'JetBrains Mono', monospace;
-    /* Match editor font */
-    font-size: 13px;
-    /* Ensure same size as input/editor */
-    line-height: normal;
-    /* Force normal line height */
-    white-space: pre;
-    /* Use pre to exact match input spacing */
+    font-size: var(--panel-font-size, 13px);
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
     overflow-x: auto;
-    /* Allow Scroll */
 }
 
 /* Match case: Green text + subtle background */
@@ -4827,21 +4839,42 @@ body.split-active .editor-pane {
 
 /* Mismatch case */
 .diff-line.mismatch-compact {
-    background: rgba(231, 76, 60, 0.15);
-    /* Increased opacity for better visibility */
+    background: rgba(231, 76, 60, 0.18);
     border-left: 2px solid var(--danger);
-    padding-left: 6px;
+    padding-left: 8px;
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: baseline;
     gap: 8px;
 }
 
 /* The wrong value (Actual) -> Strikethrough + Red */
 .diff-wrong {
-    text-decoration: line-through;
     color: var(--danger);
-    opacity: 0.8;
+    opacity: 0.92;
+}
+
+/* Character-level wrong chunk (actual) */
+.diff-char-wrong {
+    text-decoration: line-through;
+    background: rgba(231, 76, 60, 0.28);
+    border-radius: 4px;
+    padding: 0 2px;
+}
+
+/* Character-level expected chunk */
+.diff-char-right {
+    color: #9be15d;
+    font-weight: 800;
+    background: rgba(46, 204, 113, 0.24);
+    border-radius: 4px;
+    padding: 0 2px;
+}
+
+/* Placeholder for empty diff side */
+.diff-char-placeholder {
+    opacity: 0.55;
+    font-style: italic;
 }
 
 /* The arrow */
