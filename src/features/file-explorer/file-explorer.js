@@ -16,6 +16,8 @@
 
 const FileExplorer = {
     isOpen: false,
+    wasOpenBeforeStartup: false,
+    startupAutoRevealHandled: false,
     currentFolder: null,
     width: 200,
     tree: [],
@@ -239,17 +241,9 @@ const FileExplorer = {
         // Render empty state initially
         this.renderEmptyState();
 
-        // If was open before, restore state
-        if (this.isOpen) {
-            this.elements.sidebar.classList.add('visible');
-            this.elements.resizer.classList.add('visible');
-            if (this.elements.toggleBtn) {
-                this.elements.toggleBtn.classList.add('active');
-            }
-            if (this.currentFolder) {
-                this.refreshTree();
-            }
-        }
+        // Startup rule: keep explorer closed initially.
+        // It may auto-open later when a file is opened, based on previous persisted state.
+        this.close();
 
         console.log('[FileExplorer] Initialization complete');
     },
@@ -267,7 +261,8 @@ const FileExplorer = {
                 this.expandedFolders = new Set(state.expandedFolders || []);
                 this.fileStatuses = state.fileStatuses || {};
                 this.fileNotes = state.fileNotes || {};
-                this.isOpen = state.isOpen || false;
+                this.wasOpenBeforeStartup = !!state.isOpen;
+                this.isOpen = false;
 
                 // NEW: Load approach versions, expanded files, pins, and recent
                 this.fileApproaches = state.fileApproaches || {};
@@ -2354,10 +2349,28 @@ const FileExplorer = {
     },
 
     /**
+     * Open explorer lazily after first file open when user left it open in previous session.
+     */
+    handleFileOpened(filePath) {
+        if (this.startupAutoRevealHandled) return;
+        this.startupAutoRevealHandled = true;
+
+        if (this.wasOpenBeforeStartup && !this.isOpen) {
+            this.open();
+        }
+
+        if (filePath) {
+            this.highlightFile(filePath);
+        }
+    },
+
+    /**
      * Open a file in the editor
      */
     openFile(filePath, permanent = true) {
         console.log('[FileExplorer] openFile called:', filePath);
+
+        this.handleFileOpened(filePath);
 
         // Add to recent files
         this.addToRecent(filePath);

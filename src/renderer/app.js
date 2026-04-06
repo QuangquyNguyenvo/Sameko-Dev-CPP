@@ -4579,6 +4579,11 @@ function setActive(id) {
         App.editor.setValue(tab.content);
         App.isSettingValue = false;
     }
+
+    if (tab.path && window.FileExplorer?.handleFileOpened) {
+        window.FileExplorer.handleFileOpened(tab.path);
+    }
+
     restoreTabIO(id);
     clearErrorDecorations();
     renderTabs();
@@ -6277,8 +6282,9 @@ function switchTestCase(index) {
 
     // Show diff if we have batch test result for this test
     const result = batchTestResults?.find(r => r.testIndex === index);
-    if (result && result.actualOutput !== undefined) {
-        showTestResultDiff(test.output || '', result.actualOutput);
+    const actualOutput = result?.actualOutput ?? result?.output;
+    if (result && actualOutput !== undefined) {
+        showTestResultDiff(test.output || '', actualOutput);
     } else {
         // Reset to edit mode if no result
         switchToExpectedEdit();
@@ -6575,6 +6581,7 @@ async function runAllTests() {
 
             result.testIndex = i;
             result.testName = `Test ${i + 1}`;
+            result.actualOutput = result.output ?? '';
             batchTestResults.push(result);
 
             if (result.status === 'AC') {
@@ -6675,6 +6682,7 @@ async function runSingleTestByIndex(testIndex) {
 
         result.testIndex = testIndex;
         result.testName = `Test ${testIndex + 1}`;
+        result.actualOutput = result.output ?? '';
 
         const existingIdx = batchTestResults.findIndex(r => r.testIndex === testIndex);
         if (existingIdx >= 0) batchTestResults.splice(existingIdx, 1, result);
