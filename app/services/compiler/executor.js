@@ -22,6 +22,8 @@ let runningExeName = null;
 
 let runningMemoryPollInterval = null;
 
+const MAX_BUILD_ARTIFACTS = 30;
+
 /** @type {Function|null} - Callback for file watcher mtime update */
 let updateFileWatcherMtimeCallback = null;
 
@@ -34,6 +36,48 @@ function setFileWatcherCallback(callback) {
 
 function setSendToRendererCallback(callback) {
     sendToRendererCallback = callback;
+}
+
+function cleanupOldBuildArtifacts(buildsDir) {
+    try {
+        if (!fs.existsSync(buildsDir)) return;
+        const entries = fs.readdirSync(buildsDir, { withFileTypes: true })
+            .filter((e) => e.isFile() && e.name.toLowerCase().endsWith('.exe'))
+            .map((e) => {
+                const fullPath = path.join(buildsDir, e.name);
+                const stat = fs.statSync(fullPath);
+                return { fullPath, mtimeMs: stat.mtimeMs };
+            })
+            .sort((a, b) => b.mtimeMs - a.mtimeMs);
+
+        if (entries.length <= MAX_BUILD_ARTIFACTS) return;
+
+        for (const item of entries.slice(MAX_BUILD_ARTIFACTS)) {
+            try {
+                fs.unlinkSync(item.fullPath);
+            } catch (_) { }
+        }
+    } catch (_) { }
+}
+
+function sanitizeUserFlags(flags, content) {
+    const tokens = (flags || '').split(' ').filter((f) => f.trim());
+    const hasMain = /\b(?:int\s+)?main\s*\(/.test(content);
+    const hasWinMain = /\b(?:w)?WinMain\s*\(/.test(content);
+
+    if (hasMain && !hasWinMain) {
+        const hadMwindows = tokens.includes('-mwindows');
+        const sanitized = tokens.filter((f) => f !== '-mwindows');
+        return {
+            flags: sanitized.join(' '),
+            removedMwindows: hadMwindows
+        };
+    }
+
+    return {
+        flags: tokens.join(' '),
+        removedMwindows: false
+    };
 }
 
 /**
@@ -65,8 +109,8 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false 
         } catch (e) { }
         activeCompilerProcess = null;
         console.log(`[Compile] Cancelled previous active compilation`);
-        // Let it breathe for a few ms before spawning a new one
-        await new Promise(r => setTimeout(r, 50));
+        // Minimal pause to allow process teardown
+        await new Promise(r => setTimeout(r, 10));
     }
 
     // Kill any running process first (to release .exe lock)
@@ -74,7 +118,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false 
         runningProcess.kill();
         runningProcess = null;
         // Minimal delay - just enough to release file lock
-        await new Promise(r => setTimeout(r, 50));
+        await new Promise(r => setTimeout(r, 10));
     }
 
     try {
@@ -121,6 +165,8 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false 
     if (!fs.existsSync(buildsDir)) {
         fs.mkdirSync(buildsDir, { recursive: true });
     }
+    cleanupOldBuildArtifacts(buildsDir);
+
     const outputPath = path.join(buildsDir, baseName + '.exe');
 
     // ===== MULTI-FILE PROJECT SUPPORT =====
@@ -159,11 +205,21 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false 
     // Resolve flags FIRST so PCH uses the same flags as compilation
     let resolvedFlags = flags;
     if (flags) {
-        const flagsArr = flags.split(' ').filter(f => f.trim());
+        const sanitized = sanitizeUserFlags(flags, content);
+        resolvedFlags = sanitized.flags;
+
+        if (sanitized.removedMwindows) {
+            sendToRenderer('system-message', {
+                type: 'warning',
+                message: 'Ignored -mwindows for console program (main). Use WinMain if you need GUI subsystem.'
+            });
+        }
+
+        const flagsArr = resolvedFlags.split(' ').filter(f => f.trim());
         const hasStdFlag = flagsArr.some(f => f.startsWith('-std='));
         if (!hasStdFlag) {
             // Inject default standard so PCH and compilation match
-            resolvedFlags = '-std=c++17 ' + flags;
+            resolvedFlags = '-std=c++17 ' + resolvedFlags;
         }
     } else {
         resolvedFlags = '-std=c++17 -O0 -w';

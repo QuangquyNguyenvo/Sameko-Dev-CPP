@@ -133,14 +133,21 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
                 debugInfo.stderrPreview = errPreview;
                 details = `Runtime error (${reason})${errPreview ? `\nStderr: ${errPreview}` : ''}`;
             } else if (expectedOutput !== undefined && expectedOutput !== null) {
-                // Compare output using shared judge rules
-                const compared = compareOutputs(output, expectedOutput);
-                debugInfo.expectedNormHash = hashText(compared.expectedNorm);
-                debugInfo.actualNormHash = hashText(compared.actualNorm);
+                const expectedText = String(expectedOutput ?? '');
+                const hasExpected = expectedText.trim().length > 0;
 
-                if (!compared.matched) {
-                    status = 'WA';
-                    details = `Expected: ${truncate(compared.expectedNorm, 100)}\nGot: ${truncate(compared.actualNorm, 100)}`;
+                // If expected is blank, treat as run-only (do not judge WA).
+                // This avoids false WA when users only want to execute and inspect output.
+                if (hasExpected) {
+                    // Compare output using shared judge rules
+                    const compared = compareOutputs(output, expectedOutput);
+                    debugInfo.expectedNormHash = hashText(compared.expectedNorm);
+                    debugInfo.actualNormHash = hashText(compared.actualNorm);
+
+                    if (!compared.matched) {
+                        status = 'WA';
+                        details = `Expected: ${truncate(compared.expectedNorm, 100)}\nGot: ${truncate(compared.actualNorm, 100)}`;
+                    }
                 }
             }
 

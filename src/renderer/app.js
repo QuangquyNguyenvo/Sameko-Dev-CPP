@@ -5665,27 +5665,52 @@ function compareOutput() {
 
     const terminalEl = document.getElementById('terminal');
     const lines = Array.from(terminalEl.querySelectorAll('pre, .line'));
-    let actualText = '';
+
+    // Extract output from the latest run block (not the first one),
+    // so reruns don't reuse stale output from older runs.
+    let currentRunLines = [];
+    let latestRunLines = [];
     let capturing = false;
 
     for (const line of lines) {
         const text = line.textContent;
+
         if (text.includes('--- Running ---')) {
             capturing = true;
+            currentRunLines = [];
             continue;
         }
+
+        if (!capturing) continue;
+
         if (text.includes('--- Exit') || text.includes('--- Stopped')) {
-            break;
+            latestRunLines = currentRunLines.slice();
+            capturing = false;
+            continue;
         }
-        if (capturing && !line.classList.contains('input') && !line.classList.contains('system') && !line.classList.contains('info')) {
-            actualText += (actualText ? '\n' : '') + text;
+
+        if (!line.classList.contains('input') && !line.classList.contains('system') && !line.classList.contains('info')) {
+            currentRunLines.push(text);
         }
     }
+
+    // If process hasn't emitted exit yet, use currently capturing block.
+    const actualText = (capturing ? currentRunLines : latestRunLines).join('\n');
 
     const diffDisplay = document.getElementById('expected-diff');
     const textarea = document.getElementById('expected-area');
     const dockedDiffDisplay = document.getElementById('docked-expected-diff');
     const dockedTextarea = document.getElementById('docked-expected');
+
+    const expectedNorm = normalizeJudgeOutput(expectedRaw);
+    const hasExpected = expectedNorm.length > 0;
+
+    // Empty expected = run-only mode (do not mark WA/AC automatically)
+    // Keep EXPECTED strictly as editable expected output (no auto output rendering).
+    if (!hasExpected) {
+        switchToExpectedEdit();
+        return;
+    }
 
     const diff = buildCompactDiffHtml(expectedRaw, actualText, { normalize: true });
 
@@ -5822,6 +5847,11 @@ if (window.electronAPI) {
         }
 
         setRunning(false);
+
+        // Refresh diff for the latest run if expected panel is present.
+        if (document.getElementById('expected-area')) {
+            compareOutput();
+        }
 
         const statusParts = [];
         if (timeStr) statusParts.push(timeStr);
