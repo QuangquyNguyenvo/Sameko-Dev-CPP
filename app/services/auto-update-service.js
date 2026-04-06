@@ -349,58 +349,86 @@ class AutoUpdateService {
         const os = require('os');
         
         try {
-            const pendingDir = path.join(os.homedir(), 'AppData', 'Local', 'sameko-dev-cpp-updater', 'pending');
-            
-            if (fs.existsSync(pendingDir)) {
-                const files = fs.readdirSync(pendingDir);
-                const installerFile = files.find(f => f.endsWith('.exe') && f.includes('sameko-dev-cpp-setup'));
-                
-                if (installerFile) {
-                    log.info('[AutoUpdate] Found pending update file:', installerFile);
-                    
-                    // Extract version from filename (e.g., sameko-dev-cpp-setup-1.0.3.exe)
-                    const versionMatch = installerFile.match(/sameko-dev-cpp-setup-(\d+\.\d+\.\d+)/);
-                    const pendingVersion = versionMatch ? versionMatch[1] : null;
-                    const currentVersion = app.getVersion();
-                    
-                    if (pendingVersion) {
-                        // Compare versions
-                        const versionComparison = this.compareVersions(pendingVersion, currentVersion);
-                        
-                        if (versionComparison > 0) {
-                            // Pending version is definitely newer (e.g., 1.0.4 > 1.0.3)
-                            log.info(`[AutoUpdate] Pending update (v${pendingVersion}) is newer than current (v${currentVersion})`);
-                            
-                            // Trigger update-downloaded event to show Restart button
-                            this.updateDownloaded = true;
-                            this.sendStatusToRenderer('update-downloaded', {
-                                version: pendingVersion,
-                                releaseNotes: 'Update downloaded in previous session',
-                                releaseDate: new Date().toISOString(),
-                                fromPending: true
+            const pendingDirs = [
+                path.join(app.getPath('localAppData'), 'sameko-dev-cpp-updater', 'pending'),
+                path.join(os.homedir(), 'AppData', 'Local', 'sameko-dev-cpp-updater', 'pending')
+            ];
+
+            const installerFiles = [];
+
+            pendingDirs.forEach(pendingDir => {
+                if (fs.existsSync(pendingDir)) {
+                    const files = fs.readdirSync(pendingDir);
+                    files.forEach(file => {
+                        if (file.endsWith('.exe') && file.includes('sameko-dev-cpp-setup')) {
+                            installerFiles.push({
+                                dir: pendingDir,
+                                file
                             });
-                        } else if (versionComparison === 0) {
-                            // Same version means update was already applied - clean up
-                            const filePath = path.join(pendingDir, installerFile);
-                            log.info(`[AutoUpdate] Pending file (v${pendingVersion}) matches current version (v${currentVersion}), update already applied. Cleaning up...`);
-                            try {
-                                fs.unlinkSync(filePath);
-                                log.info('[AutoUpdate] Deleted applied pending file');
-                            } catch (cleanupErr) {
-                                log.warn('[AutoUpdate] Failed to clean up pending file:', cleanupErr.message);
-                            }
-                        } else {
-                            // Pending version is older (e.g., 1.0.2 < 1.0.3)
-                            log.info(`[AutoUpdate] Pending update (v${pendingVersion}) is older than current (v${currentVersion}), cleaning up...`);
-                            
-                            const filePath = path.join(pendingDir, installerFile);
-                            fs.unlinkSync(filePath);
-                            log.info('[AutoUpdate] Deleted outdated pending file');
                         }
-                    } else {
-                        log.warn('[AutoUpdate] Could not extract version from filename:', installerFile);
-                    }
+                    });
                 }
+            });
+
+            if (installerFiles.length === 0) return;
+
+            const parsed = installerFiles
+                .map(({ dir, file }) => {
+                    const versionMatch = file.match(/sameko-dev-cpp-setup-(\d+\.\d+\.\d+)/);
+                    return {
+                        dir,
+                        file,
+                        version: versionMatch ? versionMatch[1] : null
+                    };
+                })
+                .filter(item => item.version);
+
+            if (parsed.length === 0) {
+                log.warn('[AutoUpdate] Could not extract version from pending installers');
+                return;
+            }
+
+            parsed.sort((a, b) => this.compareVersions(b.version, a.version));
+            const newest = parsed[0];
+
+            log.info('[AutoUpdate] Found pending update file:', newest.file);
+
+            const pendingVersion = newest.version;
+            const currentVersion = app.getVersion();
+            const versionComparison = this.compareVersions(pendingVersion, currentVersion);
+
+            if (versionComparison > 0) {
+                log.info(`[AutoUpdate] Pending update (v${pendingVersion}) is newer than current (v${currentVersion})`);
+                this.updateDownloaded = true;
+                this.sendStatusToRenderer('update-downloaded', {
+                    version: pendingVersion,
+                    releaseNotes: 'Update downloaded in previous session',
+                    releaseDate: new Date().toISOString(),
+                    fromPending: true
+                });
+            } else {
+                parsed.forEach(item => {
+                    const itemComparison = this.compareVersions(item.version, currentVersion);
+                    if (itemComparison > 0) {
+                        // Keep newer pending installers so user can still restart and update.
+                        log.info(`[AutoUpdate] Keeping newer pending installer (v${item.version})`);
+                        return;
+                    }
+
+                    const filePath = path.join(item.dir, item.file);
+                    if (itemComparison === 0) {
+                        log.info(`[AutoUpdate] Pending file (v${item.version}) matches current version (v${currentVersion}), cleaning up...`);
+                    } else {
+                        log.info(`[AutoUpdate] Pending update (v${item.version}) is older than current (v${currentVersion}), cleaning up...`);
+                    }
+
+                    try {
+                        fs.unlinkSync(filePath);
+                        log.info('[AutoUpdate] Deleted pending file:', item.file);
+                    } catch (cleanupErr) {
+                        log.warn('[AutoUpdate] Failed to clean up pending file:', cleanupErr.message);
+                    }
+                });
             }
         } catch (err) {
             log.warn('[AutoUpdate] Failed to check pending update:', err.message);
@@ -412,12 +440,15 @@ class AutoUpdateService {
      * @returns {number} 1 if v1 > v2, -1 if v1 < v2, 0 if equal
      */
     compareVersions(v1, v2) {
-        const parts1 = v1.split('.').map(Number);
-        const parts2 = v2.split('.').map(Number);
-        
-        for (let i = 0; i < 3; i++) {
-            if (parts1[i] > parts2[i]) return 1;
-            if (parts1[i] < parts2[i]) return -1;
+        const parts1 = String(v1).split('.').map(Number);
+        const parts2 = String(v2).split('.').map(Number);
+
+        const maxLen = Math.max(parts1.length, parts2.length, 3);
+        for (let i = 0; i < maxLen; i++) {
+            const a = Number.isFinite(parts1[i]) ? parts1[i] : 0;
+            const b = Number.isFinite(parts2[i]) ? parts2[i] : 0;
+            if (a > b) return 1;
+            if (a < b) return -1;
         }
         return 0;
     }

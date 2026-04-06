@@ -7,6 +7,8 @@ const fs = require('fs');
 let tsParser = null;
 let compilerStatus = { found: false, path: null, error: null };
 
+let compilerWarmupStarted = false;
+
 function initTreeSitter() {
     try {
         const Parser = require('tree-sitter');
@@ -74,10 +76,38 @@ function getCompilerStatus() {
     return compilerStatus;
 }
 
+function startBackgroundCompilerPreparation() {
+    try {
+        const { performCompilerWarmup, ensurePCH } = require('../services/compiler');
+
+        // Warm up compiler/linker binaries without blocking app startup
+        performCompilerWarmup(1200);
+
+        // Prebuild default PCH in background so first Build/Run is faster
+        setTimeout(() => {
+            ensurePCH('-std=c++17 -O0 -w').then((result) => {
+                if (result?.ready) {
+                    console.log('[Startup] Background PCH is ready');
+                } else {
+                    console.log('[Startup] Background PCH preparation skipped/failed');
+                }
+            }).catch((err) => {
+                console.warn('[Startup] Background PCH preparation failed:', err?.message || err);
+            });
+        }, 1500);
+    } catch (e) {
+        console.warn('[Startup] Compiler background preparation unavailable:', e.message);
+    }
+}
+
 async function initializeApp() {
     initTreeSitter();
     ensureDirectories();
-    validateCompiler();
+    const status = validateCompiler();
+
+    if (status.found || status.fallback) {
+        startBackgroundCompilerPreparation();
+    }
 }
 
 function cleanupBeforeQuit() {

@@ -2,9 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachang28 p/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
+
+## [1.1.0] - 2026-04-06
 
 ### Added
 - **Run All diagnostics metadata**: Added per-test debug metadata for `Run All` failures (exit/signal, timeout flag, stderr preview, and output hashes) to help investigate intermittent verdict issues.
@@ -13,14 +15,13 @@ The format is based on [Keep a Changelog](https://keepachang28 p/spec/v2.0.0.htm
   - Added clean support for both built-in font options and custom font-family input.
   - Normalized font-family persistence so custom values apply consistently across sessions.
 - **Editor productivity shortcuts (VS Code-style, tier 1)**: Added default keybindings for `Ctrl+/`, `Ctrl+D`, `Ctrl+Shift+L`, `Alt+Up/Down`, and `Shift+Alt+Up/Down`.
-- **Explorer UX polish**: Added quality-of-life improvements for file explorer interactions and visual consistency.
 - **Smart WA Diff Viewer + Single Test Run**:
   - Added character-level WA diff highlighting (actual vs expected) with better readability in Input/Expected panel.
   - Added per-test "Run" action directly in TESTS list to quickly run one testcase without running all.
   - Enabled `Ctrl + Mouse Wheel` zoom support inside diff view (same panel font scaling behavior as IO/terminal).
 
 ### Fixed
-- **[[BUG] Random "RTE" (Runtime Error) when using the "Run All" feature for Test Cases (Fixes #27)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/27)**:'
+- **[[BUG] Random "RTE" (Runtime Error) when using the "Run All" feature for Test Cases (Fixes #27)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/27)**:
   - Unified output normalization/comparison rules between normal run comparison and batch `Run All` judging.
   - Fixed expected-output comparison guard so empty expected output is still judged correctly.
   - Improved runtime error details to include exit signal/code and stderr preview.
@@ -33,6 +34,9 @@ The format is based on [Keep a Changelog](https://keepachang28 p/spec/v2.0.0.htm
 - **[[BUG] Input/Expected panel state is shared across tabs (Fixes #33)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/33)**: Input/Expected data is now persisted per-tab and restored on tab switch, preventing cross-tab overwrite.
 - **[[BUG] Terminal log severity classes become inconsistent with aliases (Fixes #34)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/34)**: Normalized log type aliases (`warn`/`ok`) before applying classes and color mapping to keep terminal status styling consistent.
 - **CP status regression on tab/file switch**: Prevented accepted status from being downgraded to editing/coding when switching/opening tabs without actual content edits.
+- **Explorer startup + reveal behavior**: Explorer now starts closed and auto-reveals only when opening a file if it was open in the previous session.
+- **Test diff visibility reliability**: Fixed missing diff after `Run Single`/`Run All` by normalizing `actualOutput` handling.
+- **Responsive editor clipping on different aspect ratios**: Fixed Monaco editor being visually covered by side panels instead of shrinking correctly.
 
 ### Improved
 - **Run All timing stability**: Added warm-up execution before measured test loop to reduce first-test cold-start skew.
@@ -41,6 +45,9 @@ The format is based on [Keep a Changelog](https://keepachang28 p/spec/v2.0.0.htm
   - Kept checkpoint persistence flow centralized and startup-aware to avoid stale or conflicting restores.
   - Improved session restore summary to clearly distinguish unsaved and modified files before recovery.
 - **Responsive behavior and layout consistency**: Improved responsive handling across panels/layout breakpoints for better usability on different window sizes.
+- **Performance mode animation behavior**: `Reduce Animations` now disables UI transitions/animations globally for a clearly smoother low-motion mode.
+- **Startup compiler preparation**: Compiler warmup + default PCH are now prepared in background after app launch to reduce first Build/Run latency.
+- **Debug-build compile speed**: `-s` stripping is skipped for non-optimized builds (`-O0`) to reduce compile overhead in normal coding workflow.
 
 
 ## [1.0.4] - 2026-02-15

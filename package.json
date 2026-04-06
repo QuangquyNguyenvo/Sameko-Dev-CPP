@@ -1,6 +1,6 @@
 {
     "name": "sameko-dev-cpp",
-    "version": "1.0.5",
+    "version": "1.1.0",
     "description": "A fast, modern, and beautiful C++ IDE built with Electron and Monaco Editor",
     "main": "app/main.js",
     "author": "QuangquyNguyenvo",
@@ -59,8 +59,8 @@
         "dev": "electron . --enable-logging",
         "clean": "powershell -Command \"Remove-Item -Recurse -Force $env:APPDATA/cpp-ide -ErrorAction SilentlyContinue\"",
         "clean-start": "npm run clean && npm start",
-        "build": "electron-builder",
-        "build:win": "electron-builder --win",
+        "build": "electron-builder --win nsis",
+        "build:win": "electron-builder --win nsis",
         "build:mac": "electron-builder --mac",
         "build:linux": "electron-builder --linux",
         "clean:dist": "powershell -Command \"Remove-Item -Recurse -Force release_build -ErrorAction SilentlyContinue\"",
@@ -88,7 +88,7 @@
         "productName": "Sameko Dev C++",
         "artifactName": "${productName}-${version}.${ext}",
         "directories": {
-            "output": "release_build"
+            "output": "samekodevcpp"
         },
         "files": [
             "app/**/*",
@@ -121,12 +121,6 @@
             "target": [
                 {
                     "target": "nsis",
-                    "arch": [
-                        "x64"
-                    ]
-                },
-                {
-                    "target": "portable",
                     "arch": [
                         "x64"
                     ]

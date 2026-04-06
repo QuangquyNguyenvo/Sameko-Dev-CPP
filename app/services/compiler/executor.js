@@ -180,8 +180,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false 
         ...sourceFiles,
         '-o', outputPath,
         '-I', dir,
-        '-pipe',
-        '-s'
+        '-pipe'
     ];
 
     if (unbufferObj) {
@@ -197,6 +196,12 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false 
     // LLD Linker support
     if (useLLD !== false && compilerInfo.hasLLD) {
         args.push('-fuse-ld=lld');
+    }
+
+    // Strip only when optimization enabled to keep debug builds faster
+    const hasOptimization = /(^|\s)-O(1|2|3|s|fast)(\s|$)/.test(resolvedFlags);
+    if (hasOptimization) {
+        args.push('-s');
     }
 
     if (pch.ready) {
