@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-05-19
+
+### Added
+- **[[FEATURE] Add Save As support with Ctrl+Shift+S (Fixes #35)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/35)**:
+  - Added `File > Save As...` and `Ctrl+Shift+S` for saving the active tab to a new path.
+  - Updated tab title/path and file watching after Save As completes.
+  - Preserved regular `Ctrl+S` behavior for saving to the current file path.
+
+### Fixed
+- **[[BUG] Startup untitled.cpp is marked unsaved even when untouched (Fixes #41)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/41)**:
+  - Treats generated startup/template content as the clean tab baseline.
+  - Prevents untouched generated `untitled.cpp` tabs from triggering unsaved-change prompts.
+  - Avoids restoring untouched generated untitled tabs as recoverable unsaved work.
+- **[[BUG] Switching tabs reuses the previous tab scroll position (Fixes #39)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/39)**:
+  - Saves Monaco editor view state per tab before switching away.
+  - Restores each tab's own scroll/cursor viewport when switching back.
+  - Resets new tabs without saved view state to the top of the file.
+
 ## [1.1.0] - 2026-04-06
 
 ### Added

@@ -114,8 +114,12 @@ function registerHandlers() {
         }
     });
 
-    ipcMain.handle(IPC.FILE.SAVE_DIALOG, async (event, content) => {
+    ipcMain.handle(IPC.FILE.SAVE_DIALOG, async (event, payload) => {
+        const content = typeof payload === 'object' && payload !== null ? payload.content : payload;
+        const defaultPath = typeof payload === 'object' && payload !== null ? payload.defaultPath : undefined;
+
         const result = await dialog.showSaveDialog(mainWindow, {
+            defaultPath,
             filters: [
                 { name: 'C++ Files', extensions: ['cpp'] },
                 { name: 'C Files', extensions: ['c'] },
@@ -125,8 +129,13 @@ function registerHandlers() {
 
         if (!result.canceled) {
             try {
+                const dir = path.dirname(result.filePath);
+                if (!fs.existsSync(dir)) {
+                    fs.mkdirSync(dir, { recursive: true });
+                }
                 fs.writeFileSync(result.filePath, content, 'utf-8');
                 currentFile = result.filePath;
+                updateFileWatcherMtime(result.filePath);
                 return { success: true, path: result.filePath };
             } catch (error) {
                 return { success: false, error: error.message };

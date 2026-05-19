@@ -15,6 +15,7 @@ const DEFAULT_KEYBINDINGS = {
     'run': 'F10',
     'stop': 'Shift+F5',
     'save': 'Ctrl+S',
+    'saveAs': 'Ctrl+Shift+S',
     'newFile': 'Ctrl+N',
     'openFile': 'Ctrl+O',
     'closeTab': 'Ctrl+W',

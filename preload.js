@@ -29,7 +29,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // File operations
     openFile: () => ipcRenderer.invoke('open-file-dialog'),
     saveFile: (data) => ipcRenderer.invoke('save-file', data),
-    saveFileDialog: (content) => ipcRenderer.invoke('save-file-dialog', content),
+    saveFileDialog: (payload) => ipcRenderer.invoke('save-file-dialog', payload),
     getCurrentFile: () => ipcRenderer.invoke('get-current-file'),
 
     // File Explorer operations

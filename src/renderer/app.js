@@ -94,6 +94,7 @@ int main() {
         run: 'F10',
         stop: 'Shift+F5',
         save: 'Ctrl+S',
+        saveAs: 'Ctrl+Shift+S',
         newFile: 'Ctrl+N',
         openFile: 'Ctrl+O',
         closeTab: 'Ctrl+W',
@@ -702,6 +703,7 @@ function createEditor(containerId) {
     editor.addCommand(monaco.KeyCode.F10, run);
     editor.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.F5, stop);
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, save);
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyS, () => saveAs());
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyN, newFile);
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyO, openFile);
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyJ, toggleProblems);
@@ -2248,6 +2250,7 @@ const KEYBINDING_LABELS = {
     run: 'Run Only',
     stop: 'Stop Process',
     save: 'Save File',
+    saveAs: 'Save File As',
     newFile: 'New File',
     openFile: 'Open File',
     closeTab: 'Close Tab',
@@ -2505,7 +2508,7 @@ function getStoredSession() {
 }
 
 function buildSessionRestoreSummary(session) {
-    const unsavedTabs = session.tabs.filter(t => !t.path || t.modified);
+    const unsavedTabs = session.tabs.filter(t => t.modified || (!t.path && (t.content || '') !== (t.original || '')));
     const untitledCount = unsavedTabs.filter(t => !t.path).length;
     const modifiedCount = unsavedTabs.filter(t => t.path && t.modified).length;
     const parts = [];
@@ -2569,7 +2572,8 @@ async function reopenSessionTabs(session, { includeUnsaved }) {
             continue;
         }
 
-        if (!includeUnsaved) continue;
+        const hasRecoverableUntitledContent = tabData.modified || ((tabData.content || '') !== (tabData.original || ''));
+        if (!includeUnsaved || !hasRecoverableUntitledContent) continue;
 
         const restoredTab = {
             id: createRestoredTabId(),
@@ -2595,8 +2599,8 @@ async function reopenSessionTabs(session, { includeUnsaved }) {
 }
 
 /**
- * Save the current session (all open tabs including unsaved ones) to localStorage.
- * This ensures unsaved work survives accidental app closure.
+ * Save recoverable tabs to localStorage.
+ * This keeps saved files and real unsaved work, but ignores untouched generated untitled tabs.
  */
 function saveSession() {
     try {
@@ -2615,8 +2619,14 @@ function saveSession() {
             if (splitTab) splitTab.content = App.editor2.getValue();
         }
 
+        const tabsForSession = App.tabs.filter(t => t.path || t.modified || ((t.content || '') !== (t.original || '')));
+        if (tabsForSession.length === 0) {
+            clearSession();
+            return;
+        }
+
         const session = {
-            tabs: App.tabs.map(t => ({
+            tabs: tabsForSession.map(t => ({
                 id: t.id,
                 name: t.name,
                 path: t.path || null,
@@ -2736,7 +2746,7 @@ async function restoreSession() {
             return;
         }
 
-        const unsavedTabs = session.tabs.filter(t => !t.path || t.modified);
+        const unsavedTabs = session.tabs.filter(t => t.modified || (!t.path && (t.content || '') !== (t.original || '')));
         if (unsavedTabs.length > 0) {
             const confirmed = await showSessionRestoreNotification(buildSessionRestoreSummary(session));
 
@@ -3244,6 +3254,7 @@ const ACTION_HANDLERS = {
     'run': () => run(),
     'stop': () => stop(),
     'save': () => save(),
+    'saveAs': () => saveAs(),
     'newFile': () => newFile(),
     'openFile': () => openFile(),
     'closeTab': () => { if (App.activeTabId) closeTab(App.activeTabId); },
@@ -3304,6 +3315,7 @@ function updateMenuShortcutLabels() {
         'new': 'newFile',
         'open': 'openFile',
         'save': 'save',
+        'saveas': 'saveAs',
         'buildrun': 'buildRun',
         'run': 'run',
         'stop': 'stop',
@@ -4556,7 +4568,7 @@ function newFile() {
     const id = 'tab_' + Date.now();
 
     const templateCode = App.settings.template?.code || DEFAULT_CODE;
-    const tab = { id, name: 'untitled.cpp', path: null, untitledHistoryKey: createUntitledHistoryKey(), content: templateCode, original: '', modified: true };
+    const tab = { id, name: 'untitled.cpp', path: null, untitledHistoryKey: createUntitledHistoryKey(), content: templateCode, original: templateCode, modified: false, viewState: null };
     App.tabs.push(tab);
     setActive(id);
     updateUI();
@@ -4599,7 +4611,10 @@ function setActive(id) {
 
     if (App.activeTabId && App.editor && App.ready) {
         const cur = App.tabs.find(t => t.id === App.activeTabId);
-        if (cur) cur.content = App.editor.getValue();
+        if (cur) {
+            cur.content = App.editor.getValue();
+            cur.viewState = App.editor.saveViewState();
+        }
         persistCurrentTabIO();
     }
 
@@ -4607,6 +4622,13 @@ function setActive(id) {
     if (App.editor && App.ready) {
         App.isSettingValue = true;
         App.editor.setValue(tab.content);
+        if (tab.viewState) {
+            App.editor.restoreViewState(tab.viewState);
+        } else {
+            App.editor.setPosition({ lineNumber: 1, column: 1 });
+            App.editor.setScrollTop(0);
+            App.editor.setScrollLeft(0);
+        }
         App.isSettingValue = false;
     }
 
@@ -4827,7 +4849,7 @@ function closeMenus() {
 
 function doAction(action) {
     const map = {
-        new: newFile, open: openFile, save, run, buildrun: buildRun, stop,
+        new: newFile, open: openFile, save, saveas: () => saveAs(), run, buildrun: buildRun, stop,
         exit: () => window.electronAPI?.closeWindow?.(),
         undo: () => getActiveEditor()?.trigger('keyboard', 'undo'),
         redo: () => getActiveEditor()?.trigger('keyboard', 'redo'),
@@ -4899,14 +4921,20 @@ async function saveAs(tabIdOverride = null) {
     const tab = App.tabs.find(t => t.id === tabId);
     if (!tab) return;
     tab.content = editor.getValue();
-    const r = await window.electronAPI.saveFileDialog(tab.content);
+    const oldPath = tab.path;
+    const r = await window.electronAPI.saveFileDialog({
+        content: tab.content,
+        defaultPath: tab.path || tab.name || 'untitled.cpp'
+    });
     if (r.success) {
         tab.path = r.path;
         tab.name = r.path.split(/[/\\]/).pop();
         tab.original = tab.content;
         tab.modified = false;
+        if (oldPath && oldPath !== r.path) stopFileWatch(oldPath);
+        startFileWatch(r.path);
         renderTabs();
-        setStatus('Saved', 'success');
+        setStatus(`Saved ${tab.name}`, 'success');
         scheduleSessionSave();
     }
 }
