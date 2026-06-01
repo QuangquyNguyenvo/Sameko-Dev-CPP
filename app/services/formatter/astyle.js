@@ -71,7 +71,7 @@ async function formatCode(code, style = 'google') {
     if (!astylePath) {
         return {
             success: false,
-            error: 'AStyle không được tìm thấy. Vui lòng tải astyle.exe và đặt vào thư mục Sameko-GCC\\bin\\'
+            error: 'AStyle was not found. Download astyle.exe and place it in Sameko-GCC\\bin\\.'
         };
     }
 

@@ -3353,7 +3353,7 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     position: relative;
 }
 
-/* Background pattern sẽ được set động qua inline style */
+/* Background pattern is set dynamically via inline style */
 .tc-preview-section {
     background-size: cover;
     background-position: center;

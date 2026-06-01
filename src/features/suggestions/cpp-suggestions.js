@@ -31,11 +31,11 @@ window.registerCppIntellisense = function (monaco) {
             { label: 'scanf', doc: 'Scan', text: 'scanf("${1:%d}", &${2});' }
         ],
         common: [
-            // Loop xuôi (0 -> n-1)
+            // Forward loop (0 -> n-1)
             { label: 'for', doc: 'Loop 0 -> n-1', text: 'for(int ${1:i}=0; ${1:i}<${2:n}; ${1:i}++){\n    ${0}\n}' },
-            // Loop xuôi (1 -> n)
+            // Forward loop (1 -> n)
             { label: 'for1', doc: 'Loop 1 -> n', text: 'for(int ${1:i}=1; ${1:i}<=${2:n}; ${1:i}++){\n    ${0}\n}' },
-            // Loop ngược (n-1 -> 0)
+            // Reverse loop (n-1 -> 0)
             { label: 'ford', doc: 'Loop n-1 -> 0', text: 'for(int ${1:i}=${2:n}-1; ${1:i}>=0; ${1:i}--){\n    ${0}\n}' },
 
             { label: 'while', doc: 'While', text: 'while(${1:cond}){\n    ${0}\n}' },

@@ -4965,7 +4965,7 @@ body.split-active .editor-pane {
     color: var(--text-muted, rgba(255, 255, 255, 0.5));
 }
 
-/* File Markers - "Đang giải" indicator */
+/* File Markers - active-solving indicator */
 .explorer-item.marked {
     background: rgba(255, 193, 7, 0.15);
     border-left: 3px solid var(--warning, #ffc107);

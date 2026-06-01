@@ -3510,7 +3510,7 @@ const ThemeCustomizer = {
                                  data-key="bgPanel-input" data-label="Input Panel">
                                 <div class="tc6-panel-title tc6-accent-text">INPUT</div>
                                 <div class="tc6-panel-body tc6-text-muted">
-                                    Nhập dữ liệu test...
+                                    Enter test data...
                                 </div>
                             </div>
                             
@@ -3519,7 +3519,7 @@ const ThemeCustomizer = {
                                  data-key="bgPanel-expected" data-label="Expected Panel">
                                 <div class="tc6-panel-title tc6-accent-text">EXPECTED</div>
                                 <div class="tc6-panel-body tc6-text-muted">
-                                    Kết quả mong đợi...
+                                    Expected output...
                                 </div>
                             </div>
                         </div>
@@ -4331,7 +4331,7 @@ const ThemeCustomizer = {
             this._dispatchThemeSaveEvent(themeData);
 
             // Show success notification
-            this._showSaveNotification(`Theme "${name}" đã được lưu thành công!`);
+            this._showSaveNotification(`Theme "${name}" has been saved.`);
 
             // Update sourceThemeId to the new theme and refresh header buttons
             this.sourceThemeId = id;
@@ -4408,7 +4408,7 @@ const ThemeCustomizer = {
             this._dispatchThemeSaveEvent(themeData);
 
             // Show success notification
-            this._showSaveNotification(`Theme "${name}" đã được cập nhật thành công!`);
+            this._showSaveNotification(`Theme "${name}" has been updated.`);
 
             // CRITICAL: Clear saved values so close() won't restore old values
             // The new theme was just applied by ThemeManager.setTheme() above
@@ -4480,7 +4480,7 @@ const ThemeCustomizer = {
             this._savedEditorBgBlur = null;
 
             // Show success notification
-            this._showSaveNotification(`Background cho "${activeTheme?.name || this.sourceThemeId}" đã được lưu!`);
+            this._showSaveNotification(`Background for "${activeTheme?.name || this.sourceThemeId}" has been saved.`);
 
             this.close();
         } catch (e) {

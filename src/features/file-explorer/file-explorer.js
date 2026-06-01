@@ -4569,7 +4569,7 @@ const FileExplorer = {
                     const targetCat = this.categories.find(c => c.id === catId);
                     if (!targetCat) {
                         console.warn('[FileExplorer] Drop: category not found:', catId);
-                        if (typeof log === 'function') log('Collection không tồn tại. Hãy tạo mới.', 'warning');
+                        if (typeof log === 'function') log('Collection does not exist. Create a new one.', 'warning');
                         this.renderTree ? this.renderTree() : this.renderEmptyState();
                         return;
                     }

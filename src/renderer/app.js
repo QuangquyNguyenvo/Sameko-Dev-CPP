@@ -518,6 +518,9 @@ function createEditor(containerId) {
         scrollBeyondLastLine: false,
         automaticLayout: true,
         tabSize: App.settings.editor.tabSize,
+        insertSpaces: true,
+        detectIndentation: false,
+        emptySelectionClipboard: false,
         cursorBlinking: App.settings.appearance.performanceMode ? 'solid' : 'smooth',
         smoothScrolling: !App.settings.appearance.performanceMode,
         bracketPairColorization: { enabled: !App.settings.appearance.performanceMode },
@@ -3009,7 +3012,7 @@ function applyLiveCheckMarkers(editor, diagnostics) {
         setLiveCheckUIState((summary.errors + summary.warnings) > 0 ? 'issues' : 'clean');
         if (!isBuilding && !App.isRunning) {
             if (summary.errors > 0) {
-                setStatus(`${pluralizeIssue(summary.errors, 'error')}${summary.warnings ? ` · ${pluralizeIssue(summary.warnings, 'warning')}` : ''}`, 'error');
+                setStatus(`${pluralizeIssue(summary.errors, 'error')}${summary.warnings ? ` - ${pluralizeIssue(summary.warnings, 'warning')}` : ''}`, 'error');
             } else if (summary.warnings > 0) {
                 setStatus(pluralizeIssue(summary.warnings, 'warning'), 'warning');
             } else {
@@ -3035,6 +3038,9 @@ function applySettings() {
         fontSize: App.settings.editor.fontSize,
         fontFamily: App.settings.editor.fontFamily,
         tabSize: App.settings.editor.tabSize,
+        insertSpaces: true,
+        detectIndentation: false,
+        emptySelectionClipboard: false,
         minimap: { enabled: App.settings.editor.minimap },
         wordWrap: App.settings.editor.wordWrap ? 'on' : 'off',
         multiCursorModifier: resolveMultiCursorModifier(),
@@ -3452,11 +3458,11 @@ async function formatCode() {
             termLog('✓ Code has been formatted (Google Style) - Press Ctrl+Z to undo', 'success');
         } else {
             setStatus('error', 'Format failed');
-            termLog(`⚠ Format thất bại: ${result.error}`, 'error');
+            termLog(`Format failed: ${result.error}`, 'error');
         }
     } catch (err) {
         setStatus('error', 'Format error');
-        termLog(`⚠ Lỗi format: ${err.message}`, 'error');
+        termLog(`Format error: ${err.message}`, 'error');
     }
 }
 
@@ -6037,6 +6043,7 @@ function addTestCase() {
     }
 
     ccProblem.tests.push({ input: '', output: '' });
+    resetTestRunResults();
     ccTestIndex = ccProblem.tests.length - 1;
     switchTestCase(ccTestIndex);
     updateTestNavUI();
@@ -6051,8 +6058,8 @@ function showConfirmPopup(message, onConfirm) {
         <div class="confirm-popup">
             <div class="confirm-message">${message}</div>
             <div class="confirm-buttons">
-                <button class="confirm-btn cancel">Hủy</button>
-                <button class="confirm-btn confirm">Xác nhận</button>
+                <button class="confirm-btn cancel">Cancel</button>
+                <button class="confirm-btn confirm">Confirm</button>
             </div>
         </div>
     `;
@@ -6085,6 +6092,7 @@ async function deleteTestCase() {
     if (!confirmed) return;
 
     ccProblem.tests.splice(ccTestIndex, 1);
+    resetTestRunResults();
 
     if (ccProblem.tests.length === 0) {
         document.getElementById('input-area').value = '';
@@ -6118,6 +6126,7 @@ async function deleteTestCaseByIndex(index) {
     if (!confirmed) return;
 
     ccProblem.tests.splice(index, 1);
+    resetTestRunResults();
 
     if (ccProblem.tests.length === 0) {
         document.getElementById('input-area').value = '';
@@ -6162,7 +6171,7 @@ async function deleteAllTestCases() {
     if (dockedInput) dockedInput.value = '';
     if (dockedExpected) dockedExpected.value = '';
 
-    batchTestResults = [];
+    resetTestRunResults();
     updateTestNavUI();
     renderTestResults();
 
@@ -6232,8 +6241,8 @@ function handleProblemReceived(problem) {
         return str
             .normalize('NFD')
             .replace(/[\u0300-\u036f]/g, '')
-            .replace(/đ/g, 'd')
-            .replace(/Đ/g, 'D');
+            .replace(/\u0111/g, 'd')
+            .replace(/\u0110/g, 'D');
     };
 
     const safeName = removeVietnameseDiacritics(problem.name)
@@ -6499,7 +6508,7 @@ function showReloadNotification(tab) {
                         </svg>
                     </div>
                     <div class="reload-notification-text">
-                        <div class="reload-notification-title">File đã thay đổi</div>
+                        <div class="reload-notification-title">File changed</div>
                         <div class="reload-notification-file">${tab.name}</div>
                         <div class="reload-notification-desc">File has been changed externally. Do you want to reload?</div>
                     </div>
@@ -6567,6 +6576,11 @@ if (window.electronAPI?.onFileChangedExternal) {
 // ============================================================================
 let batchTestResults = [];
 let isBatchTesting = false;
+
+function resetTestRunResults() {
+    batchTestResults = [];
+    switchToExpectedEdit();
+}
 
 function initBatchTesting() {
     const runAllBtn = document.getElementById('btn-run-all-tests');
@@ -6746,12 +6760,12 @@ async function runAllTests() {
 
 async function runSingleTestByIndex(testIndex) {
     if (!ccProblem || !ccProblem.tests || !ccProblem.tests[testIndex]) {
-        log('Test case không tồn tại.', 'warning');
+        log('Test case does not exist.', 'warning');
         return;
     }
 
     if (isBatchTesting) {
-        log('Đang chạy batch test, vui lòng đợi xong.', 'warning');
+        log('Batch tests are running. Please wait.', 'warning');
         return;
     }
 
@@ -6916,12 +6930,12 @@ function renderTestResults() {
                         <span class="test-result-details">${details}</span>
                     </div>
                     <span class="test-result-time">${timeStr}</span>
-                    <button class="test-run-btn" data-run-index="${idx}" title="Run test case này">
+                    <button class="test-run-btn" data-run-index="${idx}" title="Run this test case">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                             <polygon points="8 5 19 12 8 19 8 5"></polygon>
                         </svg>
                     </button>
-                    <button class="test-delete-btn" data-delete-index="${idx}" title="Xóa test case này">
+                    <button class="test-delete-btn" data-delete-index="${idx}" title="Delete this test case">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -6938,7 +6952,7 @@ function renderTestResults() {
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
-                Thêm Test Case Mới
+                Add New Test Case
             </div>
         `;
 
@@ -7085,7 +7099,7 @@ function showUpdateNotification(info) {
     if (newEl) newEl.textContent = `v${info.latestVersion}`;
 
     if (notesEl) {
-        notesEl.innerHTML = '<p style="text-align: center; font-weight: 600; font-size: 15px; margin: 10px 0;">Thằng wjbu nó mới fix bug hay thêm tính năng gì đó. Tải thử xem coi có gì khác không 🐟</p>';
+        notesEl.innerHTML = '<p style="text-align: center; font-weight: 600; font-size: 15px; margin: 10px 0;">A new update is available. Download it to get the latest fixes and features.</p>';
     }
 
     overlay.classList.add('show');
