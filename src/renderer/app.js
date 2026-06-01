@@ -1465,6 +1465,7 @@ function initTemplateEditor() {
         lineNumbers: 'on',
         folding: false,
         renderWhitespace: 'none',
+        emptySelectionClipboard: false,
         overviewRulerBorder: false,
         overviewRulerLanes: 0,
         hideCursorInOverviewRuler: true,
@@ -5265,7 +5266,7 @@ async function stop() {
     }
 
     setRunning(false);
-    log('\n[System] Process terminated.', 'error');
+    log('\n[System] Process terminated.', 'system');
 
     await window.electronAPI.stopProcess();
 }
@@ -7172,7 +7173,7 @@ function initTerminalUX() {
                     e.preventDefault();
                     if (App.isRunning) {
                         stop();
-                        log('^C', 'error');
+                        log('^C', 'system');
                     }
                 }
                 return;

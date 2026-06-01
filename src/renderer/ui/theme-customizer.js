@@ -2573,6 +2573,7 @@ const ThemeCustomizer = {
                 automaticLayout: true,
                 tabSize: 2,
                 wordWrap: 'on',
+                emptySelectionClipboard: false,
                 formatOnPaste: true,
                 formatOnType: true,
                 renderLineHighlight: 'none',

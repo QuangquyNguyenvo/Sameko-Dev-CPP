@@ -24,6 +24,7 @@ function initSnippetEditor() {
         tabSize: 4,
         lineNumbers: 'on',
         renderWhitespace: 'selection',
+        emptySelectionClipboard: false,
         bracketPairColorization: { enabled: true }
     });
 }

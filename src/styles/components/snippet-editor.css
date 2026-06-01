@@ -250,8 +250,6 @@
     border: 1px solid var(--border, #e0e0e0);
     border-radius: 12px;
     padding: 12px;
-    margin-bottom: 16px;
-    margin-bottom: 16px;
     height: 400px;
     min-height: 200px;
     overflow-y: auto;
@@ -268,8 +266,6 @@
 #panel-snippets .setting-row label {
     font-size: 1.1em;
     color: var(--accent);
-
-    overflow-y: auto;
 }
 
 /* Custom scrollbar for snippets list */
@@ -390,6 +386,7 @@
 #btn-add-snippet {
     width: 100%;
     padding: 12px 16px;
+    margin-bottom: 16px;
     background: var(--accent, #88c9ea);
     color: white;
     border: none;
