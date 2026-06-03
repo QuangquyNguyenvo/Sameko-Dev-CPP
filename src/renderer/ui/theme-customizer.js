@@ -2827,8 +2827,32 @@ const ThemeCustomizer = {
                 this.workingTheme.colors.editorBackground = currentEditorBg;
             }
 
+            // Re-define and re-apply the Monaco theme so the real editor's syntax
+            // colors reflect the edited JSON immediately. Previously this only
+            // happened on Save, so the editor looked "stuck" on the old colors. (#43)
+            try {
+                if (typeof ThemeManager !== 'undefined' && typeof monaco !== 'undefined' && this.sourceThemeId) {
+                    const normalized = ThemeManager._normalizeTheme({
+                        id: this.sourceThemeId,
+                        name: this.workingTheme.name,
+                        type: this.workingTheme.type,
+                        colors: this.workingTheme.colors,
+                        editor: this.workingTheme.editor,
+                        terminal: this.workingTheme.terminal
+                    });
+                    ThemeManager._defineMonacoTheme(normalized);
+                    if (ThemeManager.activeThemeId === this.sourceThemeId) {
+                        monaco.editor.setTheme(this.sourceThemeId);
+                    }
+                }
+            } catch (e) {
+                console.warn('[Customizer] Live Monaco re-theme failed:', e);
+            }
+
             this._renderControlsWithoutJson();
-            this._renderPreview();
+            // clearStale: drop CSS variables for keys the user removed/renamed in the
+            // JSON so they fall back to stylesheet defaults instead of staying stuck. (#43)
+            this._renderPreview({ clearStale: true });
 
             if (statusEl) {
                 statusEl.textContent = '✔ Applied successfully!';
@@ -3387,7 +3411,7 @@ const ThemeCustomizer = {
     /**
      * Render live preview
      */
-    _renderPreview() {
+    _renderPreview(options = {}) {
         const wrapper = this.popup?.querySelector('#tc6-preview-wrapper');
         if (!wrapper) return;
 
@@ -3568,7 +3592,7 @@ const ThemeCustomizer = {
             });
         });
 
-        this._injectAllPreviewVariables();
+        this._injectAllPreviewVariables(options);
     },
 
     /**
@@ -4830,7 +4854,7 @@ const ThemeCustomizer = {
      * Inject ALL CSS variables from workingTheme onto preview wrapper AND document root
      * This ensures both the preview AND the real app UI (e.g., settings popup) show the correct colors
      */
-    _injectAllPreviewVariables() {
+    _injectAllPreviewVariables(options = {}) {
         const wrapper = this.popup?.querySelector('#tc6-preview-wrapper');
         if (!wrapper) return;
 
@@ -4906,6 +4930,26 @@ const ThemeCustomizer = {
             wrapper.style.setProperty(cssVar, value);
             root.style.setProperty(cssVar, value);
         };
+
+        // clearStale: when applying edited JSON, remove every managed CSS variable
+        // first so keys the user deleted/renamed fall back to stylesheet defaults
+        // instead of keeping their previous inline value ("stuck on one color"). (#43)
+        if (options.clearStale) {
+            for (const cssVar of Object.values(varMappings)) {
+                wrapper.style.removeProperty(cssVar);
+                root.style.removeProperty(cssVar);
+            }
+            for (const [, parentCssVar] of [
+                ['bgHeader-main', '--bg-header-main'],
+                ['bgHeader-statusbar', '--bg-header-statusbar'],
+                ['bgPanel-problems', '--bg-panel-problems'],
+                ['bgPanel-input', '--bg-panel-input'],
+                ['bgPanel-expected', '--bg-panel-expected']
+            ]) {
+                wrapper.style.removeProperty(parentCssVar);
+                root.style.removeProperty(parentCssVar);
+            }
+        }
 
         for (const [key, cssVar] of Object.entries(varMappings)) {
             const value = c[key];

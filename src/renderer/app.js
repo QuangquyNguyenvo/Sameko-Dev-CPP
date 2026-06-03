@@ -525,7 +525,10 @@ function createEditor(containerId) {
         smoothScrolling: !App.settings.appearance.performanceMode,
         bracketPairColorization: { enabled: !App.settings.appearance.performanceMode },
         padding: { top: 12 },
-        mouseWheelZoom: !App.settings.appearance.performanceMode,
+        // Editor zoom is handled solely by initCtrlWheelZoom + fontSize. Monaco's
+        // built-in mouseWheelZoom applies a separate global zoom that re-applies on
+        // relayout (e.g. dragging a panel divider), shrinking only the editor. (#36)
+        mouseWheelZoom: false,
 
         overviewRulerBorder: false,
         overviewRulerLanes: 0,
@@ -3068,13 +3071,16 @@ function applySettings() {
         }
     };
 
+    // Editor zoom is driven only by fontSize + initCtrlWheelZoom; never let Monaco's
+    // built-in wheel zoom back on, or a settings re-apply would resurrect #36.
+    opts.mouseWheelZoom = false;
+
     // Performance optimizations
     if (App.settings.appearance.performanceMode) {
         opts.minimap = { enabled: false };
         opts.bracketPairColorization = { enabled: false };
         opts.cursorBlinking = 'solid';
         opts.smoothScrolling = false;
-        opts.mouseWheelZoom = false;
     }
 
     if (App.editor) App.editor.updateOptions(opts);
@@ -5247,8 +5253,18 @@ async function run(clearTerminal = true) {
     if (inputText && App.settings.execution.autoSendInput) {
         setTimeout(() => {
             if (App.isRunning) {
-                // Log each line to terminal with input styling
-                inputText.split('\n').forEach(line => log(line, 'input'));
+                // Echo the input as a single block. Splitting huge input into one
+                // log() (and one DOM node) per line froze the UI for minutes before
+                // any program output appeared. (#48)
+                const echoLineCount = (inputText.match(/\n/g) || []).length + 1;
+                const ECHO_LINE_CAP = 5000;
+                if (echoLineCount > ECHO_LINE_CAP) {
+                    const head = inputText.split('\n').slice(0, ECHO_LINE_CAP).join('\n');
+                    log(head, 'input');
+                    log(`... (${echoLineCount - ECHO_LINE_CAP} more input lines hidden)`, 'system');
+                } else {
+                    log(inputText, 'input');
+                }
 
                 // Send entire input to stdin at once (no per-line delay)
                 window.electronAPI.sendInput(inputText);
@@ -5557,12 +5573,22 @@ function log(msg, type = '') {
         t.removeChild(t.firstChild);
     }
 
-    t.scrollTop = t.scrollHeight;
+    scheduleTerminalScrollSync();
+}
 
-
-    if (DockingState.terminalDocked) {
-        syncTerminalContent();
-    }
+// Scrolling to the bottom and mirroring into the docked terminal both force a
+// layout; doing them synchronously on every log() call made large output render
+// O(n^2) and stall the UI. Coalesce to at most once per animation frame. (#48)
+let _termScrollSyncPending = false;
+function scheduleTerminalScrollSync() {
+    if (_termScrollSyncPending) return;
+    _termScrollSyncPending = true;
+    requestAnimationFrame(() => {
+        _termScrollSyncPending = false;
+        const t = document.getElementById('terminal');
+        if (t) t.scrollTop = t.scrollHeight;
+        if (DockingState.terminalDocked) syncTerminalContent();
+    });
 }
 
 function clearTerm() { document.getElementById('terminal').innerHTML = ''; }
@@ -6290,6 +6316,8 @@ function handleProblemReceived(problem) {
         if (expectedArea) expectedArea.value = problem.tests[0].output || '';
     }
 
+    // Clear any stale Expected/Actual comparison from a previous problem/run
+    resetTestRunResults();
 
     updateTestNavUI();
     renderTestResults(); // Initialize list
