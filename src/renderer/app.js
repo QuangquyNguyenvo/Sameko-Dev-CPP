@@ -457,7 +457,7 @@ function initCtrlWheelZoom() {
         if (!e.ctrlKey) return;
 
         const editorContainer = e.target.closest('#editor-container, #editor-container-2');
-        const panelContainer = e.target.closest('.terminal-body, .terminal-input, .panel-textarea, .docked-io-textarea, .diff-display, #expected-diff, #docked-expected-diff, .io-section, .terminal-section, .docked-io-view');
+        const panelContainer = e.target.closest('.terminal-body, .terminal-input, .panel-textarea, .docked-io-textarea, .diff-display, #expected-diff, .io-section, .terminal-section, .docked-io-view');
 
         if (!editorContainer && !panelContainer) return;
 
@@ -3700,25 +3700,7 @@ function initPanels() {
     setupRightClickPaste(document.getElementById('expected-area'));
     setupRightClickPaste(document.getElementById('terminal-in'));
 
-    // Setup 2-way sync between main IO panels and docked IO panels
-    const inputArea = document.getElementById('input-area');
-    const expectedArea = document.getElementById('expected-area');
-
-    if (inputArea) {
-        inputArea.addEventListener('input', () => {
-            const dockedInput = document.getElementById('docked-input');
-            if (dockedInput) dockedInput.value = inputArea.value;
-        });
-    }
-
-    if (expectedArea) {
-        expectedArea.addEventListener('input', () => {
-            const dockedExpected = document.getElementById('docked-expected');
-            if (dockedExpected) dockedExpected.value = expectedArea.value;
-        });
-    }
-
-
+    // IO textareas are the real elements — no sync needed even when docked
     initDockablePanels();
 }
 
@@ -3956,12 +3938,12 @@ function switchDockedPanel(panelId) {
         if (termInput) termInput.style.display = 'flex';
     } else if (panelId === 'io') {
         ioTab?.classList.add('active');
+        // Ensure docked shell exists (textareas are moved in by dockIOToProblems)
         if (!ioView) {
             createDockedIOView(problemsPanel);
             ioView = problemsPanel.querySelector('.docked-io-view');
         }
         if (ioView) ioView.style.display = 'flex';
-        syncIOContent();
     }
 }
 
@@ -4030,10 +4012,25 @@ function dockIOToProblems() {
 
     if (!ioSection || !problemsPanel) return;
 
-
+    // Hide IO section (textareas will be moved into docked shell)
     ioSection.classList.add('docked-away');
     if (resizerIO) resizerIO.classList.add('docked-away');
 
+    // Create docked shell (header + split containers, no clone textareas)
+    createDockedIOView(problemsPanel);
+
+    // Move real textareas into the docked slots
+    const inputArea = document.getElementById('input-area');
+    const expectedArea = document.getElementById('expected-area');
+    const expectedDiff = document.getElementById('expected-diff');
+    const inputSlot = document.getElementById('docked-input-slot');
+    const expectedSlot = document.getElementById('docked-expected-slot');
+
+    if (inputArea && inputSlot) inputSlot.appendChild(inputArea);
+    if (expectedSlot) {
+        if (expectedArea) expectedSlot.appendChild(expectedArea);
+        if (expectedDiff) expectedSlot.appendChild(expectedDiff);
+    }
 
     const panelHead = problemsPanel.querySelector('.panel-head');
     if (panelHead) {
@@ -4101,18 +4098,31 @@ function undockIO() {
     const problemsPanel = document.getElementById('problems-panel');
     const resizerIO = document.getElementById('resizer-io');
 
+    // Move real textareas back to io-section
+    const inputArea = document.getElementById('input-area');
+    const expectedArea = document.getElementById('expected-area');
+    const expectedDiff = document.getElementById('expected-diff');
+
+    if (inputArea) {
+        const inputPanel = ioSection?.querySelector('.io-panel-input');
+        if (inputPanel) inputPanel.appendChild(inputArea);
+    }
+    if (expectedArea) {
+        const expectedPanel = ioSection?.querySelector('.io-panel-expected');
+        if (expectedPanel) {
+            expectedPanel.appendChild(expectedArea);
+            if (expectedDiff) expectedPanel.appendChild(expectedDiff);
+        }
+    }
 
     ioSection?.classList.remove('docked-away');
     resizerIO?.classList.remove('docked-away');
 
-
     const ioTab = document.getElementById('docked-io-tab');
     ioTab?.remove();
 
-
     const dockedView = problemsPanel?.querySelector('.docked-io-view');
     dockedView?.remove();
-
 
     if (!DockingState.terminalDocked) {
         const problemsBody = problemsPanel?.querySelector('.problems-body');
@@ -4175,52 +4185,26 @@ function createDockedIOView(container) {
             <div class="docked-io-split">
                 <div class="docked-io-panel">
                     <div class="docked-io-header">INPUT</div>
-                    <textarea class="docked-io-textarea" id="docked-input" placeholder="Enter test data..."></textarea>
+                    <div class="docked-io-slot" id="docked-input-slot"></div>
                 </div>
                 <div class="docked-io-divider"></div>
                 <div class="docked-io-panel">
                     <div class="docked-io-header">EXPECTED</div>
-                    <textarea class="docked-io-textarea" id="docked-expected" placeholder="Expected output..."></textarea>
-                    <div class="docked-io-textarea" id="docked-expected-diff" style="display: none; overflow: auto; cursor: text;"></div>
+                    <div class="docked-io-slot" id="docked-expected-slot"></div>
                 </div>
             </div>
         `;
         container.appendChild(dockedIOView);
 
-
-        syncIOContent();
         updateDockedTestNavUI();
 
-
-        const dockedInput = document.getElementById('docked-input');
-        const dockedExpected = document.getElementById('docked-expected');
-
-        dockedInput?.addEventListener('input', () => {
-            const original = document.getElementById('input-area');
-            if (original) original.value = dockedInput.value;
-            // Also update current test case if exists
-            if (ccProblem?.tests?.[ccTestIndex]) {
-                ccProblem.tests[ccTestIndex].input = dockedInput.value;
-            }
-        });
-
-        dockedExpected?.addEventListener('input', () => {
-            const original = document.getElementById('expected-area');
-            if (original) original.value = dockedExpected.value;
-            // Also update current test case if exists
-            if (ccProblem?.tests?.[ccTestIndex]) {
-                ccProblem.tests[ccTestIndex].output = dockedExpected.value;
-            }
-        });
-
-        // Bind docked nav buttons
+        // Bind docked nav buttons - these never change
         document.getElementById('docked-btn-add-test')?.addEventListener('click', addTestCase);
         document.getElementById('docked-btn-prev-test')?.addEventListener('click', prevTestCase);
         document.getElementById('docked-btn-next-test')?.addEventListener('click', nextTestCase);
         document.getElementById('docked-btn-delete-test')?.addEventListener('click', deleteTestCase);
-
-        // Bind docked diff click to switch to edit
-        document.getElementById('docked-expected-diff')?.addEventListener('click', switchToExpectedEdit);
+    } else {
+        updateDockedTestNavUI();
     }
     return dockedIOView;
 }
@@ -4246,26 +4230,6 @@ function updateDockedTestNavUI() {
         if (prevBtn) prevBtn.style.display = 'none';
         if (nextBtn) nextBtn.style.display = 'none';
         if (deleteBtn) deleteBtn.style.display = 'none';
-    }
-}
-
-function syncIOContent() {
-    const originalInput = document.getElementById('input-area');
-    const originalExpected = document.getElementById('expected-area');
-    const dockedInput = document.getElementById('docked-input');
-    const dockedExpected = document.getElementById('docked-expected');
-    const dockedDiffDisplay = document.getElementById('docked-expected-diff');
-
-    if (originalInput && dockedInput) {
-        dockedInput.value = originalInput.value;
-    }
-    if (originalExpected && dockedExpected) {
-        dockedExpected.value = originalExpected.value;
-    }
-
-    // If docked diff is visible, refresh comparison so it stays consistent with latest expected/actual
-    if (dockedDiffDisplay && dockedDiffDisplay.style.display !== 'none') {
-        compareOutput();
     }
 }
 
@@ -4502,11 +4466,6 @@ function restoreTabIO(tabId) {
     const ioState = App.ioByTab[tabId] || { input: '', expected: '' };
     inputArea.value = ioState.input || '';
     expectedArea.value = ioState.expected || '';
-
-    const dockedInput = document.getElementById('docked-input');
-    const dockedExpected = document.getElementById('docked-expected');
-    if (dockedInput) dockedInput.value = inputArea.value;
-    if (dockedExpected) dockedExpected.value = expectedArea.value;
 }
 
 function setActive(id) {
@@ -5662,8 +5621,6 @@ function compareOutput() {
 
     const diffDisplay = document.getElementById('expected-diff');
     const textarea = document.getElementById('expected-area');
-    const dockedDiffDisplay = document.getElementById('docked-expected-diff');
-    const dockedTextarea = document.getElementById('docked-expected');
 
     const expectedNorm = normalizeJudgeOutput(expectedRaw);
     const hasExpected = expectedNorm.length > 0;
@@ -5682,19 +5639,6 @@ function compareOutput() {
         diffDisplay.style.display = 'block';
         textarea.style.display = 'none';
     }
-
-    if (window.FileExplorer) {
-        const judgeTab = App.tabs.find(t => t.id === (App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId));
-        if (judgeTab && judgeTab.path) {
-            window.FileExplorer.notifyBuildEvent(judgeTab.path, diff.allMatch ? 'judge-ac' : 'judge-wa');
-        }
-    }
-
-    if (dockedDiffDisplay && dockedTextarea) {
-        dockedDiffDisplay.innerHTML = diff.html;
-        dockedDiffDisplay.style.display = 'block';
-        dockedTextarea.style.display = 'none';
-    }
 }
 
 function escapeHtml(text) {
@@ -5711,20 +5655,6 @@ function switchToExpectedEdit() {
         textarea.style.display = 'block';
         diffDisplay.style.display = 'none';
         textarea.focus();
-    }
-
-    // Also switch Docked View
-    const dockedTextarea = document.getElementById('docked-expected');
-    const dockedDiffDisplay = document.getElementById('docked-expected-diff');
-
-    if (dockedTextarea && dockedDiffDisplay) {
-        dockedTextarea.style.display = 'block';
-        dockedDiffDisplay.style.display = 'none';
-        // If docked panel is visible, focus it
-        if (document.getElementById('problems-panel')?.style.display !== 'none' &&
-            DockingState.ioDocked) {
-            dockedTextarea.focus();
-        }
     }
 }
 
@@ -6010,10 +5940,6 @@ async function deleteTestCase() {
     if (ccProblem.tests.length === 0) {
         document.getElementById('input-area').value = '';
         document.getElementById('expected-area').value = '';
-        const dockedInput = document.getElementById('docked-input');
-        const dockedExpected = document.getElementById('docked-expected');
-        if (dockedInput) dockedInput.value = '';
-        if (dockedExpected) dockedExpected.value = '';
         ccTestIndex = 0;
     } else {
         ccTestIndex = Math.max(0, ccTestIndex - 1);
@@ -6044,10 +5970,6 @@ async function deleteTestCaseByIndex(index) {
     if (ccProblem.tests.length === 0) {
         document.getElementById('input-area').value = '';
         document.getElementById('expected-area').value = '';
-        const dockedInput = document.getElementById('docked-input');
-        const dockedExpected = document.getElementById('docked-expected');
-        if (dockedInput) dockedInput.value = '';
-        if (dockedExpected) dockedExpected.value = '';
         ccTestIndex = 0;
     } else {
         if (ccTestIndex >= ccProblem.tests.length) {
@@ -6079,10 +6001,6 @@ async function deleteAllTestCases() {
 
     document.getElementById('input-area').value = '';
     document.getElementById('expected-area').value = '';
-    const dockedInput = document.getElementById('docked-input');
-    const dockedExpected = document.getElementById('docked-expected');
-    if (dockedInput) dockedInput.value = '';
-    if (dockedExpected) dockedExpected.value = '';
 
     resetTestRunResults();
     updateTestNavUI();
@@ -6312,13 +6230,6 @@ function switchTestCase(index) {
     if (inputArea) inputArea.value = test.input || '';
     if (expectedArea) expectedArea.value = test.output || '';
 
-
-    // Also sync docked views
-    const dockedInput = document.getElementById('docked-input');
-    const dockedExpected = document.getElementById('docked-expected');
-    if (dockedInput) dockedInput.value = inputArea.value;
-    if (dockedExpected) dockedExpected.value = expectedArea.value;
-
     updateTestNavUI();
     updateDockedTestNavUI();
 
@@ -6336,8 +6247,6 @@ function switchTestCase(index) {
 function showTestResultDiff(expectedText, actualText) {
     const diffDisplay = document.getElementById('expected-diff');
     const textarea = document.getElementById('expected-area');
-    const dockedDiffDisplay = document.getElementById('docked-expected-diff');
-    const dockedTextarea = document.getElementById('docked-expected');
 
     if (!String(expectedText || '').trim() && !String(actualText || '').trim()) {
         switchToExpectedEdit();
@@ -6350,12 +6259,6 @@ function showTestResultDiff(expectedText, actualText) {
         diffDisplay.innerHTML = diff.html;
         diffDisplay.style.display = 'block';
         textarea.style.display = 'none';
-    }
-
-    if (dockedDiffDisplay && dockedTextarea) {
-        dockedDiffDisplay.innerHTML = diff.html;
-        dockedDiffDisplay.style.display = 'block';
-        dockedTextarea.style.display = 'none';
     }
 }
 

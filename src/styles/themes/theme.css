@@ -3200,9 +3200,10 @@ body.split-active .editor-pane {
     opacity: 0.5;
 }
 
-/* When terminal is docked, increase problems panel height */
+/* When terminal/IO is docked, increase problems panel height */
 .problems-panel:has(.docked-tab) {
-    min-height: 280px;
+    min-height: 320px;
+    max-height: none;
 }
 
 /* Panel head with docked tabs - better spacing */
@@ -3412,11 +3413,12 @@ body.split-active .editor-pane {
 }
 
 .docked-io-panel {
-    flex: 1;
+    flex: 1 1 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
     min-width: 0;
+    min-height: 0;
 }
 
 .docked-io-divider {
@@ -3457,6 +3459,25 @@ body.split-active .editor-pane {
 .docked-io-textarea::placeholder {
     color: var(--text-muted, #6c8aa0);
     opacity: 0.6;
+}
+
+/* Slot for real textareas inside docked IO panels */
+.docked-io-slot {
+    flex: 1 1 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 60px;
+}
+
+/* Make panel textareas fill the slot when docked */
+.docked-io-slot .panel-textarea,
+.docked-io-slot .diff-display {
+    flex: 1 1 0;
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    width: 100%;
 }
 
 /* Docked Test Navigation Header */
