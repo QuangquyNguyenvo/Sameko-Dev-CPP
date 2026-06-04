@@ -2,6 +2,9 @@
 
 require('v8-compile-cache');
 
+const __T0 = process.hrtime.bigint();
+const __ms = () => Number(process.hrtime.bigint() - __T0) / 1e6;
+
 const { app } = require('electron');
 const { initializeApp, setupAppEvents } = require('./core/app-lifecycle');
 const { createMainWindow } = require('./windows/main-window');
@@ -24,12 +27,20 @@ if (!gotTheLock) {
 setupAppEvents();
 
 app.whenReady().then(async () => {
-    console.log('[App] Electron ready');
+    console.log(`[PERF] whenReady @ ${__ms().toFixed(0)}ms`);
     await initializeApp();
+    console.log(`[PERF] initializeApp done @ ${__ms().toFixed(0)}ms`);
     const mainWindow = createMainWindow();
+    console.log(`[PERF] createMainWindow done @ ${__ms().toFixed(0)}ms`);
     registerLegacyHandlers(mainWindow);
     autoUpdateService.initialize(mainWindow);
     discordRPC.connect();
+    mainWindow.webContents.once('did-finish-load', () => {
+        console.log(`[PERF] renderer did-finish-load @ ${__ms().toFixed(0)}ms`);
+    });
+    mainWindow.webContents.once('dom-ready', () => {
+        console.log(`[PERF] renderer dom-ready @ ${__ms().toFixed(0)}ms`);
+    });
     console.log('[App] Sameko Dev C++ is ready!');
 });
 

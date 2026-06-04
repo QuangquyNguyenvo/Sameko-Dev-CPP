@@ -3277,50 +3277,43 @@ body.split-active .editor-pane {
 }
 
 
-/* Docked terminal view - VS Code style */
-.docked-terminal-view {
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    background: var(--terminal-bg, #1e2933);
-    overflow: hidden;
-    min-height: 120px;
-}
-
-.docked-terminal-body {
+/* Terminal when docked inside problems panel — use real elements, no clones */
+.problems-panel .terminal-body {
     flex: 1;
     padding: 8px 12px;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    font-size: var(--panel-font-size, 13px);
     color: var(--terminal-text, #e0f0ff);
     overflow-y: auto;
     user-select: text;
     line-height: 1.5;
+    background: var(--terminal-bg, #1e2933);
 }
 
 /* Inline input at bottom of terminal - VS Code style */
-.docked-terminal-input {
+.problems-panel .terminal-input {
     display: flex;
     align-items: center;
     padding: 4px 12px 8px;
     background: transparent;
     border: none;
+    flex-shrink: 0;
 }
 
-.docked-terminal-input .prompt {
+.problems-panel .terminal-input .prompt {
     color: var(--success, #68d391);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    font-size: var(--panel-font-size, 13px);
     margin-right: 8px;
 }
 
-.docked-terminal-input textarea {
+.problems-panel .terminal-input textarea {
     flex: 1;
     background: transparent;
     border: none;
     color: var(--terminal-text, #e0f0ff);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    font-size: var(--panel-font-size, 13px);
     outline: none;
     resize: none;
     line-height: 1.4;
@@ -3330,55 +3323,55 @@ body.split-active .editor-pane {
     overflow-y: auto;
 }
 
-.docked-terminal-input input {
+.problems-panel .terminal-input input {
     flex: 1;
     background: transparent;
     border: none;
     color: var(--terminal-text, #e0f0ff);
     font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
+    font-size: var(--panel-font-size, 13px);
     outline: none;
 }
 
-.docked-terminal-input input::placeholder,
-.docked-terminal-input textarea::placeholder {
+.problems-panel .terminal-input input::placeholder,
+.problems-panel .terminal-input textarea::placeholder {
     color: rgba(255, 255, 255, 0.3);
 }
 
 /* Hide send button for cleaner look */
-.docked-terminal-input .send-btn {
+.problems-panel .terminal-input .send-btn {
     display: none;
 }
 
 /* ===== DOCKED TERMINAL LINE TYPES ===== */
 /* Success messages (green) */
-.docked-terminal-body .line.success {
+.problems-panel .terminal-body .line.success {
     color: #98c379;
 }
 
 /* Error messages (red) */
-.docked-terminal-body .line.error {
+.problems-panel .terminal-body .line.error {
     color: #e06c75;
 }
 
 /* Warning messages (yellow) */
-.docked-terminal-body .line.warning {
+.problems-panel .terminal-body .line.warning {
     color: #e5c07b;
 }
 
 /* Info messages (blue) - for build/settings info */
-.docked-terminal-body .line.info {
+.problems-panel .terminal-body .line.info {
     color: #61afef;
 }
 
 /* System messages (gray/muted) */
-.docked-terminal-body .line.system {
+.problems-panel .terminal-body .line.system {
     color: #7a8a9a;
     font-style: italic;
 }
 
 /* Input messages (cyan/lighter) */
-.docked-terminal-body .line.input {
+.problems-panel .terminal-body .line.input {
     color: #56b6c2;
     opacity: 0.85;
 }

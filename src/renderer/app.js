@@ -457,7 +457,7 @@ function initCtrlWheelZoom() {
         if (!e.ctrlKey) return;
 
         const editorContainer = e.target.closest('#editor-container, #editor-container-2');
-        const panelContainer = e.target.closest('.terminal-body, .terminal-input, .panel-textarea, .docked-io-textarea, .diff-display, #expected-diff, #docked-expected-diff, .io-section, .terminal-section');
+        const panelContainer = e.target.closest('.terminal-body, .terminal-input, .panel-textarea, .docked-io-textarea, .diff-display, #expected-diff, #docked-expected-diff, .io-section, .terminal-section, .docked-io-view');
 
         if (!editorContainer && !panelContainer) return;
 
@@ -3831,14 +3831,19 @@ function dockTerminalToProblems() {
 
     if (!terminalSection || !problemsPanel) return;
 
-    // Hide terminal section
+    // Move terminal body and input into problems panel (single DOM element, no clone)
+    const termBody = document.getElementById('terminal');
+    const termInput = document.querySelector('.terminal-input');
+    if (termBody) problemsPanel.appendChild(termBody);
+    if (termInput) problemsPanel.appendChild(termInput);
+
+    // Hide the now-empty terminal section shell + its resizer
     terminalSection.classList.add('docked-away');
     if (resizerTerm) resizerTerm.classList.add('docked-away');
 
     // Add Terminal tab to the panel-head, right after PROBLEMS
     const panelHead = problemsPanel.querySelector('.panel-head');
     if (panelHead) {
-        // Create Terminal tab that looks like PROBLEMS title
         const terminalTab = document.createElement('span');
         terminalTab.className = 'panel-title terminal docked-tab';
         terminalTab.id = 'docked-terminal-tab';
@@ -3886,10 +3891,12 @@ function dockTerminalToProblems() {
 
         terminalTab.addEventListener('dragend', () => {
             terminalTab.classList.remove('dragging');
-
             undockTerminal();
         });
     }
+
+    // Show terminal, hide problems body
+    switchDockedPanel('terminal');
 
     DockingState.terminalDocked = true;
 
@@ -3919,7 +3926,9 @@ function switchDockedPanel(panelId) {
 
     const problemsBody = problemsPanel.querySelector('.problems-body');
     const testsBody = document.getElementById('tests-results-list');
-    let terminalView = problemsPanel.querySelector('.docked-terminal-view');
+    // Terminal elements are the real ones (moved into problemsPanel when docked)
+    const termBody = document.getElementById('terminal');
+    const termInput = document.querySelector('#terminal-in')?.closest('.terminal-input');
     let ioView = problemsPanel.querySelector('.docked-io-view');
 
     // Deactivate all headers
@@ -3931,7 +3940,8 @@ function switchDockedPanel(panelId) {
     // Hide all bodies
     if (problemsBody) problemsBody.style.display = 'none';
     if (testsBody) testsBody.style.display = 'none';
-    if (terminalView) terminalView.style.display = 'none';
+    if (termBody) termBody.style.display = 'none';
+    if (termInput) termInput.style.display = 'none';
     if (ioView) ioView.style.display = 'none';
 
     if (panelId === 'problems') {
@@ -3942,12 +3952,8 @@ function switchDockedPanel(panelId) {
         if (testsBody) testsBody.style.display = 'block';
     } else if (panelId === 'terminal') {
         terminalTab?.classList.add('active');
-        if (!terminalView) {
-            createDockedTerminalView(problemsPanel);
-            terminalView = problemsPanel.querySelector('.docked-terminal-view');
-        }
-        if (terminalView) terminalView.style.display = 'flex';
-        syncTerminalContent();
+        if (termBody) { termBody.style.display = ''; termBody.style.flex = '1'; }
+        if (termInput) termInput.style.display = 'flex';
     } else if (panelId === 'io') {
         ioTab?.classList.add('active');
         if (!ioView) {
@@ -3959,123 +3965,6 @@ function switchDockedPanel(panelId) {
     }
 }
 
-function createDockedTerminalView(container) {
-    const view = document.createElement('div');
-    view.className = 'docked-terminal-view';
-    view.innerHTML = `
-        <div class="docked-terminal-body" id="docked-terminal-output"></div>
-        <div class="docked-terminal-input">
-            <span class="prompt"></span>
-            <textarea id="docked-terminal-in" rows="1" placeholder="Input..."></textarea>
-            <button class="send-btn" id="docked-send-btn">➤</button>
-        </div>
-    `;
-    container.appendChild(view);
-
-
-    const input = view.querySelector('#docked-terminal-in');
-    const sendBtn = view.querySelector('#docked-send-btn');
-
-    const sendDockedInput = () => {
-        if (input.value && App.isRunning) {
-            // Send each line separately
-            const lines = input.value.split('\n');
-            lines.forEach(line => {
-                log(line, 'input');
-                window.electronAPI?.sendInput(line);
-            });
-            input.value = '';
-            input.rows = 1;
-        }
-    };
-
-
-    input.onkeydown = (e) => {
-        if (e.key === 'Enter' && e.ctrlKey) {
-            e.preventDefault();
-            sendDockedInput();
-        } else if (e.key === 'Enter' && !e.shiftKey && input.rows === 1) {
-            // Single line mode: Enter sends
-            e.preventDefault();
-            sendDockedInput();
-        }
-    };
-
-    // Auto-resize logic with paste fix
-    const handleResize = function () {
-        if (this.value === '') {
-            this.style.height = '';
-            return;
-        }
-        this.style.height = 0;
-        this.style.height = (this.scrollHeight) + 'px';
-    };
-    input.addEventListener('input', handleResize);
-    input.addEventListener('paste', function () {
-        setTimeout(() => handleResize.call(this), 10);
-    });
-
-
-    input.addEventListener('contextmenu', async (e) => {
-        e.preventDefault();
-        try {
-            const text = await navigator.clipboard.readText();
-            const start = input.selectionStart;
-            const end = input.selectionEnd;
-            input.value = input.value.slice(0, start) + text + input.value.slice(end);
-            input.selectionStart = input.selectionEnd = start + text.length;
-            input.dispatchEvent(new Event('input')); // Trigger resize
-        } catch (err) {
-            console.log('Clipboard access denied:', err);
-        }
-    });
-
-    sendBtn.onclick = sendDockedInput;
-
-
-    view.addEventListener('contextmenu', async (e) => {
-        // Ignore if valid interactive elements
-        if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
-
-        e.preventDefault();
-        try {
-            const text = await navigator.clipboard.readText();
-            if (text) {
-                const start = input.selectionStart;
-                const end = input.selectionEnd;
-                input.value = input.value.slice(0, start) + text + input.value.slice(end);
-
-                // Trigger events for auto-resize
-                input.dispatchEvent(new Event('input'));
-                input.focus();
-
-                // Update cursor
-                input.selectionStart = input.selectionEnd = start + text.length;
-            }
-        } catch (err) {
-            console.warn('Paste failed', err);
-        }
-    });
-
-    syncTerminalContent();
-}
-
-function syncTerminalContent() {
-    const original = document.getElementById('terminal');
-    const docked = document.getElementById('docked-terminal-output');
-    if (original && docked) {
-        docked.innerHTML = original.innerHTML;
-        // Scroll to bottom
-        scrollDockedTerminalToBottom();
-    }
-}
-
-function scrollDockedTerminalToBottom() {
-    const docked = document.getElementById('docked-terminal-output');
-    if (docked) {
-        docked.scrollTop = docked.scrollHeight;
-    }
-}
 
 function undockTerminal() {
     if (!DockingState.terminalDocked) return;
@@ -4084,22 +3973,25 @@ function undockTerminal() {
     const problemsPanel = document.getElementById('problems-panel');
     const resizerTerm = document.getElementById('resizer-term');
 
+    // Move terminal body and input back to the terminal section
+    const termBody = document.getElementById('terminal');
+    const termInput = document.querySelector('#terminal-in')?.closest('.terminal-input');
+    if (termBody && termBody.parentElement !== terminalSection) {
+        terminalSection.appendChild(termBody);
+    }
+    if (termInput && termInput.parentElement !== terminalSection) {
+        terminalSection.appendChild(termInput);
+    }
 
     terminalSection?.classList.remove('docked-away');
     resizerTerm?.classList.remove('docked-away');
 
-
     const terminalTab = document.getElementById('docked-terminal-tab');
     terminalTab?.remove();
 
-
-    const dockedView = problemsPanel?.querySelector('.docked-terminal-view');
-    dockedView?.remove();
-
-
+    // Show problems body
     const problemsBody = problemsPanel?.querySelector('.problems-body');
     if (problemsBody) problemsBody.style.display = '';
-
 
     const problemsTitle = problemsPanel?.querySelector('.panel-title.problems');
     if (problemsTitle) {
@@ -5213,11 +5105,10 @@ async function run(clearTerminal = true) {
 
     if (DockingState.terminalDocked) {
         switchDockedPanel('terminal');
-        scrollDockedTerminalToBottom();
 
         setTimeout(() => {
-            const dockedInput = document.getElementById('docked-terminal-in');
-            if (dockedInput) dockedInput.focus();
+            const termInput = document.getElementById('terminal-in');
+            if (termInput) termInput.focus();
         }, 100);
     }
 
@@ -5587,7 +5478,7 @@ function scheduleTerminalScrollSync() {
         _termScrollSyncPending = false;
         const t = document.getElementById('terminal');
         if (t) t.scrollTop = t.scrollHeight;
-        if (DockingState.terminalDocked) syncTerminalContent();
+        if (DockingState.terminalDocked) { /* terminal is the real element — no sync needed */ }
     });
 }
 
@@ -5601,11 +5492,6 @@ function setRunning(v) {
     document.getElementById('btn-buildrun')?.classList.toggle('running', v);
     document.getElementById('btn-run-only')?.classList.toggle('running', v);
     document.getElementById('btn-stop')?.classList.toggle('running', v);
-
-    const dockedTermIn = document.getElementById('docked-terminal-in');
-    const dockedSendBtn = document.getElementById('docked-send-btn');
-    if (dockedTermIn) dockedTermIn.disabled = !v;
-    if (dockedSendBtn) dockedSendBtn.disabled = !v;
 
     if (v) document.getElementById('terminal-in').focus();
 }

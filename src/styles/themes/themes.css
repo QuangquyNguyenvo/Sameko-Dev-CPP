@@ -1813,17 +1813,11 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
 }
 
 /* Docked terminal view - dark themes */
-[data-theme="kawaii-dark"] .docked-terminal-view,
-[data-theme="dracula"] .docked-terminal-view,
-[data-theme="monokai"] .docked-terminal-view,
-[data-theme="nord"] .docked-terminal-view {
+[data-theme="kawaii-dark"] .problems-panel .terminal-body,
+[data-theme="dracula"] .problems-panel .terminal-body,
+[data-theme="monokai"] .problems-panel .terminal-body,
+[data-theme="nord"] .problems-panel .terminal-body {
     background: var(--bg-secondary, #1e1e1e);
-}
-
-[data-theme="kawaii-dark"] .docked-terminal-body,
-[data-theme="dracula"] .docked-terminal-body,
-[data-theme="monokai"] .docked-terminal-body,
-[data-theme="nord"] .docked-terminal-body {
     color: var(--text-primary);
 }
 
@@ -2254,11 +2248,8 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     background: rgba(255, 105, 180, 0.3);
 }
 
-[data-theme="sakura"] .docked-terminal-view {
+[data-theme="sakura"] .problems-panel .terminal-body {
     background: var(--terminal-bg);
-}
-
-[data-theme="sakura"] .docked-terminal-body {
     color: var(--terminal-text);
 }
 
