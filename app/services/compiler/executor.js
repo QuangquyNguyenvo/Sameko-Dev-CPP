@@ -490,20 +490,57 @@ async function run({ exePath, cwd }) {
         runningMemoryPollInterval = setInterval(pollMemory, 500);
     }
 
-    let output = '';
-    let errorOutput = '';
+    // Coalesce program output: a tight `while(1) cout<<...` loop fires the
+    // 'data' event thousands of times per second. Emitting one IPC message per
+    // chunk floods the renderer and lags the machine, so batch chunks and flush
+    // on a short timer (~24ms) or once the pending buffer crosses a size cap.
+    // We do NOT retain the full output (it was previously accumulated into
+    // unused `output`/`errorOutput` strings -> unbounded memory under infinite
+    // loops); we only hold what hasn't been flushed yet.
+    const FLUSH_INTERVAL_MS = 24;
+    const FLUSH_THRESHOLD_BYTES = 64 * 1024;
+
+    let pendingOut = '';
+    let pendingErr = '';
+    let flushTimer = null;
+
+    const flush = () => {
+        if (flushTimer) {
+            clearTimeout(flushTimer);
+            flushTimer = null;
+        }
+        if (pendingOut) {
+            sendToRenderer('process-output', pendingOut);
+            pendingOut = '';
+        }
+        if (pendingErr) {
+            sendToRenderer('process-error', pendingErr);
+            pendingErr = '';
+        }
+    };
+
+    const scheduleFlush = () => {
+        if (pendingOut.length + pendingErr.length >= FLUSH_THRESHOLD_BYTES) {
+            flush();
+            return;
+        }
+        if (!flushTimer) {
+            flushTimer = setTimeout(flush, FLUSH_INTERVAL_MS);
+        }
+    };
 
     runningProcess.stdout.on('data', (data) => {
-        output += data.toString();
-        sendToRenderer('process-output', data.toString());
+        pendingOut += data.toString();
+        scheduleFlush();
     });
 
     runningProcess.stderr.on('data', (data) => {
-        errorOutput += data.toString();
-        sendToRenderer('process-error', data.toString());
+        pendingErr += data.toString();
+        scheduleFlush();
     });
 
     runningProcess.on('close', (code) => {
+        flush(); // emit any buffered output before signalling exit
         if (runningMemoryPollInterval) {
             clearInterval(runningMemoryPollInterval);
             runningMemoryPollInterval = null;
@@ -518,6 +555,7 @@ async function run({ exePath, cwd }) {
     });
 
     runningProcess.on('error', (err) => {
+        flush();
         if (runningMemoryPollInterval) {
             clearInterval(runningMemoryPollInterval);
             runningMemoryPollInterval = null;

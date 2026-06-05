@@ -18,6 +18,7 @@
     <link rel="stylesheet" href="styles/components/local-history.css">
     <link rel="stylesheet" href="styles/components/confirm-dialog.css">
     <link rel="stylesheet" href="../node_modules/monaco-editor/min/vs/editor/editor.main.css">
+    <link rel="stylesheet" href="../node_modules/xterm/css/xterm.css">
 </head>
 
 <body>
@@ -1308,6 +1309,10 @@
         };
         console.log('[DEBUG] Scripts starting to load...');
     </script>
+    <!-- xterm UMD libs must load BEFORE Monaco's AMD loader, otherwise they
+         register as anonymous AMD modules instead of attaching to window. -->
+    <script src="../node_modules/xterm/lib/xterm.js"></script>
+    <script src="../node_modules/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
     <script>var require = { paths: { vs: '../node_modules/monaco-editor/min/vs' } };</script>
     <script src="../node_modules/monaco-editor/min/vs/loader.js"
         onerror="console.error('[ERROR] Failed to load Monaco loader')"></script>
@@ -1321,6 +1326,7 @@
     <script src="renderer/ui/confirm-dialog.js"></script>
     <script src="features/local-history/history-manager.js"></script>
     <script src="features/file-explorer/file-explorer.js"></script>
+    <script src="features/terminal/terminal-manager.js"></script>
     <script src="renderer/app.js"></script>
 </body>
 

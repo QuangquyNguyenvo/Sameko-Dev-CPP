@@ -483,6 +483,7 @@ function initCtrlWheelZoom() {
             if (newSize !== currentSize) {
                 App.settings.execution.panelFontSize = newSize;
                 document.documentElement.style.setProperty('--panel-font-size', newSize + 'px');
+                if (window.TerminalManager) TerminalManager.setFontSize(newSize);
                 // Update settings slider if visible
                 const slider = document.getElementById('set-panelFontSize');
                 const valSpan = document.getElementById('val-panelFontSize');
@@ -3089,6 +3090,7 @@ function applySettings() {
     // Apply panel font size to terminal, I/O panels
     const panelFontSize = App.settings.execution.panelFontSize || 13;
     document.documentElement.style.setProperty('--panel-font-size', panelFontSize + 'px');
+    if (window.TerminalManager) TerminalManager.setFontSize(panelFontSize);
 
     if (App.settings.appearance.performanceMode) {
         document.body.classList.add('performance-mode');
@@ -3135,6 +3137,9 @@ function applyTheme(themeName) {
 
     // Additional app-specific background logic (opacity, image...)
     applyBackgroundSettings();
+
+    // Re-color the xterm terminal to match the new theme.
+    if (typeof syncTerminalTheme === 'function') syncTerminalTheme();
 }
 
 /**
@@ -5393,55 +5398,43 @@ function normalizeLogType(type) {
     return type;
 }
 
+// IDE status / build messages: each call is a discrete colored line.
 function log(msg, type = '') {
-    const t = document.getElementById('terminal');
+    if (!window.TerminalManager) return;
+
     const normalizedType = normalizeLogType(type);
-    const l = document.createElement('pre');
-    l.className = 'line' + (normalizedType ? ' ' + normalizedType : '');
-    l.style.margin = '0';
-    l.style.fontFamily = 'inherit';
+    const colorScheme = App.settings?.terminal?.colorScheme || 'ansi-16';
+    const colorEnabled = colorScheme !== 'disabled';
+
+    let hexColor = null;
+    if (colorEnabled && normalizedType) {
+        const messageColors = TERMINAL_MESSAGE_COLORS[colorScheme] || TERMINAL_MESSAGE_COLORS['ansi-16'];
+        hexColor = messageColors[normalizedType] || null;
+    }
+
+    TerminalManager.writeMessage(msg, hexColor, colorEnabled, normalizedType);
+}
+
+// Raw program output (stdout/stderr): written verbatim so the program controls
+// its own newlines and ANSI colors. stderr is tinted with the 'error' color.
+function logProgram(data, isError = false) {
+    if (!window.TerminalManager) return;
 
     const colorScheme = App.settings?.terminal?.colorScheme || 'ansi-16';
-    if (colorScheme !== 'disabled' && msg.includes('\x1b[')) {
-        l.innerHTML = parseAnsiToHtml(msg);
-    } else {
-        l.textContent = msg.replace(/\x1b\[[0-9;]*m/g, '');
-    }
+    const colorEnabled = colorScheme !== 'disabled';
 
-    if (normalizedType && colorScheme !== 'disabled') {
+    let hexColor = null;
+    if (isError && colorEnabled) {
         const messageColors = TERMINAL_MESSAGE_COLORS[colorScheme] || TERMINAL_MESSAGE_COLORS['ansi-16'];
-        if (messageColors[normalizedType]) {
-            l.style.color = messageColors[normalizedType];
-        }
+        hexColor = messageColors.error || null;
     }
 
-    t.appendChild(l);
-
-    // Performance: Limit terminal lines to prevent lagging
-    const MAX_TERM_LINES = 1000;
-    while (t.childElementCount > MAX_TERM_LINES) {
-        t.removeChild(t.firstChild);
-    }
-
-    scheduleTerminalScrollSync();
+    TerminalManager.writeProgram(data, hexColor, colorEnabled, isError ? 'error' : '');
 }
 
-// Scrolling to the bottom and mirroring into the docked terminal both force a
-// layout; doing them synchronously on every log() call made large output render
-// O(n^2) and stall the UI. Coalesce to at most once per animation frame. (#48)
-let _termScrollSyncPending = false;
-function scheduleTerminalScrollSync() {
-    if (_termScrollSyncPending) return;
-    _termScrollSyncPending = true;
-    requestAnimationFrame(() => {
-        _termScrollSyncPending = false;
-        const t = document.getElementById('terminal');
-        if (t) t.scrollTop = t.scrollHeight;
-        if (DockingState.terminalDocked) { /* terminal is the real element — no sync needed */ }
-    });
+function clearTerm() {
+    if (window.TerminalManager) TerminalManager.clear();
 }
-
-function clearTerm() { document.getElementById('terminal').innerHTML = ''; }
 
 function setRunning(v) {
     App.isRunning = v;
@@ -5585,8 +5578,8 @@ function buildCompactDiffHtml(expectedRaw, actualRaw, { normalize = true } = {})
 function compareOutput() {
     const expectedRaw = document.getElementById('expected-area').value;
 
-    const terminalEl = document.getElementById('terminal');
-    const lines = Array.from(terminalEl.querySelectorAll('pre, .line'));
+    // Read from the terminal line buffer (xterm canvas isn't DOM-queryable).
+    const lines = window.TerminalManager ? TerminalManager.getLines() : [];
 
     // Extract output from the latest run block (not the first one),
     // so reruns don't reuse stale output from older runs.
@@ -5595,7 +5588,7 @@ function compareOutput() {
     let capturing = false;
 
     for (const line of lines) {
-        const text = line.textContent;
+        const text = line.text;
 
         if (text.includes('--- Running ---')) {
             capturing = true;
@@ -5611,7 +5604,7 @@ function compareOutput() {
             continue;
         }
 
-        if (!line.classList.contains('input') && !line.classList.contains('system') && !line.classList.contains('info')) {
+        if (line.type !== 'input' && line.type !== 'system' && line.type !== 'info') {
             currentRunLines.push(text);
         }
     }
@@ -5716,8 +5709,8 @@ if (window.electronAPI) {
             setStatus('Done', 'success');
         }
     });
-    window.electronAPI.onProcessOutput?.(d => log(d));
-    window.electronAPI.onProcessError?.(d => log(d, 'error'));
+    window.electronAPI.onProcessOutput?.(d => logProgram(d, false));
+    window.electronAPI.onProcessError?.(d => logProgram(d, true));
     window.electronAPI.onProcessExit?.(data => {
         if (App.runTimeout) {
             clearTimeout(App.runTimeout);
@@ -6963,9 +6956,46 @@ let termHistory = [];
 let termHistoryIndex = -1;
 let termCurrentDraft = '';
 
+// Read terminal colors from the active theme's CSS variables and push them to
+// xterm so it matches the app theme. Called on init and whenever the theme
+// changes.
+function syncTerminalTheme() {
+    if (!window.TerminalManager) return;
+    const cs = getComputedStyle(document.documentElement);
+    const bg = (cs.getPropertyValue('--terminal-bg') || '#1e2933').trim();
+    const fg = (cs.getPropertyValue('--text-primary') || '#e0f0ff').trim();
+    TerminalManager.applyTheme({
+        background: bg || '#1e2933',
+        foreground: fg || '#e0f0ff',
+        cursor: bg || '#1e2933'
+    });
+}
+
+// Initialize the xterm.js terminal once, sized to the current panel font size
+// and themed to match the active app theme. Re-fits on container resize.
+function initXtermTerminal() {
+    if (!window.TerminalManager) return;
+    const fontSize = App.settings?.execution?.panelFontSize || 13;
+    TerminalManager.initTerminal('terminal', { fontSize });
+    syncTerminalTheme();
+
+    // Re-fit whenever the terminal container changes size (resizer drag, dock
+    // toggle, window resize, panel show/hide). ResizeObserver coalesces these.
+    const termEl = document.getElementById('terminal');
+    if (termEl && typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(() => {
+            requestAnimationFrame(() => TerminalManager.fit());
+        });
+        ro.observe(termEl);
+    }
+}
+
 function initTerminalUX() {
     const termSection = document.getElementById('terminal-section');
     const termInput = document.getElementById('terminal-in');
+
+    // Mount the xterm.js terminal into the #terminal element (output display only).
+    initXtermTerminal();
 
     if (termInput) {
 
