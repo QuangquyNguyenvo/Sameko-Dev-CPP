@@ -48,7 +48,8 @@ const DEFAULT_SETTINGS = {
         autoSendInput: true,
         useExternalTerminal: false,
         panelFontSize: 13,
-        noBuildCache: false
+        noBuildCache: false,
+        realtimeOutput: true
     },
     appearance: {
         theme: 'kawaii-light',
@@ -66,6 +67,7 @@ const DEFAULT_SETTINGS = {
         showIO: false,
         showTerm: true,
         showProblems: false,
+        terminalDocked: true,
         ioWidth: null,
         termWidth: null,
         problemsHeight: null
@@ -2032,6 +2034,8 @@ function openSettings() {
     document.getElementById('set-clearTerminal').checked = App.settings.execution.clearTerminal;
     document.getElementById('set-autoSendInput').checked = App.settings.execution.autoSendInput;
     document.getElementById('set-useExternalTerminal').checked = App.settings.execution.useExternalTerminal || false;
+    const setRealtimeOutput = document.getElementById('set-realtimeOutput');
+    if (setRealtimeOutput) setRealtimeOutput.checked = App.settings.execution.realtimeOutput !== false;
 
     document.getElementById('set-terminalColorScheme').value = App.settings.terminal?.colorScheme || 'ansi-16';
 
@@ -2142,6 +2146,8 @@ function saveSettingsAndClose() {
     App.settings.execution.clearTerminal = document.getElementById('set-clearTerminal').checked;
     App.settings.execution.autoSendInput = document.getElementById('set-autoSendInput').checked;
     App.settings.execution.useExternalTerminal = document.getElementById('set-useExternalTerminal').checked;
+    const realtimeOutputToggle = document.getElementById('set-realtimeOutput');
+    if (realtimeOutputToggle) App.settings.execution.realtimeOutput = realtimeOutputToggle.checked;
 
     if (!App.settings.terminal) App.settings.terminal = {};
     App.settings.terminal.colorScheme = document.getElementById('set-terminalColorScheme').value;
@@ -3640,6 +3646,7 @@ function toggleTerm() {
         if (App.editor) App.editor.layout();
         if (App.editor2) App.editor2.layout();
     }, 50);
+    if (App.showTerm) fitTerminal();
 }
 function toggleProblems() {
     App.showProblems = !App.showProblems;
@@ -3941,6 +3948,7 @@ function switchDockedPanel(panelId) {
         terminalTab?.classList.add('active');
         if (termBody) { termBody.style.display = ''; termBody.style.flex = '1'; }
         if (termInput) termInput.style.display = 'flex';
+        fitTerminal();
     } else if (panelId === 'io') {
         ioTab?.classList.add('active');
         // Ensure docked shell exists (textareas are moved in by dockIOToProblems)
@@ -4002,6 +4010,7 @@ function undockTerminal() {
 
     log('Terminal undocked', 'info');
     refreshEditorLayout();
+    fitTerminal();
 }
 
 // ============================================================================
@@ -4243,6 +4252,17 @@ function refreshEditorLayout() {
         if (App.editor) App.editor.layout();
         if (App.editor2) App.editor2.layout();
     }, 50);
+}
+
+// Re-fit the xterm terminal after a layout change (dock/undock/switch/show).
+// xterm computes a fixed row/col count in fit(); when the container changes
+// size we must recompute or it keeps stale dimensions and won't fill. Two rAFs
+// + a fallback timeout cover both instant reflows and CSS transitions.
+function fitTerminal() {
+    if (!window.TerminalManager) return;
+    const doFit = () => TerminalManager.fit();
+    requestAnimationFrame(() => requestAnimationFrame(doFit));
+    setTimeout(doFit, 120); // after the panel height/opacity transition
 }
 
 
@@ -4892,7 +4912,8 @@ async function compileOnly() {
             content: tab.content,
             flags,
             singleFileMode: App.settings.compiler.singleFileMode !== false,
-            noBuildCache: App.settings.execution.noBuildCache === true
+            noBuildCache: App.settings.execution.noBuildCache === true,
+            realtimeOutput: App.settings.execution.realtimeOutput !== false
         });
         const ms = Date.now() - t0;
 
@@ -4991,7 +5012,8 @@ async function buildRun() {
             flags,
             singleFileMode: App.settings.compiler.singleFileMode !== false,
             useLLD: App.settings.compiler.useLLD !== false,
-            noBuildCache: App.settings.execution.noBuildCache === true
+            noBuildCache: App.settings.execution.noBuildCache === true,
+            realtimeOutput: App.settings.execution.realtimeOutput !== false
         });
         const ms = Date.now() - t0;
 
@@ -6468,7 +6490,8 @@ async function runAllTests() {
             filePath: tab.path,
             content: content,
             flags: compileFlags,
-            singleFileMode: App.settings.compiler.singleFileMode !== false
+            singleFileMode: App.settings.compiler.singleFileMode !== false,
+            realtimeOutput: App.settings.execution.realtimeOutput !== false
         });
 
         if (!compileResult.success) {
@@ -6599,7 +6622,8 @@ async function runSingleTestByIndex(testIndex) {
             filePath: tab.path,
             content: content,
             flags: compileFlags,
-            singleFileMode: App.settings.compiler.singleFileMode !== false
+            singleFileMode: App.settings.compiler.singleFileMode !== false,
+            realtimeOutput: App.settings.execution.realtimeOutput !== false
         });
 
         if (!compileResult.success) {

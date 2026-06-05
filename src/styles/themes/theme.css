@@ -3291,6 +3291,14 @@ body.split-active .editor-pane {
     background: var(--terminal-bg, #1e2933);
 }
 
+/* xterm.js must fill its container (#terminal) in both docked and undocked
+   positions. fit() recomputes the row count; this guarantees the visual fill
+   (and background) even between fits. */
+#terminal .xterm {
+    height: 100%;
+    width: 100%;
+}
+
 /* Inline input at bottom of terminal - VS Code style */
 .problems-panel .terminal-input {
     display: flex;

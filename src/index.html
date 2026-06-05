@@ -265,12 +265,12 @@
                 </div>
                 <div class="update-body">
                     <div class="update-version">
-                        <span class="update-current" id="update-current">v1.1.0</span>
+                        <span class="update-current" id="update-current">v1.2.0</span>
                         <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
                             stroke-width="2">
                             <path d="M5 12h14M12 5l7 7-7 7" />
                         </svg>
-                        <span class="update-new" id="update-new">v1.1.1</span>
+                        <span class="update-new" id="update-new">v1.2.0</span>
                     </div>
                     <div class="update-notes" id="update-notes">
                         <!-- Release notes will be inserted here -->
@@ -630,6 +630,14 @@
                                 </label>
                             </div>
                             <div class="setting-row">
+                                <label>Realtime Output <span class="tooltip"
+                                        title="Show cout/printf output line-by-line as it happens.&#10;Disable for max speed when printing huge amounts (heavy CP output).">?</span></label>
+                                <label class="switch">
+                                    <input type="checkbox" id="set-realtimeOutput" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-row">
                                 <label>Auto-send Input</label>
                                 <label class="switch">
                                     <input type="checkbox" id="set-autoSendInput" checked>
@@ -826,7 +834,7 @@
                                     style="background: var(--bg-secondary); padding: 20px; border-radius: 8px; max-width: 400px; margin: 0 auto; text-align: left;">
                                     <div class="setting-row">
                                         <label>Version</label>
-                                        <span class="setting-value" id="about-version">1.1.0</span>
+                                        <span class="setting-value" id="about-version">1.2.0</span>
                                     </div>
                                     <div class="setting-row">
                                         <label>Electron</label>

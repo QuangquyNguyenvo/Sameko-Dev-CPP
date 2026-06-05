@@ -100,7 +100,7 @@ function sendToRenderer(channel, data) {
  * @param {string} [options.flags] - Compiler flags
  * @returns {Promise<import('../../../shared/types').CompileResult>}
  */
-async function compile({ filePath, content, flags, useLLD, noBuildCache = false, singleFileMode = false }) {
+async function compile({ filePath, content, flags, useLLD, noBuildCache = false, singleFileMode = false, realtimeOutput = true }) {
     const startTime = Date.now();
 
     if (activeCompilerProcess) {
@@ -246,7 +246,10 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
         '-pipe'
     ];
 
-    if (unbufferObj) {
+    // Link the realtime-output shim (unit-buffers std::cout/cerr) so program
+    // output appears line-by-line in the terminal. Skipped when the user
+    // disables it for max throughput on heavy competitive-programming output.
+    if (unbufferObj && realtimeOutput !== false) {
         args.push(unbufferObj);
     }
 

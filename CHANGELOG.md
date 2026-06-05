@@ -6,15 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [1.1.1] - 2026-05-19
+## [1.2.0] - 2026-06-06
 
 ### Added
+- **Realtime program output (`std::cout`/`printf` shown line-by-line)**:
+  - Rebuilt the output-unbuffering shim as C++ (`Sameko-GCC/lib/sameko_unbuffer.cpp`) so it also unit-buffers `std::cout`/`std::cerr`, not just C `stdio`. The old C-only `setvbuf` shim could not reach `std::cout`'s buffer, so programs using `ios_base::sync_with_stdio(false)` (standard in competitive programming) only showed output in one burst when the process exited.
+  - Added a **Realtime Output** setting (Settings > Execution, default on). When disabled, the shim is not linked, restoring full buffering for maximum throughput on heavy output.
 - **[[FEATURE] Add Save As support with Ctrl+Shift+S (Fixes #35)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/35)**:
   - Added `File > Save As...` and `Ctrl+Shift+S` for saving the active tab to a new path.
   - Updated tab title/path and file watching after Save As completes.
   - Preserved regular `Ctrl+S` behavior for saving to the current file path.
 
+### Changed
+- **Terminal now renders with xterm.js instead of per-line DOM nodes**:
+  - Output is written to an xterm.js terminal (canvas-based) rather than creating a `<pre>` element per output chunk. A tight `while(1) std::cout << ...` loop previously created thousands of DOM nodes per second and froze the UI.
+  - Program output is written verbatim (program controls its own newlines/ANSI); IDE status/build messages render as discrete colored lines using the existing terminal color palette.
+  - Kept the existing terminal UI: header, clear button, input textarea + send button, command history, Ctrl+C, docking, and per-theme colors.
+  - The terminal now defaults to being docked at the bottom panel.
+
 ### Fixed
+- **Main-process output flooding**: stdout/stderr chunks are now coalesced and flushed on a short timer (or at a 64KB threshold) instead of emitting one IPC message per `data` event, with a guaranteed flush before process exit.
+- **Unbounded memory growth on infinite output**: removed the write-only `output`/`errorOutput` accumulators that grew without limit under `while(1)`-style loops.
+- **Docked terminal height**: the xterm terminal now fills the full panel height when docked and re-fits after dock/undock/resize/show transitions.
 - **[[BUG] Startup untitled.cpp is marked unsaved even when untouched (Fixes #41)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/41)**:
   - Treats generated startup/template content as the clean tab baseline.
   - Prevents untouched generated `untitled.cpp` tabs from triggering unsaved-change prompts.

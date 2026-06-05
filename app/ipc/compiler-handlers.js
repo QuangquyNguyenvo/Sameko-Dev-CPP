@@ -28,8 +28,8 @@ function setMainWindow(window) {
  */
 function registerHandlers() {
     // Compile
-    ipcMain.handle(IPC.COMPILER.COMPILE, async (event, { filePath, content, flags, useLLD, noBuildCache, singleFileMode }) => {
-        return await compiler.compile({ filePath, content, flags, useLLD, noBuildCache, singleFileMode });
+    ipcMain.handle(IPC.COMPILER.COMPILE, async (event, { filePath, content, flags, useLLD, noBuildCache, singleFileMode, realtimeOutput }) => {
+        return await compiler.compile({ filePath, content, flags, useLLD, noBuildCache, singleFileMode, realtimeOutput });
     });
 
     // Run
