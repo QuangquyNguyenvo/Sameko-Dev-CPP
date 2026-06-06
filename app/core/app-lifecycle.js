@@ -10,15 +10,8 @@ let compilerStatus = { found: false, path: null, error: null };
 let compilerWarmupStarted = false;
 
 function initTreeSitter() {
-    try {
-        const Parser = require('tree-sitter');
-        const Cpp = require('tree-sitter-cpp');
-        tsParser = new Parser();
-        tsParser.setLanguage(Cpp);
-        return true;
-    } catch (e) {
-        return false;
-    }
+    // No-op: Defer/disable C++ native parser loading at startup to improve launch speed
+    return false;
 }
 
 function getTreeSitterParser() {
@@ -101,7 +94,7 @@ function startBackgroundCompilerPreparation() {
 }
 
 async function initializeApp() {
-    initTreeSitter();
+    // initTreeSitter(); // Disabled to optimize startup speed
     ensureDirectories();
     const status = validateCompiler();
 

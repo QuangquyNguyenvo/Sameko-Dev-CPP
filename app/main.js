@@ -7,10 +7,6 @@ const __ms = () => Number(process.hrtime.bigint() - __T0) / 1e6;
 
 const { app } = require('electron');
 const { initializeApp, setupAppEvents } = require('./core/app-lifecycle');
-const { createMainWindow } = require('./windows/main-window');
-const autoUpdateService = require('./services/auto-update-service');
-const discordRPC = require('./services/discord-rpc-service');
-const registerLegacyHandlers = require('./ipc');
 
 if (process.platform === 'win32') {
     app.setAppUserModelId('com.quangquy.cppide');
@@ -30,11 +26,21 @@ app.whenReady().then(async () => {
     console.log(`[PERF] whenReady @ ${__ms().toFixed(0)}ms`);
     await initializeApp();
     console.log(`[PERF] initializeApp done @ ${__ms().toFixed(0)}ms`);
+    
+    // Lazy load window & handlers
+    const { createMainWindow } = require('./windows/main-window');
     const mainWindow = createMainWindow();
     console.log(`[PERF] createMainWindow done @ ${__ms().toFixed(0)}ms`);
+    
+    const registerLegacyHandlers = require('./ipc');
     registerLegacyHandlers(mainWindow);
+    
+    const autoUpdateService = require('./services/auto-update-service');
     autoUpdateService.initialize(mainWindow);
+    
+    const discordRPC = require('./services/discord-rpc-service');
     discordRPC.connect();
+    
     mainWindow.webContents.once('did-finish-load', () => {
         console.log(`[PERF] renderer did-finish-load @ ${__ms().toFixed(0)}ms`);
     });
@@ -45,7 +51,8 @@ app.whenReady().then(async () => {
 });
 
 app.on('will-quit', (event) => {
-    // Prevent quit until Discord presence is cleared, then re-quit
+    // Require on demand to avoid blocking startup
+    const discordRPC = require('./services/discord-rpc-service');
     if (!discordRPC.isRpcConnected()) return; // nothing to clear, let quit proceed
     event.preventDefault();
     discordRPC.destroy().finally(() => {
