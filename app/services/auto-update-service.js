@@ -104,12 +104,14 @@ class AutoUpdateService {
         // Checking for updates
         autoUpdater.on('checking-for-update', () => {
             log.info('[AutoUpdate] Checking for updates...');
+            this.updateDownloaded = false; // Reset state
             this.sendStatusToRenderer('checking-for-update');
         });
 
         // Update available
         autoUpdater.on('update-available', (info) => {
             log.info('[AutoUpdate] Update available:', info.version);
+            this.updateDownloaded = false; // Reset state
             this.updateInfo = info;
             this.sendStatusToRenderer('update-available', {
                 version: info.version,
@@ -246,6 +248,7 @@ class AutoUpdateService {
     async downloadUpdate() {
         try {
             log.info('[AutoUpdate] Starting update download...');
+            this.updateDownloaded = false; // Reset state
             this.sendStatusToRenderer('download-started');
             await autoUpdater.downloadUpdate();
         } catch (error) {
@@ -358,15 +361,24 @@ class AutoUpdateService {
 
             pendingDirs.forEach(pendingDir => {
                 if (fs.existsSync(pendingDir)) {
-                    const files = fs.readdirSync(pendingDir);
-                    files.forEach(file => {
-                        if (file.endsWith('.exe') && file.includes('sameko-dev-cpp-setup')) {
-                            installerFiles.push({
-                                dir: pendingDir,
-                                file
-                            });
+                    // Check if update-info.json exists to confirm the download was completed successfully
+                    const updateInfoPath = path.join(pendingDir, 'update-info.json');
+                    if (fs.existsSync(updateInfoPath)) {
+                        try {
+                            const updateInfo = JSON.parse(fs.readFileSync(updateInfoPath, 'utf8'));
+                            if (updateInfo && updateInfo.fileName) {
+                                const exePath = path.join(pendingDir, updateInfo.fileName);
+                                if (fs.existsSync(exePath)) {
+                                    installerFiles.push({
+                                        dir: pendingDir,
+                                        file: updateInfo.fileName
+                                    });
+                                }
+                            }
+                        } catch (parseErr) {
+                            log.warn('[AutoUpdate] Failed to parse pending update-info.json:', parseErr.message);
                         }
-                    });
+                    }
                 }
             });
 
@@ -425,6 +437,13 @@ class AutoUpdateService {
                     try {
                         fs.unlinkSync(filePath);
                         log.info('[AutoUpdate] Deleted pending file:', item.file);
+                        
+                        // Also delete the corresponding update-info.json
+                        const infoPath = path.join(item.dir, 'update-info.json');
+                        if (fs.existsSync(infoPath)) {
+                            fs.unlinkSync(infoPath);
+                            log.info('[AutoUpdate] Deleted corresponding update-info.json');
+                        }
                     } catch (cleanupErr) {
                         log.warn('[AutoUpdate] Failed to clean up pending file:', cleanupErr.message);
                     }

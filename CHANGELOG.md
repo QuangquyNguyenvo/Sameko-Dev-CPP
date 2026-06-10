@@ -42,6 +42,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Removed the "(Beta)" suffix from the C++26 compiler standard selector to reflect the official release status of the bundled GCC 16.1.0.
   - Cleaned up duplicate nested HTML `div` elements within the compiler settings block.
 
+### Fixed
+- **Premature Auto-Update Restart Trigger**:
+  - Prevented the "Restart to Update" button from appearing before an update is completely downloaded by requiring both the installer `.exe` and the corresponding `update-info.json` file to exist in the pending directory before declaring it as downloaded from a previous session.
+  - Reset the `updateDownloaded` state and hid the restart button on update check start, update availability, download start, and update errors to ensure users cannot click the restart button while a new download is in progress.
+  - Reverted update button styling to a flat ocean theme color with clean hover animations (1px translation and soft shadow) without visual gradients or outer glow animations to keep it consistent with the overall IDE theme.
+
 ## [1.2.0] - 2026-06-06
 
 ### Added

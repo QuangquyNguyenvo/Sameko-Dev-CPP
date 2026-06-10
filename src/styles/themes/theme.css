@@ -612,11 +612,12 @@ body.customizer-open::before {
     background: var(--bg-ocean-deep) !important;
     border: 2px solid var(--bg-ocean-dark) !important;
     color: var(--btn-primary-text, white) !important;
-    animation: pulse-update 2s infinite;
     font-weight: 700;
     padding: 8px 16px;
     font-size: 12px;
     gap: 6px;
+    animation: pulse-update 2s infinite;
+    transition: background 0.2s, transform 0.2s, box-shadow 0.2s, filter 0.2s !important;
 }
 
 .action-btn.update-ready svg {
@@ -630,12 +631,12 @@ body.customizer-open::before {
 }
 
 .action-btn.update-ready:hover {
-    background: var(--bg-ocean-dark) !important;
+    filter: brightness(0.88);
     transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 @keyframes pulse-update {
-
     0%,
     100% {
         transform: scale(1);
@@ -4140,13 +4141,18 @@ body.split-active .editor-pane {
 
 .header-progress-fill {
     height: 100%;
-    /* Use the main accent color or a nice gradient matching the theme */
-    background: linear-gradient(90deg, var(--bg-ocean-deep), var(--accent-hover));
+    background: linear-gradient(90deg, var(--bg-ocean-deep), var(--accent-hover, #0088cc), var(--bg-ocean-deep));
+    background-size: 200% 100%;
+    animation: shimmer-progress 2s linear infinite;
     border-radius: 10px;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    /* Smooth easing */
     width: 0%;
     box-shadow: none !important;
+}
+
+@keyframes shimmer-progress {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
 
 .header-progress-text {

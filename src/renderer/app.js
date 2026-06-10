@@ -7441,14 +7441,20 @@ function handleUpdateStatus(data) {
     const downloadBtn = document.getElementById('update-download');
     const restartBtn = document.getElementById('update-restart');
     const laterBtn = document.getElementById('update-later');
+    const headerRestartBtn = document.getElementById('btn-restart-update');
 
     switch (status) {
         case 'checking-for-update':
             console.log('[Update] Checking for updates...');
+            updateDownloaded = false;
+            if (headerRestartBtn && !isPortableVersion) {
+                headerRestartBtn.style.display = 'none';
+            }
             break;
 
         case 'update-available':
             console.log('[Update] Update available:', updateData?.version);
+            updateDownloaded = false;
             pendingUpdateVersion = updateData?.version;
 
             // Update version info
@@ -7466,10 +7472,9 @@ function handleUpdateStatus(data) {
 
             if (isPortableVersion) {
                 // Portable: Show header button that links to download page
-                const headerUpdateBtn = document.getElementById('btn-restart-update');
-                if (headerUpdateBtn) {
-                    headerUpdateBtn.style.display = 'flex';
-                    headerUpdateBtn.querySelector('span').textContent = 'Download v' + updateData?.version;
+                if (headerRestartBtn) {
+                    headerRestartBtn.style.display = 'flex';
+                    headerRestartBtn.querySelector('span').textContent = 'Download v' + updateData?.version;
                 }
                 // Don't show overlay for portable - just header notification
                 if (overlay) overlay.style.display = 'none';
@@ -7478,6 +7483,11 @@ function handleUpdateStatus(data) {
                 console.log('[Update] Update will be auto-downloaded in background...');
                 // Don't show overlay - silent download
                 if (overlay) overlay.style.display = 'none';
+                
+                // Hide header restart button during check/download
+                if (headerRestartBtn) {
+                    headerRestartBtn.style.display = 'none';
+                }
             }
 
             if (progress) progress.style.display = 'none';
@@ -7490,6 +7500,7 @@ function handleUpdateStatus(data) {
 
         case 'download-started':
             console.log('[Update] Download started');
+            updateDownloaded = false;
 
             if (title) title.textContent = 'Downloading Update...';
             if (downloadBtn) downloadBtn.disabled = true;
@@ -7507,6 +7518,11 @@ function handleUpdateStatus(data) {
                 const textStart = document.getElementById('header-progress-text');
                 if (fillStart) fillStart.style.width = '0%';
                 if (textStart) textStart.textContent = '0%';
+            }
+
+            // Hide header restart button during download
+            if (headerRestartBtn && !isPortableVersion) {
+                headerRestartBtn.style.display = 'none';
             }
             break;
 
@@ -7535,6 +7551,11 @@ function handleUpdateStatus(data) {
                 if (headerText) headerText.textContent = percent + '%';
             }
 
+            // Hide header restart button during download
+            if (headerRestartBtn && !isPortableVersion) {
+                headerRestartBtn.style.display = 'none';
+            }
+
             // At 100%, keep waiting for a real update-downloaded event.
             // This avoids showing "Restart to Update" too early while updater is still finalizing.
             if (percent >= 100 && !updateDownloaded) {
@@ -7558,7 +7579,6 @@ function handleUpdateStatus(data) {
             if (headerProgressDone) headerProgressDone.style.display = 'none';
 
             // Show "Restart to Update" button in header with badge
-            const headerRestartBtn = document.getElementById('btn-restart-update');
             if (headerRestartBtn) {
                 headerRestartBtn.style.display = 'flex';
                 headerRestartBtn.querySelector('span').textContent = 'Restart to Update';
@@ -7568,6 +7588,10 @@ function handleUpdateStatus(data) {
         case 'update-error':
             console.error('[Update] Error:', updateData?.message || 'Unknown error');
             // Silent fail - don't show popup error messages
+            updateDownloaded = false;
+            if (headerRestartBtn && !isPortableVersion) {
+                headerRestartBtn.style.display = 'none';
+            }
             break;
     }
 }
