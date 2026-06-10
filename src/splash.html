@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Sameko Dev C++</title>
+    <!-- Link local fonts served by the app -->
+    <link rel="stylesheet" href="assets/fonts.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        html,
+        body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: transparent;
+        }
+
+        .splash {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            /* Aesthetic dark ocean linear gradient */
+            background: linear-gradient(135deg, #10223d 0%, #081220 100%);
+            /* Bold round border */
+            border: 8px solid #88c9ea;
+            border-radius: 48px;
+            box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
+            position: relative;
+            overflow: hidden;
+            -webkit-app-region: drag;
+        }
+
+        /* ----------------------------------------------------
+           Flat Organic Blobs in Background (No blur, no glow)
+           Aesthetic contrast of Sakura Pink and Mint Green on Dark Navy
+           ---------------------------------------------------- */
+        .bg-blob {
+            position: absolute;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .bg-blob svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Top-left: Soft flat Sakura Pink Blob */
+        .blob-1 {
+            width: 320px;
+            height: 320px;
+            top: -90px;
+            left: -110px;
+        }
+        .blob-path-1 {
+            fill: #ffaec4;
+            opacity: 0.08;
+            transform-origin: 0px 0px;
+            animation: morph-blob-1 25s infinite ease-in-out alternate;
+        }
+
+        /* Bottom-right: Soft flat Mint Green Blob */
+        .blob-2 {
+            width: 280px;
+            height: 280px;
+            bottom: -80px;
+            right: -90px;
+        }
+        .blob-path-2 {
+            fill: #a8e6cf;
+            opacity: 0.07;
+            transform-origin: 0px 0px;
+            animation: morph-blob-2 28s infinite ease-in-out alternate;
+        }
+
+        @keyframes morph-blob-1 {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+            50% {
+                transform: rotate(180deg) scale(1.15);
+            }
+            100% {
+                transform: rotate(360deg) scale(0.95);
+            }
+        }
+
+        @keyframes morph-blob-2 {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+            50% {
+                transform: rotate(-180deg) scale(1.1);
+            }
+            100% {
+                transform: rotate(-360deg) scale(0.9);
+            }
+        }
+
+        /* ----------------------------------------------------
+           Cute flat floating bubbles (Flat white bubbles)
+           ---------------------------------------------------- */
+        .bubbles {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: -60px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 2px solid rgba(255, 255, 255, 0.12);
+            border-radius: 50%;
+            animation: float-up 10s infinite linear;
+        }
+
+        /* Varied sizes, paths, and speed for natural floating bubbles */
+        .bubble:nth-child(1) { width: 32px; height: 32px; left: 8%; animation-duration: 9s; animation-delay: 0s; }
+        .bubble:nth-child(2) { width: 18px; height: 18px; left: 28%; animation-duration: 13s; animation-delay: 3s; }
+        .bubble:nth-child(3) { width: 44px; height: 44px; left: 52%; animation-duration: 11s; animation-delay: 1s; }
+        .bubble:nth-child(4) { width: 26px; height: 26px; left: 74%; animation-duration: 10s; animation-delay: 4s; }
+        .bubble:nth-child(5) { width: 22px; height: 22px; left: 88%; animation-duration: 12s; animation-delay: 1.5s; }
+        .bubble:nth-child(6) { width: 30px; height: 30px; left: 40%; animation-duration: 14s; animation-delay: 5s; }
+
+        @keyframes float-up {
+            0% {
+                transform: translateY(0) translateX(0) scale(0.8);
+                opacity: 0;
+            }
+            15% {
+                opacity: 0.7;
+            }
+            85% {
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-400px) translateX(25px) scale(1.1);
+                opacity: 0;
+            }
+        }
+
+        /* ----------------------------------------------------
+           Content Elements (Upsized & flat)
+           ---------------------------------------------------- */
+        .logo-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 3;
+        }
+
+        .logo {
+            width: 115px;
+            height: 115px;
+            object-fit: contain;
+            /* Clean float animation (no filter: drop-shadow/glow) */
+            animation: float-logo 3.5s ease-in-out infinite;
+        }
+
+        @keyframes float-logo {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        .title {
+            font-family: 'Fredoka', 'Nunito', 'Segoe UI', sans-serif;
+            font-size: 36px; /* Upsized title */
+            font-weight: 850; /* Ultra bold */
+            color: #ffffff; /* Contrast pure white text */
+            letter-spacing: 0.5px;
+            z-index: 3;
+            margin-top: 2px;
+        }
+
+        /* Custom SVG spinner container */
+        .spinner-container {
+            width: 54px;
+            height: 54px;
+            margin-top: 10px;
+            z-index: 3;
+        }
+
+        .spinner-svg {
+            width: 100%;
+            height: 100%;
+            animation: rotate-spinner 1.8s linear infinite;
+        }
+
+        .spinner-path {
+            stroke-dasharray: 90, 150;
+            stroke-dashoffset: 0;
+            animation: dash-spinner 1.4s ease-in-out infinite;
+        }
+
+        @keyframes rotate-spinner {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes dash-spinner {
+            0% {
+                stroke-dasharray: 1, 150;
+                stroke-dashoffset: 0;
+            }
+            50% {
+                stroke-dasharray: 90, 150;
+                stroke-dashoffset: -35;
+            }
+            100% {
+                stroke-dasharray: 90, 150;
+                stroke-dashoffset: -124;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="splash">
+        <!-- Flat organic background blobs (no blur, no glow) -->
+        <!-- Top-left: Sakura Pink | Bottom-right: Mint Green -->
+        <div class="bg-blob blob-1">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <g transform="translate(100, 100)">
+                    <path class="blob-path-1" d="M45.7,-64C58.1,-56.3,66.1,-41.8,70.5,-26.3C74.9,-10.8,75.7,5.7,71.6,20.8C67.5,35.9,58.4,49.5,45.8,58.5C33.2,67.5,16.6,71.8,0.2,71.5C-16.2,71.2,-32.4,66.3,-45.5,57C-58.6,47.8,-68.6,34.2,-72.9,18.8C-77.2,3.3,-75.8,-14,-68.9,-28.3C-62.1,-42.6,-49.7,-53.9,-36,-61C-22.3,-68.1,-7.2,-71,3.9,-76.3C15,-81.7,33.2,-71.7,45.7,-64Z" />
+                </g>
+            </svg>
+        </div>
+        <div class="bg-blob blob-2">
+            <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <g transform="translate(100, 100)">
+                    <path class="blob-path-2" d="M41.5,-60.2C54.1,-52.9,64.9,-41.3,70.8,-27.3C76.8,-13.4,77.9,3,75.1,18.5C72.3,34.1,65.6,48.8,54.4,59C43.1,69.2,27.2,74.9,11.3,76.5C-4.7,78.2,-20.7,75.8,-35.1,68.9C-49.4,62,-62.1,50.7,-68.9,36.5C-75.7,22.2,-76.6,5,-73.7,-11C-70.8,-27,-64.1,-41.7,-52.8,-49.2C-41.5,-56.7,-25.6,-57.1,-11.2,-60.4C3.2,-63.7,17.6,-69.9,31.7,-68.3C35.5,-67.9,38.1,-64.1,41.5,-60.2Z" />
+                </g>
+            </svg>
+        </div>
+
+        <!-- Cute flat floating bubbles in background -->
+        <div class="bubbles">
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+        </div>
+
+        <div class="logo-container">
+            <img class="logo" src="assets/icons/icon.png" alt="Sameko Dev C++"
+                onerror="this.src='assets/icons/fish.png'; this.onerror=null;">
+        </div>
+        
+        <div class="title">Sameko Dev C++</div>
+        
+        <!-- Premium thick loading spinner with rounded caps -->
+        <div class="spinner-container">
+            <svg class="spinner-svg" viewBox="0 0 50 50">
+                <circle class="spinner-bg" cx="25" cy="25" r="20" fill="none" stroke="rgba(255, 255, 255, 0.06)" stroke-width="6.5"></circle>
+                <circle class="spinner-path" cx="25" cy="25" r="20" fill="none" stroke="#88c9ea" stroke-width="6.5" stroke-linecap="round"></circle>
+            </svg>
+        </div>
+    </div>
+</body>
+
+</html>

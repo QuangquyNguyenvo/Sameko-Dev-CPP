@@ -14,6 +14,8 @@ samekodevcpp/
 
 # ===== Bundled Tools =====
 Sameko-GCC/
+Sameko-GCC.rar
+*.rar
 llvm-mingw-*/
 mingw64/
 TDM-GCC-64/

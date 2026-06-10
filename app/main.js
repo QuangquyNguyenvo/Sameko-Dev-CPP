@@ -23,6 +23,10 @@ if (!gotTheLock) {
 setupAppEvents();
 
 app.whenReady().then(async () => {
+    // Show splash screen immediately
+    const { createSplashWindow, closeSplashWindow } = require('./windows/splash-window');
+    createSplashWindow();
+
     console.log(`[PERF] whenReady @ ${__ms().toFixed(0)}ms`);
     await initializeApp();
     console.log(`[PERF] initializeApp done @ ${__ms().toFixed(0)}ms`);
@@ -41,12 +45,30 @@ app.whenReady().then(async () => {
     const discordRPC = require('./services/discord-rpc-service');
     discordRPC.connect();
     
+    let revealed = false;
+    const revealMainWindow = (reason) => {
+        if (revealed) return;
+        revealed = true;
+        closeSplashWindow();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.show();
+            mainWindow.focus();
+        }
+        console.log(`[PERF] main window shown @ ${__ms().toFixed(0)}ms (${reason})`);
+    };
+
+    mainWindow.once('ready-to-show', () => revealMainWindow('ready-to-show'));
     mainWindow.webContents.once('did-finish-load', () => {
         console.log(`[PERF] renderer did-finish-load @ ${__ms().toFixed(0)}ms`);
+        revealMainWindow('did-finish-load');
     });
     mainWindow.webContents.once('dom-ready', () => {
         console.log(`[PERF] renderer dom-ready @ ${__ms().toFixed(0)}ms`);
     });
+    
+    // Safety net: never let the splash hang longer than 10s.
+    setTimeout(() => revealMainWindow('fallback-timeout'), 10000);
+
     console.log('[App] Sameko Dev C++ is ready!');
 });
 

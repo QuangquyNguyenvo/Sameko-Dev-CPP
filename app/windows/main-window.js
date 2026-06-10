@@ -259,6 +259,7 @@ function createMainWindow() {
         x: savedBounds?.x,
         y: savedBounds?.y,
         frame: false,
+        show: false,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,

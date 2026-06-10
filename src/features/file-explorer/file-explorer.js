@@ -271,6 +271,7 @@ const FileExplorer = {
                 this.recentFiles = state.recentFiles || [];
                 this.contestSectionCollapsed = !!state.contestSectionCollapsed;
                 this.collectionsSectionCollapsed = !!state.collectionsSectionCollapsed;
+                this.activeContestId = state.activeContestId || null;
             }
 
             // Load categories for the current folder (per-folder storage)
@@ -316,6 +317,7 @@ const FileExplorer = {
                 recentFiles: this.recentFiles,
                 contestSectionCollapsed: this.contestSectionCollapsed,
                 collectionsSectionCollapsed: this.collectionsSectionCollapsed,
+                activeContestId: this.activeContestId,
             };
             localStorage.setItem('explorerState', JSON.stringify(state));
 
@@ -341,6 +343,12 @@ const FileExplorer = {
             if (catSaved) {
                 const catData = JSON.parse(catSaved);
                 this.categories = catData.categories || [];
+                // Ensure all loaded categories have a color
+                this.categories.forEach((cat, index) => {
+                    if (!cat.color) {
+                        cat.color = this.CATEGORY_COLORS[index % this.CATEGORY_COLORS.length];
+                    }
+                });
                 this.collapsedCategories = new Set(catData.collapsedCategories || []);
             }
         } catch (e) {
@@ -1127,7 +1135,7 @@ const FileExplorer = {
             <div class="cp-contest-header">
                 <div class="cp-contest-info">
                     <span class="cp-contest-collapse" data-action="toggle-contest-collapse" title="${this.contestCollapsed ? 'Expand' : 'Collapse'}">${collapseIcon}</span>
-                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    <svg class="icon-contest" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                     <span class="cp-contest-name" title="Double-click to rename">${meta.name || 'Contest'}</span>
                     ${platformBadge}
                 </div>
@@ -2195,7 +2203,7 @@ const FileExplorer = {
         document.body.appendChild(overlay);
 
         const input = overlay.querySelector('.input-dialog-field');
-        const saveBtn = overlay.querySelector('.note-dialog-save');
+        const saveBtn = overlay.querySelector('.input-dialog-save');
         const cancelBtn = overlay.querySelector('.note-dialog-cancel');
         const closeBtn = overlay.querySelector('.note-dialog-close');
 
@@ -2375,6 +2383,21 @@ const FileExplorer = {
         // Add to recent files
         this.addToRecent(filePath);
 
+        // Check if file belongs to any contest category and auto-activate it
+        if (this.categories && this.categories.length > 0) {
+            const normalizedPath = filePath.replace(/\\/g, '/');
+            const matchingCat = this.categories.find(c => 
+                c.type === 'contest' && 
+                c.folderPath && 
+                normalizedPath.startsWith(c.folderPath.replace(/\\/g, '/') + '/')
+            );
+            if (matchingCat) {
+                if (this.activeContestId !== matchingCat.id) {
+                    this.activateContestCategory(matchingCat.id);
+                }
+            }
+        }
+
         // Track timer in contest mode
         if (this.displayMode === 'contest') {
             const fileName = filePath.split(/[/\\]/).pop();
@@ -2485,18 +2508,18 @@ const FileExplorer = {
         const config = iconMap[ext] || { color: '#6d8086', icon: 'file' };
 
         if (config.icon === 'code') {
-            return `<svg class="explorer-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${config.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            return `<svg class="explorer-icon" style="color: ${config.color}" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="16 18 22 12 16 6"/>
                 <polyline points="8 6 2 12 8 18"/>
             </svg>`;
         } else if (config.icon === 'braces') {
-            return `<svg class="explorer-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${config.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            return `<svg class="explorer-icon" style="color: ${config.color}" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M8 3H7a2 2 0 00-2 2v5a2 2 0 01-2 2 2 2 0 012 2v5c0 1.1.9 2 2 2h1"/>
                 <path d="M16 21h1a2 2 0 002-2v-5c0-1.1.9-2 2-2a2 2 0 01-2-2V5a2 2 0 00-2-2h-1"/>
             </svg>`;
         }
 
-        return `<svg class="explorer-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="${config.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        return `<svg class="explorer-icon file-icon" style="color: ${config.color}" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
         </svg>`;
@@ -3178,7 +3201,7 @@ const FileExplorer = {
     },
 
     /**
-     * Show context menu for contest-mode approach items 
+     * Show contest-mode context menu for approach items 
      */
     showContestApproachContextMenu(e, filePath, problemId, approachId) {
         document.querySelectorAll('.explorer-context-menu').forEach(el => el.remove());
@@ -3787,9 +3810,17 @@ const FileExplorer = {
                 return;
             }
 
+            let parentDir = this.currentFolder;
+            if (this.displayMode === 'contest' || this.contestFolder) {
+                const activeContestPath = this.contestFolder || this.currentFolder;
+                if (activeContestPath) {
+                    parentDir = activeContestPath.replace(/[/\\][^/\\]+$/, '');
+                }
+            }
+
             if (window.electronAPI && window.electronAPI.createContest) {
                 const result = await window.electronAPI.createContest({
-                    parentDir: this.currentFolder,
+                    parentDir,
                     name,
                     problemIds,
                     platform
@@ -3942,6 +3973,27 @@ const FileExplorer = {
             cat.color = color;
             this.saveState();
         }
+    },
+
+    /**
+     * Activate a contest category and auto-collapse all other contests
+     */
+    activateContestCategory(catId) {
+        const cat = this.categories.find(c => c.id === catId);
+        if (!cat || cat.type !== 'contest') return;
+
+        this.activeContestId = cat.id;
+        this.contestFolder = cat.folderPath;
+
+        // Auto-expand this active contest, and collapse all other contest categories
+        this.collapsedCategories.delete(cat.id);
+        for (const otherCat of this.categories) {
+            if (otherCat.type === 'contest' && otherCat.id !== cat.id) {
+                this.collapsedCategories.add(otherCat.id);
+            }
+        }
+
+        this.saveState();
     },
 
     /**
@@ -4148,6 +4200,19 @@ const FileExplorer = {
         const contestCats = this.categories
             .filter(c => c.type === 'contest')
             .sort((a, b) => {
+                const normalFolderPathA = a.folderPath ? a.folderPath.replace(/\\/g, '/') : '';
+                const normalFolderPathB = b.folderPath ? b.folderPath.replace(/\\/g, '/') : '';
+                const normalContestFolder = this.contestFolder ? this.contestFolder.replace(/\\/g, '/') : '';
+                const isActiveA = this.activeContestId 
+                    ? (this.activeContestId === a.id) 
+                    : (normalFolderPathA && normalContestFolder === normalFolderPathA);
+                const isActiveB = this.activeContestId 
+                    ? (this.activeContestId === b.id) 
+                    : (normalFolderPathB && normalContestFolder === normalFolderPathB);
+
+                if (isActiveA && !isActiveB) return -1;
+                if (!isActiveA && isActiveB) return 1;
+
                 const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
                 const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
                 return dateB - dateA; // newest first
@@ -4159,7 +4224,7 @@ const FileExplorer = {
                 <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
             </button>
             <span class="cat-section-title">
-                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>CONTEST
+                <svg class="icon-contest" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:4px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>CONTEST
             </span>
             <button class="cat-add-btn" data-action="new-sub-contest" title="New Contest">
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -4186,22 +4251,47 @@ const FileExplorer = {
             const itemCount = cat.items.length;
             const solvedCount = cat.items.filter(i => i.status === 'ac').length;
             const pct = itemCount > 0 ? Math.round((solvedCount / itemCount) * 100) : 0;
+            const isCompleted = itemCount > 0 && cat.items.every(i => i.status === 'ac');
 
+            // Determine if active
+            const normalFolderPath = cat.folderPath ? cat.folderPath.replace(/\\/g, '/') : '';
+            const normalContestFolder = this.contestFolder ? this.contestFolder.replace(/\\/g, '/') : '';
+            const isActive = this.activeContestId 
+                ? (this.activeContestId === cat.id) 
+                : (normalFolderPath && normalContestFolder === normalFolderPath);
+
+            const isSpecialContest = isActive && !isCompleted;
             const dateLabel = cat.createdAt ? this._formatRelativeDate(cat.createdAt) : '';
 
+            // Render headers based on active / completed
+            let iconHtml = '';
+            if (isSpecialContest) {
+                // Glowing lightning
+                iconHtml = `<svg class="icon-contest glowing" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
+            } else {
+                // Folder icon
+                iconHtml = this.getFolderIcon(!isCollapsed);
+            }
+
             html += `
-                <div class="cat-group ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${cat.id}"
-                     style="--cat-color: ${cat.color}">
+                <div class="cat-group ${isSpecialContest ? 'active-contest-card' : ''} ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${cat.id}"
+                     style="--cat-color: ${cat.color || '#64b5f6'}">
                     <div class="cat-header" data-cat-id="${cat.id}">
                         <span class="cat-arrow">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <polyline points="9 18 15 12 9 6"/>
                             </svg>
                         </span>
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        ${iconHtml}
                         <span class="cat-name">${cat.name}</span>
-                        ${dateLabel ? `<span class="cat-date">${dateLabel}</span>` : ''}
+                        ${isSpecialContest ? `<span class="active-badge" style="--cat-color: ${cat.color || '#64b5f6'}">ACTIVE</span>` : ''}
+                        ${dateLabel && !isSpecialContest ? `<span class="cat-date">${dateLabel}</span>` : ''}
                         <span class="cat-count">${solvedCount}/${itemCount}</span>
+                        ${!isActive ? `
+                        <button class="cat-activate-btn" data-cat-id="${cat.id}" data-action="activate-contest-quick" title="Set as Active Contest">
+                            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        </button>
+                        ` : ''}
                         <button class="cat-new-problem-btn" data-cat-id="${cat.id}" data-action="new-problem-quick" title="New Problem">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         </button>
@@ -4220,25 +4310,44 @@ const FileExplorer = {
                     `;
                 }
 
-                // Problem items (list style for better readability)
+                // Problem items
                 if (itemCount > 0) {
                     const sortedItems = [...cat.items].sort((a, b) => (b.addedAt || 0) - (a.addedAt || 0));
-                    html += '<div class="cat-items-list">';
-                    for (const item of sortedItems) {
-                        const statusInfo = this.CP_STATUSES[item.status] || this.CP_STATUSES.todo;
-                        const statusIcon = this.STATUS_ICONS[item.status] || this.STATUS_ICONS.todo;
-                        const isActive = this.isActiveFile(item.filePath);
-                        html += `
-                            <div class="cat-list-item ${isActive ? 'active' : ''} cp-status-${item.status || 'todo'}"
-                                 data-cat-id="${cat.id}" data-file-path="${item.filePath}"
-                                 draggable="true" title="${item.fileName}">
-                                <span class="cat-list-item-status">${statusIcon}</span>
-                                <span class="cat-list-item-name">${item.name}</span>
-                                <span class="cat-list-item-badge cp-badge-${item.status || 'todo'}">${statusInfo.label}</span>
-                            </div>
-                        `;
+                    
+                    if (isSpecialContest) {
+                        // Render horizontal grid of squares
+                        html += '<div class="cp-problems-grid">';
+                        for (const item of sortedItems) {
+                            const statusInfo = this.CP_STATUSES[item.status] || this.CP_STATUSES.todo;
+                            const isActiveProblem = this.isActiveFile(item.filePath);
+                            html += `
+                                <div class="cat-list-item cp-problem-square ${isActiveProblem ? 'active' : ''} cp-status-${item.status || 'todo'}"
+                                     data-cat-id="${cat.id}" data-file-path="${item.filePath}"
+                                     draggable="true" title="${item.fileName} (${statusInfo.label})">
+                                    ${item.name}
+                                </div>
+                            `;
+                        }
+                        html += '</div>';
+                    } else {
+                        // Render standard list
+                        html += '<div class="cat-items-list">';
+                        for (const item of sortedItems) {
+                            const statusInfo = this.CP_STATUSES[item.status] || this.CP_STATUSES.todo;
+                            const statusIcon = this.STATUS_ICONS[item.status] || this.STATUS_ICONS.todo;
+                            const isActiveProblem = this.isActiveFile(item.filePath);
+                            html += `
+                                <div class="cat-list-item ${isActiveProblem ? 'active' : ''} cp-status-${item.status || 'todo'}"
+                                     data-cat-id="${cat.id}" data-file-path="${item.filePath}"
+                                     draggable="true" title="${item.fileName}">
+                                    <span class="cat-list-item-status">${statusIcon}</span>
+                                    <span class="cat-list-item-name">${item.name}</span>
+                                    <span class="cat-list-item-badge cp-badge-${item.status || 'todo'}">${statusInfo.label}</span>
+                                </div>
+                            `;
+                        }
+                        html += '</div>';
                     }
-                    html += '</div>';
                 } else {
                     html += `
                         <div class="cat-empty-drop" data-cat-id="${cat.id}">
@@ -4313,7 +4422,6 @@ const FileExplorer = {
                             </svg>
                         </span>
                         <span class="cat-kind-icon" title="Collection">${this.ICONS.collection}</span>
-                        <span class="cat-color-dot" style="background: ${cat.color}"></span>
                         <span class="cat-name">${cat.name}</span>
                         <span class="cat-count">${solvedCount}/${itemCount}</span>
                         <button class="cat-new-problem-btn" data-cat-id="${cat.id}" data-action="new-problem-quick" title="New Problem">
@@ -4419,6 +4527,20 @@ const FileExplorer = {
                 this.renderTree ? this.renderTree() : this.renderEmptyState();
             });
 
+            // Double click to select/activate contest
+            header.addEventListener('dblclick', (e) => {
+                if (e.target.closest('[data-action]')) return;
+                const catId = header.dataset.catId;
+                const cat = this.categories.find(c => c.id === catId);
+
+                if (cat && cat.type === 'contest') {
+                    if (this.activeContestId !== cat.id) {
+                        this.activateContestCategory(cat.id);
+                        this.renderTree ? this.renderTree() : this.renderEmptyState();
+                    }
+                }
+            });
+
             // Right-click context menu on category header
             header.addEventListener('contextmenu', (e) => {
                 e.preventDefault();
@@ -4492,6 +4614,16 @@ const FileExplorer = {
                         this.renderTree ? this.renderTree() : this.renderEmptyState();
                     }
                 });
+            });
+        });
+
+        // Quick activate contest button
+        this.elements.tree.querySelectorAll('[data-action="activate-contest-quick"]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const catId = btn.dataset.catId;
+                this.activateContestCategory(catId);
+                this.renderTree ? this.renderTree() : this.renderEmptyState();
             });
         });
 
@@ -4746,6 +4878,11 @@ const FileExplorer = {
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
                 Open Folder
             </div>` : ''}
+            ${cat.type === 'contest' && this.activeContestId !== cat.id ? `
+            <div class="context-item" data-action="activate-contest">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                Set as Active Contest
+            </div>` : ''}
             <div class="context-separator"></div>
             <div class="context-item" data-action="rename">
                 Rename
@@ -4828,6 +4965,15 @@ const FileExplorer = {
                 if (cat.folderPath && window.electronAPI && window.electronAPI.showItemInFolder) {
                     window.electronAPI.showItemInFolder(cat.folderPath);
                 }
+            };
+        }
+
+        const activateContestBtn = menu.querySelector('[data-action="activate-contest"]');
+        if (activateContestBtn) {
+            activateContestBtn.onclick = () => {
+                menu.remove();
+                this.activateContestCategory(cat.id);
+                this.renderTree ? this.renderTree() : this.renderEmptyState();
             };
         }
 

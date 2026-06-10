@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- **Active Contest Auto-Collapsing & Top Prioritization**:
+  - Double-clicking a contest, clicking its quick-activate button, or opening any file inside it sets it as the active contest, automatically collapses all other contests, and expands the active one.
+  - The active contest temporarily jumps/bubbles to the very top of the CONTEST list. Upon deactivation, it returns to the chronological "newest-first" sorting order.
+- **Quick-Activation Button**:
+  - Added a subtle lightning bolt button (`.cat-activate-btn`) next to non-active contest folders on hover, allowing quick activation with a single click.
+
+### Changed
+- **Explorer Rounded Cards and Thick-Border Aesthetic**:
+  - Re-styled the outer file explorer sidebar container as a floating card with `border-radius: 16px`, `margin: 12px 0 12px 12px`, and a thick `2px solid var(--border)` outline, matching the layout of the main editor.
+  - Re-styled collections and contests in the sidebar as floating rounded cards with explicit 2px borders, replacing flat borderless container boundaries.
+  - Removed explicit borders from sub-items (chips and list items) by default to avoid nested border clutter, replacing them with a soft glass background that transitions to active borders only when selected.
+  - Stripped solid backgrounds and bottom borders from the main CONTEST and COLLECTIONS section headers, turning them into clean, transparent, minimalist typography labels.
+  - Tuned category section header margins: removed top margin from the first section (CONTEST) to eliminate excess top gap, and increased top margin on the second section (COLLECTIONS) for better vertical separation.
+  - Increased list spacing gap to 6px and enabled floating pill backgrounds for category list items, matching the Kawaii rounded design system.
+  - Normalized border colors for all explorer card containers and lists in Dracula, Nord, Monokai, and general dark themes.
+- **Context Menu Danger Item & Layout Improvements**:
+  - Styled the "Delete Collection" danger item to blend in with standard menu colors by default, turning red with a soft error background only on hover.
+  - Prevented line wrapping in context menus using `white-space: nowrap`.
+  - Upgraded submenus to use `min-width: max-content` for flexible, responsive widths that auto-fit the content text.
+
 ## [1.2.0] - 2026-06-06
 
 ### Added
@@ -18,6 +39,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Preserved regular `Ctrl+S` behavior for saving to the current file path.
 
 ### Changed
+- **Bundled GCC 16.1.0 toolchain refresh and cleanup**:
+  - Replaced the local `Sameko-GCC` bundle with the official WinLibs GCC 16.1.0 MinGW-w64 14.0.0 toolchain for newer C++ standard support.
+  - Removed unused documentation, locale, Python test/GUI modules, and non-integrated helper tools from the bundled toolchain, reducing `Sameko-GCC` from ~918 MB to ~737 MB while preserving IDE compilation, syntax checking, `bits/stdc++.h`, and the realtime-output shim.
 - **Faster app startup by bundling fonts locally (no Google Fonts CDN)**:
   - Replaced the runtime Google Fonts requests (`<link>` in `src/index.html` and the render-blocking `@import` in `src/styles/base.css`) with locally bundled `woff2` files served from `src/assets/fonts/` via `src/assets/fonts.css`.
   - Startup no longer waits on a network round-trip to `fonts.googleapis.com`/`fonts.gstatic.com`, so the IDE opens reliably and consistently even on a slow connection or fully offline. Measured `did-finish-load` dropped from ~1190ms to ~1004ms (~16% faster) in dev mode.

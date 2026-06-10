@@ -6067,7 +6067,7 @@ async function startCCServer(silent = false) {
     }
 }
 
-function handleProblemReceived(problem) {
+async function handleProblemReceived(problem) {
     console.log('Received problem:', problem);
 
 
@@ -6102,14 +6102,88 @@ function handleProblemReceived(problem) {
     const id = 'tab_' + Date.now();
     const template = App.settings.template?.code || DEFAULT_CODE;
 
+    let targetPath = null;
+    let finalFileName = fileName;
+
+    if (typeof FileExplorer !== 'undefined' && FileExplorer.currentFolder) {
+        // Find or create "Fetched Problems" category
+        let targetCategory = FileExplorer.categories.find(c => c.name === 'Fetched Problems');
+        if (!targetCategory) {
+            const catId = 'cat_' + Date.now();
+            const colors = ['#ff9800', '#2196f3', '#4caf50', '#e91e63', '#9c27b0', '#00bcd4'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            const folderPath = `${FileExplorer.currentFolder}/Fetched Problems`.replace(/\\/g, '/');
+
+            // Create physical directory
+            try {
+                if (window.electronAPI && window.electronAPI.createDirectory) {
+                    await window.electronAPI.createDirectory(folderPath);
+                }
+            } catch (err) {
+                console.error('Failed to create Fetched Problems folder:', err);
+            }
+
+            targetCategory = {
+                id: catId,
+                name: 'Fetched Problems',
+                type: 'collection',
+                color: randomColor,
+                folderPath: folderPath,
+                items: [],
+                createdAt: Date.now()
+            };
+            FileExplorer.categories.push(targetCategory);
+            FileExplorer.saveState();
+        }
+
+        const folder = targetCategory.folderPath || FileExplorer.currentFolder;
+        let counter = 1;
+        let checkPath = `${folder}/${fileName}`.replace(/\\/g, '/');
+        let fileExists = true;
+        while (fileExists) {
+            try {
+                await window.electronAPI.readFile(checkPath);
+                counter++;
+                finalFileName = `${safeName}_${counter}.cpp`;
+                checkPath = `${folder}/${finalFileName}`.replace(/\\/g, '/');
+            } catch (err) {
+                fileExists = false;
+            }
+        }
+        targetPath = checkPath;
+
+        // Save file physically to disk
+        try {
+            const r = await window.electronAPI.saveFile({ path: targetPath, content: template });
+            if (r.success) {
+                // Add to category in file explorer
+                FileExplorer.addFileToCategory(targetCategory.id, targetPath, finalFileName.replace(/\.[^.]+$/, ''));
+                FileExplorer.saveState();
+
+                // Expose to file watcher
+                if (typeof startFileWatch === 'function') {
+                    startFileWatch(targetPath);
+                }
+
+                // If FileExplorer is open, refresh it
+                if (typeof FileExplorer.refreshTree === 'function') {
+                    await FileExplorer.refreshTree();
+                }
+            }
+        } catch (err) {
+            console.error('Failed to auto-save fetched problem:', err);
+            targetPath = null; // fallback to untitled tab
+        }
+    }
+
     App.tabs.push({
         id,
-        name: fileName,
-        path: null,
-        untitledHistoryKey: createUntitledHistoryKey(),
+        name: targetPath ? finalFileName : fileName,
+        path: targetPath,
+        untitledHistoryKey: targetPath ? null : createUntitledHistoryKey(),
         content: template,
-        original: '',
-        modified: true
+        original: targetPath ? template : '',
+        modified: !targetPath
     });
 
 
