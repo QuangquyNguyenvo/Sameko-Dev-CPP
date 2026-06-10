@@ -55,6 +55,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     stopProcess: () => ipcRenderer.invoke('stop-process'),
     getCompilerInfo: () => ipcRenderer.invoke('get-compiler-info'),
     getCompilerStatus: () => ipcRenderer.invoke('get-compiler-status'),
+    cleanPCHCache: (options) => ipcRenderer.invoke('clean-pch-cache', options),
 
     // Window controls (for frameless window)
     minimizeWindow: () => ipcRenderer.invoke('window-minimize'),

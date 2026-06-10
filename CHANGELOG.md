@@ -26,6 +26,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Styled the "Delete Collection" danger item to blend in with standard menu colors by default, turning red with a soft error background only on hover.
   - Prevented line wrapping in context menus using `white-space: nowrap`.
   - Upgraded submenus to use `min-width: max-content` for flexible, responsive widths that auto-fit the content text.
+- **Visual Glow Removal**:
+  - Removed pulsating drop-shadow glow animation (`lightning-glow`) and glowing filter from the active contest lightning bolt icon.
+  - Eliminated colored box-shadow glows from active contest cards and active status badges, replacing them with flat solid borders.
+  - Removed soft box-shadow glow (`var(--shadow-soft)`) from the editor panel container, replacing it with a clean, flat shadow (`var(--shadow-card)`).
+  - Removed glow shadow from the header progress bar.
+- **Active Contest & Test Case Runner State Synchronization**:
+  - Wired compilation and execution events in the test case runner to the file explorer sidebar status updates.
+  - Synchronized the active contest problems' statuses/tags dynamically with compilation and testing results (AC, WA, TLE, RE).
+  - Updated the status decision matrix to allow downgrading/upgrading active contest tags on subsequent test executions (e.g. from AC to WA/TLE/RE if the latest run fails).
 
 ## [1.2.0] - 2026-06-06
 

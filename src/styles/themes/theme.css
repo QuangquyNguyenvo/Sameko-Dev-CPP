@@ -721,7 +721,7 @@ body.customizer-open::before {
     background: var(--bg-glass);
     border: 2px solid var(--border);
     border-radius: var(--radius);
-    box-shadow: var(--shadow-soft);
+    box-shadow: var(--shadow-card) !important;
     backdrop-filter: var(--blur-filter);
     overflow: hidden;
 }
@@ -4146,8 +4146,7 @@ body.split-active .editor-pane {
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     /* Smooth easing */
     width: 0%;
-    box-shadow: 0 0 8px rgba(136, 201, 234, 0.4);
-    /* Glow effect */
+    box-shadow: none !important;
 }
 
 .header-progress-text {
@@ -6718,7 +6717,7 @@ body.split-active .editor-pane {
 /* Special active contest card styling */
 .cat-group.active-contest-card {
     border: 2px solid var(--cat-color, #ffa726) !important;
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--cat-color, #ffa726) 18%, transparent);
+    box-shadow: none !important;
     background: color-mix(in srgb, var(--bg-panel, #e8f4fc) 85%, var(--cat-color, #ffa726) 8%) !important;
 }
 
@@ -6738,7 +6737,7 @@ body.split-active .editor-pane {
     border-radius: 8px;
     margin-left: auto;
     letter-spacing: 0.5px;
-    box-shadow: 0 2px 5px color-mix(in srgb, var(--cat-color, #ffa726) 30%, transparent);
+    box-shadow: none !important;
 }
 
 /* Horizontal Grid of Square Problems */
@@ -6804,14 +6803,10 @@ body.split-active .editor-pane {
     transform: scale(1.05);
 }
 
-/* Glow effect for active lightning icon */
-@keyframes lightning-glow {
-    0% { filter: drop-shadow(0 0 1px #ffa726); }
-    50% { filter: drop-shadow(0 0 4px #ffa726); }
-    100% { filter: drop-shadow(0 0 1px #ffa726); }
-}
+/* Glow effect for active lightning icon - removed glow, made flat */
 .icon-contest.glowing {
-    animation: lightning-glow 2s infinite ease-in-out;
+    filter: none !important;
+    animation: none !important;
 }
 
 /* Category Header */

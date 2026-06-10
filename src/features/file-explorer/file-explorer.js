@@ -819,15 +819,20 @@ const FileExplorer = {
                     // Clean exit — keep testing, compareOutput will determine AC/WA later
                     return null;
                 case 'run-exit-fail':
-                    // Non-zero exit = RE (unless already AC)
-                    return (currentStatus !== 'ac') ? 're' : null;
+                    // Non-zero exit = RE
+                    return 're';
                 case 'edit':
                     // Editing means back to in-progress
                     return currentStatus === 'todo' ? 'coding' : currentStatus === 'coding' ? null : 'coding';
                 case 'judge-ac':
                     return 'ac';
                 case 'judge-wa':
-                    return (currentStatus !== 'ac') ? 'wa' : null;
+                    return 'wa';
+                case 'judge-tle':
+                    return 'tle';
+                case 'judge-re':
+                case 'judge-rte':
+                    return 're';
                 default:
                     return null;
             }
@@ -840,7 +845,7 @@ const FileExplorer = {
             const prob = this.contestMeta.problems.find(p => p.id === problemId || p.id === problemId.toLowerCase());
             if (prob) {
                 const ns = getNewStatus(prob.status);
-                if (ns) {
+                if (ns && prob.status !== ns) {
                     prob.status = ns;
                     this.saveContestMeta(this.contestFolder, this.contestMeta);
                     changed = true;
@@ -854,7 +859,7 @@ const FileExplorer = {
                 const itemPath = (item.filePath || '').replace(/\\/g, '/');
                 if (itemPath === normalizedPath) {
                     const ns = getNewStatus(item.status);
-                    if (ns) {
+                    if (ns && item.status !== ns) {
                         item.status = ns;
                         changed = true;
                     }

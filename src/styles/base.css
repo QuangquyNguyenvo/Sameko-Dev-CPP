@@ -461,7 +461,7 @@ body::after {
     background: var(--bg-glass);
     border: 2px solid var(--border-glass-edge, rgba(255, 255, 255, 0.4));
     border-radius: var(--radius);
-    box-shadow: var(--shadow-soft);
+    box-shadow: var(--shadow-card);
     backdrop-filter: blur(10px);
     overflow: hidden;
     /* Fix corner gaps */

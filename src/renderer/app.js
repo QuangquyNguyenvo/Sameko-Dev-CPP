@@ -1432,6 +1432,38 @@ function initSettings() {
     document.getElementById('btn-save-settings').onclick = saveSettingsAndClose;
     document.getElementById('btn-reset-settings').onclick = resetSettings;
 
+    // Clear PCH Cache button
+    const clearPchBtn = document.getElementById('btn-clear-pch');
+    if (clearPchBtn) {
+        clearPchBtn.onclick = async () => {
+            const originalText = clearPchBtn.textContent;
+            clearPchBtn.textContent = 'Clearing...';
+            clearPchBtn.disabled = true;
+
+            const flags = buildCompileFlags();
+            const result = await window.electronAPI.cleanPCHCache({ flags });
+
+            if (result && result.success) {
+                clearPchBtn.textContent = 'Rebuilding PCH...';
+                setTimeout(() => {
+                    clearPchBtn.textContent = 'Done!';
+                    setTimeout(() => {
+                        clearPchBtn.textContent = originalText;
+                        clearPchBtn.disabled = false;
+                    }, 1500);
+                }, 800);
+            } else {
+                clearPchBtn.textContent = 'Failed!';
+                clearPchBtn.style.backgroundColor = 'var(--red-primary)';
+                setTimeout(() => {
+                    clearPchBtn.textContent = originalText;
+                    clearPchBtn.disabled = false;
+                    clearPchBtn.style.backgroundColor = '';
+                }, 2000);
+            }
+        };
+    }
+
     // Template reset button
     const templateResetBtn = document.getElementById('btn-template-reset');
     if (templateResetBtn) {
@@ -6508,6 +6540,45 @@ function initBatchTesting() {
     }
 }
 
+function syncProblemStatusWithExplorer() {
+    if (!window.FileExplorer || !App.activeTabId) return;
+    const tab = App.tabs.find(t => t.id === App.activeTabId);
+    if (!tab || !tab.path) return;
+
+    if (!ccProblem || !ccProblem.tests || ccProblem.tests.length === 0) return;
+
+    // Check if we have results
+    if (batchTestResults.length === 0) return;
+
+    // Determine overall status
+    let overallEvent = null;
+
+    const totalCount = ccProblem.tests.length;
+
+    // Find if there is any failure in the current results
+    const hasRE = batchTestResults.some(r => r.status === 'RE');
+    const hasTLE = batchTestResults.some(r => r.status === 'TLE');
+    const hasWA = batchTestResults.some(r => r.status === 'WA');
+    const allAC = batchTestResults.filter(r => r.status === 'AC').length === totalCount;
+
+    if (hasRE) {
+        overallEvent = 'judge-re';
+    } else if (hasTLE) {
+        overallEvent = 'judge-tle';
+    } else if (hasWA) {
+        overallEvent = 'judge-wa';
+    } else if (allAC) {
+        overallEvent = 'judge-ac';
+    } else {
+        // Some tests run and passed, but not all. Keep status as testing/run-start.
+        overallEvent = 'run-start';
+    }
+
+    if (overallEvent) {
+        window.FileExplorer.notifyBuildEvent(tab.path, overallEvent);
+    }
+}
+
 async function runAllTests() {
     if (!ccProblem || !ccProblem.tests || ccProblem.tests.length === 0) {
         log('No test cases to run. Get test cases from OJ first!', 'warning');
@@ -6577,7 +6648,6 @@ async function runAllTests() {
 
         App.exePath = compileResult.outputPath;
         log(`Compiled in ${compileResult.time}ms`, 'success');
-
 
         const timeLimit = ccProblem.timeLimit || (App.settings.execution.timeLimitSeconds * 1000) || 3000;
 
@@ -6657,6 +6727,9 @@ async function runAllTests() {
         renderTestResults();
         if (typeof showTestsTab === 'function') showTestsTab();
 
+        // Sync status with explorer
+        syncProblemStatusWithExplorer();
+
     } catch (e) {
         log(`Error running tests: ${e.message}`, 'error');
         setStatus('Test Error', 'error');
@@ -6689,7 +6762,6 @@ async function runSingleTestByIndex(testIndex) {
 
     try {
         setStatus(`Single test ${testIndex + 1}: compiling...`, '');
-
         const content = App.editor ? App.editor.getValue() : tab.content;
         const compileFlags = buildCompileFlags();
         const compileResult = await window.electronAPI.compile({
@@ -6708,6 +6780,7 @@ async function runSingleTestByIndex(testIndex) {
         }
 
         App.exePath = compileResult.outputPath;
+
         const timeLimit = ccProblem.timeLimit || (App.settings.execution.timeLimitSeconds * 1000) || 3000;
         const lastSlash = tab.path ? Math.max(tab.path.lastIndexOf('/'), tab.path.lastIndexOf('\\')) : -1;
         const sourceDir = lastSlash !== -1 ? tab.path.substring(0, lastSlash) : null;
@@ -6745,6 +6818,9 @@ async function runSingleTestByIndex(testIndex) {
             log(`Single Test ${testIndex + 1}: ${result.status} (${timeStr})`, result.status === 'WA' ? 'error' : 'warning');
             setStatus(`Test ${testIndex + 1}: ${result.status}`, 'warning');
         }
+
+        // Sync status with explorer
+        syncProblemStatusWithExplorer();
     } catch (e) {
         log(`Single test error: ${e.message}`, 'error');
         setStatus('Single Test Error', 'error');

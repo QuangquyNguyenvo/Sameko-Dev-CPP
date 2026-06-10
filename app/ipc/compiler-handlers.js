@@ -67,6 +67,24 @@ function registerHandlers() {
         const { getCompilerStatus } = require('../core/app-lifecycle');
         return getCompilerStatus();
     });
+
+    // Clean PCH cache
+    ipcMain.handle('clean-pch-cache', async (event, options) => {
+        try {
+            compiler.cleanPCHCache();
+            const flags = options?.flags;
+            if (flags) {
+                console.log(`[Compiler IPC] Triggering background PCH rebuild with flags: ${flags}`);
+                compiler.ensurePCH(flags).catch(err => {
+                    console.error('[Compiler IPC] Background PCH rebuild failed:', err);
+                });
+            }
+            return { success: true };
+        } catch (err) {
+            console.error('[Compiler IPC] Failed to clean PCH cache:', err);
+            return { success: false, error: err.message };
+        }
+    });
 }
 
 module.exports = {

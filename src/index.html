@@ -557,7 +557,7 @@
                                     <option value="c++17">C++17</option>
                                     <option value="c++20">C++20</option>
                                     <option value="c++23">C++23</option>
-                                    <option value="c++26">C++26 (Beta)</option>
+                                    <option value="c++26">C++26</option>
                                 </select>
                             </div>
                             <div class="setting-row">
@@ -592,6 +592,11 @@
                                     <input type="checkbox" id="set-singleFileMode" checked>
                                     <span class="slider"></span>
                                 </label>
+                            </div>
+                            <div class="setting-row">
+                                <label>Clear Compiler Cache <span class="tooltip"
+                                        title="Clear Precompiled Header (PCH) cache to fix compile slowness or issues.">?</span></label>
+                                <button class="action-btn danger" id="btn-clear-pch" style="padding: 6px 12px; font-size: 11px; width: auto; border-radius: var(--radius-sm);">Clear PCH Cache</button>
                             </div>
                         </div>
 
