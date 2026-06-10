@@ -12,6 +12,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - The active contest temporarily jumps/bubbles to the very top of the CONTEST list. Upon deactivation, it returns to the chronological "newest-first" sorting order.
 - **Quick-Activation Button**:
   - Added a subtle lightning bolt button (`.cat-activate-btn`) next to non-active contest folders on hover, allowing quick activation with a single click.
+- **PCH Cache-Clear with Background Rebuild**:
+  - Added a "Clear PCH Cache" action to settings to delete corrupted or slow Precompiled Header files.
+  - Wired it to an IPC call that runs asynchronously in the background to re-optimize/precompile libraries using the active compiler flags, keeping the UI smooth while restoring 200-400ms C++ compile speed.
 
 ### Changed
 - **Explorer Rounded Cards and Thick-Border Aesthetic**:
@@ -35,6 +38,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Wired compilation and execution events in the test case runner to the file explorer sidebar status updates.
   - Synchronized the active contest problems' statuses/tags dynamically with compilation and testing results (AC, WA, TLE, RE).
   - Updated the status decision matrix to allow downgrading/upgrading active contest tags on subsequent test executions (e.g. from AC to WA/TLE/RE if the latest run fails).
+- **Settings Layout and C++26 Standard Option**:
+  - Removed the "(Beta)" suffix from the C++26 compiler standard selector to reflect the official release status of the bundled GCC 16.1.0.
+  - Cleaned up duplicate nested HTML `div` elements within the compiler settings block.
 
 ## [1.2.0] - 2026-06-06
 
