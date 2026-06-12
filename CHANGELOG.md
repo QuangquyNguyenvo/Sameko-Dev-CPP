@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **PCH Cache-Clear with Background Rebuild**:
   - Added a "Clear PCH Cache" action to settings to delete corrupted or slow Precompiled Header files.
   - Wired it to an IPC call that runs asynchronously in the background to re-optimize/precompile libraries using the active compiler flags, keeping the UI smooth while restoring 200-400ms C++ compile speed.
+- **Competitive Companion Import Target Setting** ([#46](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/46)):
+  - Added an option in the CC popup to choose where imported tests land: **"Open in a new tab"** (default, existing behavior) or **"Import into current tab"** (keeps your code, only updates tests).
+  - When importing into the current tab, users can choose to **replace** existing tests or **append** new ones.
+  - Setting is persisted in `settings.json` under `oj.importTarget` and `oj.importMerge`.
 
 ### Changed
 - **Explorer Rounded Cards and Thick-Border Aesthetic**:

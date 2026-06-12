@@ -73,7 +73,9 @@ const DEFAULT_SETTINGS = {
         problemsHeight: null
     },
     oj: {
-        verified: false
+        verified: false,
+        importTarget: 'new-tab',   // 'new-tab' | 'current-tab'
+        importMerge: 'replace'     // 'replace' | 'append' (only used when importTarget = 'current-tab')
     },
     localHistory: {
         enabled: true,
@@ -5903,11 +5905,38 @@ function initCompetitiveCompanion() {
         hideCCPopup();
     });
 
+    const importTargetSelect = document.getElementById('cc-import-target');
+    const importMergeSelect = document.getElementById('cc-import-merge');
+    const importMergeRow = document.getElementById('cc-import-merge-row');
+
+    if (!App.settings.oj) App.settings.oj = {};
+    if (!App.settings.oj.importTarget) App.settings.oj.importTarget = 'new-tab';
+    if (!App.settings.oj.importMerge) App.settings.oj.importMerge = 'replace';
+
+    const updateCCImportUI = () => {
+        if (importTargetSelect) importTargetSelect.value = App.settings.oj.importTarget || 'new-tab';
+        if (importMergeSelect) importMergeSelect.value = App.settings.oj.importMerge || 'replace';
+        if (importMergeRow) {
+            importMergeRow.style.display = (App.settings.oj.importTarget === 'current-tab') ? 'flex' : 'none';
+        }
+    };
+
+    importTargetSelect?.addEventListener('change', () => {
+        App.settings.oj.importTarget = importTargetSelect.value;
+        updateCCImportUI();
+        saveSettings();
+    });
+
+    importMergeSelect?.addEventListener('change', () => {
+        App.settings.oj.importMerge = importMergeSelect.value;
+        saveSettings();
+    });
+
+    updateCCImportUI();
 
     document.getElementById('cc-overlay')?.addEventListener('click', (e) => {
         if (e.target.id === 'cc-overlay') hideCCPopup();
     });
-
 
     window.electronAPI?.onProblemReceived?.(handleProblemReceived);
 }
@@ -6102,7 +6131,6 @@ async function startCCServer(silent = false) {
 async function handleProblemReceived(problem) {
     console.log('Received problem:', problem);
 
-
     if (!ccHasReceivedProblem) {
         ccHasReceivedProblem = true;
         if (!App.settings.oj) App.settings.oj = {};
@@ -6110,135 +6138,152 @@ async function handleProblemReceived(problem) {
         saveSettings();
     }
 
+    const importTarget = App.settings.oj?.importTarget || 'new-tab';
+    const importMerge = App.settings.oj?.importMerge || 'replace';
+    const useCurrentTab = importTarget === 'current-tab' && App.activeTabId && App.tabs.length > 0;
 
-    ccProblem = problem;
-    ccTestIndex = 0;
+    if (useCurrentTab) {
+        // Import tests into the current active tab \u2014 don't create a new tab
+        if (importMerge === 'append' && ccProblem && ccProblem.tests) {
+            // Append new tests to existing ones
+            ccProblem.tests = ccProblem.tests.concat(problem.tests || []);
+            ccProblem.name = problem.name;
+            ccProblem.timeLimit = problem.timeLimit;
+            ccProblem.memoryLimit = problem.memoryLimit;
+            ccProblem.url = problem.url;
+            ccProblem.group = problem.group;
+        } else {
+            // Replace all tests
+            ccProblem = problem;
+        }
+        ccTestIndex = 0;
+    } else {
+        // Original behavior: create a new tab
+        ccProblem = problem;
+        ccTestIndex = 0;
 
+        const removeVietnameseDiacritics = (str) => {
+            return str
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .replace(/\u0111/g, 'd')
+                .replace(/\u0110/g, 'D');
+        };
 
-    const removeVietnameseDiacritics = (str) => {
-        return str
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/\u0111/g, 'd')
-            .replace(/\u0110/g, 'D');
-    };
+        const safeName = removeVietnameseDiacritics(problem.name)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '')
+            .substring(0, 50);
+        const fileName = safeName + '.cpp';
 
-    const safeName = removeVietnameseDiacritics(problem.name)
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '_')
-        .replace(/^_+|_+$/g, '')
-        .substring(0, 50);
-    const fileName = safeName + '.cpp';
+        const id = 'tab_' + Date.now();
+        const template = App.settings.template?.code || DEFAULT_CODE;
 
+        let targetPath = null;
+        let finalFileName = fileName;
 
-    const id = 'tab_' + Date.now();
-    const template = App.settings.template?.code || DEFAULT_CODE;
+        if (typeof FileExplorer !== 'undefined' && FileExplorer.currentFolder) {
+            // Find or create "Fetched Problems" category
+            let targetCategory = FileExplorer.categories.find(c => c.name === 'Fetched Problems');
+            if (!targetCategory) {
+                const catId = 'cat_' + Date.now();
+                const colors = ['#ff9800', '#2196f3', '#4caf50', '#e91e63', '#9c27b0', '#00bcd4'];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                const folderPath = `${FileExplorer.currentFolder}/Fetched Problems`.replace(/\\/g, '/');
 
-    let targetPath = null;
-    let finalFileName = fileName;
-
-    if (typeof FileExplorer !== 'undefined' && FileExplorer.currentFolder) {
-        // Find or create "Fetched Problems" category
-        let targetCategory = FileExplorer.categories.find(c => c.name === 'Fetched Problems');
-        if (!targetCategory) {
-            const catId = 'cat_' + Date.now();
-            const colors = ['#ff9800', '#2196f3', '#4caf50', '#e91e63', '#9c27b0', '#00bcd4'];
-            const randomColor = colors[Math.floor(Math.random() * colors.length)];
-            const folderPath = `${FileExplorer.currentFolder}/Fetched Problems`.replace(/\\/g, '/');
-
-            // Create physical directory
-            try {
-                if (window.electronAPI && window.electronAPI.createDirectory) {
-                    await window.electronAPI.createDirectory(folderPath);
+                // Create physical directory
+                try {
+                    if (window.electronAPI && window.electronAPI.createDirectory) {
+                        await window.electronAPI.createDirectory(folderPath);
+                    }
+                } catch (err) {
+                    console.error('Failed to create Fetched Problems folder:', err);
                 }
-            } catch (err) {
-                console.error('Failed to create Fetched Problems folder:', err);
-            }
 
-            targetCategory = {
-                id: catId,
-                name: 'Fetched Problems',
-                type: 'collection',
-                color: randomColor,
-                folderPath: folderPath,
-                items: [],
-                createdAt: Date.now()
-            };
-            FileExplorer.categories.push(targetCategory);
-            FileExplorer.saveState();
-        }
-
-        const folder = targetCategory.folderPath || FileExplorer.currentFolder;
-        let counter = 1;
-        let checkPath = `${folder}/${fileName}`.replace(/\\/g, '/');
-        let fileExists = true;
-        while (fileExists) {
-            try {
-                await window.electronAPI.readFile(checkPath);
-                counter++;
-                finalFileName = `${safeName}_${counter}.cpp`;
-                checkPath = `${folder}/${finalFileName}`.replace(/\\/g, '/');
-            } catch (err) {
-                fileExists = false;
-            }
-        }
-        targetPath = checkPath;
-
-        // Save file physically to disk
-        try {
-            const r = await window.electronAPI.saveFile({ path: targetPath, content: template });
-            if (r.success) {
-                // Add to category in file explorer
-                FileExplorer.addFileToCategory(targetCategory.id, targetPath, finalFileName.replace(/\.[^.]+$/, ''));
+                targetCategory = {
+                    id: catId,
+                    name: 'Fetched Problems',
+                    type: 'collection',
+                    color: randomColor,
+                    folderPath: folderPath,
+                    items: [],
+                    createdAt: Date.now()
+                };
+                FileExplorer.categories.push(targetCategory);
                 FileExplorer.saveState();
+            }
 
-                // Expose to file watcher
-                if (typeof startFileWatch === 'function') {
-                    startFileWatch(targetPath);
-                }
-
-                // If FileExplorer is open, refresh it
-                if (typeof FileExplorer.refreshTree === 'function') {
-                    await FileExplorer.refreshTree();
+            const folder = targetCategory.folderPath || FileExplorer.currentFolder;
+            let counter = 1;
+            let checkPath = `${folder}/${fileName}`.replace(/\\/g, '/');
+            let fileExists = true;
+            while (fileExists) {
+                try {
+                    await window.electronAPI.readFile(checkPath);
+                    counter++;
+                    finalFileName = `${safeName}_${counter}.cpp`;
+                    checkPath = `${folder}/${finalFileName}`.replace(/\\/g, '/');
+                } catch (err) {
+                    fileExists = false;
                 }
             }
-        } catch (err) {
-            console.error('Failed to auto-save fetched problem:', err);
-            targetPath = null; // fallback to untitled tab
+            targetPath = checkPath;
+
+            // Save file physically to disk
+            try {
+                const r = await window.electronAPI.saveFile({ path: targetPath, content: template });
+                if (r.success) {
+                    // Add to category in file explorer
+                    FileExplorer.addFileToCategory(targetCategory.id, targetPath, finalFileName.replace(/\.[^.]+$/, ''));
+                    FileExplorer.saveState();
+
+                    // Expose to file watcher
+                    if (typeof startFileWatch === 'function') {
+                        startFileWatch(targetPath);
+                    }
+
+                    // If FileExplorer is open, refresh it
+                    if (typeof FileExplorer.refreshTree === 'function') {
+                        await FileExplorer.refreshTree();
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to auto-save fetched problem:', err);
+                targetPath = null; // fallback to untitled tab
+            }
         }
+
+        App.tabs.push({
+            id,
+            name: targetPath ? finalFileName : fileName,
+            path: targetPath,
+            untitledHistoryKey: targetPath ? null : createUntitledHistoryKey(),
+            content: template,
+            original: targetPath ? template : '',
+            modified: !targetPath
+        });
+
+        App.activeTabId = id;
+
+        if (App.editor && App.ready) {
+            App.isSettingValue = true;
+            App.editor.setValue(template);
+            App.isSettingValue = false;
+        }
+
+        renderTabs();
+        updateUI();
     }
 
-    App.tabs.push({
-        id,
-        name: targetPath ? finalFileName : fileName,
-        path: targetPath,
-        untitledHistoryKey: targetPath ? null : createUntitledHistoryKey(),
-        content: template,
-        original: targetPath ? template : '',
-        modified: !targetPath
-    });
-
-
-    App.activeTabId = id;
-
-
-    if (App.editor && App.ready) {
-        App.isSettingValue = true;
-        App.editor.setValue(template);
-        App.isSettingValue = false;
-    }
-
-    renderTabs();
-    updateUI();
-
-
-    const testCount = problem.tests?.length || 0;
+    // Load first test into UI
+    const testCount = ccProblem?.tests?.length || 0;
     if (testCount > 0) {
         const inputArea = document.getElementById('input-area');
         const expectedArea = document.getElementById('expected-area');
 
-        if (inputArea) inputArea.value = problem.tests[0].input || '';
-        if (expectedArea) expectedArea.value = problem.tests[0].output || '';
+        if (inputArea) inputArea.value = ccProblem.tests[0].input || '';
+        if (expectedArea) expectedArea.value = ccProblem.tests[0].output || '';
     }
 
     // Clear any stale Expected/Actual comparison from a previous problem/run
@@ -6247,26 +6292,25 @@ async function handleProblemReceived(problem) {
     updateTestNavUI();
     renderTestResults(); // Initialize list
 
-
     if (!App.showIO) toggleIO();
-
 
     const timeLimit = problem.timeLimit ? `${problem.timeLimit}ms` : '-';
     const memLimit = problem.memoryLimit ? `${problem.memoryLimit}MB` : '-';
 
     log(`[OJ] ${problem.name}`, 'success');
     log(`     ${testCount} test | ${timeLimit} | ${memLimit}`, 'info');
+    if (useCurrentTab) {
+        log(`     Imported to current tab (${importMerge})`, 'info');
+    }
 
     // Update status
     setStatus(`${problem.name}`, 'success');
-
 
     const btn = document.getElementById('btn-cc');
     if (btn) {
         btn.classList.add('cc-flash');
         setTimeout(() => btn.classList.remove('cc-flash'), 1000);
     }
-
 
     setTimeout(() => {
         if (App.editor) {

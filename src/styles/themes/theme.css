@@ -3113,6 +3113,57 @@ body.split-active .editor-pane {
     font-weight: 700;
 }
 
+/* CC Options */
+.cc-options {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: var(--bg-button, #f8fbfe);
+    border-radius: 14px;
+    border: 2px solid var(--border, #e0f0f8);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.cc-option-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.cc-option-label {
+    color: var(--text-secondary, #5a9fc8);
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.cc-option-select {
+    flex: 1;
+    max-width: 220px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 2px solid var(--border, #c8e4f5);
+    background: var(--btn-bg, #fff);
+    color: var(--text, #2a4a64);
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.cc-option-select:hover {
+    border-color: var(--border-strong, #a0d4f0);
+}
+
+.cc-option-select:focus {
+    outline: none;
+    border-color: var(--accent, #6bb8e0);
+}
+
 /* CC Footer */
 .cc-footer {
     padding: 16px 24px;

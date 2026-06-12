@@ -239,6 +239,22 @@
                                 IDE!</span>
                         </div>
                     </div>
+                    <div class="cc-options">
+                        <div class="cc-option-row">
+                            <label class="cc-option-label" for="cc-import-target">When tests arrive</label>
+                            <select class="cc-option-select" id="cc-import-target">
+                                <option value="new-tab">Open in a new tab</option>
+                                <option value="current-tab">Import into current tab</option>
+                            </select>
+                        </div>
+                        <div class="cc-option-row" id="cc-import-merge-row">
+                            <label class="cc-option-label" for="cc-import-merge">Existing tests</label>
+                            <select class="cc-option-select" id="cc-import-merge">
+                                <option value="replace">Replace with new tests</option>
+                                <option value="append">Append new tests</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
                 <div class="cc-footer">
                     <button class="cc-btn secondary" id="cc-cancel">Close</button>
