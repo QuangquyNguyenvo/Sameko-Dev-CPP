@@ -58,6 +58,8 @@ const IPC = {
         CODE: 'format-code',
         SYNTAX_CHECK: 'syntax-check',
         SMART_SUGGESTIONS: 'smart-suggestions',
+        CLANGD_COMPLETIONS: 'get-clangd-completions',
+        CLANGD_HOVER: 'get-clangd-hover',
     },
 
     // Competitive Programming

@@ -1,0 +1,16 @@
+-std=gnu++17
+--target=x86_64-pc-windows-gnu
+-I
+D:/Code/Project/IDE/Sameko-GCC/include/c++/16.1.0
+-I
+D:/Code/Project/IDE/Sameko-GCC/include/c++/16.1.0/x86_64-w64-mingw32
+-I
+D:/Code/Project/IDE/Sameko-GCC/include/c++/16.1.0/backward
+-I
+D:/Code/Project/IDE/Sameko-GCC/lib/gcc/x86_64-w64-mingw32/16.1.0/include
+-I
+D:/Code/Project/IDE/Sameko-GCC/include
+-I
+D:/Code/Project/IDE/Sameko-GCC/lib/gcc/x86_64-w64-mingw32/16.1.0/include-fixed
+-I
+D:/Code/Project/IDE/Sameko-GCC/x86_64-w64-mingw32/include

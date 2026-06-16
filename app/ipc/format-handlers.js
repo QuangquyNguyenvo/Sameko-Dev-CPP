@@ -35,7 +35,15 @@ function registerHandlers() {
         return syntax.getSmartSuggestions(content, row, column);
     });
 
+    // Clangd completions
+    ipcMain.handle(IPC.FORMAT.CLANGD_COMPLETIONS, async (event, { filePath, content, line, character }) => {
+        return syntax.getClangdCompletions(filePath, content, line, character);
+    });
 
+    // Clangd hover
+    ipcMain.handle(IPC.FORMAT.CLANGD_HOVER, async (event, { filePath, content, line, character }) => {
+        return syntax.getClangdHover(filePath, content, line, character);
+    });
 }
 
 module.exports = {

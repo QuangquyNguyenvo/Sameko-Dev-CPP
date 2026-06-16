@@ -1,5 +1,5 @@
 window.registerCppIntellisense = function (monaco) {
-    console.log('[Intellisense] Registering C/C++ Provider (Full STL Support)...');
+    console.log('[Intellisense] Registering C/C++ Provider (Snippets + Clangd)...');
 
     // ========================================================================
     // 1. DATA: SNIPPETS & TEMPLATES
@@ -44,91 +44,6 @@ window.registerCppIntellisense = function (monaco) {
         ]
     };
 
-    // ========================================================================
-    // 2. DATA: STL METHODS & DOCUMENTATION
-    // ========================================================================
-    const STL_DOCS = {
-        // --- Vector / String / Deque Modifications ---
-        'push_back': { type: 'Method', detail: 'void push_back(val)', doc: 'Add element to the end.' },
-        'emplace_back': { type: 'Method', detail: 'void emplace_back(args...)', doc: 'Construct and add element to the end.' },
-        'pop_back': { type: 'Method', detail: 'void pop_back()', doc: 'Remove the last element.' },
-        'resize': { type: 'Method', detail: 'void resize(n, val)', doc: 'Resize container to contain n elements.' },
-        'assign': { type: 'Method', detail: 'void assign(n, val)', doc: 'Assign new content to container.' },
-        'clear': { type: 'Method', detail: 'void clear()', doc: 'Remove all elements.' },
-
-        // --- Insert / Erase ---
-        'erase': { type: 'Method', detail: 'iterator erase(pos)', doc: 'Remove element at position/range.\nEx: v.erase(v.begin() + 1);' },
-        'insert': { type: 'Method', detail: 'iterator insert(pos, val)', doc: 'Insert element before pos.' },
-
-        // --- Access ---
-        'front': { type: 'Method', detail: 'T& front()', doc: 'Access first element.' },
-        'back': { type: 'Method', detail: 'T& back()', doc: 'Access last element.' },
-        'at': { type: 'Method', detail: 'T& at(idx)', doc: 'Access element with bounds checking.' },
-
-        // --- String Specific ---
-        'substr': { type: 'Method', detail: 'string substr(pos, len)', doc: 'Generate substring.' },
-        'length': { type: 'Method', detail: 'size_t length()', doc: 'Return string length.' },
-        'c_str': { type: 'Method', detail: 'const char* c_str()', doc: 'Return C-style string array.' },
-        'append': { type: 'Method', detail: 'string& append(str)', doc: 'Append to string.' },
-
-        // --- Map / Set / Finders ---
-        'find': { type: 'Method', detail: 'iterator find(key)', doc: 'Search for an element.' },
-        'count': { type: 'Method', detail: 'size_t count(key)', doc: 'Count elements with key (1 or 0 for set).' },
-        'lower_bound': { type: 'Method', detail: 'iterator lower_bound(key)', doc: 'First element NOT less than key (>=).' },
-        'upper_bound': { type: 'Method', detail: 'iterator upper_bound(key)', doc: 'First element greater than key (>).' },
-
-        // --- Stack / Queue / PQ ---
-        'push': { type: 'Method', detail: 'void push(val)', doc: 'Insert element.' },
-        'pop': { type: 'Method', detail: 'void pop()', doc: 'Remove top element.' },
-        'top': { type: 'Method', detail: 'T& top()', doc: 'Access top element.' },
-        'empty': { type: 'Method', detail: 'bool empty()', doc: 'Check if container is empty.' },
-
-        'push_front': { type: 'Method', detail: 'void push_front(val)', doc: 'Add element to the front.' },
-        'emplace_front': { type: 'Method', detail: 'void emplace_front(args...)', doc: 'Construct and add element to the front.' },
-        'pop_front': { type: 'Method', detail: 'void pop_front()', doc: 'Remove the first element.' },
-
-        // --- Iterators & Capacity ---
-        'begin': { type: 'Method', detail: 'iterator begin()', doc: 'Return iterator to beginning.' },
-        'end': { type: 'Method', detail: 'iterator end()', doc: 'Return iterator to end.' },
-        'size': { type: 'Method', detail: 'size_t size()', doc: 'Return size of container.' },
-
-        // --- Algorithms & Utils ---
-        'sort': { type: 'Func', detail: 'sort(begin, end)', doc: 'Sort range.' },
-        'reverse': { type: 'Func', detail: 'reverse(begin, end)', doc: 'Reverse range.' },
-        'memset': { type: 'Func', detail: 'memset(ptr, val, size)', doc: 'Fill memory.' },
-        'memcpy': { type: 'Func', detail: 'memcpy(dest, src, size)', doc: 'Copy memory.' },
-        '__gcd': { type: 'Func', detail: '__gcd(a, b)', doc: 'Greatest Common Divisor.' },
-        'min': { type: 'Func', detail: 'min(a, b)', doc: 'Return smaller value.' },
-        'max': { type: 'Func', detail: 'max(a, b)', doc: 'Return larger value.' },
-        'swap': { type: 'Func', detail: 'swap(a, b)', doc: 'Swap two values.' },
-
-        'to_string': { type: 'Func', detail: 'to_string(val)', doc: 'Convert numerical value to string.' },
-        'stoi': { type: 'Func', detail: 'stoi(str)', doc: 'Convert string to integer.' },
-        'stoll': { type: 'Func', detail: 'stoll(str)', doc: 'Convert string to long long.' },
-        'stod': { type: 'Func', detail: 'stod(str)', doc: 'Convert string to double.' },
-        'itoa': { type: 'Func', detail: 'itoa(val, buffer, radix)', doc: 'Convert integer to string (Non-standard).' },
-
-        // --- Standard Library ---
-        'fopen': { type: 'Func', detail: 'FILE* fopen(filename, mode)', doc: 'Open file.' },
-        'freopen': { type: 'Func', detail: 'FILE* freopen(filename, mode, stream)', doc: 'Reassign file stream.' }
-    };
-
-    const STL_TYPE_METHODS = {
-        'vector': ['push_back', 'emplace_back', 'pop_back', 'resize', 'assign', 'clear', 'erase', 'insert', 'front', 'back', 'at', 'empty', 'begin', 'end', 'size'],
-        'string': ['push_back', 'pop_back', 'resize', 'assign', 'clear', 'erase', 'insert', 'front', 'back', 'at', 'substr', 'length', 'c_str', 'append', 'empty', 'begin', 'end', 'size', 'find'],
-        'deque': ['push_back', 'emplace_back', 'pop_back', 'push_front', 'emplace_front', 'pop_front', 'resize', 'assign', 'clear', 'erase', 'insert', 'front', 'back', 'at', 'empty', 'begin', 'end', 'size'],
-        'set': ['insert', 'erase', 'clear', 'find', 'count', 'lower_bound', 'upper_bound', 'empty', 'begin', 'end', 'size'],
-        'map': ['insert', 'erase', 'clear', 'find', 'count', 'lower_bound', 'upper_bound', 'empty', 'begin', 'end', 'size', 'at'],
-        'queue': ['push', 'pop', 'front', 'back', 'empty', 'size'],
-        'stack': ['push', 'pop', 'top', 'empty', 'size'],
-        'priority_queue': ['push', 'pop', 'top', 'empty', 'size'],
-        'multiset': ['insert', 'erase', 'clear', 'find', 'count', 'lower_bound', 'upper_bound', 'empty', 'begin', 'end', 'size'],
-        'unordered_set': ['insert', 'erase', 'clear', 'find', 'count', 'empty', 'begin', 'end', 'size'],
-        'unordered_map': ['insert', 'erase', 'clear', 'find', 'count', 'empty', 'begin', 'end', 'size', 'at']
-    };
-
-    const STL_KEYWORDS = Object.keys(STL_DOCS);
-
     // Headers
     const HEADERS = {
         c: ['stdio.h', 'stdlib.h', 'string.h', 'math.h', 'windows.h', 'conio.h'],
@@ -136,9 +51,9 @@ window.registerCppIntellisense = function (monaco) {
     };
 
     // ========================================================================
-    // 3. LOGIC PROVIDER
+    // 2. LOGIC PROVIDER (fallback when clangd is unavailable, e.g. unsaved files)
     // ========================================================================
-    const createProposals = (range, languageId, textUntilPosition, objectContextType = null) => {
+    const createProposals = (range, languageId, textUntilPosition) => {
         const suggestions = [];
         const insideInclude = /#include\s*[<"]\s*$/.test(textUntilPosition);
         const insideParentheses = /\([^\)]*$/.test(textUntilPosition);
@@ -163,21 +78,9 @@ window.registerCppIntellisense = function (monaco) {
             return { suggestions };
         }
 
+        // Member access is handled exclusively by clangd. Without it we offer
+        // nothing here to avoid polluting the list with keywords/snippets.
         if (afterDot) {
-            let allowedMethods = STL_KEYWORDS; // default to all
-            if (objectContextType && STL_TYPE_METHODS[objectContextType]) {
-                allowedMethods = STL_TYPE_METHODS[objectContextType];
-            }
-
-            allowedMethods.forEach(k => {
-                const info = STL_DOCS[k];
-                if (info && info.type === 'Method') {
-                    suggestions.push({
-                        label: k, kind: monaco.languages.CompletionItemKind.Method,
-                        insertText: k, documentation: info.doc, detail: info.detail, range: range
-                    });
-                }
-            });
             return { suggestions };
         }
 
@@ -221,22 +124,13 @@ window.registerCppIntellisense = function (monaco) {
             ['ll', 'pb', 'mp', 'fi', 'se', 'vi', 'pii'].forEach(k => {
                 suggestions.push({ label: k, kind: monaco.languages.CompletionItemKind.Constant, insertText: k, range: range });
             });
-            STL_KEYWORDS.forEach(k => {
-                const info = STL_DOCS[k];
-                if (info.type === 'Func') {
-                    suggestions.push({
-                        label: k, kind: monaco.languages.CompletionItemKind.Function,
-                        insertText: k, documentation: info.doc, detail: info.detail, range: range
-                    });
-                }
-            });
         }
 
         return { suggestions };
     };
 
     // ========================================================================
-    // 4. REGISTRATION (HOVER & SIGNATURE)
+    // 3. REGISTRATION (COMPLETION & HOVER)
     // ========================================================================
     const registerFeatures = (lang) => {
         monaco.languages.registerCompletionItemProvider(lang, {
@@ -254,19 +148,66 @@ window.registerCppIntellisense = function (monaco) {
                     return { suggestions: [] };
                 }
 
-                let objectContextType = null;
-                const afterDotMatch = textUntilPosition.match(/([a-zA-Z0-9_]+)\.\s*$/);
-                if (afterDotMatch) {
-                    const objectName = afterDotMatch[1];
-                    const content = model.getValue();
-                    const regex = new RegExp(`\\b(vector|string|deque|set|map|multiset|priority_queue|queue|stack|unordered_set|unordered_map)\\b[^;=]*?\\b${objectName}\\b`);
-                    const declMatch = content.match(regex);
-                    if (declMatch) {
-                        objectContextType = declMatch[1];
+                let baseProposals = createProposals(range, lang, textUntilPosition);
+
+                // Call clangd if available
+                if (window.electronAPI && window.electronAPI.getClangdCompletions && window.TabManager) {
+                    const activeTab = window.TabManager.getActiveTab();
+                    if (activeTab && (activeTab.path || activeTab.id)) {
+                        const filePath = activeTab.path || activeTab.id;
+                        const content = model.getValue();
+                        const line = position.lineNumber - 1;
+                        const character = position.column - 1;
+
+                        try {
+                            const clangdItems = await window.electronAPI.getClangdCompletions(filePath, content, line, character);
+                            if (clangdItems && clangdItems.length > 0) {
+                                const mappedClangdItems = clangdItems.map(item => {
+                                    let doc = undefined;
+                                    if (item.documentation) {
+                                        if (typeof item.documentation === 'string') {
+                                            doc = item.documentation;
+                                        } else if (typeof item.documentation === 'object' && item.documentation.value) {
+                                            doc = item.documentation.value;
+                                        }
+                                    }
+                                    return {
+                                        label: item.label,
+                                        kind: item.kind,
+                                        detail: item.detail,
+                                        documentation: doc,
+                                        insertText: item.insertText || (item.textEdit && item.textEdit.newText) || item.label,
+                                        insertTextRules: item.insertTextFormat === 2 ? monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet : undefined,
+                                        range: range,
+                                        sortText: item.sortText || item.label,
+                                        additionalTextEdits: item.additionalTextEdits ? item.additionalTextEdits.map(edit => ({
+                                            range: new monaco.Range(
+                                                edit.range.start.line + 1,
+                                                edit.range.start.character + 1,
+                                                edit.range.end.line + 1,
+                                                edit.range.end.character + 1
+                                            ),
+                                            text: edit.newText
+                                        })) : undefined
+                                    };
+                                });
+
+                                // Merge Clangd suggestions at front with custom snippets from base proposals (sorted at the bottom)
+                                const customSnippets = baseProposals.suggestions
+                                    .filter(s => s.kind === monaco.languages.CompletionItemKind.Snippet)
+                                    .map(s => ({
+                                        ...s,
+                                        sortText: 'zzz_' + (s.label.label || s.label)
+                                    }));
+                                return {
+                                    suggestions: [...mappedClangdItems, ...customSnippets]
+                                };
+                            }
+                        } catch (err) {
+                            console.error('[Clangd] completions error:', err);
+                        }
                     }
                 }
-
-                let baseProposals = createProposals(range, lang, textUntilPosition, objectContextType);
 
                 if (window.electronAPI && window.electronAPI.getSmartSuggestions) {
                     try {
@@ -304,40 +245,72 @@ window.registerCppIntellisense = function (monaco) {
             }
         });
 
-        // Hover
+        // Hover (clangd only)
         monaco.languages.registerHoverProvider(lang, {
-            provideHover: (model, position) => {
+            provideHover: async (model, position) => {
                 const word = model.getWordAtPosition(position);
-                if (!word) return null;
-                const item = STL_DOCS[word.word];
-                if (item) {
-                    return {
-                        range: new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn),
-                        contents: [{ value: `**${item.type}:** \`${item.detail}\`` }, { value: item.doc }]
-                    };
-                }
-                return null;
-            }
-        });
 
-        // Signature Help
-        monaco.languages.registerSignatureHelpProvider(lang, {
-            signatureHelpTriggerCharacters: ['(', ','],
-            provideSignatureHelp: (model, position) => {
-                const textUntilPosition = model.getValueInRange({ startLineNumber: position.lineNumber, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column });
-                const match = textUntilPosition.match(/([a-zA-Z0-9_]+)\s*\($|([a-zA-Z0-9_]+)\s*\([^)]*,/);
-                if (!match) return null;
-                const funcName = match[1] || match[2];
-                const info = STL_DOCS[funcName];
-                if (info) {
-                    return {
-                        value: {
-                            signatures: [{ label: info.detail, documentation: info.doc, parameters: [] }],
-                            activeSignature: 0, activeParameter: 0
-                        },
-                        dispose: () => { }
-                    };
+                if (window.electronAPI && window.electronAPI.getClangdHover && window.TabManager) {
+                    const activeTab = window.TabManager.getActiveTab();
+                    if (activeTab && (activeTab.path || activeTab.id)) {
+                        const filePath = activeTab.path || activeTab.id;
+                        const content = model.getValue();
+                        const line = position.lineNumber - 1;
+                        const character = position.column - 1;
+
+                        try {
+                            const clangdHover = await window.electronAPI.getClangdHover(filePath, content, line, character);
+                            if (clangdHover && clangdHover.contents) {
+                                let formattedContents = [];
+                                const mapLspContentToMonaco = (c) => {
+                                    if (!c) return null;
+                                    if (typeof c === 'string') {
+                                        return { value: c };
+                                    }
+                                    if (typeof c === 'object' && typeof c.value === 'string') {
+                                        if (c.kind === 'markdown' || !c.language) {
+                                            return { value: c.value };
+                                        } else {
+                                            return { value: `\`\`\`${c.language}\n${c.value}\n\`\`\`` };
+                                        }
+                                    }
+                                    return null;
+                                };
+
+                                if (Array.isArray(clangdHover.contents)) {
+                                    clangdHover.contents.forEach(c => {
+                                        const mapped = mapLspContentToMonaco(c);
+                                        if (mapped) formattedContents.push(mapped);
+                                    });
+                                } else {
+                                    const mapped = mapLspContentToMonaco(clangdHover.contents);
+                                    if (mapped) formattedContents.push(mapped);
+                                }
+
+                                if (formattedContents.length > 0) {
+                                    let range = undefined;
+                                    if (clangdHover.range) {
+                                        const startLine = clangdHover.range.start.line + 1;
+                                        const startCol = clangdHover.range.start.character + 1;
+                                        const endLine = clangdHover.range.end.line + 1;
+                                        const endCol = clangdHover.range.end.character + 1;
+                                        range = new monaco.Range(startLine, startCol, endLine, endCol);
+                                    } else if (word) {
+                                        range = new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn);
+                                    }
+
+                                    return {
+                                        range: range,
+                                        contents: formattedContents
+                                    };
+                                }
+                            }
+                        } catch (err) {
+                            console.error('[Clangd] hover error:', err);
+                        }
+                    }
                 }
+
                 return null;
             }
         });

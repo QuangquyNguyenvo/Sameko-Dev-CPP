@@ -5684,8 +5684,9 @@ function compareOutput() {
     const diff = buildCompactDiffHtml(expectedRaw, actualText, { normalize: true });
 
     if (diffDisplay && textarea) {
-        diffDisplay.innerHTML = diff.html;
+        diffDisplay.innerHTML = `<div class="diff-hint">Click diff to edit expected output</div>${diff.html}`;
         diffDisplay.style.display = 'block';
+        diffDisplay.title = 'Click to edit expected output';
         textarea.style.display = 'none';
     }
 }
@@ -6916,11 +6917,14 @@ function renderTestResults() {
     // Summary if run
     if (executed > 0) {
         const allPassed = passed === total && total > 0;
+        const totalTime = results.reduce((s, r) => s + (r.executionTime || 0), 0);
+        const summaryClass = allPassed ? 'test-results-summary all-passed' : 'test-results-summary has-failed';
         html += `
-                <div class="test-results-summary">
+                <div class="${summaryClass}">
+                    <span class="test-summary-ratio">${passed}/${total}</span>
                     <span class="test-summary-stat passed">✓ ${passed} passed</span>
                     <span class="test-summary-stat failed">✗ ${executed - passed} failed</span>
-                    <span class="test-summary-stat total">${results.reduce((s, r) => s + (r.executionTime || 0), 0)}ms total</span>
+                    <span class="test-summary-stat total">${totalTime}ms</span>
                 </div>
                 `;
     }
@@ -6949,13 +6953,13 @@ function renderTestResults() {
         }
 
         const isAC = result && result.status === 'AC';
-        const itemClass = isAC ? 'test-result-item item-ac' : 'test-result-item';
+        const itemClass = `test-result-item status-${statusClass}${isAC ? ' item-ac' : ''}`;
 
         html += `
                 <div class="${itemClass}" data-index="${idx}">
                     <span class="test-result-status ${statusClass}">${status}</span>
                     <div class="test-result-info">
-                        <span class="test-result-title">Test Case ${idx + 1}</span>
+                        <span class="test-result-title">Test ${idx + 1}</span>
                         <span class="test-result-details">${details}</span>
                     </div>
                     <span class="test-result-time">${timeStr}</span>

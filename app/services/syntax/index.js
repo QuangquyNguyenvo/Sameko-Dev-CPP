@@ -8,6 +8,10 @@
 
 const treeSitter = require('./tree-sitter');
 const gccChecker = require('./gcc-checker');
+const clangdService = require('./clangd-service');
+
+// Initialize Clangd IntelliSense service at startup
+clangdService.init();
 
 /**
  * Perform combined syntax check using Tree-sitter and GCC
@@ -25,17 +29,24 @@ async function checkSyntax(content, filePath = null) {
     allDiagnostics.push(...tsDiagnostics);
 
     // 2. GCC (semantic check)
-    const gccDiagnostics = await gccChecker.checkSyntax(content, filePath);
+    let gccDiagnostics = [];
+    try {
+        gccDiagnostics = await gccChecker.checkSyntax(content, filePath);
+    } catch (err) {
+        console.error('[Syntax] GCC checkSyntax error:', err);
+    }
 
     // 3. Merge results - deduplicate by line/column
-    gccDiagnostics.forEach(d => {
-        const exists = allDiagnostics.some(
-            ts => ts.line === d.line && Math.abs(ts.column - d.column) < 5
-        );
-        if (!exists) {
-            allDiagnostics.push(d);
-        }
-    });
+    if (Array.isArray(gccDiagnostics)) {
+        gccDiagnostics.forEach(d => {
+            const exists = allDiagnostics.some(
+                ts => ts.line === d.line && Math.abs(ts.column - d.column) < 5
+            );
+            if (!exists) {
+                allDiagnostics.push(d);
+            }
+        });
+    }
 
     return {
         success: allDiagnostics.length === 0,
@@ -59,4 +70,11 @@ module.exports = {
     checkSyntaxGcc: gccChecker.checkSyntax,
     parseGccOutput: gccChecker.parseGccOutput,
     cancelSyntaxCheck: gccChecker.cancelSyntaxCheck,
+
+    // Clangd LSP
+    initClangd: clangdService.init,
+    getClangdCompletions: clangdService.getCompletions,
+    getClangdHover: clangdService.getHover,
+    shutdownClangd: clangdService.shutdown,
+    isClangdAvailable: clangdService.isAvailable,
 };

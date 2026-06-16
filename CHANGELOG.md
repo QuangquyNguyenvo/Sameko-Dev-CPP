@@ -15,12 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **PCH Cache-Clear with Background Rebuild**:
   - Added a "Clear PCH Cache" action to settings to delete corrupted or slow Precompiled Header files.
   - Wired it to an IPC call that runs asynchronously in the background to re-optimize/precompile libraries using the active compiler flags, keeping the UI smooth while restoring 200-400ms C++ compile speed.
-- **Competitive Companion Import Target Setting** ([#46](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/46)):
-  - Added an option in the CC popup to choose where imported tests land: **"Open in a new tab"** (default, existing behavior) or **"Import into current tab"** (keeps your code, only updates tests).
-  - When importing into the current tab, users can choose to **replace** existing tests or **append** new ones.
-  - Setting is persisted in `settings.json` under `oj.importTarget` and `oj.importMerge`.
 
 ### Changed
+- **Clangd-Driven IntelliSense (Removed Hardcoded STL Tables)**:
+  - Removed the hardcoded `STL_DOCS`, `STL_TYPE_METHODS`, and `STL_KEYWORDS` tables, the after-dot STL method completion logic, the STL hover provider, and the STL-only signature help provider from the C/C++ suggestion provider.
+  - Member completions (e.g. `.push_back`, `.size`), hover info, and signature help are now served entirely by clangd, which is accurate and context-aware instead of pattern-matched.
+  - Kept the custom snippets (CP template, `for`/`while`/`if`, `vec`, `ios`, `fre`, user-defined snippets), include-path completion, preprocessor directives, and language keywords as the fallback path when clangd has no result (e.g. unsaved files).
 - **Explorer Rounded Cards and Thick-Border Aesthetic**:
   - Re-styled the outer file explorer sidebar container as a floating card with `border-radius: 16px`, `margin: 12px 0 12px 12px`, and a thick `2px solid var(--border)` outline, matching the layout of the main editor.
   - Re-styled collections and contests in the sidebar as floating rounded cards with explicit 2px borders, replacing flat borderless container boundaries.
@@ -51,6 +51,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Prevented the "Restart to Update" button from appearing before an update is completely downloaded by requiring both the installer `.exe` and the corresponding `update-info.json` file to exist in the pending directory before declaring it as downloaded from a previous session.
   - Reset the `updateDownloaded` state and hid the restart button on update check start, update availability, download start, and update errors to ensure users cannot click the restart button while a new download is in progress.
   - Reverted update button styling to a flat ocean theme color with clean hover animations (1px translation and soft shadow) without visual gradients or outer glow animations to keep it consistent with the overall IDE theme.
+- **Competitive Companion Import Target Setting** ([#46](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/46)):
+  - Added an option in the CC popup to choose where imported tests land: **"Open in a new tab"** (default, existing behavior) or **"Import into current tab"** (keeps your code, only updates tests).
+  - When importing into the current tab, users can choose to **replace** existing tests or **append** new ones.
+  - Setting is persisted in `settings.json` under `oj.importTarget` and `oj.importMerge`.
 
 ## [1.2.0] - 2026-06-06
 
