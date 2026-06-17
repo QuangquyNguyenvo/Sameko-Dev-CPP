@@ -150,6 +150,12 @@ window.registerCppIntellisense = function (monaco) {
 
                 let baseProposals = createProposals(range, lang, textUntilPosition);
 
+                // For member-access (e.g. `v.|`), prefer clangd's
+                // textEdit.range which is already correct. When the
+                // user has typed a partial word after the dot (e.g.
+                // `v.b|`), fall back to the current word range so the
+                // partial prefix is replaced.
+
                 // Call clangd if available
                 if (window.electronAPI && window.electronAPI.getClangdCompletions && window.TabManager) {
                     const activeTab = window.TabManager.getActiveTab();
@@ -171,14 +177,35 @@ window.registerCppIntellisense = function (monaco) {
                                             doc = item.documentation.value;
                                         }
                                     }
+
+                                    // Prefer the LSP textEdit.range that clangd
+                                    // computed. Fall back to the current word
+                                    // range (which handles both plain words and
+                                    // partial words after a `.` like `v.b|`).
+                                    let itemRange = range;
+                                    let insertText = item.label;
+                                    if (item.textEdit && item.textEdit.newText) {
+                                        insertText = item.textEdit.newText;
+                                        if (item.textEdit.range) {
+                                            itemRange = {
+                                                startLineNumber: item.textEdit.range.start.line + 1,
+                                                endLineNumber: item.textEdit.range.end.line + 1,
+                                                startColumn: item.textEdit.range.start.character + 1,
+                                                endColumn: item.textEdit.range.end.character + 1
+                                            };
+                                        }
+                                    } else if (item.insertText) {
+                                        insertText = item.insertText;
+                                    }
+
                                     return {
                                         label: item.label,
                                         kind: item.kind,
                                         detail: item.detail,
                                         documentation: doc,
-                                        insertText: item.insertText || (item.textEdit && item.textEdit.newText) || item.label,
+                                        insertText: insertText,
                                         insertTextRules: item.insertTextFormat === 2 ? monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet : undefined,
-                                        range: range,
+                                        range: itemRange,
                                         sortText: item.sortText || item.label,
                                         additionalTextEdits: item.additionalTextEdits ? item.additionalTextEdits.map(edit => ({
                                             range: new monaco.Range(

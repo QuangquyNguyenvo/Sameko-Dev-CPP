@@ -566,7 +566,7 @@ function createEditor(containerId) {
         suggestOnTriggerCharacters: true,
         acceptSuggestionOnEnter: 'on',
         tabCompletion: 'on',
-        wordBasedSuggestions: App.settings.editor.intellisense !== false ? 'allDocuments' : 'off',
+        wordBasedSuggestions: 'off',
         parameterHints: { enabled: App.settings.editor.intellisense !== false },
         snippetSuggestions: 'top',
         suggest: {
@@ -3094,7 +3094,7 @@ function applySettings() {
             comments: false,
             strings: (App.settings.editor.intellisense !== false || App.settings.editor.snippets !== false)
         },
-        wordBasedSuggestions: App.settings.editor.intellisense !== false ? 'allDocuments' : 'off',
+        wordBasedSuggestions: 'off',
         parameterHints: { enabled: App.settings.editor.intellisense !== false },
         suggest: {
             showKeywords: App.settings.editor.intellisense !== false && App.settings.editor.keywords !== false,

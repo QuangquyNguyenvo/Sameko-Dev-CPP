@@ -515,10 +515,13 @@ function getFileUri(filePath) {
     if (filePath && typeof filePath === 'string' && path.isAbsolute(filePath)) {
         return url.pathToFileURL(filePath).href;
     }
-    // Handle unsaved files with unique identifier
+    // Handle unsaved files with a stable identifier. Use the provided
+    // string (e.g. `tab-1`) directly so the same tab always maps to the
+    // same URI — calling didOpen on a fresh random URI each time would
+    // wipe clangd's parsed state and make completions stale.
     const id = (filePath && typeof filePath === 'string')
         ? filePath.replace(/[^a-zA-Z0-9-]/g, '_')
-        : Math.random().toString(36).substring(7);
+        : 'anon';
 
     const mockPath = path.join(getBasePath(), `temp_untitled_${id}.cpp`);
     return url.pathToFileURL(mockPath).href;
@@ -570,6 +573,7 @@ function syncDocument(fileUri, content) {
 async function getCompletions(filePath, content, line, character) {
     const ready = await ensureReady();
     if (!ready) {
+        console.warn('[Clangd-DBG] getCompletions: not ready, returning []');
         return [];
     }
 
@@ -588,7 +592,12 @@ async function getCompletions(filePath, content, line, character) {
 
     try {
         const result = await sendRequest('textDocument/completion', completionParams);
-        return result ? (Array.isArray(result) ? result : result.items || []) : [];
+        const items = result ? (Array.isArray(result) ? result : result.items || []) : [];
+        if (process.env.SAMEKO_CLANGD_DEBUG) {
+            const labels = items.slice(0, 5).map(i => i.label).join(', ');
+            console.log(`[Clangd-DBG] completions @${line}:${character} uri=${fileUri} → ${items.length} items [${labels}${items.length > 5 ? ', ...' : ''}]`);
+        }
+        return items;
     } catch (err) {
         console.error('[Clangd] getCompletions request failed:', err);
         return [];

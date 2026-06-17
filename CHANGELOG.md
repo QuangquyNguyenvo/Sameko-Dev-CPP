@@ -47,6 +47,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Cleaned up duplicate nested HTML `div` elements within the compiler settings block.
 
 ### Fixed
+- **Clangd Member Completions for `bits/stdc++.h`**:
+  - clangd 22.1.6 (bundled) now correctly resolves member completions like `vector::begin`, `vector::push_back`, `string::size` for files using `<bits/stdc++.h>` — the previous combination of clangd 18 and missing include flags was returning zero or only-prefix-matched items.
+  - Added a `compile_flags.txt` writer in `app/services/syntax/clangd-service.js` that queries `g++ -Wp,-v` for the MinGW system include paths and writes them to `<basePath>/compile_flags.txt` once at startup. clangd walks up from each source file's directory to find it, so untitled tabs (mocked as `temp_untitled_tab-N.cpp` under the base path) and saved files both pick it up.
+  - The `--target=x86_64-pc-windows-gnu` flag is passed in `compile_flags.txt` so clangd uses the MinGW ABI; `--query-driver=...g++*` is also passed so clangd will fall back to invoking g++ for system include extraction if needed.
+  - Stable URI for untitled tabs in `getFileUri()`: the previous code generated a fresh random URI per call, which forced clangd to re-open the file on every keystroke and wiped its parsed state. Now untitled tabs map deterministically to `temp_untitled_<tabId>.cpp` so `didChange` (incremental) is used instead of `didOpen` (full re-parse).
+  - Completion items now use clangd's `textEdit.range` when present (for correct insertion at member-access points like `v.b|` → `v.begin()`), falling back to the current word range otherwise.
+- **Monaco Word-Based Suggestions Conflict**:
+  - Set `wordBasedSuggestions: 'off'` in `src/renderer/app.js` (both editor instances) so Monaco no longer pollutes the dropdown with tokens scraped from the document (e.g. showing `main` when typing `v`). clangd's results are complete enough on their own; the previous `'allDocuments'` setting caused duplicate, context-free suggestions to out-rank clangd's typed results.
 - **Premature Auto-Update Restart Trigger**:
   - Prevented the "Restart to Update" button from appearing before an update is completely downloaded by requiring both the installer `.exe` and the corresponding `update-info.json` file to exist in the pending directory before declaring it as downloaded from a previous session.
   - Reset the `updateDownloaded` state and hid the restart button on update check start, update availability, download start, and update errors to ensure users cannot click the restart button while a new download is in progress.
