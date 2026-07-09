@@ -219,7 +219,16 @@ int main() {
 document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     applySettings();
-    initMonaco();
+    // Monaco is the heaviest part of startup (~0.6s of load + editor create).
+    // Don't block first paint on it. It loads on demand the moment a file is
+    // opened/created (ensureMonaco() inside setActive), with an idle-time
+    // fallback so Monaco-embedding panels (settings template, snippets, theme
+    // customizer, checkpoint preview) still work even if no file is opened.
+    if (typeof window.requestIdleCallback === 'function') {
+        window.requestIdleCallback(() => ensureMonaco(), { timeout: 1500 });
+    } else {
+        setTimeout(() => ensureMonaco(), 800);
+    }
     initHeader();
     initMenus();
     initPanels();
@@ -276,7 +285,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-function initMonaco() {
+let __monacoLoadPromise = null;
+
+// Load Monaco (the editor engine) on demand. Idempotent: repeated calls return
+// the same promise, which resolves once the editor exists and App.ready is true.
+function ensureMonaco() {
+    if (!__monacoLoadPromise) {
+        __monacoLoadPromise = new Promise((resolve) => initMonaco(resolve));
+    }
+    return __monacoLoadPromise;
+}
+
+// Push the active tab's content into the editor once Monaco is ready. Covers the
+// case where tabs were opened/restored before the (deferred) editor finished
+// loading — replacing the old fragile "wait 300ms and hope Monaco is ready"
+// assumption in initSessionPersistence with an explicit, timing-independent sync.
+function syncEditorToActiveTab() {
+    if (!App.editor || !App.ready || !App.activeTabId) return;
+    const tab = App.tabs.find(t => t.id === App.activeTabId);
+    if (!tab) return;
+    App.isSettingValue = true;
+    App.editor.setValue(tab.content || '');
+    if (tab.viewState) {
+        App.editor.restoreViewState(tab.viewState);
+    } else {
+        App.editor.setPosition({ lineNumber: 1, column: 1 });
+    }
+    App.isSettingValue = false;
+}
+
+function initMonaco(onReady) {
     require(['vs/editor/editor.main'], async function () {
 
         // Register enhanced C++ tokenizer with escape sequence highlighting
@@ -428,6 +466,10 @@ function initMonaco() {
         App.editor = createEditor('editor-container');
         App.ready = true;
 
+        // If a tab was already active before Monaco finished loading (session
+        // restore, or the user opened a file during the deferred load), show it.
+        syncEditorToActiveTab();
+
         // Apply saved theme
         if (typeof applyTheme === 'function') {
             applyTheme(App.settings.appearance.theme);
@@ -453,6 +495,8 @@ function initMonaco() {
         if (typeof registerCppIntellisense === 'function') {
             registerCppIntellisense(monaco);
         }
+
+        if (typeof onReady === 'function') onReady();
     });
 }
 
@@ -4536,6 +4580,9 @@ function setActive(id) {
     const tab = App.tabs.find(t => t.id === id);
     if (!tab) return;
 
+    // Any tab being shown means we need the editor — kick off the (deferred)
+    // Monaco load now if it hasn't started. Idempotent and cheap when already loaded.
+    ensureMonaco();
 
     if (App.activeTabId && App.editor && App.ready) {
         const cur = App.tabs.find(t => t.id === App.activeTabId);

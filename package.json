@@ -99,7 +99,26 @@
             "src/**/*",
             "node_modules/**/*",
             "mingw64/**/*",
-            "!Sameko-GCC/**/*"
+            "!Sameko-GCC/**/*",
+            "!node_modules/monaco-editor/dev/**",
+            "!node_modules/monaco-editor/esm/**",
+            "!node_modules/monaco-editor/min-maps/**",
+            "!node_modules/monaco-editor/*.d.ts",
+            "!node_modules/monaco-editor/CHANGELOG.md",
+            "!node_modules/monaco-editor/ThirdPartyNotices.txt",
+            "!node_modules/tree-sitter-cpp/src/**",
+            "!node_modules/tree-sitter-cpp/*.wasm",
+            "!node_modules/tree-sitter-cpp/prebuilds/darwin-arm64/**",
+            "!node_modules/tree-sitter-cpp/prebuilds/darwin-x64/**",
+            "!node_modules/tree-sitter-cpp/prebuilds/linux-arm64/**",
+            "!node_modules/tree-sitter-cpp/prebuilds/linux-x64/**",
+            "!node_modules/tree-sitter-cpp/prebuilds/win32-arm64/**",
+            "!node_modules/tree-sitter/prebuilds/darwin-arm64/**",
+            "!node_modules/tree-sitter/prebuilds/darwin-x64/**",
+            "!node_modules/tree-sitter/prebuilds/linux-x64/**",
+            "!**/*.js.map",
+            "!**/*.ts.map",
+            "!**/*.css.map"
         ],
         "extraResources": [
             {

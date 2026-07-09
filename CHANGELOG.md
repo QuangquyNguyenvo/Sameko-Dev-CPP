@@ -19,6 +19,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added a free-text "Additional Compile Flags" field (`compiler.extraFlags`) whose contents are appended to every compile command (e.g. `-DLOCAL -DDEBUG`), validated against unsafe flags (`-B`, `-plugin`, `@`, `--specs=`) before reaching the compiler.
   - The same flags and the chosen C++ standard now also drive clangd's `compile_flags.txt` and the live `-fsyntax-only` diagnostics, so IntelliSense, editor squiggles, and real builds agree on macros and `#ifdef` branches (e.g. code guarded by `-DLOCAL`).
 
+### Performance
+- **Faster First-Launch (Packaging Trim)**:
+  - Excluded ~1,870 files / ~115 MB of never-loaded assets from the packaged app: Monaco's `dev/`, `esm/`, and `min-maps/` folders (the app only uses `min/vs` via the AMD loader), tree-sitter-cpp's `src/` parser source and `.wasm`, non-Windows tree-sitter prebuilds (macOS/Linux/ARM), and source maps.
+  - Smaller `app.asar` and far fewer files mean less to read from cold disk and less for Windows Defender to scan on the very first run — the slowest launch, before the OS file cache is warm.
+- **Deferred (Lazy) Monaco Editor Load**:
+  - Monaco (the editor engine) was the single biggest chunk of renderer startup (~46%, measured). It no longer blocks initial paint: the window shell, welcome screen, and UI theme appear first, and Monaco loads on demand the moment a file is opened/created (with an idle-time fallback so settings/snippet/theme-customizer/checkpoint panels still work if no file is opened).
+  - Session restore now syncs restored tab content into the editor via an explicit editor-ready hook instead of a fragile fixed 300 ms delay, so reopened/restored files show reliably regardless of how long Monaco takes to load.
+  - Measured `did-finish-load` dropped from ~1.44 s to ~1.0 s, with the shell interactive noticeably sooner.
+
 ### Changed
 - **Clangd-Driven IntelliSense (Removed Hardcoded STL Tables)**:
   - Removed the hardcoded `STL_DOCS`, `STL_TYPE_METHODS`, and `STL_KEYWORDS` tables, the after-dot STL method completion logic, the STL hover provider, and the STL-only signature help provider from the C/C++ suggestion provider.
