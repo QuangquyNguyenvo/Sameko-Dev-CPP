@@ -12,6 +12,7 @@ const fs = require('fs');
 const { spawn, exec } = require('child_process');
 const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getBasePath, getUnbufferObjectPath } = require('./detector');
 const { ensurePCH } = require('./pch-manager');
+const { validateCompilerFlags } = require('../../shared/validators');
 
 let runningProcess = null;
 let activeCompilerProcess = null;
@@ -102,6 +103,16 @@ function sendToRenderer(channel, data) {
  */
 async function compile({ filePath, content, flags, useLLD, noBuildCache = false, singleFileMode = false, realtimeOutput = true }) {
     const startTime = Date.now();
+
+    const flagsCheck = validateCompilerFlags(flags);
+    if (!flagsCheck.valid) {
+        return {
+            success: false,
+            error: `${flagsCheck.error}. Check your Additional Compile Flags in Settings > Compiler.`,
+            outputPath: null,
+            time: Date.now() - startTime
+        };
+    }
 
     if (activeCompilerProcess) {
         try {

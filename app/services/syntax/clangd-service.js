@@ -9,9 +9,11 @@
 const { spawn } = require('child_process');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const url = require('url');
 const { app } = require('electron');
 const { getCompilerBinDir, getBasePath, getDetectedCompiler } = require('../compiler/detector');
+const { getCompilerSettings } = require('../../shared/settings-reader');
 
 let clangdProcess = null;
 let isEnabled = false;
@@ -343,15 +345,23 @@ async function spawnProcess() {
 
     const queryDriverPath = path.join(binDir, 'g++*').replace(/\\/g, '/');
     // NOTE: clangd does NOT accept -I as command-line argument (rejected at
-    // startup). Include paths are supplied via compile_flags.txt written to
-    // the base path by init() — clangd picks it up automatically when
-    // processing files in that directory tree.
+    // startup). Include paths are supplied two ways: compile_flags.txt
+    // written to the base path (covers untitled/temp files and anything
+    // saved under the app dir), and the global clangd user config YAML
+    // written by regenerateCompileFlags() (covers files saved ANYWHERE else
+    // on disk — Desktop, Documents, another project folder — which would
+    // otherwise get zero include paths and fail to resolve even <vector>).
+    // --enable-config is required for clangd to read that user config file.
     const flags = [
         '--background-index',
         '--background-index-priority=low',
         '--clang-tidy',
-        '--completion-style=detailed',
+        // bundled groups function overloads into a single entry ("assign(…)
+        // [3 overloads]") instead of one line per overload — a shorter, less
+        // noisy completion list, better suited to competitive programming.
+        '--completion-style=bundled',
         '--header-insertion=never',
+        '--enable-config',
         `--query-driver=${queryDriverPath}`
     ];
 
@@ -377,7 +387,12 @@ async function spawnProcess() {
         });
 
         clangdProcess.stderr.on('data', (data) => {
-            // stderr contains logs, which we can ignore or print to debug
+            // stderr carries clangd's own diagnostic logs (preamble build
+            // errors, missing headers, etc.) — surfaced only in debug mode
+            // to avoid spamming the console in normal use.
+            if (process.env.SAMEKO_CLANGD_DEBUG) {
+                console.log('[Clangd-stderr]', data.toString());
+            }
         });
 
         clangdProcess.on('error', (err) => {
@@ -436,6 +451,149 @@ async function spawnProcess() {
 }
 
 /**
+ * Build the shared list of clangd/g++ flags (std, target, includes, extra
+ * flags) from the user's compiler settings plus MinGW's system include
+ * paths. Mirrors what executor.js actually passes to g++ so clangd's
+ * diagnostics/completions (macros, #ifdef branches like -DLOCAL) match real
+ * compiles. Shared by both compile_flags.txt (one flag per line) and the
+ * global user config YAML (flow-sequence list) writers below.
+ * @param {string[]} includePaths
+ * @param {{posixPaths?: boolean}} [opts] - convert `-I` paths to forward
+ *   slashes; needed for YAML since backslashes are escape characters there.
+ * @returns {string[]}
+ */
+function buildClangdFlagsList(includePaths, opts = {}) {
+    const { cppStandard, extraFlags } = getCompilerSettings();
+    // Default to the GNU dialect (matches g++'s own default) rather than
+    // strict c++17, preserving prior behavior when the user hasn't picked
+    // a standard in Settings. If the user did pick one, mirror it exactly
+    // so clangd agrees with the real compile command.
+    const stdFlag = cppStandard ? `-std=${cppStandard}` : '-std=gnu++17';
+    const toPath = (p) => opts.posixPaths ? p.replace(/\\/g, '/') : p;
+
+    const flags = [
+        stdFlag,
+        '--target=x86_64-w64-mingw32',
+        ...includePaths.flatMap(p => ['-I', toPath(p)])
+    ];
+    if (extraFlags) {
+        flags.push(...extraFlags.split(/\s+/).filter(Boolean));
+    }
+    return flags;
+}
+
+function buildCompileFlagsContent(includePaths) {
+    return buildClangdFlagsList(includePaths).join('\n') + '\n';
+}
+
+function yamlQuote(str) {
+    return '"' + str.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+}
+
+/**
+ * clangd only auto-discovers compile_flags.txt by walking up from a source
+ * file's own directory — so a file saved anywhere outside getBasePath()
+ * (Desktop, Documents, another project folder) gets NO include paths and
+ * fails to resolve even <vector>. The global user config YAML (read via
+ * --enable-config from a fixed OS-level path) applies to every file clangd
+ * opens regardless of location, so it's the only way to make IntelliSense
+ * work for files saved outside the app's install directory.
+ * @param {string[]} includePaths
+ * @returns {string}
+ */
+// %LOCALAPPDATA%\clangd\config.yaml is THE canonical global clangd user
+// config — shared by every clangd process on the machine (VSCode's clangd
+// extension, CLion, other IDEs, other C++ projects), not scoped to this app.
+// We mark our writes so we only ever touch a file we created ourselves;
+// if the user already has an unrelated clangd config there, we leave it
+// alone rather than risk breaking IntelliSense in their other projects.
+const USER_CONFIG_MARKER = '# Managed by Sameko Dev C++ — safe to delete, will be regenerated.';
+
+function buildUserConfigYamlContent(includePaths) {
+    const flags = buildClangdFlagsList(includePaths, { posixPaths: true });
+    return `${USER_CONFIG_MARKER}\nCompileFlags:\n  Add: [${flags.map(yamlQuote).join(', ')}]\n`;
+}
+
+function getClangdUserConfigPath() {
+    const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
+    return path.join(localAppData, 'clangd', 'config.yaml');
+}
+
+/**
+ * Write a file if its content differs from what's on disk. No-op otherwise.
+ * @param {boolean} [requireMarker] - if true, refuse to overwrite an
+ *   existing file that doesn't start with USER_CONFIG_MARKER (i.e. one we
+ *   didn't create) to avoid clobbering unrelated config.
+ * @returns {boolean} whether the file was written
+ */
+function writeIfChanged(filePath, desired, requireMarker = false) {
+    try {
+        const current = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : null;
+        if (current === desired) {
+            return false;
+        }
+        if (requireMarker && current !== null && !current.startsWith(USER_CONFIG_MARKER)) {
+            console.warn(`[Clangd] ${filePath} exists and wasn't created by this app — leaving it untouched.`);
+            return false;
+        }
+        const dir = path.dirname(filePath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        fs.writeFileSync(filePath, desired, 'utf-8');
+        console.log(`[Clangd] ${current === null ? 'Wrote' : 'Updated'} ${filePath}`);
+        return true;
+    } catch (err) {
+        console.warn(`[Clangd] Failed to write ${filePath}:`, err.message);
+        return false;
+    }
+}
+
+/**
+ * (Re)write compile_flags.txt (for files under getBasePath()) and the
+ * global clangd user config YAML (for files saved anywhere else) if their
+ * content differs from what the current settings/compiler would produce.
+ * Safe to call repeatedly (e.g. every time the user saves Settings) — a
+ * no-op when nothing changed.
+ * @returns {Promise<boolean>} whether either file's content actually changed
+ */
+async function regenerateCompileFlags() {
+    const includePaths = await getGccIncludePaths();
+    if (includePaths.length === 0) return false;
+
+    const flagsFile = path.join(getBasePath(), 'compile_flags.txt');
+    const localChanged = writeIfChanged(flagsFile, buildCompileFlagsContent(includePaths));
+
+    const userConfigFile = getClangdUserConfigPath();
+    const globalChanged = writeIfChanged(userConfigFile, buildUserConfigYamlContent(includePaths), true);
+
+    return localChanged || globalChanged;
+}
+
+/**
+ * Called after the user saves Settings. Refreshes compile_flags.txt to
+ * match the (possibly changed) cppStandard/extraFlags, and cleanly restarts
+ * the clangd process so it re-reads the file — clangd only parses
+ * compile_flags.txt at startup, so without a restart e.g. a new -DLOCAL
+ * would silently not affect completions/diagnostics until next app launch.
+ * @returns {Promise<void>}
+ */
+async function onSettingsChanged() {
+    if (!isEnabled || isPermanentlyDisabled) return;
+    const changed = await regenerateCompileFlags();
+    if (!changed || !clangdProcess) return;
+
+    isShuttingDown = true;
+    try {
+        clangdProcess.kill('SIGTERM');
+    } catch (e) { }
+    setTimeout(() => {
+        isShuttingDown = false;
+        spawnProcess();
+    }, 300);
+}
+
+/**
  * Initialize the Clangd Service
  */
 async function init() {
@@ -461,28 +619,7 @@ async function init() {
     // clangd's --query-driver alone does NOT pick up MinGW include paths on
     // Windows, and clangd rejects -I as a command-line argument — this file
     // is the only way to pass them.
-    const includePaths = await getGccIncludePaths();
-    if (includePaths.length > 0) {
-        const flagsFile = path.join(getBasePath(), 'compile_flags.txt');
-        try {
-            if (!fs.existsSync(flagsFile)) {
-                // Each flag on its own line. The leading flags (target/std)
-                // are needed to match MinGW's ABI; without --target clangd
-                // uses MSVC defaults and builtins won't resolve.
-                const lines = [
-                    '-std=gnu++17',
-                    '--target=x86_64-w64-mingw32',
-                    ...includePaths.flatMap(p => ['-I', p])
-                ];
-                fs.writeFileSync(flagsFile, lines.join('\n') + '\n', 'utf-8');
-                console.log(`[Clangd] Wrote ${flagsFile} (${includePaths.length} include paths)`);
-            } else {
-                console.log(`[Clangd] compile_flags.txt already exists at ${flagsFile}, not overwriting`);
-            }
-        } catch (err) {
-            console.warn(`[Clangd] Failed to write compile_flags.txt:`, err.message);
-        }
-    }
+    await regenerateCompileFlags();
 
     spawnProcess();
 }
@@ -686,5 +823,6 @@ module.exports = {
     getCompletions,
     getHover,
     shutdown,
-    isAvailable
+    isAvailable,
+    onSettingsChanged
 };

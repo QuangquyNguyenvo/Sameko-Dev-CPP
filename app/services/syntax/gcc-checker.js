@@ -12,6 +12,8 @@ const fs = require('fs');
 const { spawn } = require('child_process');
 const { getDetectedCompiler } = require('../compiler/detector');
 const { ensurePCH } = require('../compiler/pch-manager');
+const { getCompilerSettings } = require('../../shared/settings-reader');
+const { validateCompilerFlags } = require('../../shared/validators');
 
 let activeChecker = null;
 
@@ -37,9 +39,16 @@ async function checkSyntax(content, filePath = null) {
     const tempFile = path.join(tempDir, 'check_temp.cpp');
     fs.writeFileSync(tempFile, content, 'utf-8');
 
+    // Mirror the user's actual compile settings (cppStandard/extraFlags) so
+    // live diagnostics agree with what really compiles — e.g. code guarded
+    // by `#ifdef LOCAL` shouldn't show as unreachable/wrong here if the user
+    // set -DLOCAL as an extra compile flag.
+    const { cppStandard, extraFlags } = getCompilerSettings();
+    const stdFlag = `-std=${cppStandard || 'c++17'}`;
+
     const args = [
         '-fsyntax-only',
-        '-std=c++17',
+        stdFlag,
         '-fmax-errors=50',
         '-Wall',
         '-Wextra',
@@ -48,8 +57,12 @@ async function checkSyntax(content, filePath = null) {
         '-fno-rtti'
     ];
 
+    if (extraFlags && validateCompilerFlags(extraFlags).valid) {
+        args.push(...extraFlags.split(/\s+/).filter(Boolean));
+    }
+
     try {
-        const pch = await ensurePCH('-std=c++17 -O0');
+        const pch = await ensurePCH(`${stdFlag} -O0`);
         if (pch && pch.ready) {
             args.push('-I', pch.pchSubDir);
             args.push('-include', 'stdc++.h');

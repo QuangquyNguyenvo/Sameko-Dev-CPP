@@ -17,6 +17,12 @@ function registerHandlers() {
     ipcMain.handle(IPC.SETTINGS.SAVE, async (event, settings) => {
         try {
             fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
+            try {
+                // Keep clangd's compile_flags.txt (cppStandard/extraFlags) in
+                // sync so IntelliSense matches the compiler settings the user
+                // just saved, without requiring an app restart.
+                require('../services/syntax').onClangdSettingsChanged();
+            } catch (e) { }
             return { success: true };
         } catch (error) {
             console.error('Failed to save settings:', error);

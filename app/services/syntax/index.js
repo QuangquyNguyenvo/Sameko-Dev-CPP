@@ -77,4 +77,5 @@ module.exports = {
     getClangdHover: clangdService.getHover,
     shutdownClangd: clangdService.shutdown,
     isClangdAvailable: clangdService.isAvailable,
+    onClangdSettingsChanged: clangdService.onSettingsChanged,
 };

@@ -39,7 +39,8 @@ const DEFAULT_SETTINGS = {
         singleFileMode: true,
         fastDebugMode: true,
         disableExceptions: false,
-        disableRTTI: false
+        disableRTTI: false,
+        extraFlags: ''
     },
     execution: {
         timeLimitEnabled: false,
@@ -52,7 +53,7 @@ const DEFAULT_SETTINGS = {
         realtimeOutput: true
     },
     appearance: {
-        theme: 'kawaii-light',
+        theme: 'monokai',
         bgOpacity: 50,
         bgUrl: '',
         performanceMode: true
@@ -2062,6 +2063,8 @@ function openSettings() {
     if (lldToggle) lldToggle.checked = App.settings.compiler.useLLD !== false;
     const singleFileToggle = document.getElementById('set-singleFileMode');
     if (singleFileToggle) singleFileToggle.checked = App.settings.compiler.singleFileMode !== false;
+    const extraFlagsInput = document.getElementById('set-extraFlags');
+    if (extraFlagsInput) extraFlagsInput.value = App.settings.compiler.extraFlags || '';
 
     document.getElementById('set-timeLimitEnabled').checked = App.settings.execution.timeLimitEnabled;
     document.getElementById('set-timeLimitSeconds').value = App.settings.execution.timeLimitSeconds;
@@ -2174,6 +2177,8 @@ function saveSettingsAndClose() {
     if (lldToggle) App.settings.compiler.useLLD = lldToggle.checked;
     const singleFileToggle = document.getElementById('set-singleFileMode');
     if (singleFileToggle) App.settings.compiler.singleFileMode = singleFileToggle.checked;
+    const extraFlagsInput = document.getElementById('set-extraFlags');
+    if (extraFlagsInput) App.settings.compiler.extraFlags = extraFlagsInput.value.trim();
 
     App.settings.execution.timeLimitEnabled = document.getElementById('set-timeLimitEnabled').checked;
     App.settings.execution.timeLimitSeconds = parseInt(document.getElementById('set-timeLimitSeconds').value);
@@ -4553,6 +4558,15 @@ function setActive(id) {
             App.editor.setScrollLeft(0);
         }
         App.isSettingValue = false;
+
+        // Warm up clangd for this document as soon as it's shown, instead of
+        // waiting for the user's first completion request. Building the
+        // preamble for a #include<bits/stdc++.h> file takes ~1-2s; without
+        // this, that first request races the build and clangd falls back to
+        // its dumb "identifiers from buffer" completion (see cpp-suggestions.js).
+        if (window.electronAPI?.getClangdCompletions) {
+            window.electronAPI.getClangdCompletions(tab.path || tab.id, tab.content, 0, 0).catch(() => {});
+        }
     }
 
     if (tab.path && window.FileExplorer?.handleFileOpened) {
@@ -7083,6 +7097,10 @@ function buildCompileFlags() {
     if (fastDebugMode) {
         if (App.settings.compiler.disableExceptions) flags.push('-fno-exceptions');
         if (App.settings.compiler.disableRTTI) flags.push('-fno-rtti');
+    }
+
+    if (App.settings.compiler.extraFlags) {
+        flags.push(App.settings.compiler.extraFlags.trim());
     }
 
     return flags.join(' ');
