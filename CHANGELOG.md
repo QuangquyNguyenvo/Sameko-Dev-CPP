@@ -15,12 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **PCH Cache-Clear with Background Rebuild**:
   - Added a "Clear PCH Cache" action to settings to delete corrupted or slow Precompiled Header files.
   - Wired it to an IPC call that runs asynchronously in the background to re-optimize/precompile libraries using the active compiler flags, keeping the UI smooth while restoring 200-400ms C++ compile speed.
+- **Additional Compile Flags (Settings → Compiler)**:
+  - Added a free-text "Additional Compile Flags" field (`compiler.extraFlags`) whose contents are appended to every compile command (e.g. `-DLOCAL -DDEBUG`), validated against unsafe flags (`-B`, `-plugin`, `@`, `--specs=`) before reaching the compiler.
+  - The same flags and the chosen C++ standard now also drive clangd's `compile_flags.txt` and the live `-fsyntax-only` diagnostics, so IntelliSense, editor squiggles, and real builds agree on macros and `#ifdef` branches (e.g. code guarded by `-DLOCAL`).
 
 ### Changed
 - **Clangd-Driven IntelliSense (Removed Hardcoded STL Tables)**:
   - Removed the hardcoded `STL_DOCS`, `STL_TYPE_METHODS`, and `STL_KEYWORDS` tables, the after-dot STL method completion logic, the STL hover provider, and the STL-only signature help provider from the C/C++ suggestion provider.
   - Member completions (e.g. `.push_back`, `.size`), hover info, and signature help are now served entirely by clangd, which is accurate and context-aware instead of pattern-matched.
   - Kept the custom snippets (CP template, `for`/`while`/`if`, `vec`, `ios`, `fre`, user-defined snippets), include-path completion, preprocessor directives, and language keywords as the fallback path when clangd has no result (e.g. unsaved files).
+- **Bundled Completion Style**:
+  - Switched clangd to `--completion-style=bundled` so overloaded members collapse into a single entry (e.g. `assign(…) [3 overloads]`, `push_back(…) [2 overloads]`) instead of one line per overload — a shorter, less noisy completion list better suited to competitive programming.
 - **Explorer Rounded Cards and Thick-Border Aesthetic**:
   - Re-styled the outer file explorer sidebar container as a floating card with `border-radius: 16px`, `margin: 12px 0 12px 12px`, and a thick `2px solid var(--border)` outline, matching the layout of the main editor.
   - Re-styled collections and contests in the sidebar as floating rounded cards with explicit 2px borders, replacing flat borderless container boundaries.
@@ -47,6 +52,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Cleaned up duplicate nested HTML `div` elements within the compiler settings block.
 
 ### Fixed
+- **IntelliSense Completions & Hover Were Silently Disabled**:
+  - clangd-backed member completions (`v.` → `push_back`, `size`, …) and hover never fired: the C/C++ provider gated both features on `window.TabManager`, a module `index.html` never loads, so the condition was always false and the editor silently fell back to buffer-word suggestions (showing `main`/`v` instead of real STL members).
+  - Rewrote the provider to resolve the active document from the app's own `App` tab state via a `clangdFileId(model)` helper that always yields a valid identifier (saved path → tab id → Monaco model URI), and removed the tab-existence gate so clangd is queried unconditionally — a missing or stale tab can no longer drop IntelliSense to the fallback.
+  - Fixed a latent `afterDot is not defined` ReferenceError in the completion provider (the flag was declared only in a sibling function's scope) that would otherwise throw the moment the clangd branch became reachable.
 - **Clangd Member Completions for `bits/stdc++.h`**:
   - clangd 22.1.6 (bundled) now correctly resolves member completions like `vector::begin`, `vector::push_back`, `string::size` for files using `<bits/stdc++.h>` — the previous combination of clangd 18 and missing include flags was returning zero or only-prefix-matched items.
   - Added a `compile_flags.txt` writer in `app/services/syntax/clangd-service.js` that queries `g++ -Wp,-v` for the MinGW system include paths and writes them to `<basePath>/compile_flags.txt` once at startup. clangd walks up from each source file's directory to find it, so untitled tabs (mocked as `temp_untitled_tab-N.cpp` under the base path) and saved files both pick it up.
