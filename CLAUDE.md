@@ -21,7 +21,17 @@ No test runner or linter is configured. Do not assume `npm test`.
 - `node_modules/`, `samekodevcpp/`, `release_build/`, `dist/` — output & deps.
 - `package-lock.json` — large lockfile.
 - `.agent/` — internal notes (gitignored).
-- `src/renderer/app.js` — **7774 lines**. Do NOT read the whole file. Grep for the function/section you need, then read by `offset`/`limit`.
+- `src/renderer/app.js` — **7774 lines**. Do NOT read the whole file. Always use CodeGraph first to locate specific functions or sections.
+
+## Code Intelligence (CodeGraph)
+This repository is indexed by CodeGraph. Do **NOT** use grep/find unless CodeGraph fails.
+- **MCP Tool**: Prefer `codegraph_explore` (returns verbatim source and callpaths).
+- **CLI Commands**:
+  - `npm run codegraph:status` — Show index status and stats
+  - `npm run codegraph:sync` — Sync changes after editing files
+  - `codegraph explore "<symbol_or_query>"` — Locate code and trace call paths
+  - `codegraph node <symbol>` — Show symbol source and dependent trail
+
 
 ## Layout at a glance (details in CODEBASE.md)
 - `app/` — **Main process** (Electron/Node). Lifecycle, windows, IPC handlers, services (compiler, competitive, formatter, syntax, discord, auto-update).
@@ -38,7 +48,13 @@ No test runner or linter is configured. Do not assume `npm test`.
   ```
   Keep this pattern when editing renderer modules.
 - **Adding a new IPC:** (1) declare the channel name in `app/shared/constants.js`, (2) write the handler in `app/ipc/*-handlers.js` and register it in `app/ipc/index.js`, (3) expose the matching function in `preload.js`.
-- **Settings** live at `%APPDATA%/cpp-ide/settings.json`. Local history & snippets are in the same folder.
+- **Settings** live at `%APPDATA%/sameko-dev-cpp/settings.json` (folder name comes from package.json's `name`, not the product name). Local history & snippets are in the same folder.
+
+## Git & GitHub Credentials
+- **Commit Identity**: **NEVER** commit under the AI's name or alter configuration to represent an AI agent. Always commit using the user's local git identity (`user.name`/`user.email`).
+- **Authentication**:
+  - If GitHub CLI (`gh`) is available, use it for GitHub requests (e.g. issues, PRs).
+  - If `gh` is unavailable, programmatically query Git Credential Manager via `echo "url=https://github.com" | git credential fill` to get the OAuth token for API requests. Do not print or log the token.
 
 ## When editing code
 - Read related code before writing; follow the existing style.

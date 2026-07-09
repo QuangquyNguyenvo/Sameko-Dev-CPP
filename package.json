@@ -64,7 +64,9 @@
         "build:mac": "electron-builder --mac",
         "build:linux": "electron-builder --linux",
         "clean:dist": "powershell -Command \"Remove-Item -Recurse -Force release_build -ErrorAction SilentlyContinue\"",
-        "rebuild:win": "npm run clean:dist && npm run build:win"
+        "rebuild:win": "npm run clean:dist && npm run build:win",
+        "codegraph:sync": "codegraph sync",
+        "codegraph:status": "codegraph status"
     },
     "dependencies": {
         "discord-rpc": "^4.0.1",
