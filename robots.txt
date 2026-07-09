@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://samekocpp.wibu.me/sitemap.xml
+
+
+
+# Disallow specific paths if needed (currently allowing all)
+# Disallow: /private/

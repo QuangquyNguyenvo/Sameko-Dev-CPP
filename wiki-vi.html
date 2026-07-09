@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="assets/css/fonts.css">
+
+    <title>Wiki | Sameko Dev C++</title>
+    <meta name="description"
+        content="Tài liệu hướng dẫn sử dụng Sameko Dev C++ - Từ cài đặt, cấu hình compiler đến các tính năng nâng cao cho competitive programming.">
+    <meta name="keywords" content="Sameko Wiki, C++ IDE documentation, Dev-C++ guide, competitive programming tutorial">
+    <meta name="author" content="QuangquyNguyenvo">
+    <meta name="theme-color" content="#64B5F6">
+    <meta name="robots" content="index, follow">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://samekocpp.wibu.me/wiki-vi.html">
+    <meta property="og:title" content="Wiki | Sameko Dev C++">
+    <meta property="og:description"
+        content="Tài liệu hướng dẫn sử dụng Sameko Dev C++ - Từ cài đặt, cấu hình compiler đến các tính năng nâng cao cho competitive programming.">
+    <meta property="og:image" content="https://samekocpp.wibu.me/assets/icon.png">
+    <meta property="og:site_name" content="Sameko Dev C++">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Wiki | Sameko Dev C++">
+    <meta name="twitter:description"
+        content="Tài liệu hướng dẫn sử dụng Sameko Dev C++ - Từ cài đặt, cấu hình compiler đến các tính năng nâng cao.">
+    <meta name="twitter:image" content="https://samekocpp.wibu.me/assets/icon.png">
+
+    <link rel="icon" href="assets/favicon-32.png" sizes="32x32">
+    <link rel="icon" href="assets/logo-48.png" sizes="48x48">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="canonical" href="https://samekocpp.wibu.me/wiki-vi.html">
+
+    <script>
+        (function () {
+            if (location.hostname.endsWith('github.io')) {
+                var p = location.pathname.replace(/^\/[^\/]+/, '');
+                location.replace('https://samekocpp.wibu.me' + (p || '/') + location.search + location.hash);
+            }
+        })();
+    </script>
+    <noscript>
+        <meta http-equiv="refresh" content="0; url=https://samekocpp.wibu.me/wiki-vi.html">
+    </noscript>
+
+    <link rel="stylesheet" href="styles.min.css">
+
+    <script>
+        (function () {
+            const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+
+            // Language - Default to EN
+            const lang = localStorage.getItem('wiki-lang') || 'en';
+            document.documentElement.lang = lang;
+        })();
+    </script>
+    <script>
+        // Clean URL: remove .html extension from address bar
+        (function () {
+            if (window.history.replaceState && location.pathname.endsWith('.html')) {
+                var clean = location.pathname.replace(/\.html$/, '') + location.search + location.hash;
+                history.replaceState(null, '', clean);
+            }
+        })();
+    </script>
+    <link rel="stylesheet" href="assets/css/atom-one-dark.min.css">
+    <script src="assets/js/highlight.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            hljs.highlightAll();
+        });
+    </script>
+</head>
+
+<body>
+    <!-- Theme Toggle Button -->
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark/light mode">
+        <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+    </button>
+
+    <!-- Language Switcher -->
+    <div class="lang-switcher">
+        <a href="wiki-vi.html" class="lang-btn active">VI</a>
+        <a href="wiki.html" class="lang-btn">EN</a>
+    </div>
+
+    <!-- Scroll To Top Button -->
+    <button class="scroll-top" id="scroll-top" aria-label="Scroll to top" title="Scroll to top">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </button>
+
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">
+            <a href="index.html"
+                style="display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none;">
+                <img src="assets/icon.png" alt="Logo">
+                Sameko Dev C++
+            </a>
+        </div>
+        <div class="nav-links">
+            <a href="index.html#features">Features</a>
+            <a href="index.html#benchmark">Benchmarks</a>
+            <a href="wiki.html" style="color: var(--primary);">Wiki</a>
+            <a href="index.html#download-trigger">Download</a>
+        </div>
+    </nav>
+
+    <!-- WIKI CONTENT -->
+    <div class="wiki-wrapper">
+        <div class="container wiki-layout">
+            <!-- SIDEBAR - Ukrainian (Actually Vietnamese, my bad) -->
+            <aside class="wiki-sidebar">
+                <button class="wiki-sidebar-toggle" aria-label="Toggle navigation">
+                    <span class="wiki-sidebar-toggle-text">Mục lục</span>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                    </svg>
+                </button>
+                <div class="wiki-sidebar-nav">
+                    <div class="wiki-nav-group">
+                        <div class="wiki-nav-title">Bắt Đầu</div>
+                        <a href="#introduction" class="wiki-nav-link active">Giới thiệu</a>
+                        <a href="#installation" class="wiki-nav-link">Cài đặt</a>
+                        <a href="#first-project" class="wiki-nav-link">Project đầu tiên</a>
+                        <a href="#requirements" class="wiki-nav-link">Yêu cầu hệ thống</a>
+                    </div>
+                    <div class="wiki-nav-group">
+                        <div class="wiki-nav-title">Cấu Hình</div>
+                        <a href="#compiler" class="wiki-nav-link">Compiler Settings</a>
+                        <a href="#shortcuts" class="wiki-nav-link">Phím tắt</a>
+                        <a href="#themes" class="wiki-nav-link">Themes & Fonts</a>
+                    </div>
+                    <div class="wiki-nav-group">
+                        <div class="wiki-nav-title">Tính Năng</div>
+                        <a href="#editor-features" class="wiki-nav-link">Editor</a>
+                        <a href="#file-explorer" class="wiki-nav-link">Quản lý File</a>
+                        <a href="#checkpoints" class="wiki-nav-link">Checkpoints</a>
+                        <a href="#competitive" class="wiki-nav-link">Competitive Companion</a>
+                        <a href="#snippets" class="wiki-nav-link">Snippets</a>
+                        <a href="#auto-update" class="wiki-nav-link">Tự động cập nhật</a>
+                    </div>
+                    <div class="wiki-nav-group">
+                        <div class="wiki-nav-title">Trợ Giúp</div>
+                        <a href="#troubleshooting" class="wiki-nav-link">Khắc phục lỗi</a>
+                    </div>
+                </div>
+            </aside>
+
+
+
+            <main class="wiki-content">
+                <!-- ========== VIETNAMESE CONTENT ========== -->
+                <div>
+                    <!-- INTRODUCTION -->
+                    <section id="introduction">
+                        <h1>Sameko Dev C++ Wiki</h1>
+                        <p class="wiki-subtitle">Tài liệu hướng dẫn sử dụng IDE từ cơ bản đến nâng cao.</p>
+
+                        <p>Sameko Dev C++ là một IDE C++ được thiết kế cho competitive programming và học tập.
+                            IDE đi kèm GCC 16 đã cấu hình sẵn, bạn chỉ cần tải về và bắt đầu code ngay mà không cần
+                            cài đặt thêm compiler hay MinGW.</p>
+
+                        <h2>Sameko phù hợp với ai?</h2>
+                        <ul>
+                            <li><b>Người mới học C++</b> cần một môi trường đơn giản, không phức tạp như Visual
+                                Studio
+                            </li>
+                            <li><b>Competitive programmer</b> cần compile nhanh và tích hợp test case</li>
+                            <li><b>Học sinh, sinh viên</b> muốn một IDE portable mang theo USB dùng ở trường</li>
+                        </ul>
+
+                        <h2>So sánh với IDE khác</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tính năng</th>
+                                    <th>Sameko</th>
+                                    <th>VS Code</th>
+                                    <th>Dev-C++ 5.11</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Thời gian setup</td>
+                                    <td>2 phút</td>
+                                    <td>15+ phút</td>
+                                    <td>5 phút</td>
+                                </tr>
+                                <tr>
+                                    <td>Portable</td>
+                                    <td>Có</td>
+                                    <td>Không</td>
+                                    <td>Có</td>
+                                </tr>
+                                <tr>
+                                    <td>Phiên bản GCC</td>
+                                    <td>16.0</td>
+                                    <td>Tùy cấu hình</td>
+                                    <td>4.x</td>
+                                </tr>
+                                <tr>
+                                    <td>Tốc độ compile</td>
+                                    <td>500ms</td>
+                                    <td>2500ms+</td>
+                                    <td>1500ms</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <p><small>Thời gian compile đo với file sử dụng <code>#include&lt;bits/stdc++.h&gt;</code>
+                                cùng
+                                C++17 và cấu hình máy tương đương nhau.</small>
+                        </p>
+                    </section>
+
+                    <!-- INSTALLATION -->
+                    <section id="installation">
+                        <h2>Cài đặt Sameko IDE</h2>
+                        <p>Quá trình cài đặt mất khoảng 3-5 phút.</p>
+
+                        <!-- Installer vs Portable Guide -->
+                        <section id="installer-vs-portable"
+                            style="margin: 20px 0; padding: 20px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color);">
+                            <h3 style="margin-top: 0;">Nên dùng Installer hay Portable?</h3>
+                            <p>Sameko cung cấp 2 lựa chọn tải xuống, tùy vào nhu cầu của bạn:</p>
+                            <ul style="margin-bottom: 0;">
+                                <li style="margin-bottom: 12px;">
+                                    <b>Installer (.exe)</b> <span
+                                        style="background: rgba(76, 175, 80, 0.2); color: #4CAF50; font-size: 0.8em; padding: 2px 8px; border-radius: 12px;">Khuyên
+                                        dùng</span>
+                                    <ul>
+                                        <li>Cài đặt tự động, thêm vào Start Menu.</li>
+                                        <li>Tích hợp menu chuột phải (Open with Sameko).</li>
+                                        <li>Có uninstaller để gỡ cài đặt sạch sẽ.</li>
+                                    </ul>
+                                </li>
+                                <li>
+                                    <b>Portable (.rar)</b>
+                                    <ul>
+                                        <li>Giải nén là chạy được ngay, không cần quyền Admin.</li>
+                                        <li>Phù hợp để chép vào USB mang đi học, ra quán net.</li>
+                                        <li>Dữ liệu được lưu trong thư mục giải nén, không ảnh hưởng registry.</li>
+                                        <li><span style="color: #EF5350; font-weight: bold;">Lưu ý:</span> Bản Portable
+                                            KHÔNG hỗ trợ tự động cập nhật.</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </section>
+
+                        <div class="tutorial-steps">
+                            <div class="tutorial-step">
+                                <h3>Tải Sameko</h3>
+                                <p>Truy cập <a href="index.html#download-trigger">trang chủ</a> và nhấn nút
+                                    <b>Download</b> để chọn phiên
+                                    bản phù hợp (Installer hoặc Portable).</p>
+                            </div>
+
+                            <div class="tutorial-step">
+                                <h3>Cài đặt hoặc Giải nén</h3>
+                                <p>Nếu dùng Installer: Chạy file .exe và làm theo hướng dẫn.<br>
+                                    Nếu dùng Portable: Giải nén vào thư mục như <code>D:\Sameko-IDE\</code>.</p>
+                            </div>
+
+                            <div class="tutorial-step">
+                                <h3>Chạy Sameko.exe</h3>
+                                <p>Double-click vào file <code>Sameko.exe</code> để khởi động IDE.</p>
+                            </div>
+                        </div>
+
+                        <div class="callout note">
+                            <div class="callout-title">Lưu ý</div>
+                            <p>Windows Defender có thể cảnh báo "not commonly downloaded". Đây là cảnh báo bình
+                                thường,
+                                click "Keep" để tiếp tục.</p>
+                        </div>
+                    </section>
+
+                    <!-- FIRST PROJECT -->
+                    <section id="first-project">
+                        <h2>Tạo project đầu tiên</h2>
+                        <p>Sau khi mở IDE, bạn thử viết và chạy chương trình Hello World để kiểm tra cài đặt.</p>
+
+                        <div class="code-wrapper">
+                            <button class="copy-btn" onclick="copyCode(this)">Copy</button>
+                            <pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
+using namespace std;
+int main() {
+    cout &lt;&lt; "Toi yeu gai alime!" &lt;&lt; '\n';
+    return 0;
+}</code></pre>
+                        </div>
+
+                        <p><b>Các bước thực hiện:</b></p>
+                        <ol>
+                            <li>Paste đoạn code trên vào editor</li>
+                            <li>Bấm <kbd>Ctrl</kbd> + <kbd>S</kbd> để lưu, đặt tên <code>hello.cpp</code></li>
+                            <li>Bấm <kbd>F11</kbd> để compile và run</li>
+                            <li>Kết quả sẽ hiện trong terminal phía dưới</li>
+                        </ol>
+
+                        <div class="callout tip">
+                            <div class="callout-title">Mẹo</div>
+                            <p>Dùng <kbd>F9</kbd> để chỉ compile, <kbd>F10</kbd> để chỉ run, <kbd>F11</kbd> để làm
+                                cả
+                                hai.</p>
+                        </div>
+                    </section>
+
+                    <!-- REQUIREMENTS -->
+                    <section id="requirements">
+                        <h2>Yêu cầu hệ thống</h2>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Thành phần</th>
+                                    <th>Tối thiểu</th>
+                                    <th>Khuyến nghị</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Hệ điều hành</td>
+                                    <td>Windows 10 64-bit</td>
+                                    <td>Windows 11</td>
+                                </tr>
+                                <tr>
+                                    <td>CPU</td>
+                                    <td>Intel Core i3 / AMD Ryzen 3</td>
+                                    <td>Intel Core i5 / AMD Ryzen 5 trở lên</td>
+                                </tr>
+                                <tr>
+                                    <td>RAM</td>
+                                    <td>4GB</td>
+                                    <td>8GB+ cho project lớn</td>
+                                </tr>
+                                <tr>
+                                    <td>Disk Space</td>
+                                    <td>1.5GB (trống)</td>
+                                    <td>2GB+</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <!-- COMPILER -->
+                    <section id="compiler">
+                        <h2>Compiler Settings</h2>
+                        <p>Sameko dùng GCC 16 với các tùy chọn compile được cấu hình sẵn.</p>
+
+                        <h3>C++ Standard</h3>
+                        <p>Sameko hỗ trợ đầy đủ các chuẩn C++ từ cổ điển đến hiện đại.</p>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Standard</th>
+                                    <th>Mô tả</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>C++98</td>
+                                    <td>Chuẩn cũ (Legacy), ít dùng hiện nay</td>
+                                </tr>
+                                <tr>
+                                    <td>C++11 / C++14</td>
+                                    <td>Chuẩn phổ biến, ổn định, hỗ trợ auto, lambda</td>
+                                </tr>
+                                <tr>
+                                    <td>C++17</td>
+                                    <td>(Mặc định) Chuẩn vàng cho Competitive Programming</td>
+                                </tr>
+                                <tr>
+                                    <td>C++20</td>
+                                    <td>Thêm Ranges, Concepts, Modules</td>
+                                </tr>
+                                <tr>
+                                    <td>C++23</td>
+                                    <td>Thêm std::print, std::expected</td>
+                                </tr>
+                                <tr>
+                                    <td>C++26</td>
+                                    <td>(Beta/Experimental) Các tính năng mới nhất đang phát triển</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>Compiler Flags phổ biến</h3>
+                        <ul>
+                            <li><code>-O2</code> - Tối ưu tốc độ chạy, dùng khi submit lên Codeforces</li>
+                            <li><code>-Wall</code> - Hiển thị cảnh báo, giúp phát hiện bug</li>
+                            <li><code>-g</code> - Thêm thông tin debug</li>
+                        </ul>
+
+                        <div class="callout warning">
+                            <div class="callout-title">Cảnh báo</div>
+                            <p>Không nên dùng <code>-O2</code> khi debug vì code được optimize sẽ khó trace lỗi.</p>
+                        </div>
+                    </section>
+
+                    <!-- SHORTCUTS -->
+                    <section id="shortcuts">
+                        <h2>Phím tắt</h2>
+                        <p>Các phím tắt giúp bạn code nhanh hơn.</p>
+
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Phím tắt</th>
+                                    <th>Chức năng</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><kbd>F9</kbd></td>
+                                    <td>Compile</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>F10</kbd></td>
+                                    <td>Run</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>F11</kbd></td>
+                                    <td>Compile & Run</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>N</kbd></td>
+                                    <td>File mới</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>O</kbd></td>
+                                    <td>Mở file</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>S</kbd></td>
+                                    <td>Lưu file</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd></td>
+                                    <td>Format code (AStyle)</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>J</kbd></td>
+                                    <td>Ẩn/hiện terminal</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>\</kbd></td>
+                                    <td>Split editor</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <!-- THEMES -->
+                    <section id="themes">
+                        <h2>Themes & Fonts</h2>
+                        <p>Sameko có 6 themes có sẵn. Bạn thay đổi theme trong menu Settings hoặc bấm vào icon
+                            palette.
+                        </p>
+
+                        <ul>
+                            <li><b>Sameko Blue</b> - Theme mặc định với tông xanh dương</li>
+                            <li><b>Sakura Pink</b> - Tông hồng nhạt phong cách anime</li>
+                            <li><b>Dark Mode</b> - Theme tối cho làm việc ban đêm</li>
+                            <li><b>Dracula</b> - Theme tím đậm phổ biến</li>
+                            <li><b>Monokai</b> - Theme classic cho lập trình viên</li>
+                            <li><b>Nord</b> - Theme xanh arctic</li>
+                        </ul>
+
+                        <p>IDE cũng hỗ trợ đặt ảnh GIF làm background trong Settings.</p>
+                    </section>
+
+                    <!-- EDITOR FEATURES -->
+                    <section id="editor-features">
+                        <h2>Editor</h2>
+                        <p>Sameko sử dụng Monaco Editor — cùng lõi với VS Code. Điều này mang lại trải nghiệm code
+                            chuyên nghiệp ngay từ đầu.</p>
+
+                        <h3>Tính năng nổi bật</h3>
+                        <ul>
+                            <li><b>IntelliSense</b> — tự động gợi ý code cho STL, hàm và biến của bạn</li>
+                            <li><b>Bracket Colorization</b> — tô màu cặp ngoặc tương ứng để dễ nhìn</li>
+                            <li><b>Minimap</b> — bản đồ code thu nhỏ ở bên phải</li>
+                            <li><b>Multi-cursor</b> — giữ <kbd>Alt</kbd> và click để đặt nhiều con trỏ</li>
+                            <li><b>Find & Replace</b> — <kbd>Ctrl</kbd> + <kbd>H</kbd> với hỗ trợ Regex</li>
+                            <li><b>Code Folding</b> — thu gọn các block code, function</li>
+                            <li><b>Split Editor</b> — bấm <kbd>Ctrl</kbd> + <kbd>\</kbd> để chia đôi màn hình code</li>
+                        </ul>
+
+                        <h3>Tabs</h3>
+                        <p>Mở nhiều file cùng lúc trên các tab. Kéo thả để sắp xếp, click chuột giữa để đóng, hoặc chuột
+                            phải để xem thêm tùy chọn như "Close Others". Các tab đang mở sẽ được khôi phục khi bạn mở
+                            lại IDE.</p>
+                    </section>
+
+                    <!-- FILE EXPLORER -->
+                    <section id="file-explorer">
+                        <h2>Quản lý File</h2>
+                        <p>Thanh bên File Explorer giúp bạn duyệt và quản lý file mà không cần rời khỏi IDE.</p>
+
+                        <ul>
+                            <li>Click vào file <code>.cpp</code>, <code>.c</code>, hoặc <code>.h</code> để mở</li>
+                            <li>Chuột phải để đổi tên, xóa, hoặc tạo file mới</li>
+                            <li>Kéo thả file từ bên ngoài vào IDE để mở nhanh</li>
+                            <li>File đã mở gần đây (Recent files) được lưu và truy cập nhanh từ menu</li>
+                        </ul>
+                    </section>
+
+                    <!-- CHECKPOINTS / LOCAL HISTORY -->
+                    <section id="checkpoints">
+                        <h2>Checkpoints (Lịch sử nội bộ)</h2>
+                        <p>Sameko tự động lưu một bản checkpoint mỗi khi bạn Save file. Bạn có thể xem lại code cũ bất
+                            cứ lúc nào — kể cả khi đã lỡ tắt IDE.</p>
+
+                        <h3>Cách hoạt động</h3>
+                        <ol>
+                            <li>Mỗi lần bấm <kbd>Ctrl</kbd> + <kbd>S</kbd>, một bản backup có timestamp sẽ được tạo</li>
+                            <li>Mở panel Checkpoints để xem danh sách các phiên bản</li>
+                            <li>Click vào checkpoint để xem nội dung</li>
+                            <li>Restore để khôi phục file về trạng thái đó</li>
+                        </ol>
+
+                        <div class="callout tip">
+                            <div class="callout-title">Mẹo</div>
+                            <p>Checkpoints được lưu nội bộ và không mất đi khi tắt IDE. Rất hữu ích khi bạn muốn thử
+                                nhiều cách giải trong lúc thi contest.</p>
+                        </div>
+                    </section>
+
+                    <!-- COMPETITIVE -->
+                    <section id="competitive">
+                        <h2>Competitive Companion</h2>
+                        <p>Competitive Companion là extension giúp tự động lấy test cases từ các trang như
+                            Codeforces,
+                            AtCoder, LeetCode.</p>
+
+                        <h3>Cài đặt</h3>
+                        <ol>
+                            <li>Cài extension <a
+                                    href="https://chrome.google.com/webstore/detail/competitive-companion/cjnmckjndlpiamhfimnnjmnckgghkjbl"
+                                    target="_blank" rel="noopener noreferrer">Competitive Companion</a> trên
+                                Chrome/Firefox</li>
+                            <li>Mở Sameko IDE</li>
+                            <li>Vào trang bài tập (ví dụ Codeforces) và bấm icon extension</li>
+                            <li>Test cases sẽ tự động được thêm vào IDE</li>
+                        </ol>
+
+                        <div class="callout tip">
+                            <div class="callout-title">Mẹo</div>
+                            <p>Sau khi parse test cases, bấm nút Run All Tests để chạy tất cả và xem kết quả
+                                AC/WA/TLE.
+                            </p>
+                        </div>
+                    </section>
+
+                    <!-- SNIPPETS -->
+                    <section id="snippets">
+                        <h2>Snippets</h2>
+                        <p>Snippets giúp bạn gõ code template nhanh hơn. Sameko có sẵn một số snippets phổ biến và
+                            bạn
+                            có thể thêm snippets riêng.</p>
+
+                        <h3>Snippets có sẵn</h3>
+                        <ul>
+                            <li><code>cp</code> - Template competitive programming với bits/stdc++.h</li>
+                            <li><code>bfs</code> - Template BFS</li>
+                            <li><code>dfs</code> - Template DFS</li>
+                            <li><code>segtree</code> - Segment Tree</li>
+                            <li><code>dsu</code> - Disjoint Set Union</li>
+                        </ul>
+
+                        <p>Gõ prefix và bấm <kbd>Tab</kbd> hoặc <kbd>Enter</kbd> để expand snippet.</p>
+
+                        <h3>Thêm snippet mới</h3>
+                        <p>Vào menu Settings > Snippets để mở snippet editor. Mỗi snippet gồm prefix (trigger) và
+                            body
+                            (code được expand).</p>
+                    </section>
+
+                    <!-- AUTO-UPDATE -->
+                    <section id="auto-update">
+                        <h2>Tự động cập nhật</h2>
+                        <p>Phiên bản Installer của Sameko sẽ tự động kiểm tra bản cập nhật mới.</p>
+
+                        <h3>Quy trình</h3>
+                        <ol>
+                            <li>Khi khởi động, IDE kiểm tra GitHub Releases</li>
+                            <li>Nếu có bản mới, nó sẽ tự động tải về ngầm</li>
+                            <li>Thông báo sẽ hiện ra khi tải xong</li>
+                            <li>Bấm "Restart" để cập nhật — các file đang mở sẽ được giữ nguyên</li>
+                        </ol>
+
+                        <div class="callout warning">
+                            <div class="callout-title">Lưu ý</div>
+                            <p>Tính năng này chỉ có trên bản Installer. Nếu dùng Portable, bạn cần tải thủ công từ trang
+                                chủ.</p>
+                        </div>
+                    </section>
+
+                    <!-- TROUBLESHOOTING -->
+                    <section id="troubleshooting">
+                        <h2>Khắc phục lỗi</h2>
+
+                        <h3>IDE không mở được</h3>
+                        <p>Right-click vào Sameko.exe, chọn Properties, tick "Unblock" ở dưới cùng rồi Apply.</p>
+
+                        <h3>Lỗi "Missing DLL"</h3>
+                        <p>Cài Visual C++ Redistributable từ <a href="https://aka.ms/vs/17/release/vc_redist.x64.exe"
+                                target="_blank" rel="noopener noreferrer">link này</a>.</p>
+
+                        <h3>Compile không chạy</h3>
+                        <p>Kiểm tra các điều sau:</p>
+                        <ul>
+                            <li>Đường dẫn không có ký tự tiếng Việt hoặc khoảng trắng</li>
+                            <li>Antivirus không chặn gcc.exe</li>
+                            <li>File đã được lưu với đuôi .cpp</li>
+                        </ul>
+
+                        <h3>Terminal không hiển thị output</h3>
+                        <p>Bấm <kbd>Ctrl</kbd> + <kbd>J</kbd> để toggle terminal panel. Nếu vẫn không thấy, thử
+                            restart
+                            IDE.</p>
+
+                        <div class="callout note">
+                            <div class="callout-title">Cần hỗ trợ thêm?</div>
+                            <p>Tạo issue trên <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues"
+                                    target="_blank" rel="noopener noreferrer">GitHub</a> với mô tả chi tiết lỗi gặp
+                                phải.</p>
+                        </div>
+                    </section>
+                </div>
+
+
+
+                <!-- Navigation -->
+                <div class="wiki-section-nav">
+                    <a href="index.html" class="wiki-nav-btn">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                        <div>
+                            <div class="label">Quay lại</div>
+                            <div class="title">Trang chủ</div>
+                        </div>
+                    </a>
+                    <a href="index.html#download-trigger" class="wiki-nav-btn">
+                        <div>
+                            <div class="label">Bước tiếp theo</div>
+                            <div class="title">Download IDE</div>
+                        </div>
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container"
+            style="text-align: center; padding: 40px 0; border-top: 1px solid var(--border-color); margin-top: 40px;">
+            <p>© 2026 Sameko Dev C++ Project. Open Source under MIT License.</p>
+            <p style="opacity: 0.7; margin-top: 5px;">Built with 💙 by QuangquyNguyenvo</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Mobile sidebar toggle
+        (function () {
+            const sidebar = document.querySelector('.wiki-sidebar');
+            const toggle = document.querySelector('.wiki-sidebar-toggle');
+            if (toggle && sidebar) {
+                toggle.addEventListener('click', function () {
+                    sidebar.classList.toggle('open');
+                });
+                sidebar.querySelectorAll('.wiki-nav-link').forEach(function (link) {
+                    link.addEventListener('click', function () {
+                        sidebar.classList.remove('open');
+                    });
+                });
+            }
+        })();
+
+        // Theme Toggle
+        const themeToggle = document.getElementById('theme-toggle');
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => {
+                const html = document.documentElement;
+                const currentTheme = html.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                if (newTheme === 'dark') {
+                    html.setAttribute('data-theme', 'dark');
+                } else {
+                    html.removeAttribute('data-theme');
+                }
+                localStorage.setItem('theme', newTheme);
+            });
+        }
+
+        // Helper for custom smooth scroll
+        function smoothScrollTo(targetY, duration = 800) {
+            const startY = window.scrollY;
+            const diff = targetY - startY;
+            const startTime = performance.now();
+
+            function step(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // Easing: easeOutCubic
+                const ease = 1 - Math.pow(1 - progress, 3);
+
+                window.scrollTo(0, startY + diff * ease);
+
+                if (progress < 1) {
+                    requestAnimationFrame(step);
+                }
+            }
+            requestAnimationFrame(step);
+        }
+
+        // Scroll to top
+        const scrollTopBtn = document.getElementById('scroll-top');
+        if (scrollTopBtn) {
+            window.addEventListener('scroll', () => {
+                scrollTopBtn.classList.toggle('visible', window.scrollY > 300);
+            });
+            scrollTopBtn.addEventListener('click', () => {
+                smoothScrollTo(0);
+            });
+        }
+
+        // Copy code functionality
+        function copyCode(btn) {
+            const code = btn.nextElementSibling.querySelector('code').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // ========== SIMPLIFIED TOC SYSTEM ==========
+
+        // Smooth scroll for sidebar links
+        document.querySelectorAll('.wiki-nav-link').forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href').substring(1);
+
+                const target = document.getElementById(targetId);
+                if (target) {
+                    const offset = 100;
+                    const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - offset;
+                    smoothScrollTo(targetPosition);
+
+                    // Update active link immediately
+                    updateActiveLink(targetId);
+                }
+            });
+        });
+
+        // Update active link in sidebar
+        function updateActiveLink(sectionId) {
+            document.querySelectorAll('.wiki-nav-link').forEach(link => {
+                link.classList.remove('active');
+                const linkId = link.getAttribute('href').substring(1);
+                if (linkId === sectionId) {
+                    link.classList.add('active');
+                }
+            });
+            // Update mobile toggle text
+            const toggleText = document.querySelector('.wiki-sidebar-toggle-text');
+            if (toggleText) {
+                const activeLink = document.querySelector('.wiki-nav-link[href="#' + sectionId + '"]');
+                if (activeLink) toggleText.textContent = activeLink.textContent;
+            }
+        }
+
+        // Scroll tracking function
+        function updateTocOnScroll() {
+            const sections = document.querySelectorAll('section[id]');
+            if (sections.length === 0) return;
+
+            const headerOffset = 150;
+            let currentSection = null;
+
+            // Find section currently in view
+            sections.forEach(section => {
+                const rect = section.getBoundingClientRect();
+                if (rect.top <= headerOffset && rect.bottom > headerOffset) {
+                    currentSection = section;
+                }
+            });
+
+            // Fallback: find closest section above viewport
+            if (!currentSection) {
+                sections.forEach(section => {
+                    const rect = section.getBoundingClientRect();
+                    if (rect.top <= headerOffset) {
+                        currentSection = section;
+                    }
+                });
+            }
+
+            // If near top of page, use first section
+            if (!currentSection && window.scrollY < 200) {
+                currentSection = sections[0];
+            }
+
+            if (currentSection) {
+                updateActiveLink(currentSection.getAttribute('id'));
+            }
+        }
+
+        // Throttled scroll listener
+        let scrollTicking = false;
+        window.addEventListener('scroll', () => {
+            if (!scrollTicking) {
+                requestAnimationFrame(() => {
+                    updateTocOnScroll();
+                    scrollTicking = false;
+                });
+                scrollTicking = true;
+            }
+        }, { passive: true });
+
+        // Initial call
+        setTimeout(updateTocOnScroll, 150);
+
+        // Auto-wrap tables in scrollable wrapper with scroll indicators
+        document.querySelectorAll('.wiki-content table').forEach(function (table) {
+            if (table.parentElement.classList.contains('wiki-table-wrapper')) return;
+            var wrapper = document.createElement('div');
+            wrapper.className = 'wiki-table-wrapper';
+            table.parentNode.insertBefore(wrapper, table);
+            wrapper.appendChild(table);
+
+            // Check if table overflows and add scroll hint
+            function updateScrollHint() {
+                if (wrapper.scrollWidth > wrapper.clientWidth + 2) {
+                    wrapper.classList.add('has-scroll');
+                    if (wrapper.scrollLeft + wrapper.clientWidth >= wrapper.scrollWidth - 4) {
+                        wrapper.classList.add('scrolled-end');
+                    } else {
+                        wrapper.classList.remove('scrolled-end');
+                    }
+                } else {
+                    wrapper.classList.remove('has-scroll');
+                }
+            }
+
+            wrapper.addEventListener('scroll', updateScrollHint, { passive: true });
+            window.addEventListener('resize', updateScrollHint, { passive: true });
+            updateScrollHint();
+        });
+    </script>
+</body>
+
+</html>
