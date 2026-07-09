@@ -1,6 +1,36 @@
 window.registerCppIntellisense = function (monaco) {
     console.log('[Intellisense] Registering C/C++ Provider (Snippets + Clangd)...');
 
+    // Resolve the tab that owns the given Monaco model. The app tracks tabs on
+    // the global `App` object (App.tabs / App.activeTabId), NOT window.TabManager
+    // (that module is never loaded in index.html). Handles the split editor by
+    // matching the model against App.editor2 when present.
+    const getActiveTabForModel = (model) => {
+        if (typeof App === 'undefined' || !Array.isArray(App.tabs)) return null;
+        let tabId = App.activeTabId;
+        try {
+            if (App.editor2 && model && App.editor2.getModel && model === App.editor2.getModel()) {
+                tabId = App.splitTabId;
+            }
+        } catch (e) { /* editor2 may not exist */ }
+        return App.tabs.find(t => t.id === tabId) || null;
+    };
+
+    // Always returns a non-empty, stable identifier for the document clangd
+    // should analyze. Prefers the real saved path (so clangd resolves #includes
+    // relative to it), then the tab id, and finally the Monaco model URI as a
+    // last-resort fallback. This must NEVER return null/undefined — clangd is
+    // called unconditionally, so a missing tab must not break completions.
+    const clangdFileId = (model) => {
+        const tab = getActiveTabForModel(model);
+        if (tab && tab.path) return tab.path;
+        if (tab && tab.id) return tab.id;
+        try {
+            if (model && model.uri && model.uri.toString) return model.uri.toString();
+        } catch (e) { /* ignore */ }
+        return 'untitled';
+    };
+
     // ========================================================================
     // 1. DATA: SNIPPETS & TEMPLATES
     // ========================================================================
@@ -139,6 +169,7 @@ window.registerCppIntellisense = function (monaco) {
                 const word = model.getWordUntilPosition(position);
                 const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
                 const textUntilPosition = model.getValueInRange({ startLineNumber: position.lineNumber, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column });
+                const afterDot = /\.\s*$/.test(textUntilPosition);
 
                 if (/[<>]{2}\s*$/.test(textUntilPosition)) {
                     return { suggestions: [] };
@@ -156,11 +187,13 @@ window.registerCppIntellisense = function (monaco) {
                 // `v.b|`), fall back to the current word range so the
                 // partial prefix is replaced.
 
-                // Call clangd if available
-                if (window.electronAPI && window.electronAPI.getClangdCompletions && window.TabManager) {
-                    const activeTab = window.TabManager.getActiveTab();
-                    if (activeTab && (activeTab.path || activeTab.id)) {
-                        const filePath = activeTab.path || activeTab.id;
+                // Call clangd if available. We ALWAYS have a stable file
+                // identifier (see clangdFileId) so clangd is never skipped just
+                // because the tab lookup missed — that fragility is what used to
+                // silently drop us to the dumb fallback.
+                if (window.electronAPI && window.electronAPI.getClangdCompletions) {
+                    {
+                        const filePath = clangdFileId(model);
                         const content = model.getValue();
                         const line = position.lineNumber - 1;
                         const character = position.column - 1;
@@ -168,7 +201,26 @@ window.registerCppIntellisense = function (monaco) {
                         try {
                             const clangdItems = await window.electronAPI.getClangdCompletions(filePath, content, line, character);
                             if (clangdItems && clangdItems.length > 0) {
-                                const mappedClangdItems = clangdItems.map(item => {
+                                // LSP CompletionItemKind: Method=2, Function=3, Field=5,
+                                // Variable=6, Property=10, Value=11, Keyword=14, etc.
+                                // For member-access (after a `.`) clangd sometimes leaks
+                                // file-scope items (`main`, globals) when the receiver's
+                                // type is unresolved. Keep only the kind that legitimately
+                                // belong on an object: Method, Field, Property, Value.
+                                // Outside member-access, keep Function/Variable so users
+                                // can still complete identifiers (cout, local vars).
+                                const memberKinds = afterDot
+                                    ? new Set([2 /*Method*/, 5 /*Field*/, 10 /*Property*/, 11 /*Value*/])
+                                    : null;
+                                const filtered = memberKinds
+                                    ? clangdItems.filter((it) => memberKinds.has(it.kind))
+                                    : clangdItems;
+                                // If filtering wiped everything, fall back to the raw list
+                                // so the user still sees something rather than an empty
+                                // popup — clangd's type-resolution problems will be more
+                                // visible this way.
+                                const itemsForMapping = filtered.length > 0 ? filtered : clangdItems;
+                                const mappedClangdItems = itemsForMapping.map(item => {
                                     let doc = undefined;
                                     if (item.documentation) {
                                         if (typeof item.documentation === 'string') {
@@ -206,7 +258,7 @@ window.registerCppIntellisense = function (monaco) {
                                         insertText: insertText,
                                         insertTextRules: item.insertTextFormat === 2 ? monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet : undefined,
                                         range: itemRange,
-                                        sortText: item.sortText || item.label,
+                                        sortText: item.sortText || (item.label || '').trim() || item.label,
                                         additionalTextEdits: item.additionalTextEdits ? item.additionalTextEdits.map(edit => ({
                                             range: new monaco.Range(
                                                 edit.range.start.line + 1,
@@ -277,10 +329,9 @@ window.registerCppIntellisense = function (monaco) {
             provideHover: async (model, position) => {
                 const word = model.getWordAtPosition(position);
 
-                if (window.electronAPI && window.electronAPI.getClangdHover && window.TabManager) {
-                    const activeTab = window.TabManager.getActiveTab();
-                    if (activeTab && (activeTab.path || activeTab.id)) {
-                        const filePath = activeTab.path || activeTab.id;
+                if (window.electronAPI && window.electronAPI.getClangdHover) {
+                    {
+                        const filePath = clangdFileId(model);
                         const content = model.getValue();
                         const line = position.lineNumber - 1;
                         const character = position.column - 1;
