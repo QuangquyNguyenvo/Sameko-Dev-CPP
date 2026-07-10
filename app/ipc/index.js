@@ -10,12 +10,14 @@ const competitiveHandlers = require('./competitive-handlers');
 const updateHandlers = require('./update-handlers');
 const historyHandlers = require('./history-handlers');
 const discordHandlers = require('./discord-handlers');
+const debugHandlers = require('./debug-handlers');
 
 function registerAllHandlers(mainWindow) {
     fileHandlers.setMainWindow(mainWindow);
     compilerHandlers.setMainWindow(mainWindow);
     dialogHandlers.setMainWindow(mainWindow);
     competitiveHandlers.setMainWindow(mainWindow);
+    debugHandlers.setMainWindow(mainWindow);
 
     fileHandlers.registerHandlers();
     compilerHandlers.registerHandlers();
@@ -27,6 +29,7 @@ function registerAllHandlers(mainWindow) {
     updateHandlers();
     historyHandlers.registerHistoryHandlers();
     discordHandlers.registerHandlers();
+    debugHandlers.registerHandlers();
 }
 
 module.exports = registerAllHandlers;

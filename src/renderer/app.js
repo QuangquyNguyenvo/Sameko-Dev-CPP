@@ -98,6 +98,8 @@ int main() {
         buildRun: 'F11',
         run: 'F10',
         stop: 'Shift+F5',
+        debugStart: 'F5',
+        debugStepOut: 'Shift+F11',
         save: 'Ctrl+S',
         saveAs: 'Ctrl+Shift+S',
         newFile: 'Ctrl+N',
@@ -465,6 +467,9 @@ function initMonaco(onReady) {
 
         App.editor = createEditor('editor-container');
         App.ready = true;
+
+        // Bring up the debugger UI now that Monaco + the main editor exist.
+        if (window.Debugger) { try { window.Debugger.init(); } catch (e) { console.error('[Debugger] init failed:', e); } }
 
         // If a tab was already active before Monaco finished loading (session
         // restore, or the user opened a file during the deferred load), show it.
@@ -3357,9 +3362,13 @@ let ctrlKPressed = false;
 // Action dispatcher
 const ACTION_HANDLERS = {
     'compile': () => compileOnly(),
-    'buildRun': () => buildRun(),
-    'run': () => run(),
-    'stop': () => stop(),
+    // While a debug session is live, F11/F10 act as Step Into / Step Over
+    // (standard IDE behavior); otherwise they build/run as usual.
+    'buildRun': () => (window.Debugger && window.Debugger.isActive()) ? window.Debugger.stepInto() : buildRun(),
+    'run': () => (window.Debugger && window.Debugger.isActive()) ? window.Debugger.stepOver() : run(),
+    'stop': () => { if (window.Debugger && window.Debugger.isActive()) window.Debugger.stop(); else stop(); },
+    'debugStart': () => { if (window.Debugger) window.Debugger.start(); },
+    'debugStepOut': () => { if (window.Debugger && window.Debugger.isActive()) window.Debugger.stepOut(); },
     'save': () => save(),
     'saveAs': () => saveAs(),
     'newFile': () => newFile(),
@@ -4606,6 +4615,11 @@ function setActive(id) {
         }
         App.isSettingValue = false;
 
+        // Re-paint breakpoint glyphs + the current-line marker for the file now
+        // shown (all tabs share a single Monaco model, so decorations don't
+        // follow the content swap automatically).
+        if (window.Debugger) { try { window.Debugger.onFileShown(); } catch (_) { } }
+
         // Warm up clangd for this document as soon as it's shown, instead of
         // waiting for the user's first completion request. Building the
         // preamble for a #include<bits/stdc++.h> file takes ~1-2s; without
@@ -4834,6 +4848,11 @@ function closeMenus() {
 function doAction(action) {
     const map = {
         new: newFile, open: openFile, save, saveas: () => saveAs(), run, buildrun: buildRun, stop,
+        debugstart: () => window.Debugger?.start(),
+        debugstepover: () => window.Debugger?.stepOver(),
+        debugstepinto: () => window.Debugger?.stepInto(),
+        debugstepout: () => window.Debugger?.stepOut(),
+        debugstop: () => window.Debugger?.stop(),
         exit: () => window.electronAPI?.closeWindow?.(),
         undo: () => getActiveEditor()?.trigger('keyboard', 'undo'),
         redo: () => getActiveEditor()?.trigger('keyboard', 'redo'),

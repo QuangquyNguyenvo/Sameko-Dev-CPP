@@ -138,6 +138,43 @@ function getCompilerEnv() {
     return env;
 }
 
+/**
+ * Path to the bundled gdb.exe (same bin dir as g++). Falls back to PATH.
+ * @returns {string}
+ */
+function getDebuggerPath() {
+    const binDir = getCompilerBinDir();
+    if (binDir) {
+        const gdb = path.join(binDir, 'gdb.exe');
+        if (fs.existsSync(gdb)) return gdb;
+    }
+    return 'gdb';
+}
+
+/**
+ * Directory holding the libstdc++ GDB pretty-printers
+ * (<toolchain>/share/gcc-<ver>/python, containing libstdcxx/v6/printers.py).
+ * Returns null if not found — the debugger still runs, just without STL pretty
+ * printing.
+ * @returns {string|null}
+ */
+function getPrinterPythonDir() {
+    const binDir = getCompilerBinDir();
+    if (!binDir) return null;
+    const shareDir = path.join(path.dirname(binDir), 'share');
+    try {
+        for (const entry of fs.readdirSync(shareDir)) {
+            if (/^gcc-/i.test(entry)) {
+                const pdir = path.join(shareDir, entry, 'python');
+                if (fs.existsSync(path.join(pdir, 'libstdcxx', 'v6', 'printers.py'))) {
+                    return pdir;
+                }
+            }
+        }
+    } catch (_) { /* share dir missing */ }
+    return null;
+}
+
 function getUnbufferObjectPath() {
     const resourcesPath = getResourcesPath();
     const objPath = path.join(resourcesPath, 'Sameko-GCC', 'lib', 'sameko_unbuffer.o');
@@ -157,4 +194,6 @@ module.exports = {
     getBasePath,
     getResourcesPath,
     getUnbufferObjectPath,
+    getDebuggerPath,
+    getPrinterPythonDir,
 };

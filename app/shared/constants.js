@@ -35,6 +35,25 @@ const IPC = {
         SEND_INPUT: 'process-input',
     },
 
+    // Debugger (GDB/MI)
+    DEBUG: {
+        START: 'debug:start',
+        STOP: 'debug:stop',
+        SET_BREAKPOINT: 'debug:setBreakpoint',
+        REMOVE_BREAKPOINT: 'debug:removeBreakpoint',
+        SET_CONDITION: 'debug:setCondition',
+        CONTINUE: 'debug:continue',
+        STEP_OVER: 'debug:stepOver',
+        STEP_INTO: 'debug:stepInto',
+        STEP_OUT: 'debug:stepOut',
+        SELECT_FRAME: 'debug:selectFrame',
+        EVALUATE: 'debug:evaluate',
+        VAR_CREATE: 'debug:varCreate',
+        VAR_CHILDREN: 'debug:varChildren',
+        VAR_UPDATE: 'debug:varUpdate',
+        VAR_DELETE: 'debug:varDelete',
+    },
+
     // Window Management
     WINDOW: {
         MINIMIZE: 'window-minimize',
