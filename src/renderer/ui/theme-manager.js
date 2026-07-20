@@ -75,6 +75,7 @@ const ThemeManager = {
                 meta: { id: 'kawaii-dark', name: 'Kawaii Dark', type: 'dark' },
                 colors: {
                     appBackground: 'assets/backgrounds/darkblue.webm',
+                    appOverlay: '26, 37, 48',
                     bgOceanLight: '#1a3a50',
                     bgOceanMedium: '#152535',
                     bgOceanDeep: '#88c9ea',
@@ -135,6 +136,7 @@ const ThemeManager = {
                 meta: { id: 'kawaii-light', name: 'Kawaii Light', type: 'light' },
                 colors: {
                     appBackground: 'assets/backgrounds/background.jpg',
+                    appOverlay: '255, 255, 255',
                     bgOceanLight: '#e8f4fc',
                     bgOceanMedium: '#d0e8f5',
                     bgOceanDeep: '#4a9bc9',
@@ -195,6 +197,7 @@ const ThemeManager = {
                 meta: { id: 'sakura', name: 'Sakura', type: 'light' },
                 colors: {
                     appBackground: 'assets/backgrounds/pink.webm',
+                    appOverlay: '255, 240, 245',
                     bgOceanLight: '#fff5f8',
                     bgOceanMedium: '#ffe4e1',
                     bgOceanDeep: '#ffb7c5',
@@ -259,6 +262,7 @@ const ThemeManager = {
                 meta: { id: 'dracula', name: 'Dracula', type: 'dark' },
                 colors: {
                     appBackground: 'assets/backgrounds/dracula.webm',
+                    appOverlay: '40, 42, 54',
                     bgOceanLight: '#44475a',
                     bgOceanMedium: '#383a59',
                     bgOceanDeep: '#bd93f9',
@@ -316,6 +320,7 @@ const ThemeManager = {
                 meta: { id: 'monokai', name: 'Monokai', type: 'dark' },
                 colors: {
                     appBackground: 'assets/backgrounds/monokai.webm',
+                    appOverlay: '39, 40, 34',
                     bgOceanLight: '#3e3d32',
                     bgOceanMedium: '#272822',
                     bgOceanDeep: '#a6e22e',
@@ -374,6 +379,7 @@ const ThemeManager = {
                 meta: { id: 'nord', name: 'Nord', type: 'dark' },
                 colors: {
                     appBackground: 'assets/backgrounds/nord.webm',
+                    appOverlay: '46, 52, 64',
                     bgOceanLight: '#3b4252',
                     bgOceanMedium: '#2e3440',
                     bgOceanDeep: '#88c0d0',

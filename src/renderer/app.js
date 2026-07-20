@@ -1574,74 +1574,6 @@ function initTemplateEditor() {
 }
 
 // Theme color palettes for preview and settings
-const THEME_COLORS = {
-    'kawaii-dark': {
-        headerBg: '#2d3748', editorBg: '#1a202c', terminalBg: '#171923', statusBg: '#2d3748', ioBg: '#1e2530',
-        text: '#e2e8f0', textMuted: '#a0aec0', lineNum: '#4a5568',
-        keyword: '#88c9ea', string: '#a3d9a5', type: '#ebcb8b', func: '#88c9ea',
-        accent: '#88c9ea', success: '#68d391', info: '#63b3ed',
-        // Settings popup colors
-        popupBg: '#2d3748', sidebarBg: '#1e2530', contentBg: '#1a202c',
-        border: '#4a5568', borderLight: '#3d4a5c', accentColor: '#88c9ea'
-    },
-    'kawaii-light': {
-        headerBg: '#88c9ea', editorBg: '#f8fafc', terminalBg: '#1e2530', statusBg: '#88c9ea', ioBg: '#ffffff',
-        text: '#2d3748', textMuted: '#64748b', lineNum: '#a0aec0',
-        keyword: '#3182ce', string: '#38a169', type: '#d69e2e', func: '#9f7aea',
-        accent: '#88c9ea', success: '#38a169', info: '#3182ce',
-        // Settings popup colors
-        popupBg: '#e8f4fc', sidebarBg: '#ffffff', contentBg: '#ffffff',
-        border: '#b8e2f5', borderLight: '#d4eef8', accentColor: '#7fc4e8',
-        headerFooterBg: '#c8e7f5'
-    },
-    'sakura': {
-        headerBg: '#ffb7c5', editorBg: '#2d1f2f', terminalBg: '#251a26', statusBg: '#ffb7c5', ioBg: '#fff0f5',
-        text: '#f8e8f0', textMuted: '#8b7080', lineNum: '#6d5060',
-        keyword: '#ff69b4', string: '#98d998', type: '#da75e3', func: '#ffb07a',
-        accent: '#ff69b4', success: '#77dd77', info: '#ffb7c5',
-        // Settings popup colors
-        popupBg: '#fff0f5', sidebarBg: '#ffe4e1', contentBg: '#fffafa',
-        border: '#ffc0cb', borderLight: '#ffb7c5', accentColor: '#ff69b4',
-        headerFooterBg: '#ffe4e1'
-    },
-    'dracula': {
-        headerBg: '#282a36', editorBg: '#282a36', terminalBg: '#1e1f29', statusBg: '#282a36', ioBg: '#21222c',
-        text: '#f8f8f2', textMuted: '#6272a4', lineNum: '#6272a4',
-        keyword: '#ff79c6', string: '#50fa7b', type: '#8be9fd', func: '#ffb86c',
-        accent: '#bd93f9', success: '#50fa7b', info: '#8be9fd',
-        // Settings popup colors
-        popupBg: '#282a36', sidebarBg: '#21222c', contentBg: '#282a36',
-        border: '#6272a4', borderLight: '#44475a', accentColor: '#bd93f9'
-    },
-    'monokai': {
-        headerBg: '#272822', editorBg: '#272822', terminalBg: '#1e1f1c', statusBg: '#272822', ioBg: '#1e1f1c',
-        text: '#f8f8f2', textMuted: '#75715e', lineNum: '#75715e',
-        keyword: '#f92672', string: '#a6e22e', type: '#66d9ef', func: '#e6db74',
-        accent: '#a6e22e', success: '#a6e22e', info: '#66d9ef',
-        // Settings popup colors
-        popupBg: '#272822', sidebarBg: '#1e1f1c', contentBg: '#272822',
-        border: '#75715e', borderLight: '#49483e', accentColor: '#a6e22e'
-    },
-    'nord': {
-        headerBg: '#3b4252', editorBg: '#2e3440', terminalBg: '#242933', statusBg: '#3b4252', ioBg: '#2e3440',
-        text: '#eceff4', textMuted: '#4c566a', lineNum: '#4c566a',
-        keyword: '#b48ead', string: '#a3be8c', type: '#88c0d0', func: '#ebcb8b',
-        accent: '#88c0d0', success: '#a3be8c', info: '#88c0d0',
-        // Settings popup colors
-        popupBg: '#2e3440', sidebarBg: '#3b4252', contentBg: '#2e3440',
-        border: '#4c566a', borderLight: '#434c5e', accentColor: '#88c0d0'
-    },
-    'one-dark': {
-        headerBg: '#282c34', editorBg: '#282c34', terminalBg: '#21252b', statusBg: '#282c34', ioBg: '#21252b',
-        text: '#abb2bf', textMuted: '#5c6370', lineNum: '#4b5263',
-        keyword: '#c678dd', string: '#98c379', type: '#61afef', func: '#e5c07b',
-        accent: '#61afef', success: '#98c379', info: '#61afef',
-        // Settings popup colors
-        popupBg: '#282c34', sidebarBg: '#21252b', contentBg: '#282c34',
-        border: '#5c6370', borderLight: '#3e4452', accentColor: '#61afef'
-    }
-};
-
 /**
  * Populate theme dropdown from ThemeManager
  */
@@ -1788,8 +1720,12 @@ function updateThemePreview() {
     const preview = document.getElementById('theme-preview');
     if (!preview) return;
 
-    // Prefer ThemeManager data (supports custom themes)
-    const tmTheme = (typeof ThemeManager !== 'undefined') ? ThemeManager.themes.get(theme) : null;
+    // Prefer ThemeManager data (supports custom themes). ThemeManager is the sole
+    // source of truth for theme colors; fall back to kawaii-dark if the id is
+    // somehow unregistered so the preview always has real data.
+    const tmTheme = (typeof ThemeManager !== 'undefined')
+        ? (ThemeManager.themes.get(theme) || ThemeManager.themes.get('kawaii-dark'))
+        : null;
     if (tmTheme) {
         const ui = tmTheme.colors || {};
         const ed = tmTheme.editor || {};
@@ -1871,173 +1807,6 @@ function updateThemePreview() {
         return;
     }
 
-    const colors = THEME_COLORS[theme] || THEME_COLORS['kawaii-dark'];
-    const isLight = theme === 'kawaii-light';
-
-
-    preview.style.background = colors.editorBg;
-    preview.style.borderColor = colors.headerBg;
-
-
-    const header = preview.querySelector('.preview-header');
-    if (header) {
-        header.style.background = colors.headerBg;
-    }
-
-
-    const tab = preview.querySelector('.preview-tab');
-    if (tab) {
-        tab.style.background = isLight ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.1)';
-        tab.style.color = isLight ? colors.text : colors.textMuted;
-    }
-
-
-    const body = preview.querySelector('.preview-body');
-    if (body) {
-        body.style.background = isLight ? 'rgba(136,201,234,0.15)' : 'rgba(0,0,0,0.2)';
-    }
-
-
-    const editor = preview.querySelector('.preview-editor');
-    if (editor) {
-        editor.style.background = colors.editorBg;
-        editor.style.color = colors.text;
-        editor.style.borderColor = isLight ? 'rgba(136,201,234,0.4)' : 'rgba(255,255,255,0.1)';
-    }
-
-
-    preview.querySelectorAll('.preview-io-panel').forEach(panel => {
-        panel.style.background = colors.ioBg;
-        panel.style.borderColor = isLight ? 'rgba(136,201,234,0.4)' : 'rgba(255,255,255,0.1)';
-    });
-    preview.querySelectorAll('.preview-io-header').forEach(h => {
-        h.style.color = colors.accent;
-        h.style.background = isLight ? 'rgba(136,201,234,0.2)' : 'rgba(136,201,234,0.1)';
-    });
-    preview.querySelectorAll('.preview-io-body').forEach(b => {
-        b.style.color = colors.textMuted;
-    });
-
-
-    const terminal = preview.querySelector('.preview-terminal');
-    if (terminal) {
-        terminal.style.background = colors.terminalBg;
-        terminal.style.borderColor = isLight ? 'rgba(136,201,234,0.4)' : 'rgba(255,255,255,0.1)';
-    }
-    const termHeader = preview.querySelector('.preview-term-header');
-    if (termHeader) {
-        termHeader.style.color = colors.accent;
-    }
-    const termContent = preview.querySelector('.preview-term-content');
-    if (termContent) {
-        termContent.style.color = colors.text;
-    }
-
-
-    preview.querySelectorAll('.ln').forEach(el => el.style.color = colors.lineNum);
-    preview.querySelectorAll('.kw').forEach(el => el.style.color = colors.keyword);
-    preview.querySelectorAll('.str').forEach(el => el.style.color = colors.string);
-    preview.querySelectorAll('.type').forEach(el => el.style.color = colors.type);
-    preview.querySelectorAll('.fn').forEach(el => el.style.color = colors.func);
-
-
-    preview.querySelectorAll('.term-success').forEach(el => el.style.color = colors.success);
-    preview.querySelectorAll('.term-output').forEach(el => el.style.color = colors.text);
-    preview.querySelectorAll('.term-info').forEach(el => el.style.color = colors.info);
-
-
-    const statusbar = preview.querySelector('.preview-statusbar');
-    if (statusbar) {
-        statusbar.style.background = colors.statusBg;
-        statusbar.style.color = isLight ? colors.text : colors.textMuted;
-    }
-
-
-    const statusDot = preview.querySelector('.status-dot');
-    if (statusDot) {
-        statusDot.style.background = colors.success;
-    }
-
-
-    const popup = document.querySelector('.settings-popup');
-    const sidebar = document.querySelector('.settings-sidebar');
-    const content = document.querySelector('.settings-content');
-    const settingsHeader = document.querySelector('.settings-header');
-    const footer = document.querySelector('.settings-footer');
-    const container = document.querySelector('.settings-container');
-
-    if (popup) {
-        popup.style.background = colors.popupBg;
-        popup.style.borderColor = colors.border;
-    }
-    if (sidebar) {
-        sidebar.style.background = colors.sidebarBg;
-        sidebar.style.borderColor = colors.border;
-    }
-    if (content) {
-        content.style.background = colors.contentBg;
-        content.style.borderColor = colors.border;
-    }
-
-    // Use headerFooterBg if available (for kawaii-light), else popupBg
-    const hfBg = colors.headerFooterBg || colors.popupBg;
-
-    if (settingsHeader) {
-        settingsHeader.style.background = hfBg;
-        settingsHeader.style.borderColor = colors.borderLight;
-        const h2 = settingsHeader.querySelector('h2');
-        if (h2) h2.style.color = colors.accentColor;
-    }
-    if (footer) {
-        footer.style.background = hfBg;
-        footer.style.borderColor = colors.borderLight;
-    }
-    if (container) {
-        container.style.background = colors.popupBg;
-    }
-
-
-    document.querySelectorAll('.settings-tab').forEach(tab => {
-        tab.style.background = 'transparent';
-        tab.style.color = colors.textMuted;
-    });
-    document.querySelectorAll('.settings-tab.active').forEach(tab => {
-        tab.style.background = colors.accentColor;
-        tab.style.color = '#ffffff';
-    });
-
-
-    document.querySelectorAll('.settings-panel h3').forEach(h3 => {
-        h3.style.color = colors.accentColor;
-        h3.style.borderColor = colors.borderLight;
-    });
-
-
-    document.querySelectorAll('.setting-row').forEach(row => {
-        row.style.background = isLight ? '#f5fafd' : colors.sidebarBg;
-        row.style.borderColor = colors.borderLight;
-        const label = row.querySelector('label');
-        if (label) label.style.color = colors.textMuted;
-    });
-
-
-    const btnSave = document.querySelector('.btn-save');
-    if (btnSave) {
-        btnSave.style.background = colors.accentColor;
-        btnSave.style.borderColor = colors.accent;
-        // Get button text color from CSS variable (set by ThemeManager)
-        const buttonTextColor = getComputedStyle(document.documentElement)
-            .getPropertyValue('--button-text-on-accent').trim();
-        if (buttonTextColor) {
-            btnSave.style.color = buttonTextColor;
-        }
-    }
-    const btnReset = document.querySelector('.btn-reset');
-    if (btnReset) {
-        btnReset.style.background = colors.contentBg;
-        btnReset.style.color = colors.accentColor;
-        btnReset.style.borderColor = colors.border;
-    }
 }
 
 function normalizeFontFamilyInput(value) {
@@ -3266,39 +3035,27 @@ function applyBackgroundSettings() {
     const theme = App.settings.appearance.theme || 'kawaii-dark';
     const opacity = (App.settings.appearance.bgOpacity || 50) / 100;
 
+    // Derive the fallback gradient + container overlay from the theme definition
+    // (SSOT in ThemeManager) instead of a hardcoded per-theme table.
+    const themeObj = ThemeManager.themes.get(theme);
+    const tc = themeObj?.colors || {};
+    const isLight = themeObj?.type === 'light';
 
-    const themeBackgrounds = {
-        'kawaii-dark': {
-            default: 'linear-gradient(135deg, #1a2530 0%, #152535 100%)',
-            overlay: `rgba(26, 37, 48, ${0.3 + opacity * 0.5})`
-        },
-        'kawaii-light': {
-            default: 'linear-gradient(135deg, #e8f4fc 0%, #d4eaf7 50%, #c5e3f6 100%)',
-            overlay: `rgba(255, 255, 255, ${opacity * 0.15})`
-        },
-        'sakura': {
-            default: 'linear-gradient(135deg, #fff0f5 0%, #ffe4e1 50%, #ffb7c5 100%)',
-            overlay: `rgba(255, 240, 245, ${opacity * 0.15})`
-        },
-        'dracula': {
-            default: 'linear-gradient(135deg, #282a36 0%, #21222c 100%)',
-            overlay: `rgba(40, 42, 54, ${0.3 + opacity * 0.5})`
-        },
-        'monokai': {
-            default: 'linear-gradient(135deg, #272822 0%, #1e1f1c 100%)',
-            overlay: `rgba(39, 40, 34, ${0.3 + opacity * 0.5})`
-        },
-        'nord': {
-            default: 'linear-gradient(135deg, #2e3440 0%, #242931 100%)',
-            overlay: `rgba(46, 52, 64, ${0.3 + opacity * 0.5})`
-        },
-        'one-dark': {
-            default: 'linear-gradient(135deg, #282c34 0%, #21252b 100%)',
-            overlay: `rgba(40, 44, 52, ${0.3 + opacity * 0.5})`
-        }
+    // overlay: tints .app-container when a bg image/video is present. Dark themes
+    // use a stronger tint, light themes a very subtle one (matching the original
+    // hand-tuned values). Base color is stored per-theme as `appOverlay`.
+    const overlayBase = tc.appOverlay || (isLight ? '255, 255, 255' : '26, 37, 48');
+    const overlayAlpha = isLight ? (opacity * 0.15) : (0.3 + opacity * 0.5);
+
+    // default: fallback gradient, shown only when a theme has no bg image/video
+    // (i.e. custom themes). Derived from the theme's own base tones.
+    const gradTop = tc.editorBg || tc.bgOceanMedium || '#1a2530';
+    const gradBottom = tc.bgOceanDark || tc.bgOceanMedium || '#152535';
+
+    const themeConfig = {
+        default: `linear-gradient(135deg, ${gradTop} 0%, ${gradBottom} 100%)`,
+        overlay: `rgba(${overlayBase}, ${overlayAlpha})`
     };
-
-    const themeConfig = themeBackgrounds[theme] || themeBackgrounds['kawaii-dark'];
 
     const normalizeBgUrl = (url) => {
         if (!url) return '';
@@ -3315,7 +3072,6 @@ function applyBackgroundSettings() {
     const userThemeBg = normalizeBgUrl(perTheme[theme]?.bgUrl || App.settings.appearance.bgUrl);
 
     // Get theme-specific background from THEME definition (default)
-    const themeObj = ThemeManager.themes.get(theme);
     const themeDefaultBg = themeObj?.colors?.appBackground; // e.g. 'assets/backgrounds/pink.gif'
 
     console.log('[BG] Theme:', theme, 'User BG:', userThemeBg, 'Default BG:', themeDefaultBg);
