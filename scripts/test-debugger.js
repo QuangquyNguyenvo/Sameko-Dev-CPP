@@ -238,10 +238,20 @@ async function partB() {
             for (const want of ['1', '2', '3']) assert.ok(vals.includes(want), 'children values=' + vals.join(',') + (tc.printerDir ? '' : ' [no printer dir]'));
         });
 
-        // 5) evaluate x (== 41 before x++), then run to completion
+        // 5) evaluate x (== 41 before x++)
         const ev = await session.evaluate('x');
         check('evaluate(x) == 41', () => { assert.strictEqual(String(ev.value), '41'); });
 
+        // 6) Run to Cursor: temp breakpoint at line 8 (`return 0;`) + continue.
+        // Verifies the Windows-robust runToLine (temp bp, not -exec-until linespec).
+        const stopped2P = waitForEvent(session, 'stopped', 20000);
+        await session.runToLine(src, 8);
+        const stop2 = await stopped2P;
+        check('runToLine stops at line 8', () => {
+            assert.strictEqual(parseInt((stop2.frame || {}).line, 10), 8, 'stopped at line ' + ((stop2.frame || {}).line));
+        });
+
+        // 7) run to completion
         const exitedP = waitForEvent(session, 'programExited', 20000);
         await session.cont();
         const exited = await exitedP;

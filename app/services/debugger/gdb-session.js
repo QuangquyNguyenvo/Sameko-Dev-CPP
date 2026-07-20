@@ -333,7 +333,18 @@ class GdbSession extends EventEmitter {
     step() { return this.send('-exec-step'); }
     finish() { return this.send('-exec-finish'); }
     interrupt() { return this.send('-exec-interrupt'); }
-    runToLine(file, line) { return this.send(`-exec-until ${quote(toPosix(file) + ':' + line)}`); }
+    /**
+     * Run to a specific line ("Run to Cursor"). Implemented as a *temporary*
+     * breakpoint at the explicit location (`--source/--line`) followed by
+     * continue, which is far more robust on Windows than an `-exec-until`
+     * linespec — the latter has to parse a `file:line` string whose `C:` drive
+     * colon is ambiguous. The temp breakpoint auto-deletes when hit, and unlike
+     * `-exec-until` it reliably stops on the target even across loop iterations.
+     */
+    async runToLine(file, line) {
+        await this.send(`-break-insert -t --source ${quote(toPosix(file))} --line ${line}`);
+        return this.send('-exec-continue');
+    }
 
     listFrames() { return this.send('-stack-list-frames'); }
     selectFrame(n) { return this.send(`-stack-select-frame ${n}`); }

@@ -36,6 +36,7 @@
     let state = 'idle';                 // idle | starting | running | stopped
     let inited = false;
     const bpByFile = new Map();         // normPath -> Map(line -> {condition, id})
+    const realPathByKey = new Map();    // normPath -> original-case path (survives tab close)
     let bpDecoIds = [];
     let curLineDecoIds = [];
     let hoverDecoIds = [];              // faint "ghost" glyph shown under the cursor in the gutter
@@ -435,6 +436,7 @@
 
     function fileMap(path) {
         const k = norm(path);
+        if (path) realPathByKey.set(k, path);   // remember original-case path
         let m = bpByFile.get(k);
         if (!m) { m = new Map(); bpByFile.set(k, m); }
         return m;
@@ -649,7 +651,9 @@
     function resolveRealPath(normKey) {
         const tabs = (window.App && window.App.tabs) || [];
         const t = tabs.find(x => norm(x.path) === normKey);
-        return t ? t.path : null;
+        // Prefer a live tab; fall back to the original-case path we recorded when
+        // the breakpoint was created (so a closed tab's bp still resolves in gdb).
+        return (t && t.path) || realPathByKey.get(normKey) || null;
     }
 
     // Insert any breakpoints that were added/edited while the program was running
@@ -780,18 +784,29 @@
     function frameKey(f) { return f ? ((f.func || '') + '@' + (f.file || '')) : ''; }
     function localNamesSig(locals) { return (locals || []).map(l => l.name).sort().join(','); }
 
+    let stopToken = 0;
     async function onStopped(d) {
+        const myToken = ++stopToken;   // supersede any older stop still mid-refresh
         stopFrames = d.frames || [];
         selectedFrame = 0;
-        stopFile = d.frame ? d.frame.file : (stopFrames[0] && stopFrames[0].file);
-        stopLine = d.frame ? d.frame.line : (stopFrames[0] && stopFrames[0].line);
+        // Prefer the innermost frame that actually has a source file for the
+        // arrow marker. gdb usually stops user code at frame 0, but a stop with
+        // no source there (rare) shouldn't leave the marker nowhere.
+        const srcFrame = (d.frame && d.frame.file) ? d.frame : (stopFrames.find(f => f && f.file) || d.frame || null);
+        stopFile = srcFrame ? srcFrame.file : null;
+        stopLine = srcFrame ? srcFrame.line : null;
         setStatus('stopped');
         // A pause (interrupt) surfaces as a signal stop — note it, don't alarm.
         if (d.reason && /signal/.test(d.reason)) sys('Paused.', 'system');
+        // Bring the stopped file into view (open it or switch tabs) so the arrow
+        // is actually visible for multi-file programs.
+        await revealFile(stopFile);
+        if (myToken !== stopToken) return;   // a newer stop took over
         renderCurrentLine();
         renderStack();
         // Apply any breakpoints that were deferred while the program was running.
         await syncPendingBreakpoints();
+        if (myToken !== stopToken) return;
 
         // Incremental refresh when we are still in the same frame (same function
         // + same set of locals) as the trees currently show. Otherwise the whole
@@ -807,6 +822,20 @@
         } else {
             await applyVarUpdate();
         }
+    }
+
+    /** Open/switch to a file so its current-line arrow and breakpoints are visible. */
+    async function revealFile(path) {
+        if (!path) return;
+        // Map gdb's path to an already-open tab (case/slash-insensitive) so we
+        // switch to it rather than opening a duplicate tab.
+        const tabs = (window.App && window.App.tabs) || [];
+        const existing = tabs.find(t => t.path && norm(t.path) === norm(path));
+        const target = existing ? existing.path : path;
+        if (norm(target) === norm(activePath())) return;
+        const fn = (typeof openFileFromPath === 'function') ? openFileFromPath
+            : (typeof window.openFileFromPath === 'function' ? window.openFileFromPath : null);
+        if (fn) { try { await fn(target); } catch (_) { } }
     }
 
     function renderStack() {
