@@ -161,24 +161,25 @@
         .sdbg-help b{color:var(--accent,#88c9ea)}
         .sdbg-help kbd{background:var(--bg-button,#2a4050);border:1px solid var(--border,#3a6075);
           border-radius:5px;padding:0 5px;font-family:${MONO};font-size:10px;color:var(--text-primary,#e0f0ff)}
-        /* Breakpoint — a check mark (✓) in the gutter next to the line number, plus a
-           bold, colored line number. No whole-line tint, so it never fights the
-           yellow current-line highlight while stepping. */
-        .sameko-bp-linenum{color:#ff5964!important;font-weight:900!important}
-        .sameko-bp-linenum-cond{color:#ffb02e!important;font-weight:900!important}
-        .sameko-bp-glyph{cursor:pointer;background:center/15px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23ff5964'%20stroke-width='3.6'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M5%2013l4%204L19%207'/%3E%3C/svg%3E")!important}
-        .sameko-bp-cond{cursor:pointer;background:center/15px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23ffb02e'%20stroke-width='3.6'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M5%2013l4%204L19%207'/%3E%3C/svg%3E")!important}
-        /* Unresolved / pending breakpoint: a hollow, dim gray ring — clearly not
-           an armed (solid check) breakpoint. */
-        .sameko-bp-pending{cursor:pointer;opacity:.55;background:center/13px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%238aa0b0'%20stroke-width='2.6'%3E%3Ccircle%20cx='12'%20cy='12'%20r='7'/%3E%3C/svg%3E")!important}
+        /* Breakpoint — a solid red dot in the gutter (the universal IDE symbol,
+           like Dev-C++ / Visual Studio) plus a red-tinted whole line, so a set
+           breakpoint is unmistakable. */
+        .sameko-bp-linenum{color:#e51400!important;font-weight:900!important}
+        .sameko-bp-linenum-cond{color:#ff9e2c!important;font-weight:900!important}
+        .sameko-bp-glyph{cursor:pointer;background:center/13px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Ccircle%20cx='12'%20cy='12'%20r='6.5'%20fill='%23e51400'/%3E%3C/svg%3E")!important}
+        .sameko-bp-cond{cursor:pointer;background:center/13px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Ccircle%20cx='12'%20cy='12'%20r='6.5'%20fill='%23ff9e2c'/%3E%3C/svg%3E")!important}
+        /* Red-tinted whole line for an armed breakpoint (Dev-C++ feel). */
+        .sameko-bp-line{background:rgba(229,20,0,.13)}
+        /* Unresolved / pending breakpoint: a hollow, dim gray ring. */
+        .sameko-bp-pending{cursor:pointer;opacity:.6;background:center/13px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%238aa0b0'%20stroke-width='2.6'%3E%3Ccircle%20cx='12'%20cy='12'%20r='6.5'/%3E%3C/svg%3E")!important}
         .sameko-bp-linenum-pending{color:#8aa0b0!important;font-weight:900!important}
-        /* Disabled breakpoint: kept in place but temporarily off — dim gray check. */
-        .sameko-bp-disabled{cursor:pointer;opacity:.4;background:center/15px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%237990a0'%20stroke-width='3.6'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M5%2013l4%204L19%207'/%3E%3C/svg%3E")!important}
+        /* Disabled breakpoint: kept in place but off — hollow gray ring. */
+        .sameko-bp-disabled{cursor:pointer;opacity:.5;background:center/13px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%237990a0'%20stroke-width='2.4'%3E%3Ccircle%20cx='12'%20cy='12'%20r='6.5'/%3E%3C/svg%3E")!important}
         .sameko-bp-linenum-disabled{color:#7990a0!important;font-weight:900!important;opacity:.7}
-        /* Hover affordance: a faint check under the cursor telling you "click here
-           to set a breakpoint" (VS Code style). Only on lines without a bp. */
-        .sameko-bp-hover{cursor:pointer;opacity:.28;background:center/15px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23ff5964'%20stroke-width='3.6'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M5%2013l4%204L19%207'/%3E%3C/svg%3E")!important}
-        .sameko-curline{background:rgba(255,207,94,.18)}
+        /* Hover affordance: a faint red dot under the cursor telling you "click
+           here to set a breakpoint". Only on lines without a bp. */
+        .sameko-bp-hover{cursor:pointer;opacity:.3;background:center/13px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Ccircle%20cx='12'%20cy='12'%20r='6.5'%20fill='%23e51400'/%3E%3C/svg%3E")!important}
+        .sameko-curline{background:rgba(255,207,94,.28)}
         .sameko-arrow{width:0!important;height:0!important;border-top:6px solid transparent;
           border-bottom:6px solid transparent;border-left:10px solid #ffcf5e;margin-left:5px;margin-top:5px}
         /* First-run coach marks */
@@ -457,9 +458,14 @@
         if (m) {
             for (const [line, bp] of m.entries()) {
                 const disabled = bp.enabled === false;
+                // Tint the whole line red only for an armed (enabled, resolved)
+                // breakpoint — disabled/pending ones just get the gutter ring.
+                const armed = !disabled && !bp.pending;
                 decos.push({
                     range: new monaco.Range(line, 1, line, 1),
                     options: {
+                        isWholeLine: armed ? true : undefined,
+                        className: armed ? 'sameko-bp-line' : undefined,
                         lineNumberClassName: disabled ? 'sameko-bp-linenum-disabled'
                             : bp.pending ? 'sameko-bp-linenum-pending'
                                 : bp.condition ? 'sameko-bp-linenum-cond' : 'sameko-bp-linenum',
