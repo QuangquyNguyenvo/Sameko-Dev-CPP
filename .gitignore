@@ -55,6 +55,7 @@ yarn-error.log*
 .agent/
 .github/prompts/
 .shared/
+plans/
 
 # ===== CodeGraph =====
 .codegraph/

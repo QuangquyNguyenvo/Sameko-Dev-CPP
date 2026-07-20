@@ -23,6 +23,12 @@ No test runner or linter is configured. Do not assume `npm test`.
 - `.agent/` — internal notes (gitignored).
 - `src/renderer/app.js` — **7774 lines**. Do NOT read the whole file. Always use CodeGraph first to locate specific functions or sections.
 
+## Plans folder
+- `plans/` is **gitignored** — a working area for phased implementation plans, not committed.
+- Organize by feature: `plans/<feature>/` (e.g. `plans/debugger/00-OVERVIEW.md`, `phase-01-*.md`).
+- Each phase file is written to be **self-contained** (paths, current-code snippets, conventions,
+  acceptance criteria) so a fresh session can execute one phase without prior conversation context.
+
 ## Code Intelligence (CodeGraph)
 This repository is indexed by CodeGraph. Do **NOT** use grep/find unless CodeGraph fails.
 - **MCP Tool**: Prefer `codegraph_explore` (returns verbatim source and callpaths).
