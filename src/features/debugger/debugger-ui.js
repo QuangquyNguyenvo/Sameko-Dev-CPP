@@ -287,7 +287,7 @@
             }
         });
         // Friendly empty state before the first run (panel opened via the bug icon).
-        setTreesPlaceholder('Click the gutter to set a breakpoint, then press F5 to start.');
+        setTreesPlaceholder('Set a breakpoint, then F5.');
     }
 
     function wireToolbar() {
@@ -556,14 +556,14 @@
         showPanel(true);
         maybeShowGuide();
         setStatus('starting');
-        setTreesPlaceholder('Compiling… variables appear when the program pauses.');
+        setTreesPlaceholder('Compiling…');
         lastRawEndedNL = true;
         // Beginner safety net: a debug run with no breakpoints just runs to the
         // end and exits, which looks like "nothing happened". Nudge, don't block.
         if (!hasAnyBreakpoint()) {
-            sys('No breakpoints set — the program will run straight through. Click the gutter (left of a line number) to add one, then press F5.', 'warning');
+            sys('No breakpoints — the program won’t pause. Click the gutter to add one.', 'warning');
         }
-        sys('Debug: compiling with -g …', 'info');
+        sys('Compiling with -g …', 'info');
 
         const std = (window.App.settings && window.App.settings.compiler && window.App.settings.compiler.cppStandard) || '';
         const flags = '-g -O0' + (std ? ' -std=' + std : '');
@@ -576,7 +576,7 @@
             sys('Debug build failed.', 'error');
             if (r && r.error) sys(r.error, 'error');
             setStatus('idle');
-            setTreesPlaceholder('Build failed — fix the compile errors in the terminal, then press F5. (✕ to close)');
+            setTreesPlaceholder('Build failed — see terminal.');
             return;
         }
 
@@ -587,7 +587,7 @@
         if (!res || !res.ok) {
             sys('Debugger failed to start: ' + ((res && res.error) || 'unknown'), 'error');
             setStatus('idle');
-            setTreesPlaceholder('Debugger failed to start — see the terminal for details. (✕ to close)');
+            setTreesPlaceholder('Couldn’t start — see terminal.');
             return;
         }
         // adopt gdb-assigned breakpoint ids, relocating the glyph when gdb moved
@@ -685,7 +685,7 @@
         lastFrameKey = lastLocalNames = null;
         // Keep the panel OPEN with an idle message. Yanking it away the instant a
         // program finishes looked like a crash — the user closes it via ✕.
-        setTreesPlaceholder(reason || 'Session ended — set a breakpoint and press F5 to run again.');
+        setTreesPlaceholder(reason || 'Set a breakpoint, then F5.');
         // keep breakpoints (their ids are now stale; clear ids)
         for (const m of bpByFile.values()) for (const bp of m.values()) bp.id = null;
     }
@@ -703,9 +703,9 @@
             freshLine();
             const code = d && d.code != null ? d.code : '?';
             sys('Program exited (code ' + code + ').', 'system');
-            endSession('Program finished (exit code ' + code + '). Set a breakpoint and press F5 to run again, or ✕ to close.');
+            endSession('Finished (exit ' + code + ') · F5 to run again.');
         });
-        a.onDebugTerminated(() => { freshLine(); endSession('Debug session ended. Press F5 to run again, or ✕ to close.'); });
+        a.onDebugTerminated(() => { freshLine(); endSession('Session ended · F5 to run again.'); });
         a.onDebugError((d) => { if (d && d.message) sys('[gdb] ' + d.message, 'error'); });
         a.onDebugNotify((n) => onNotify(n));
     }
@@ -846,10 +846,11 @@
 
     /** Beginner-friendly empty state while there's nothing to show yet. */
     function setTreesPlaceholder(msg) {
-        const ph = '<div class="sdbg-empty">' + escapeHtml(msg) + '</div>';
-        if (els.locals) els.locals.innerHTML = ph;
-        if (els.stack) els.stack.innerHTML = ph;
-        if (els.watch) els.watch.innerHTML = '<div class="sdbg-empty">Type an expression above to watch it.</div>';
+        // Keep it minimal: one short line in the Call Stack, a dash elsewhere.
+        // Detailed guidance lives in the collapsible "Shortcuts & tips" footer.
+        if (els.stack) els.stack.innerHTML = '<div class="sdbg-empty">' + escapeHtml(msg) + '</div>';
+        if (els.locals) els.locals.innerHTML = '<div class="sdbg-empty">—</div>';
+        if (els.watch) els.watch.innerHTML = '<div class="sdbg-empty">—</div>';
     }
 
     function hasAnyBreakpoint() {
