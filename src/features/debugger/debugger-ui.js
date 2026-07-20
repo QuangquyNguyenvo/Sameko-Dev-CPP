@@ -106,22 +106,25 @@
           background:var(--bg-glass-heavy,rgba(26,37,48,.97));color:var(--text-primary,#e0f0ff);
           border:2.5px solid var(--border-strong,var(--accent,#88c9ea));border-radius:var(--radius,20px);
           z-index:1400;display:none;flex-direction:column;font-family:'Nunito','Segoe UI',sans-serif;
-          font-size:12.5px;box-shadow:0 12px 44px rgba(0,0,0,.4);overflow:hidden}
+          font-size:12.5px;box-shadow:var(--shadow-soft,0 12px 44px rgba(0,0,0,.4));overflow:hidden}
         #sameko-debug-panel.open{display:flex}
         .sdbg-toolbar{display:flex;flex-wrap:nowrap;gap:3px;padding:7px 8px;align-items:center;overflow-x:auto;
           background:var(--bg-header,rgba(21,37,53,.5));border-bottom:2px solid var(--border,#3a6075)}
         .sdbg-toolbar::-webkit-scrollbar{height:0}
-        .sdbg-btn{background:var(--bg-button,#2a4050);border:none;color:var(--text-primary,#e0f0ff);
-          border-radius:7px;width:24px;height:24px;flex:0 0 auto;cursor:pointer;font-size:12px;line-height:1;
+        .sdbg-btn{background:var(--btn-bg,var(--bg-button,#2a4050));border:1px solid var(--border,#3a6075);
+          color:var(--btn-text,var(--text-primary,#e0f0ff));
+          border-radius:8px;width:26px;height:26px;flex:0 0 auto;cursor:pointer;font-size:12px;line-height:1;
           display:inline-flex;align-items:center;justify-content:center;
-          transition:background-color .12s,color .12s,transform .12s}
-        .sdbg-btn:hover:not(:disabled){background:var(--accent,#88c9ea);color:#11212e;transform:translateY(-1px)}
-        .sdbg-btn:disabled{opacity:.3;cursor:default}
+          transition:background-color .12s,color .12s,transform .12s,box-shadow .12s}
+        .sdbg-btn:hover:not(:disabled){background:var(--btn-bg-hover,var(--accent,#88c9ea));
+          color:var(--btn-text-hover,var(--accent,#11212e));transform:translateY(-1px);box-shadow:var(--shadow-card,0 2px 6px rgba(0,0,0,.15))}
+        .sdbg-btn:disabled{opacity:.4;cursor:default}
         /* The primary Run/Continue/Pause button is filled with the accent so it
            reads as THE run button (no need to hunt for F5). */
-        .sdbg-btn.primary{background:var(--accent,#88c9ea);color:#11212e;font-weight:800}
-        .sdbg-btn.primary:hover:not(:disabled){filter:brightness(1.12);transform:translateY(-1px)}
-        .sdbg-btn.stop:hover:not(:disabled){background:#ff6b81;color:#fff}
+        .sdbg-btn.primary{background:var(--accent,#88c9ea);border-color:var(--accent,#88c9ea);color:#11212e;font-weight:800}
+        .sdbg-btn.primary:hover:not(:disabled){background:var(--accent-hover,var(--accent,#88c9ea));
+          border-color:var(--accent-hover,var(--accent,#88c9ea));color:#11212e;filter:brightness(1.03);transform:translateY(-1px)}
+        .sdbg-btn.stop:hover:not(:disabled){background:var(--error,#ff6b81);border-color:var(--error,#ff6b81);color:#fff}
         .sdbg-close{margin-left:6px;font-size:12px}
         .sdbg-close:hover:not(:disabled){background:#ff6b81;color:#fff}
         .sdbg-status{margin-left:auto;flex:0 0 auto;font-weight:800;font-size:9.5px;color:var(--accent,#88c9ea);
@@ -129,7 +132,7 @@
           background:var(--bg-button,rgba(136,201,234,.15))}
         .sdbg-body{overflow:auto;flex:1;padding:8px}
         .sdbg-section{background:var(--bg-page,rgba(26,37,48,.4));border:1.5px solid var(--border,#3a6075);
-          border-radius:14px;margin-bottom:9px;overflow:hidden}
+          border-radius:var(--radius-sm,12px);margin-bottom:9px;overflow:hidden}
         .sdbg-head{display:flex;align-items:center;gap:8px;padding:8px 12px;
           font-weight:800;text-transform:uppercase;letter-spacing:.06em;font-size:10.5px;
           color:var(--accent,#88c9ea);border-bottom:2px dashed var(--border,#3a6075);
@@ -158,15 +161,21 @@
         .sdbg-watchin:focus{border-color:var(--accent,#88c9ea)}
         .sdbg-more{padding:3px 12px 5px 28px;color:var(--accent,#88c9ea);cursor:pointer;font-size:11px;font-weight:700}
         .sdbg-empty{color:var(--text-muted,#7990a0);padding:5px 14px;font-style:italic}
-        .sdbg-help{margin:2px 8px 8px;padding:7px 11px;border:1.5px dashed var(--border,#3a6075);
-          border-radius:12px;background:var(--bg-page,rgba(26,37,48,.4));
-          color:var(--text-secondary,#a9c2d4);font-size:10.5px;line-height:1.7}
-        .sdbg-help>div{margin-top:5px}
+        .sdbg-help{margin:2px 8px 8px;padding:8px 12px;border:1.5px solid var(--border,#3a6075);
+          border-radius:var(--radius-sm,12px);background:var(--bg-page,rgba(26,37,48,.4));
+          color:var(--text-secondary,#a9c2d4);font-size:11px;line-height:1.6}
         .sdbg-help summary{color:var(--accent,#88c9ea);font-weight:800;text-transform:uppercase;
           letter-spacing:.06em;font-size:10px;cursor:pointer;outline:none;list-style-position:inside}
-        .sdbg-help b{color:var(--accent,#88c9ea)}
-        .sdbg-help kbd{background:var(--bg-button,#2a4050);border:1px solid var(--border,#3a6075);
-          border-radius:5px;padding:0 5px;font-family:${MONO};font-size:10px;color:var(--text-primary,#e0f0ff)}
+        .sdbg-help[open] summary{margin-bottom:8px}
+        .sdbg-help b{color:var(--text-primary,#e0f0ff);font-weight:700}
+        .sdbg-keys{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px}
+        .sdbg-keys>div{display:flex;align-items:center;gap:5px}
+        .sdbg-keys span{color:var(--text-secondary,#a9c2d4)}
+        .sdbg-tip{margin-top:9px;padding-top:8px;border-top:1px solid var(--border,#3a6075)}
+        .sdbg-help kbd{background:var(--btn-bg,var(--bg-button,#2a4050));
+          border:1px solid var(--border,#3a6075);border-bottom-width:2px;
+          border-radius:6px;padding:1px 6px;font-family:${MONO};font-size:10px;font-weight:700;
+          color:var(--text-primary,#e0f0ff);min-width:16px;text-align:center;line-height:1.5}
         /* Breakpoint — a solid red dot in the gutter (the universal IDE symbol,
            like Dev-C++ / Visual Studio) plus a red-tinted whole line, so a set
            breakpoint is unmistakable. */
@@ -255,9 +264,14 @@
           </div>
           <details class="sdbg-help">
             <summary>Shortcuts &amp; tips</summary>
-            <div>Gutter click = breakpoint · <i>Alt+click</i> = conditional · <i>Ctrl+click</i> = enable/disable</div>
-            <div><kbd>F5</kbd> run/continue · <kbd>F10</kbd> over · <kbd>F11</kbd> into · <kbd>Shift+F11</kbd> out · <kbd>Shift+F5</kbd> stop</div>
-            <div>Right-click → <b>Run to Cursor</b> · hover a variable for its value · <i>double-click</i> a value = hex/dec</div>
+            <div class="sdbg-keys">
+              <div><kbd>F5</kbd><span>Run / Continue</span></div>
+              <div><kbd>F10</kbd><span>Step over</span></div>
+              <div><kbd>F11</kbd><span>Step into</span></div>
+              <div><kbd>Shift</kbd><kbd>F11</kbd><span>Step out</span></div>
+              <div><kbd>Shift</kbd><kbd>F5</kbd><span>Stop</span></div>
+            </div>
+            <div class="sdbg-tip">Click the gutter to add a breakpoint. <b>Alt</b>+click = conditional, <b>Ctrl</b>+click = enable/disable. Right-click a line for <b>Run to Cursor</b>; double-click a value to toggle hex/dec.</div>
           </details>`;
         document.body.appendChild(p);
         els = {
