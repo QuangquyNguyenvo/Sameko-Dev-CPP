@@ -102,7 +102,7 @@
         if (document.getElementById('sameko-debug-styles')) return;
         const MONO = "'Cascadia Code','JetBrains Mono',Consolas,monospace";
         const css = `
-        #sameko-debug-panel{position:fixed;top:56px;right:12px;bottom:12px;width:340px;
+        #sameko-debug-panel{position:fixed;top:66px;right:12px;bottom:12px;width:340px;
           background:var(--bg-glass-heavy,rgba(26,37,48,.97));color:var(--text-primary,#e0f0ff);
           border:2.5px solid var(--border-strong,var(--accent,#88c9ea));border-radius:var(--radius,20px);
           z-index:1400;display:none;flex-direction:column;font-family:'Nunito','Segoe UI',sans-serif;
