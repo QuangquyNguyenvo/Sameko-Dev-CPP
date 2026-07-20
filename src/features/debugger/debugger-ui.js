@@ -117,6 +117,10 @@
           transition:background-color .12s,color .12s,transform .12s}
         .sdbg-btn:hover:not(:disabled){background:var(--accent,#88c9ea);color:#11212e;transform:translateY(-1px)}
         .sdbg-btn:disabled{opacity:.3;cursor:default}
+        /* The primary Run/Continue/Pause button is filled with the accent so it
+           reads as THE run button (no need to hunt for F5). */
+        .sdbg-btn.primary{background:var(--accent,#88c9ea);color:#11212e;font-weight:800}
+        .sdbg-btn.primary:hover:not(:disabled){filter:brightness(1.12);transform:translateY(-1px)}
         .sdbg-btn.stop:hover:not(:disabled){background:#ff6b81;color:#fff}
         .sdbg-close{margin-left:6px;font-size:12px}
         .sdbg-close:hover:not(:disabled){background:#ff6b81;color:#fff}
@@ -217,12 +221,10 @@
         p.id = 'sameko-debug-panel';
         p.innerHTML = `
           <div class="sdbg-toolbar">
-            <button class="sdbg-btn" data-act="continue" title="Run / Continue (F5) — start, or resume to the next breakpoint">&#9654;|</button>
-            <button class="sdbg-btn" data-act="pause" title="Pause — interrupt the running program to inspect it">&#10073;&#10073;</button>
+            <button class="sdbg-btn primary" data-act="primary" title="Run (F5)">&#9654;</button>
             <button class="sdbg-btn" data-act="stepOver" title="Step Over (F10) — run this line, don't enter calls">&#8631;</button>
             <button class="sdbg-btn" data-act="stepInto" title="Step Into (F11) — go inside the function on this line">&#8615;</button>
             <button class="sdbg-btn" data-act="stepOut" title="Step Out (Shift+F11) — finish this function and return">&#8613;</button>
-            <button class="sdbg-btn" data-act="restart" title="Restart — rebuild and run again from the start">&#8635;</button>
             <button class="sdbg-btn stop" data-act="stop" title="Stop (Shift+F5) — end the debug session">&#9632;</button>
             <span class="sdbg-status">idle</span>
             <button class="sdbg-btn sdbg-close" data-act="close" title="Close this panel">&#10005;</button>
@@ -269,13 +271,11 @@
         p.querySelectorAll('.sdbg-btn').forEach(b => {
             b.addEventListener('click', () => {
                 const a = b.dataset.act;
-                if (a === 'continue') continueExec();
+                if (a === 'primary') primaryAction();
                 else if (a === 'close') { showPanel(false); if (isSessionLive()) stop(); }
-                else if (a === 'pause') pauseExec();
                 else if (a === 'stepOver') stepOver();
                 else if (a === 'stepInto') stepInto();
                 else if (a === 'stepOut') stepOut();
-                else if (a === 'restart') restart();
                 else if (a === 'stop') stop();
             });
         });
@@ -310,13 +310,20 @@
         if (els.status) els.status.textContent = s;
         if (dbgStoppedCtx) { try { dbgStoppedCtx.set(s === 'stopped'); } catch (_) { } }
         const live = (s === 'running' || s === 'stopped' || s === 'starting');
+        // The primary button morphs with the run lifecycle (Run ▶ / Continue ▶ / Pause ‖).
+        const prim = els.panel && els.panel.querySelector('[data-act="primary"]');
+        if (prim) {
+            if (s === 'running') { prim.innerHTML = '❙❙'; prim.title = 'Pause — interrupt to inspect'; prim.disabled = false; }
+            else if (s === 'stopped') { prim.innerHTML = '▶'; prim.title = 'Continue (F5)'; prim.disabled = false; }
+            else if (s === 'starting') { prim.innerHTML = '▶'; prim.title = 'Starting…'; prim.disabled = true; }
+            else { prim.innerHTML = '▶'; prim.title = 'Run (F5)'; prim.disabled = false; }
+        }
         els.panel && els.panel.querySelectorAll('[data-act]').forEach(b => {
             const act = b.dataset.act;
+            if (act === 'primary') return;                             // handled above
             if (act === 'close') { b.disabled = false; return; }       // close always available
-            if (act === 'stop') { b.disabled = false; return; }        // stop always live
-            if (act === 'restart') { b.disabled = !live; return; }     // restart whenever a session exists
-            if (act === 'pause') { b.disabled = (s !== 'running'); return; } // pause only while running
-            b.disabled = (s !== 'stopped');                            // continue + steps
+            if (act === 'stop') { b.disabled = !live; return; }        // stop only when a session exists
+            b.disabled = (s !== 'stopped');                            // steps only while paused
         });
     }
 
@@ -653,6 +660,14 @@
     // Keep the trees (and their varobjs) intact across a continue so the next
     // stop can diff incrementally via -var-update. The values simply show the
     // last-known state while the program runs.
+    // One primary button drives the whole run lifecycle, like a media play/pause:
+    //   idle/ended → start a fresh run   ·   stopped → continue   ·   running → pause
+    // so the user never needs to reach for F5.
+    function primaryAction() {
+        if (state === 'running') return pauseExec();
+        if (state === 'stopped') return continueExec();
+        return start();
+    }
     async function continueExec() { if (state === 'stopped') { await api().debugContinue(); } }
     // Interrupt a running inferior (-exec-interrupt) so the user can inspect
     // state mid-run. gdb replies with a *stopped(reason="signal-received").
