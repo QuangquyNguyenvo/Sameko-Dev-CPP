@@ -61,6 +61,20 @@
     let selectedFrame = 0;
     let lastRawEndedNL = true;           // did the last program-output chunk end with '\n'?
 
+    // Bold, thick-stroke toolbar icons (matches the app's filled/thick icon style
+    // rather than thin unicode glyphs). All 24×24, currentColor, sized via CSS.
+    const SW = 'fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"';
+    const DOT = '<circle cx="12" cy="18.6" r="1.7" fill="currentColor"/>';
+    const ICONS = {
+        play: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8 5.4v13.2l10.6-6.6z"/></svg>',
+        pause: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 5h3.2v14H7zm6.8 0H17v14h-3.2z"/></svg>',
+        stop: '<svg viewBox="0 0 24 24"><rect x="6.5" y="6.5" width="11" height="11" rx="2.2" fill="currentColor"/></svg>',
+        stepOver: `<svg viewBox="0 0 24 24" ${SW}><path d="M6 13.5a6 6 0 1 1 12 0"/><path d="M15.3 10.8 18 13.5l2.7-2.7"/>${DOT}</svg>`,
+        stepInto: `<svg viewBox="0 0 24 24" ${SW}><path d="M12 4v9"/><path d="M8.2 9.3 12 13l3.8-3.7"/>${DOT}</svg>`,
+        stepOut: `<svg viewBox="0 0 24 24" ${SW}><path d="M12 13V4"/><path d="M8.2 7.7 12 4l3.8 3.7"/>${DOT}</svg>`,
+        close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+    };
+
     // ---- path helpers ------------------------------------------------------
     function norm(p) { return p ? String(p).replace(/\\/g, '/').toLowerCase() : ''; }
     function activeTab() {
@@ -117,6 +131,8 @@
           border-radius:8px;width:26px;height:26px;flex:0 0 auto;cursor:pointer;font-size:12px;line-height:1;
           display:inline-flex;align-items:center;justify-content:center;
           transition:background-color .12s,color .12s,transform .12s,box-shadow .12s}
+        .sdbg-btn svg{width:15px;height:15px;display:block;pointer-events:none}
+        .sdbg-close svg{width:13px;height:13px}
         .sdbg-btn:hover:not(:disabled){background:var(--btn-bg-hover,var(--accent,#88c9ea));
           color:var(--btn-text-hover,var(--accent,#11212e));transform:translateY(-1px);box-shadow:var(--shadow-card,0 2px 6px rgba(0,0,0,.15))}
         .sdbg-btn:disabled{opacity:.4;cursor:default}
@@ -251,13 +267,13 @@
         p.id = 'sameko-debug-panel';
         p.innerHTML = `
           <div class="sdbg-toolbar">
-            <button class="sdbg-btn primary" data-act="primary" title="Run (F5)">&#9654;</button>
-            <button class="sdbg-btn" data-act="stepOver" title="Step Over (F10) — run this line, don't enter calls">&#8631;</button>
-            <button class="sdbg-btn" data-act="stepInto" title="Step Into (F11) — go inside the function on this line">&#8615;</button>
-            <button class="sdbg-btn" data-act="stepOut" title="Step Out (Shift+F11) — finish this function and return">&#8613;</button>
-            <button class="sdbg-btn stop" data-act="stop" title="Stop (Shift+F5) — end the debug session">&#9632;</button>
+            <button class="sdbg-btn primary" data-act="primary" title="Run (F5)">${ICONS.play}</button>
+            <button class="sdbg-btn" data-act="stepOver" title="Step Over (F10) — run this line, don't enter calls">${ICONS.stepOver}</button>
+            <button class="sdbg-btn" data-act="stepInto" title="Step Into (F11) — go inside the function on this line">${ICONS.stepInto}</button>
+            <button class="sdbg-btn" data-act="stepOut" title="Step Out (Shift+F11) — finish this function and return">${ICONS.stepOut}</button>
+            <button class="sdbg-btn stop" data-act="stop" title="Stop (Shift+F5) — end the debug session">${ICONS.stop}</button>
             <span class="sdbg-status">idle</span>
-            <button class="sdbg-btn sdbg-close" data-act="close" title="Close this panel">&#10005;</button>
+            <button class="sdbg-btn sdbg-close" data-act="close" title="Close this panel">${ICONS.close}</button>
           </div>
           <div class="sdbg-body">
             <div class="sdbg-section">
@@ -351,10 +367,10 @@
         // The primary button morphs with the run lifecycle (Run ▶ / Continue ▶ / Pause ‖).
         const prim = els.panel && els.panel.querySelector('[data-act="primary"]');
         if (prim) {
-            if (s === 'running') { prim.innerHTML = '❙❙'; prim.title = 'Pause — interrupt to inspect'; prim.disabled = false; }
-            else if (s === 'stopped') { prim.innerHTML = '▶'; prim.title = 'Continue (F5)'; prim.disabled = false; }
-            else if (s === 'starting') { prim.innerHTML = '▶'; prim.title = 'Starting…'; prim.disabled = true; }
-            else { prim.innerHTML = '▶'; prim.title = 'Run (F5)'; prim.disabled = false; }
+            if (s === 'running') { prim.innerHTML = ICONS.pause; prim.title = 'Pause — interrupt to inspect'; prim.disabled = false; }
+            else if (s === 'stopped') { prim.innerHTML = ICONS.play; prim.title = 'Continue (F5)'; prim.disabled = false; }
+            else if (s === 'starting') { prim.innerHTML = ICONS.play; prim.title = 'Starting…'; prim.disabled = true; }
+            else { prim.innerHTML = ICONS.play; prim.title = 'Run (F5)'; prim.disabled = false; }
         }
         els.panel && els.panel.querySelectorAll('[data-act]').forEach(b => {
             const act = b.dataset.act;

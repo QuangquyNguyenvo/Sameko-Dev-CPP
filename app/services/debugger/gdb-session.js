@@ -134,6 +134,16 @@ class GdbSession extends EventEmitter {
             'set print thread-events off',
             'set pagination off',
             'set confirm off',
+            // "Step Into" (-exec-step) must not dive into standard-library
+            // internals (e.g. std::map operators, ~_Rb_tree destructors at the
+            // end of main). Skip STL/implementation code by function-name regex
+            // and by header path so stepping stays in the user's own code.
+            'skip -rfu ^std::',
+            'skip -rfu ^__gnu_cxx::',
+            'skip -rfu ^__cxxabiv1::',
+            'skip -gfi */bits/*',
+            'skip -gfi */include/c++/*',
+            'skip -gfi */mingw*/include/*',
             '',
         );
         try {

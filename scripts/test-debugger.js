@@ -252,13 +252,23 @@ async function partB() {
         const ev = await session.evaluate('x');
         check('evaluate(x) == 41', () => { assert.strictEqual(String(ev.value), '41'); });
 
-        // 6) Run to Cursor: temp breakpoint at line 8 (`return 0;`) + continue.
+        // 6) Run to Cursor: temp breakpoint at line 7 (`cout<<x;`) + continue.
         // Verifies the Windows-robust runToLine (temp bp, not -exec-until linespec).
         const stopped2P = waitForEvent(session, 'stopped', 20000);
-        await session.runToLine(src, 8);
+        await session.runToLine(src, 7);
         const stop2 = await stopped2P;
-        check('runToLine stops at line 8', () => {
-            assert.strictEqual(parseInt((stop2.frame || {}).line, 10), 8, 'stopped at line ' + ((stop2.frame || {}).line));
+        check('runToLine stops at line 7', () => {
+            assert.strictEqual(parseInt((stop2.frame || {}).line, 10), 7, 'stopped at line ' + ((stop2.frame || {}).line));
+        });
+
+        // 6b) Step Into on `cout<<x;` calls std::operator<<. The gdbinit skip
+        // rules must keep us in the user's code (main), not inside libstdc++.
+        const stopped3P = waitForEvent(session, 'stopped', 20000);
+        await session.step();
+        const stop3 = await stopped3P;
+        check('Step Into skips STL (stays in main)', () => {
+            const fn = (stop3.frame || {}).func || '';
+            assert.ok(/main/.test(fn), 'stepped into non-main frame: ' + fn);
         });
 
         // 7) run to completion
