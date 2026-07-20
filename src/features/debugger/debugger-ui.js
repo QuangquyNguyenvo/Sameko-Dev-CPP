@@ -769,16 +769,25 @@
                 continue;
             }
             const numchild = parseInt(created.numchild || '0', 10);
-            const row = makeRow(e.label, created.value, 0, numchild > 0, e.watch);
+            const expandable = isExpandable(created);
+            const row = makeRow(e.label, created.value, 0, expandable, e.watch);
             container.appendChild(row);
             const node = {
                 row, name, exp: e.expr, valEl: row.querySelector('.sdbg-val'),
-                numchild, depth: 0, expanded: false, childRows: [], childNodes: [], kind,
+                numchild, expandable, depth: 0, expanded: false, childRows: [], childNodes: [], kind,
             };
             varNodes.set(name, node);
             attachFormatToggle(node);
-            if (numchild > 0) attachExpander(node);
+            if (expandable) attachExpander(node);
         }
+    }
+
+    // A varobj is expandable if it has children directly, OR it is a dynamic
+    // (pretty-printed) container — those report numchild="0" with dynamic="1"/
+    // has_more="1" and only materialize children via -var-list-children.
+    function isExpandable(rec) {
+        if (!rec) return false;
+        return parseInt(rec.numchild || '0', 10) > 0 || rec.has_more === '1' || rec.dynamic === '1';
     }
 
     // ---- incremental value refresh (-var-update) ---------------------------
@@ -871,7 +880,7 @@
 
     function attachExpander(node) {
         const tw = node.row.querySelector('.sdbg-tw');
-        if (!tw || !node.numchild) return;
+        if (!tw || !node.expandable) return;
         tw.addEventListener('click', async () => {
             if (node.expanded) { collapseChildren(node); tw.innerHTML = '&#9654;'; }
             else { tw.innerHTML = '&#9660;'; node.expanded = true; await loadChildren(node); }
@@ -880,25 +889,28 @@
 
     /** Fetch and render a node's children, registering each child varobj. */
     async function loadChildren(node) {
-        const r = await api().debugVarChildren(node.name, 0, Math.min(node.numchild, 200));
+        // Dynamic containers report numchild=0; request a full window regardless.
+        const to = node.numchild > 0 ? Math.min(node.numchild, 200) : 200;
+        const r = await api().debugVarChildren(node.name, 0, to);
         const kids = (r && r.children) || [];
         let anchor = node.row;
         for (const c of kids) {
             const cn = parseInt(c.numchild || '0', 10);
-            const cr = makeRow(c.exp || '?', c.value, node.depth + 1, cn > 0, false);
+            const cExpandable = isExpandable(c);
+            const cr = makeRow(c.exp || '?', c.value, node.depth + 1, cExpandable, false);
             node.row.parentNode.insertBefore(cr, anchor.nextSibling);
             anchor = cr;
             node.childRows.push(cr);
             if (c.name) {
                 const child = {
                     row: cr, name: c.name, exp: c.exp, valEl: cr.querySelector('.sdbg-val'),
-                    numchild: cn, depth: node.depth + 1, expanded: false,
+                    numchild: cn, expandable: cExpandable, depth: node.depth + 1, expanded: false,
                     childRows: [], childNodes: [], kind: 'child',
                 };
                 varNodes.set(c.name, child);
                 node.childNodes.push(child);
                 attachFormatToggle(child);
-                if (cn > 0) attachExpander(child);
+                if (cExpandable) attachExpander(child);
             }
         }
         if (r && r.hasMore) {
