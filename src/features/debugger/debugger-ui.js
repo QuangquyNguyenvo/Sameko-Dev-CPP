@@ -818,9 +818,11 @@
             }
             const ncc = c.new_num_children != null ? parseInt(c.new_num_children, 10) : null;
             if (ncc != null) node.numchild = ncc;
-            // If a container (e.g. dynamic vector) grew/shrank while expanded,
-            // re-list its children so the tree matches the new contents.
-            if ((ncc != null || c.dynamic === '1' || c.dynamic === true) && node.expanded) {
+            // Only re-list children when the child COUNT actually changed (a
+            // dynamic container grew/shrank). Same-size content changes surface
+            // as individual child entries in the changelist and are patched
+            // above, so re-listing then would needlessly collapse subtrees.
+            if (ncc != null && node.expanded) {
                 await reloadChildren(node);
             }
         }
