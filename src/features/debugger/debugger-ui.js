@@ -108,20 +108,18 @@
           z-index:1400;display:none;flex-direction:column;font-family:'Nunito','Segoe UI',sans-serif;
           font-size:12.5px;box-shadow:0 12px 44px rgba(0,0,0,.4);overflow:hidden}
         #sameko-debug-panel.open{display:flex}
-        .sdbg-toolbar{display:flex;flex-wrap:wrap;gap:5px;padding:10px 11px;align-items:flex-start;
+        .sdbg-toolbar{display:flex;flex-wrap:nowrap;gap:4px;padding:9px 10px;align-items:center;overflow-x:auto;
           background:var(--bg-header,rgba(21,37,53,.5));border-bottom:2px solid var(--border,#3a6075)}
+        .sdbg-toolbar::-webkit-scrollbar{height:0}
         .sdbg-btn{background:var(--bg-button,#2a4050);border:none;color:var(--text-primary,#e0f0ff);
-          border-radius:10px;min-width:38px;padding:5px 6px 4px;cursor:pointer;line-height:1;
-          display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+          border-radius:9px;width:29px;height:29px;flex:0 0 auto;cursor:pointer;font-size:14px;line-height:1;
+          display:inline-flex;align-items:center;justify-content:center;
           transition:background-color .12s,color .12s,transform .12s}
-        .sdbg-btn .sdbg-ic{font-size:15px;line-height:1}
-        .sdbg-btn .sdbg-lb{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;line-height:1;opacity:.8}
         .sdbg-btn:hover:not(:disabled){background:var(--accent,#88c9ea);color:#11212e;transform:translateY(-1px)}
-        .sdbg-btn:hover:not(:disabled) .sdbg-lb{opacity:1}
         .sdbg-btn:disabled{opacity:.3;cursor:default}
         .sdbg-btn.stop:hover:not(:disabled){background:#ff6b81;color:#fff}
-        .sdbg-status{flex:1 0 100%;margin-top:4px;text-align:center;font-weight:800;font-size:10px;color:var(--accent,#88c9ea);
-          text-transform:uppercase;letter-spacing:.06em;padding:4px 10px;border-radius:20px;
+        .sdbg-status{margin-left:auto;flex:0 0 auto;font-weight:800;font-size:9.5px;color:var(--accent,#88c9ea);
+          text-transform:uppercase;letter-spacing:.05em;padding:3px 9px;border-radius:20px;
           background:var(--bg-button,rgba(136,201,234,.15))}
         .sdbg-body{overflow:auto;flex:1;padding:8px}
         .sdbg-section{background:var(--bg-page,rgba(26,37,48,.4));border:1.5px solid var(--border,#3a6075);
@@ -154,11 +152,12 @@
         .sdbg-watchin:focus{border-color:var(--accent,#88c9ea)}
         .sdbg-more{padding:3px 12px 5px 28px;color:var(--accent,#88c9ea);cursor:pointer;font-size:11px;font-weight:700}
         .sdbg-empty{color:var(--text-muted,#7990a0);padding:5px 14px;font-style:italic}
-        .sdbg-help{margin:2px 8px 8px;padding:9px 12px;border:1.5px dashed var(--border,#3a6075);
+        .sdbg-help{margin:2px 8px 8px;padding:7px 11px;border:1.5px dashed var(--border,#3a6075);
           border-radius:12px;background:var(--bg-page,rgba(26,37,48,.4));
-          color:var(--text-secondary,#a9c2d4);font-size:11px;line-height:1.75}
-        .sdbg-help-h{color:var(--accent,#88c9ea);font-weight:800;text-transform:uppercase;
-          letter-spacing:.06em;font-size:10px;margin-bottom:4px}
+          color:var(--text-secondary,#a9c2d4);font-size:10.5px;line-height:1.7}
+        .sdbg-help>div{margin-top:5px}
+        .sdbg-help summary{color:var(--accent,#88c9ea);font-weight:800;text-transform:uppercase;
+          letter-spacing:.06em;font-size:10px;cursor:pointer;outline:none;list-style-position:inside}
         .sdbg-help b{color:var(--accent,#88c9ea)}
         .sdbg-help kbd{background:var(--bg-button,#2a4050);border:1px solid var(--border,#3a6075);
           border-radius:5px;padding:0 5px;font-family:${MONO};font-size:10px;color:var(--text-primary,#e0f0ff)}
@@ -213,13 +212,13 @@
         p.id = 'sameko-debug-panel';
         p.innerHTML = `
           <div class="sdbg-toolbar">
-            <button class="sdbg-btn" data-act="continue" title="Run / Continue — start the program, or resume to the next breakpoint (F5)"><span class="sdbg-ic">&#9654;|</span><span class="sdbg-lb">Run</span></button>
-            <button class="sdbg-btn" data-act="pause" title="Pause — interrupt the running program to inspect it"><span class="sdbg-ic">&#10073;&#10073;</span><span class="sdbg-lb">Pause</span></button>
-            <button class="sdbg-btn" data-act="stepOver" title="Step Over — run the current line, don't go inside calls (F10)"><span class="sdbg-ic">&#8631;</span><span class="sdbg-lb">Over</span></button>
-            <button class="sdbg-btn" data-act="stepInto" title="Step Into — go inside the function on the current line (F11)"><span class="sdbg-ic">&#8615;</span><span class="sdbg-lb">Into</span></button>
-            <button class="sdbg-btn" data-act="stepOut" title="Step Out — finish the current function and return (Shift+F11)"><span class="sdbg-ic">&#8613;</span><span class="sdbg-lb">Out</span></button>
-            <button class="sdbg-btn" data-act="restart" title="Restart — rebuild and run again from the start"><span class="sdbg-ic">&#8635;</span><span class="sdbg-lb">Restart</span></button>
-            <button class="sdbg-btn stop" data-act="stop" title="Stop — end the debug session (Shift+F5)"><span class="sdbg-ic">&#9632;</span><span class="sdbg-lb">Stop</span></button>
+            <button class="sdbg-btn" data-act="continue" title="Run / Continue (F5) — start, or resume to the next breakpoint">&#9654;|</button>
+            <button class="sdbg-btn" data-act="pause" title="Pause — interrupt the running program to inspect it">&#10073;&#10073;</button>
+            <button class="sdbg-btn" data-act="stepOver" title="Step Over (F10) — run this line, don't enter calls">&#8631;</button>
+            <button class="sdbg-btn" data-act="stepInto" title="Step Into (F11) — go inside the function on this line">&#8615;</button>
+            <button class="sdbg-btn" data-act="stepOut" title="Step Out (Shift+F11) — finish this function and return">&#8613;</button>
+            <button class="sdbg-btn" data-act="restart" title="Restart — rebuild and run again from the start">&#8635;</button>
+            <button class="sdbg-btn stop" data-act="stop" title="Stop (Shift+F5) — end the debug session">&#9632;</button>
             <span class="sdbg-status">idle</span>
           </div>
           <div class="sdbg-body">
@@ -246,14 +245,12 @@
               <div class="sdbg-secbody" id="sdbg-watch"></div>
             </div>
           </div>
-          <div class="sdbg-help">
-            <div class="sdbg-help-h">How to debug</div>
-            <div><b>1.</b> Click the left gutter (next to a line) to drop a red breakpoint · <i>Alt+click</i> = conditional · <i>Ctrl+click</i> = enable/disable</div>
-            <div><b>2.</b> Press <kbd>F5</kbd> to run — the program stops at your breakpoint</div>
-            <div><b>3.</b> <kbd>F10</kbd> step over · <kbd>F11</kbd> step into · <kbd>Shift+F11</kbd> step out · <kbd>F5</kbd> continue · right-click → <b>Run to Cursor</b></div>
-            <div><b>4.</b> Hover any variable to see its value · <i>double-click</i> a value = hex/dec · watch expressions above</div>
-            <div><b>5.</b> <kbd>Shift+F5</kbd> to stop</div>
-          </div>`;
+          <details class="sdbg-help">
+            <summary>Shortcuts &amp; tips</summary>
+            <div>Gutter click = breakpoint · <i>Alt+click</i> = conditional · <i>Ctrl+click</i> = enable/disable</div>
+            <div><kbd>F5</kbd> run/continue · <kbd>F10</kbd> over · <kbd>F11</kbd> into · <kbd>Shift+F11</kbd> out · <kbd>Shift+F5</kbd> stop</div>
+            <div>Right-click → <b>Run to Cursor</b> · hover a variable for its value · <i>double-click</i> a value = hex/dec</div>
+          </details>`;
         document.body.appendChild(p);
         els = {
             panel: p,
