@@ -40,7 +40,18 @@
     let curLineDecoIds = [];
     let hoverProviderReg = null;
     let varSeq = 0;
-    let liveVarobjs = [];               // varobj names to delete on next stop
+    // Registry of live GDB variable objects, keyed by varobj name. Each record
+    // maps a varobj to its DOM value cell so `-var-update` can patch the exact
+    // node in place (and flag it 'changed') instead of tearing the whole tree
+    // down every stop. See applyVarUpdate().
+    //   node = { row, name, exp, valEl, numchild, depth, expanded,
+    //            childRows:[DOM], childNodes:[record], kind:'local'|'watch'|'child' }
+    const varNodes = new Map();
+    // Watch/expr rows with no backing varobj (not addressable). Re-evaluated on
+    // every stop so they stay fresh — they just never get the yellow highlight.
+    const evalNodes = [];               // [{ valEl, expr }]
+    let lastFrameKey = null;            // identity of the frame the trees reflect
+    let lastLocalNames = null;          // signature of the local name set
     const watches = [];                 // array of expression strings
     let stopFrames = [];
     let selectedFrame = 0;
@@ -445,7 +456,10 @@
         return t ? t.path : null;
     }
 
-    async function continueExec() { if (state === 'stopped') { clearTrees(); await api().debugContinue(); } }
+    // Keep the trees (and their varobjs) intact across a continue so the next
+    // stop can diff incrementally via -var-update. The values simply show the
+    // last-known state while the program runs.
+    async function continueExec() { if (state === 'stopped') { await api().debugContinue(); } }
     async function stepOver() { if (state === 'stopped') { await api().debugStepOver(); } }
     async function stepInto() { if (state === 'stopped') { await api().debugStepInto(); } }
     async function stepOut() { if (state === 'stopped') { await api().debugStepOut(); } }
@@ -460,6 +474,10 @@
         stopFile = stopLine = null;
         renderCurrentLine();
         clearTrees();
+        // gdb is gone — the varobjs died with it; just drop our registry.
+        varNodes.clear();
+        evalNodes.length = 0;
+        lastFrameKey = lastLocalNames = null;
         showPanel(false);
         // keep breakpoints (their ids are now stale; clear ids)
         for (const m of bpByFile.values()) for (const bp of m.values()) bp.id = null;
@@ -483,6 +501,10 @@
         a.onDebugError((d) => { if (d && d.message) sys('[gdb] ' + d.message, 'error'); });
     }
 
+    /** Frame identity used to decide "same place" (incremental) vs "rebuild". */
+    function frameKey(f) { return f ? ((f.func || '') + '@' + (f.file || '')) : ''; }
+    function localNamesSig(locals) { return (locals || []).map(l => l.name).sort().join(','); }
+
     async function onStopped(d) {
         stopFrames = d.frames || [];
         selectedFrame = 0;
@@ -491,7 +513,21 @@
         setStatus('stopped');
         renderCurrentLine();
         renderStack();
-        await refreshTrees(d.locals);
+
+        // Incremental refresh when we are still in the same frame (same function
+        // + same set of locals) as the trees currently show. Otherwise the whole
+        // scope changed, so rebuild. This preserves expanded subtrees and lets
+        // -var-update highlight only the values that actually changed.
+        const frame0 = stopFrames[0] || d.frame || null;
+        const key = frameKey(frame0);
+        const names = localNamesSig(d.locals);
+        if (varNodes.size === 0 || key !== lastFrameKey || names !== lastLocalNames) {
+            lastFrameKey = key;
+            lastLocalNames = names;
+            await refreshTrees(d.locals);
+        } else {
+            await applyVarUpdate();
+        }
     }
 
     function renderStack() {
@@ -514,23 +550,38 @@
         selectedFrame = i;
         renderStack();
         const r = await api().debugSelectFrame(i);
-        if (r && r.ok) await refreshTrees(r.locals);
+        if (r && r.ok) {
+            // Trees now reflect this frame; record its identity so the next stop
+            // (which resets to frame 0) sees a mismatch and rebuilds correctly.
+            lastFrameKey = frameKey(stopFrames[i]);
+            lastLocalNames = localNamesSig(r.locals);
+            await refreshTrees(r.locals);
+        }
     }
 
     // ========================================================================
     // VARIABLE TREES (one mechanism: gdb variable objects)
     // ========================================================================
     async function refreshTrees(localsMaybe) {
-        // free previous varobjs to avoid leaks
-        for (const n of liveVarobjs) { try { await api().debugVarDelete(n); } catch (_) { } }
-        liveVarobjs = [];
+        // Full rebuild: drop every existing varobj, then recreate from scratch.
+        // Used on the first stop, on a frame change, and on watch add/remove —
+        // cases where the whole variable set changed.
+        await deleteAllVarobjs();
 
         let locals = localsMaybe;
         if (!locals) {
             try { const r = await api().debugSelectFrame(selectedFrame); locals = r && r.locals; } catch (_) { }
         }
-        renderScope(els.locals, (locals || []).map(l => ({ label: l.name, expr: l.name, value: l.value })));
-        renderScope(els.watch, watches.map(w => ({ label: w, expr: w, value: null, watch: true })));
+        await renderScope(els.locals, (locals || []).map(l => ({ label: l.name, expr: l.name, value: l.value })), 'local');
+        await renderScope(els.watch, watches.map(w => ({ label: w, expr: w, value: null, watch: true })), 'watch');
+    }
+
+    /** Delete every tracked varobj in gdb and empty the registry. */
+    async function deleteAllVarobjs() {
+        const names = Array.from(varNodes.keys());
+        varNodes.clear();
+        evalNodes.length = 0;
+        for (const n of names) { try { await api().debugVarDelete(n); } catch (_) { } }
     }
 
     function clearTrees() {
@@ -539,7 +590,7 @@
         if (els.stack) els.stack.innerHTML = '';
     }
 
-    async function renderScope(container, entries) {
+    async function renderScope(container, entries, kind) {
         container.innerHTML = '';
         if (!entries.length) { container.innerHTML = '<div class="sdbg-empty">—</div>'; return; }
         for (const e of entries) {
@@ -551,14 +602,69 @@
                 // evaluate fallback (e.g. watch expr not addressable as a varobj)
                 let val = e.value;
                 if (val == null) { try { const ev = await api().debugEvaluate(e.expr); val = ev && ev.ok ? ev.value : '<error>'; } catch (_) { val = '<error>'; } }
-                container.appendChild(makeRow(e.label, val, 0, false, e.watch));
+                const row = makeRow(e.label, val, 0, false, e.watch);
+                container.appendChild(row);
+                // Track eval-only rows so they can be re-evaluated on each stop.
+                if (e.watch) evalNodes.push({ valEl: row.querySelector('.sdbg-val'), expr: e.expr });
                 continue;
             }
-            liveVarobjs.push(name);
             const numchild = parseInt(created.numchild || '0', 10);
             const row = makeRow(e.label, created.value, 0, numchild > 0, e.watch);
             container.appendChild(row);
-            attachExpander(row, name, 1, numchild, container);
+            const node = {
+                row, name, exp: e.expr, valEl: row.querySelector('.sdbg-val'),
+                numchild, depth: 0, expanded: false, childRows: [], childNodes: [], kind,
+            };
+            varNodes.set(name, node);
+            if (numchild > 0) attachExpander(node);
+        }
+    }
+
+    // ---- incremental value refresh (-var-update) ---------------------------
+    // On a stop in the same frame, diff instead of rebuild: ask gdb which
+    // varobjs changed, patch only those value cells, and paint them yellow.
+    async function applyVarUpdate() {
+        let changed = [];
+        try { const r = await api().debugVarUpdate(); changed = (r && r.changed) || []; } catch (_) { }
+        // reset last step's highlights
+        for (const n of varNodes.values()) { if (n.valEl) n.valEl.classList.remove('changed'); }
+
+        for (const c of changed) {
+            const node = varNodes.get(c.name);
+            if (!node) continue;                       // not currently rendered (e.g. collapsed subtree)
+            const scope = c.in_scope;
+            if (scope === 'invalid' || c.type_changed === 'true' || c.type_changed === true) {
+                // Type changed or the object is gone. Leave it; the next frame
+                // change rebuilds cleanly. Keep this minimal by design.
+                continue;
+            }
+            if (scope === 'false' || scope === false) {
+                if (node.valEl) node.valEl.textContent = '<out of scope>';
+                continue;
+            }
+            if (c.value !== undefined && node.valEl) {
+                node.valEl.textContent = c.value;
+                node.valEl.classList.add('changed');
+            }
+            const ncc = c.new_num_children != null ? parseInt(c.new_num_children, 10) : null;
+            if (ncc != null) node.numchild = ncc;
+            // If a container (e.g. dynamic vector) grew/shrank while expanded,
+            // re-list its children so the tree matches the new contents.
+            if ((ncc != null || c.dynamic === '1' || c.dynamic === true) && node.expanded) {
+                await reloadChildren(node);
+            }
+        }
+
+        // Watches without a varobj don't appear in the changelist — refresh them.
+        for (const en of evalNodes) {
+            if (!en.valEl) continue;
+            try {
+                const ev = await api().debugEvaluate(en.expr);
+                const val = ev && ev.ok ? String(ev.value) : '<error>';
+                const changedVal = en.valEl.textContent !== val;
+                en.valEl.textContent = val;
+                en.valEl.classList.toggle('changed', changedVal);
+            } catch (_) { }
         }
     }
 
@@ -584,38 +690,69 @@
         return row;
     }
 
-    function attachExpander(row, varName, depth, numchild, container) {
-        const tw = row.querySelector('.sdbg-tw');
-        if (!tw || !numchild) return;
-        let expanded = false;
-        let childRows = [];
+    function attachExpander(node) {
+        const tw = node.row.querySelector('.sdbg-tw');
+        if (!tw || !node.numchild) return;
         tw.addEventListener('click', async () => {
-            expanded = !expanded;
-            tw.innerHTML = expanded ? '&#9660;' : '&#9654;';
-            if (expanded) {
-                const r = await api().debugVarChildren(varName, 0, Math.min(numchild, 200));
-                const kids = (r && r.children) || [];
-                let anchor = row;
-                for (const c of kids) {
-                    const cn = parseInt(c.numchild || '0', 10);
-                    const cr = makeRow(c.exp || '?', c.value, depth, cn > 0, false);
-                    row.parentNode.insertBefore(cr, anchor.nextSibling);
-                    anchor = cr;
-                    childRows.push(cr);
-                    if (cn > 0 && c.name) attachExpander(cr, c.name, depth + 1, cn, container);
-                }
-                if (r && r.hasMore) {
-                    const more = document.createElement('div');
-                    more.className = 'sdbg-more';
-                    more.textContent = '… more elements (showing first 200)';
-                    row.parentNode.insertBefore(more, anchor.nextSibling);
-                    childRows.push(more);
-                }
-            } else {
-                childRows.forEach(n => n.remove());
-                childRows = [];
-            }
+            if (node.expanded) { collapseChildren(node); tw.innerHTML = '&#9654;'; }
+            else { tw.innerHTML = '&#9660;'; node.expanded = true; await loadChildren(node); }
         });
+    }
+
+    /** Fetch and render a node's children, registering each child varobj. */
+    async function loadChildren(node) {
+        const r = await api().debugVarChildren(node.name, 0, Math.min(node.numchild, 200));
+        const kids = (r && r.children) || [];
+        let anchor = node.row;
+        for (const c of kids) {
+            const cn = parseInt(c.numchild || '0', 10);
+            const cr = makeRow(c.exp || '?', c.value, node.depth + 1, cn > 0, false);
+            node.row.parentNode.insertBefore(cr, anchor.nextSibling);
+            anchor = cr;
+            node.childRows.push(cr);
+            if (c.name) {
+                const child = {
+                    row: cr, name: c.name, exp: c.exp, valEl: cr.querySelector('.sdbg-val'),
+                    numchild: cn, depth: node.depth + 1, expanded: false,
+                    childRows: [], childNodes: [], kind: 'child',
+                };
+                varNodes.set(c.name, child);
+                node.childNodes.push(child);
+                if (cn > 0) attachExpander(child);
+            }
+        }
+        if (r && r.hasMore) {
+            const more = document.createElement('div');
+            more.className = 'sdbg-more';
+            more.textContent = '… more elements (showing first 200)';
+            node.row.parentNode.insertBefore(more, anchor.nextSibling);
+            node.childRows.push(more);
+        }
+    }
+
+    /** Collapse a node: remove its child DOM rows and unregister the subtree. */
+    function collapseChildren(node) {
+        for (const child of node.childNodes) removeNode(child);
+        node.childNodes = [];
+        for (const cr of node.childRows) cr.remove();
+        node.childRows = [];
+        node.expanded = false;
+    }
+
+    /** Recursively drop a node's descendants from the DOM and the registry. */
+    function removeNode(node) {
+        for (const child of node.childNodes) removeNode(child);
+        node.childNodes = [];
+        for (const cr of node.childRows) cr.remove();
+        node.childRows = [];
+        if (node.name) varNodes.delete(node.name);
+    }
+
+    /** Re-list children in place (keeps the node expanded) after a size change. */
+    async function reloadChildren(node) {
+        collapseChildren(node);
+        node.expanded = true;
+        await loadChildren(node);
     }
 
     // ========================================================================
