@@ -217,7 +217,27 @@
           border-radius:5px;padding:0 5px;font-family:${MONO};font-size:10px}
         .sdbg-guide-ok{margin-top:8px;background:var(--accent,#88c9ea);color:#11212e;border:none;
           border-radius:10px;padding:8px 18px;font-weight:800;cursor:pointer;font-size:12px}
-        .sdbg-guide-ok:hover{filter:brightness(1.08)}`;
+        .sdbg-guide-ok:hover{filter:brightness(1.08)}
+        /* Text prompt (Electron has no window.prompt) — used for conditional
+           breakpoints. Same card language as the coach-mark guide. */
+        #sameko-debug-prompt{position:fixed;inset:0;z-index:1700;display:flex;align-items:flex-start;
+          justify-content:center;padding-top:120px;background:rgba(6,12,18,.5);
+          font-family:'Nunito','Segoe UI',sans-serif}
+        .sdbg-prompt-card{background:var(--bg-glass-heavy,rgba(26,37,48,.98));color:var(--text-primary,#e0f0ff);
+          border:2px solid var(--accent,#88c9ea);border-radius:var(--radius-sm,14px);padding:16px 18px;
+          width:min(420px,90vw);box-shadow:var(--shadow-soft,0 18px 60px rgba(0,0,0,.5))}
+        .sdbg-prompt-h{color:var(--accent,#88c9ea);font-weight:800;font-size:12px;text-transform:uppercase;
+          letter-spacing:.05em;margin-bottom:10px}
+        .sdbg-prompt-in{width:100%;background:var(--bg-input,#1a2a3a);color:var(--text-primary,#e0f0ff);
+          border:1.5px solid var(--border,#3a6075);border-radius:10px;padding:8px 11px;
+          font-family:${MONO};font-size:13px;outline:none}
+        .sdbg-prompt-in:focus{border-color:var(--accent,#88c9ea)}
+        .sdbg-prompt-row{display:flex;justify-content:flex-end;gap:8px;margin-top:12px}
+        .sdbg-prompt-row button{border:none;border-radius:9px;padding:7px 16px;font-weight:800;
+          font-size:12px;cursor:pointer;font-family:'Nunito','Segoe UI',sans-serif}
+        .sdbg-prompt-cancel{background:var(--btn-bg,#2a4050);color:var(--text-primary,#e0f0ff)}
+        .sdbg-prompt-ok{background:var(--accent,#88c9ea);color:#11212e}
+        .sdbg-prompt-ok:hover,.sdbg-prompt-cancel:hover{filter:brightness(1.08)}`;
         const style = document.createElement('style');
         style.id = 'sameko-debug-styles';
         style.textContent = css;
@@ -470,13 +490,50 @@
         }
     }
 
+    // Promise-based text prompt. Electron does NOT implement window.prompt(), so
+    // we roll our own modal (styled like the rest of the debugger). Resolves to
+    // the entered string, or null if cancelled.
+    function promptText({ title, placeholder, initial }) {
+        return new Promise((resolve) => {
+            const ov = document.createElement('div');
+            ov.id = 'sameko-debug-prompt';
+            ov.innerHTML = `
+              <div class="sdbg-prompt-card">
+                <div class="sdbg-prompt-h">${escapeHtml(title || 'Input')}</div>
+                <input class="sdbg-prompt-in" type="text" placeholder="${escapeHtml(placeholder || '')}" />
+                <div class="sdbg-prompt-row">
+                  <button class="sdbg-prompt-cancel">Cancel</button>
+                  <button class="sdbg-prompt-ok">OK</button>
+                </div>
+              </div>`;
+            document.body.appendChild(ov);
+            const input = ov.querySelector('.sdbg-prompt-in');
+            input.value = initial || '';
+            let done = false;
+            const finish = (val) => { if (done) return; done = true; try { ov.remove(); } catch (_) { } resolve(val); };
+            ov.querySelector('.sdbg-prompt-ok').addEventListener('click', () => finish(input.value));
+            ov.querySelector('.sdbg-prompt-cancel').addEventListener('click', () => finish(null));
+            ov.addEventListener('click', (e) => { if (e.target === ov) finish(null); });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); finish(input.value); }
+                else if (e.key === 'Escape') { e.preventDefault(); finish(null); }
+            });
+            setTimeout(() => { try { input.focus(); input.select(); } catch (_) { } }, 30);
+        });
+    }
+
     async function addConditionalBreakpoint(line) {
         const path = activePath();
-        if (!path) return;
-        const cond = window.prompt('Breakpoint condition (e.g. i==n-1):', '');
-        if (cond === null) return;
+        if (!path) { sys('Save the file before setting breakpoints.', 'warning'); return; }
         const m = fileMap(path);
-        const bp = m.get(line) || { condition: null, id: null, enabled: true };
+        const existing = m.get(line);
+        const cond = await promptText({
+            title: 'Conditional breakpoint',
+            placeholder: 'e.g. i == n-1   (blank = always break)',
+            initial: (existing && existing.condition) || '',
+        });
+        if (cond === null) return;   // cancelled
+        const bp = existing || { condition: null, id: null, enabled: true };
         bp.condition = cond.trim() || null;
         m.set(line, bp);
         if (state === 'stopped') {
