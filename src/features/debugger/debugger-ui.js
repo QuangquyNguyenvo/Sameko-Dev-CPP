@@ -163,6 +163,10 @@
         .sameko-bp-linenum-cond{color:#ffb02e!important;font-weight:900!important}
         .sameko-bp-glyph{cursor:pointer;background:center/15px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23ff5964'%20stroke-width='3.6'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M5%2013l4%204L19%207'/%3E%3C/svg%3E")!important}
         .sameko-bp-cond{cursor:pointer;background:center/15px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23ffb02e'%20stroke-width='3.6'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M5%2013l4%204L19%207'/%3E%3C/svg%3E")!important}
+        /* Unresolved / pending breakpoint: a hollow, dim gray ring — clearly not
+           an armed (solid check) breakpoint. */
+        .sameko-bp-pending{cursor:pointer;opacity:.55;background:center/13px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%238aa0b0'%20stroke-width='2.6'%3E%3Ccircle%20cx='12'%20cy='12'%20r='7'/%3E%3C/svg%3E")!important}
+        .sameko-bp-linenum-pending{color:#8aa0b0!important;font-weight:900!important}
         .sameko-curline{background:rgba(255,207,94,.18)}
         .sameko-arrow{width:0!important;height:0!important;border-top:6px solid transparent;
           border-bottom:6px solid transparent;border-left:10px solid #ffcf5e;margin-left:5px;margin-top:5px}`;
@@ -308,7 +312,10 @@
             renderBreakpoints();            // instant visual feedback, before the gdb round-trip
             if (isSessionLive()) {
                 const r = await api().debugSetBreakpoint({ file: path, line });
-                if (r && r.ok) bp.id = r.id;
+                if (r && r.ok) {
+                    bp.id = r.id;
+                    if (r.line && r.line !== line) { m.delete(line); m.set(r.line, bp); renderBreakpoints(); }
+                }
             }
         }
     }
@@ -325,7 +332,10 @@
         if (isSessionLive()) {
             if (bp.id != null) { try { await api().debugRemoveBreakpoint(bp.id); } catch (_) { } }
             const r = await api().debugSetBreakpoint({ file: path, line, condition: bp.condition });
-            if (r && r.ok) bp.id = r.id;
+            if (r && r.ok) {
+                bp.id = r.id;
+                if (r.line && r.line !== line) { m.delete(line); m.set(r.line, bp); }
+            }
         }
         renderBreakpoints();
     }
@@ -342,10 +352,13 @@
                 decos.push({
                     range: new monaco.Range(line, 1, line, 1),
                     options: {
-                        lineNumberClassName: bp.condition ? 'sameko-bp-linenum-cond' : 'sameko-bp-linenum',
-                        glyphMarginClassName: bp.condition ? 'sameko-bp-cond' : 'sameko-bp-glyph',
+                        lineNumberClassName: bp.pending ? 'sameko-bp-linenum-pending'
+                            : bp.condition ? 'sameko-bp-linenum-cond' : 'sameko-bp-linenum',
+                        glyphMarginClassName: bp.pending ? 'sameko-bp-pending'
+                            : bp.condition ? 'sameko-bp-cond' : 'sameko-bp-glyph',
                         glyphMarginHoverMessage: {
-                            value: bp.condition ? 'Breakpoint if `' + bp.condition + '`' : 'Breakpoint',
+                            value: bp.pending ? 'Unresolved breakpoint'
+                                : bp.condition ? 'Breakpoint if `' + bp.condition + '`' : 'Breakpoint',
                         },
                         stickiness: 1, // NeverGrowsWhenTypingAtEdges
                     },
@@ -432,12 +445,20 @@
             setStatus('idle'); showPanel(false);
             return;
         }
-        // adopt gdb-assigned breakpoint ids
+        // adopt gdb-assigned breakpoint ids, relocating the glyph when gdb moved
+        // the breakpoint to the next executable line.
         if (res.breakpoints) {
             for (const b of res.breakpoints) {
                 const m = bpByFile.get(norm(b.file));
-                if (m && m.has(b.line)) m.get(b.line).id = b.id;
+                if (!m || !m.has(b.line)) continue;
+                const bp = m.get(b.line);
+                bp.id = b.id;
+                if (b.resolvedLine && b.resolvedLine !== b.line) {
+                    m.delete(b.line);
+                    m.set(b.resolvedLine, bp);
+                }
             }
+            renderBreakpoints();
         }
         sys('Debug session started.', 'success');
     }
@@ -505,6 +526,48 @@
         });
         a.onDebugTerminated(() => { freshLine(); endSession(); });
         a.onDebugError((d) => { if (d && d.message) sys('[gdb] ' + d.message, 'error'); });
+        a.onDebugNotify((n) => onNotify(n));
+    }
+
+    /** Locate a tracked breakpoint by its gdb-assigned id. */
+    function findBpById(id) {
+        for (const [key, m] of bpByFile.entries())
+            for (const [line, bp] of m.entries())
+                if (bp.id === id) return { key, line, bp, map: m };
+        return null;
+    }
+
+    // React to gdb breakpoint lifecycle events. gdb relocates a breakpoint to
+    // the next executable line when you drop it on a blank/comment line, and
+    // reports pending/unresolved ones — keep the glyph in sync with reality.
+    function onNotify(n) {
+        if (!n || !/^breakpoint-/.test(n.class || '')) return;
+        const bkpt = n.results && n.results.bkpt;
+        if (!bkpt || bkpt.number == null) return;
+        const id = parseInt(bkpt.number, 10);
+
+        if (n.class === 'breakpoint-deleted') {
+            const hit = findBpById(id);
+            if (hit) { hit.map.delete(hit.line); renderBreakpoints(); }
+            return;
+        }
+
+        const hit = findBpById(id);
+        if (!hit) return;                          // a breakpoint we don't own (race or gdb-internal)
+
+        const newLine = bkpt.line ? parseInt(bkpt.line, 10) : hit.line;
+        // Pending/unresolved: gdb reports a `pending` field and addr="<PENDING>".
+        // (addr="<MULTIPLE>" is resolved — several locations — so not pending.)
+        const wasPending = !!hit.bp.pending;
+        hit.bp.pending = bkpt.pending != null || !bkpt.addr || /pending/i.test(String(bkpt.addr));
+
+        if (newLine && newLine !== hit.line) {
+            hit.map.delete(hit.line);
+            hit.map.set(newLine, hit.bp);
+            sys(`Breakpoint moved to line ${newLine}.`, 'system');
+        }
+        if (hit.bp.pending && !wasPending) sys('Unresolved breakpoint (pending).', 'warning');
+        renderBreakpoints();
     }
 
     /** Frame identity used to decide "same place" (incremental) vs "rebuild". */
