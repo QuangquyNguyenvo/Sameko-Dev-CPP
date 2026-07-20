@@ -67,6 +67,7 @@ function registerHandlers() {
         guard(() => dbg.setCondition(id, condition)));
 
     ipcMain.handle(IPC.DEBUG.CONTINUE, async () => guard(() => dbg.cont()));
+    ipcMain.handle(IPC.DEBUG.INTERRUPT, async () => guard(() => dbg.interrupt()));
     ipcMain.handle(IPC.DEBUG.STEP_OVER, async () => guard(() => dbg.next()));
     ipcMain.handle(IPC.DEBUG.STEP_INTO, async () => guard(() => dbg.step()));
     ipcMain.handle(IPC.DEBUG.STEP_OUT, async () => guard(() => dbg.finish()));

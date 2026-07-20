@@ -180,6 +180,7 @@
         p.innerHTML = `
           <div class="sdbg-toolbar">
             <button class="sdbg-btn" data-act="continue" title="Continue (F5)">&#9654;|</button>
+            <button class="sdbg-btn" data-act="pause" title="Pause (interrupt running program)">&#10073;&#10073;</button>
             <button class="sdbg-btn" data-act="stepOver" title="Step Over (F10)">&#8631;</button>
             <button class="sdbg-btn" data-act="stepInto" title="Step Into (F11)">&#8615;</button>
             <button class="sdbg-btn" data-act="stepOut" title="Step Out (Shift+F11)">&#8613;</button>
@@ -231,6 +232,7 @@
             b.addEventListener('click', () => {
                 const a = b.dataset.act;
                 if (a === 'continue') continueExec();
+                else if (a === 'pause') pauseExec();
                 else if (a === 'stepOver') stepOver();
                 else if (a === 'stepInto') stepInto();
                 else if (a === 'stepOut') stepOut();
@@ -255,10 +257,11 @@
     function setStatus(s) {
         state = s;
         if (els.status) els.status.textContent = s;
-        const stepping = (s === 'stopped');
         els.panel && els.panel.querySelectorAll('[data-act]').forEach(b => {
-            if (b.dataset.act === 'stop') return;
-            b.disabled = !stepping;
+            const act = b.dataset.act;
+            if (act === 'stop') { b.disabled = false; return; }        // stop always live
+            if (act === 'pause') { b.disabled = (s !== 'running'); return; } // pause only while running
+            b.disabled = (s !== 'stopped');                            // continue + steps
         });
     }
 
@@ -460,6 +463,9 @@
     // stop can diff incrementally via -var-update. The values simply show the
     // last-known state while the program runs.
     async function continueExec() { if (state === 'stopped') { await api().debugContinue(); } }
+    // Interrupt a running inferior (-exec-interrupt) so the user can inspect
+    // state mid-run. gdb replies with a *stopped(reason="signal-received").
+    async function pauseExec() { if (state === 'running') { try { await api().debugInterrupt(); } catch (_) { } } }
     async function stepOver() { if (state === 'stopped') { await api().debugStepOver(); } }
     async function stepInto() { if (state === 'stopped') { await api().debugStepInto(); } }
     async function stepOut() { if (state === 'stopped') { await api().debugStepOut(); } }
@@ -511,6 +517,8 @@
         stopFile = d.frame ? d.frame.file : (stopFrames[0] && stopFrames[0].file);
         stopLine = d.frame ? d.frame.line : (stopFrames[0] && stopFrames[0].line);
         setStatus('stopped');
+        // A pause (interrupt) surfaces as a signal stop — note it, don't alarm.
+        if (d.reason && /signal/.test(d.reason)) sys('Paused.', 'system');
         renderCurrentLine();
         renderStack();
 

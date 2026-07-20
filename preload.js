@@ -87,6 +87,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     debugRemoveBreakpoint: (id) => ipcRenderer.invoke('debug:removeBreakpoint', { id }),
     debugSetCondition: (id, condition) => ipcRenderer.invoke('debug:setCondition', { id, condition }),
     debugContinue: () => ipcRenderer.invoke('debug:continue'),
+    debugInterrupt: () => ipcRenderer.invoke('debug:interrupt'),
     debugStepOver: () => ipcRenderer.invoke('debug:stepOver'),
     debugStepInto: () => ipcRenderer.invoke('debug:stepInto'),
     debugStepOut: () => ipcRenderer.invoke('debug:stepOut'),

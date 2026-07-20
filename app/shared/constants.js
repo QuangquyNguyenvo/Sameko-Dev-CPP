@@ -43,6 +43,7 @@ const IPC = {
         REMOVE_BREAKPOINT: 'debug:removeBreakpoint',
         SET_CONDITION: 'debug:setCondition',
         CONTINUE: 'debug:continue',
+        INTERRUPT: 'debug:interrupt',
         STEP_OVER: 'debug:stepOver',
         STEP_INTO: 'debug:stepInto',
         STEP_OUT: 'debug:stepOut',
