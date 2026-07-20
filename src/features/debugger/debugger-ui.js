@@ -118,6 +118,8 @@
         .sdbg-btn:hover:not(:disabled){background:var(--accent,#88c9ea);color:#11212e;transform:translateY(-1px)}
         .sdbg-btn:disabled{opacity:.3;cursor:default}
         .sdbg-btn.stop:hover:not(:disabled){background:#ff6b81;color:#fff}
+        .sdbg-close{margin-left:6px;font-size:12px}
+        .sdbg-close:hover:not(:disabled){background:#ff6b81;color:#fff}
         .sdbg-status{margin-left:auto;flex:0 0 auto;font-weight:800;font-size:9.5px;color:var(--accent,#88c9ea);
           text-transform:uppercase;letter-spacing:.05em;padding:3px 9px;border-radius:20px;
           background:var(--bg-button,rgba(136,201,234,.15))}
@@ -223,6 +225,7 @@
             <button class="sdbg-btn" data-act="restart" title="Restart — rebuild and run again from the start">&#8635;</button>
             <button class="sdbg-btn stop" data-act="stop" title="Stop (Shift+F5) — end the debug session">&#9632;</button>
             <span class="sdbg-status">idle</span>
+            <button class="sdbg-btn sdbg-close" data-act="close" title="Close this panel">&#10005;</button>
           </div>
           <div class="sdbg-body">
             <div class="sdbg-section">
@@ -267,6 +270,7 @@
             b.addEventListener('click', () => {
                 const a = b.dataset.act;
                 if (a === 'continue') continueExec();
+                else if (a === 'close') { showPanel(false); if (isSessionLive()) stop(); }
                 else if (a === 'pause') pauseExec();
                 else if (a === 'stepOver') stepOver();
                 else if (a === 'stepInto') stepInto();
@@ -297,6 +301,7 @@
         const live = (s === 'running' || s === 'stopped' || s === 'starting');
         els.panel && els.panel.querySelectorAll('[data-act]').forEach(b => {
             const act = b.dataset.act;
+            if (act === 'close') { b.disabled = false; return; }       // close always available
             if (act === 'stop') { b.disabled = false; return; }        // stop always live
             if (act === 'restart') { b.disabled = !live; return; }     // restart whenever a session exists
             if (act === 'pause') { b.disabled = (s !== 'running'); return; } // pause only while running
@@ -559,7 +564,8 @@
         if (!r || !r.success) {
             sys('Debug build failed.', 'error');
             if (r && r.error) sys(r.error, 'error');
-            setStatus('idle'); showPanel(false);
+            setStatus('idle');
+            setTreesPlaceholder('Build failed — fix the compile errors in the terminal, then press F5. (✕ to close)');
             return;
         }
 
@@ -569,7 +575,8 @@
         const res = await api().debugStart({ exePath: r.outputPath, cwd: dir, breakpoints: bps, stdin });
         if (!res || !res.ok) {
             sys('Debugger failed to start: ' + ((res && res.error) || 'unknown'), 'error');
-            setStatus('idle'); showPanel(false);
+            setStatus('idle');
+            setTreesPlaceholder('Debugger failed to start — see the terminal for details. (✕ to close)');
             return;
         }
         // adopt gdb-assigned breakpoint ids, relocating the glyph when gdb moved
@@ -656,17 +663,18 @@
         await start();
     }
 
-    function endSession() {
+    function endSession(reason) {
         if (state === 'idle') return;    // idempotent — programExited + terminated may both fire
         setStatus('idle');
         stopFile = stopLine = null;
         renderCurrentLine();
-        clearTrees();
         // gdb is gone — the varobjs died with it; just drop our registry.
         varNodes.clear();
         evalNodes.length = 0;
         lastFrameKey = lastLocalNames = null;
-        showPanel(false);
+        // Keep the panel OPEN with an idle message. Yanking it away the instant a
+        // program finishes looked like a crash — the user closes it via ✕.
+        setTreesPlaceholder(reason || 'Session ended — set a breakpoint and press F5 to run again.');
         // keep breakpoints (their ids are now stale; clear ids)
         for (const m of bpByFile.values()) for (const bp of m.values()) bp.id = null;
     }
@@ -682,10 +690,11 @@
         a.onDebugConsole((d) => { /* gdb chatter: keep quiet unless it's an error */ });
         a.onDebugProgramExited((d) => {
             freshLine();
-            sys('Program exited (code ' + (d && d.code != null ? d.code : '?') + ').', 'system');
-            endSession();
+            const code = d && d.code != null ? d.code : '?';
+            sys('Program exited (code ' + code + ').', 'system');
+            endSession('Program finished (exit code ' + code + '). Set a breakpoint and press F5 to run again, or ✕ to close.');
         });
-        a.onDebugTerminated(() => { freshLine(); endSession(); });
+        a.onDebugTerminated(() => { freshLine(); endSession('Debug session ended. Press F5 to run again, or ✕ to close.'); });
         a.onDebugError((d) => { if (d && d.message) sys('[gdb] ' + d.message, 'error'); });
         a.onDebugNotify((n) => onNotify(n));
     }
