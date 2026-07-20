@@ -108,16 +108,19 @@
           z-index:1400;display:none;flex-direction:column;font-family:'Nunito','Segoe UI',sans-serif;
           font-size:12.5px;box-shadow:0 12px 44px rgba(0,0,0,.4);overflow:hidden}
         #sameko-debug-panel.open{display:flex}
-        .sdbg-toolbar{display:flex;gap:6px;padding:11px 12px;align-items:center;
+        .sdbg-toolbar{display:flex;flex-wrap:wrap;gap:5px;padding:10px 11px;align-items:flex-start;
           background:var(--bg-header,rgba(21,37,53,.5));border-bottom:2px solid var(--border,#3a6075)}
         .sdbg-btn{background:var(--bg-button,#2a4050);border:none;color:var(--text-primary,#e0f0ff);
-          border-radius:11px;width:32px;height:32px;cursor:pointer;font-size:15px;line-height:1;
-          display:inline-flex;align-items:center;justify-content:center;
+          border-radius:10px;min-width:38px;padding:5px 6px 4px;cursor:pointer;line-height:1;
+          display:inline-flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
           transition:background-color .12s,color .12s,transform .12s}
+        .sdbg-btn .sdbg-ic{font-size:15px;line-height:1}
+        .sdbg-btn .sdbg-lb{font-size:8px;font-weight:800;text-transform:uppercase;letter-spacing:.02em;line-height:1;opacity:.8}
         .sdbg-btn:hover:not(:disabled){background:var(--accent,#88c9ea);color:#11212e;transform:translateY(-1px)}
+        .sdbg-btn:hover:not(:disabled) .sdbg-lb{opacity:1}
         .sdbg-btn:disabled{opacity:.3;cursor:default}
         .sdbg-btn.stop:hover:not(:disabled){background:#ff6b81;color:#fff}
-        .sdbg-status{margin-left:auto;font-weight:800;font-size:10.5px;color:var(--accent,#88c9ea);
+        .sdbg-status{flex:1 0 100%;margin-top:4px;text-align:center;font-weight:800;font-size:10px;color:var(--accent,#88c9ea);
           text-transform:uppercase;letter-spacing:.06em;padding:4px 10px;border-radius:20px;
           background:var(--bg-button,rgba(136,201,234,.15))}
         .sdbg-body{overflow:auto;flex:1;padding:8px}
@@ -178,7 +181,25 @@
         .sameko-bp-hover{cursor:pointer;opacity:.28;background:center/15px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23ff5964'%20stroke-width='3.6'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M5%2013l4%204L19%207'/%3E%3C/svg%3E")!important}
         .sameko-curline{background:rgba(255,207,94,.18)}
         .sameko-arrow{width:0!important;height:0!important;border-top:6px solid transparent;
-          border-bottom:6px solid transparent;border-left:10px solid #ffcf5e;margin-left:5px;margin-top:5px}`;
+          border-bottom:6px solid transparent;border-left:10px solid #ffcf5e;margin-left:5px;margin-top:5px}
+        /* First-run coach marks */
+        #sameko-debug-guide{position:fixed;inset:0;z-index:1600;display:flex;align-items:flex-start;
+          justify-content:center;padding-top:96px;background:rgba(6,12,18,.45);
+          font-family:'Nunito','Segoe UI',sans-serif}
+        .sdbg-guide-card{background:var(--bg-glass-heavy,rgba(26,37,48,.98));color:var(--text-primary,#e0f0ff);
+          border:2.5px solid var(--accent,#88c9ea);border-radius:18px;padding:18px 20px;max-width:440px;
+          box-shadow:0 18px 60px rgba(0,0,0,.5)}
+        .sdbg-guide-h{color:var(--accent,#88c9ea);font-weight:900;text-transform:uppercase;letter-spacing:.06em;
+          font-size:12px;margin-bottom:12px}
+        .sdbg-guide-step{display:flex;gap:10px;align-items:flex-start;margin-bottom:9px;font-size:12.5px;line-height:1.5}
+        .sdbg-guide-step b:first-child{flex:0 0 20px;height:20px;border-radius:50%;background:var(--accent,#88c9ea);
+          color:#11212e;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:11px}
+        .sdbg-guide-dot{color:#ff5964;font-size:11px}
+        .sdbg-guide-step kbd{background:var(--bg-button,#2a4050);border:1px solid var(--border,#3a6075);
+          border-radius:5px;padding:0 5px;font-family:${MONO};font-size:10px}
+        .sdbg-guide-ok{margin-top:8px;background:var(--accent,#88c9ea);color:#11212e;border:none;
+          border-radius:10px;padding:8px 18px;font-weight:800;cursor:pointer;font-size:12px}
+        .sdbg-guide-ok:hover{filter:brightness(1.08)}`;
         const style = document.createElement('style');
         style.id = 'sameko-debug-styles';
         style.textContent = css;
@@ -192,13 +213,13 @@
         p.id = 'sameko-debug-panel';
         p.innerHTML = `
           <div class="sdbg-toolbar">
-            <button class="sdbg-btn" data-act="continue" title="Continue (F5)">&#9654;|</button>
-            <button class="sdbg-btn" data-act="pause" title="Pause (interrupt running program)">&#10073;&#10073;</button>
-            <button class="sdbg-btn" data-act="stepOver" title="Step Over (F10)">&#8631;</button>
-            <button class="sdbg-btn" data-act="stepInto" title="Step Into (F11)">&#8615;</button>
-            <button class="sdbg-btn" data-act="stepOut" title="Step Out (Shift+F11)">&#8613;</button>
-            <button class="sdbg-btn" data-act="restart" title="Restart (rebuild &amp; rerun)">&#8635;</button>
-            <button class="sdbg-btn stop" data-act="stop" title="Stop (Shift+F5)">&#9632;</button>
+            <button class="sdbg-btn" data-act="continue" title="Run / Continue — start the program, or resume to the next breakpoint (F5)"><span class="sdbg-ic">&#9654;|</span><span class="sdbg-lb">Run</span></button>
+            <button class="sdbg-btn" data-act="pause" title="Pause — interrupt the running program to inspect it"><span class="sdbg-ic">&#10073;&#10073;</span><span class="sdbg-lb">Pause</span></button>
+            <button class="sdbg-btn" data-act="stepOver" title="Step Over — run the current line, don't go inside calls (F10)"><span class="sdbg-ic">&#8631;</span><span class="sdbg-lb">Over</span></button>
+            <button class="sdbg-btn" data-act="stepInto" title="Step Into — go inside the function on the current line (F11)"><span class="sdbg-ic">&#8615;</span><span class="sdbg-lb">Into</span></button>
+            <button class="sdbg-btn" data-act="stepOut" title="Step Out — finish the current function and return (Shift+F11)"><span class="sdbg-ic">&#8613;</span><span class="sdbg-lb">Out</span></button>
+            <button class="sdbg-btn" data-act="restart" title="Restart — rebuild and run again from the start"><span class="sdbg-ic">&#8635;</span><span class="sdbg-lb">Restart</span></button>
+            <button class="sdbg-btn stop" data-act="stop" title="Stop — end the debug session (Shift+F5)"><span class="sdbg-ic">&#9632;</span><span class="sdbg-lb">Stop</span></button>
             <span class="sdbg-status">idle</span>
           </div>
           <div class="sdbg-body">
@@ -512,8 +533,15 @@
         try { await api().saveFile({ path: tab.path, content: tab.content }); } catch (_) { }
 
         showPanel(true);
+        maybeShowGuide();
         setStatus('starting');
+        setTreesPlaceholder('Compiling… variables appear when the program pauses.');
         lastRawEndedNL = true;
+        // Beginner safety net: a debug run with no breakpoints just runs to the
+        // end and exits, which looks like "nothing happened". Nudge, don't block.
+        if (!hasAnyBreakpoint()) {
+            sys('No breakpoints set — the program will run straight through. Click the gutter (left of a line number) to add one, then press F5.', 'warning');
+        }
         sys('Debug: compiling with -g …', 'info');
 
         const std = (window.App.settings && window.App.settings.compiler && window.App.settings.compiler.cppStandard) || '';
@@ -789,6 +817,41 @@
         if (els.locals) els.locals.innerHTML = '';
         if (els.watch) els.watch.innerHTML = '';
         if (els.stack) els.stack.innerHTML = '';
+    }
+
+    /** Beginner-friendly empty state while there's nothing to show yet. */
+    function setTreesPlaceholder(msg) {
+        const ph = '<div class="sdbg-empty">' + escapeHtml(msg) + '</div>';
+        if (els.locals) els.locals.innerHTML = ph;
+        if (els.stack) els.stack.innerHTML = ph;
+        if (els.watch) els.watch.innerHTML = '<div class="sdbg-empty">Type an expression above to watch it.</div>';
+    }
+
+    function hasAnyBreakpoint() {
+        for (const m of bpByFile.values()) if (m.size) return true;
+        return false;
+    }
+
+    // First-run coach marks: a small 3-step guide over the editor, shown once.
+    // Dismissed permanently via localStorage so it never nags returning users.
+    function maybeShowGuide() {
+        try { if (localStorage.getItem('sameko-debug-guide-seen')) return; } catch (_) { }
+        if (document.getElementById('sameko-debug-guide')) return;
+        const g = document.createElement('div');
+        g.id = 'sameko-debug-guide';
+        g.innerHTML = `
+          <div class="sdbg-guide-card">
+            <div class="sdbg-guide-h">Debugging in 3 steps</div>
+            <div class="sdbg-guide-step"><b>1</b><span>Click the <b>left gutter</b> (next to a line number) to drop a red breakpoint <span class="sdbg-guide-dot">●</span></span></div>
+            <div class="sdbg-guide-step"><b>2</b><span>Press <kbd>F5</kbd> — your program runs and <b>pauses</b> at the breakpoint</span></div>
+            <div class="sdbg-guide-step"><b>3</b><span><kbd>F10</kbd> step over · <kbd>F11</kbd> step into · <kbd>F5</kbd> continue · hover a variable to see its value</span></div>
+            <button class="sdbg-guide-ok" data-close>Got it</button>
+          </div>`;
+        document.body.appendChild(g);
+        const close = () => { try { g.remove(); } catch (_) { } try { localStorage.setItem('sameko-debug-guide-seen', '1'); } catch (_) { } };
+        const btn = g.querySelector('[data-close]');
+        if (btn) btn.addEventListener('click', close);
+        g.addEventListener('click', (e) => { if (e.target === g) close(); });
     }
 
     async function renderScope(container, entries, kind) {
