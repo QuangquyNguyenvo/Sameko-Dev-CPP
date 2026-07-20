@@ -64,7 +64,7 @@
     // Bold, thick-stroke toolbar icons (matches the app's filled/thick icon style
     // rather than thin unicode glyphs). All 24×24, currentColor, sized via CSS.
     const SW = 'fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"';
-    const DOT = '<circle cx="12" cy="18.6" r="1.7" fill="currentColor"/>';
+    const DOT = '<circle cx="12" cy="18.6" r="1.8" fill="currentColor" stroke="none"/>';
     const ICONS = {
         play: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8 5.4v13.2l10.6-6.6z"/></svg>',
         pause: '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M7 5h3.2v14H7zm6.8 0H17v14h-3.2z"/></svg>',
