@@ -302,6 +302,9 @@
         });
         // Friendly empty state before the first run (panel opened via the bug icon).
         setTreesPlaceholder('Set a breakpoint, then F5.');
+        // Reflect the idle state immediately so Step/Stop aren't shown as clickable
+        // before a session exists.
+        setStatus('idle');
     }
 
     function wireToolbar() {
@@ -695,14 +698,6 @@
         endSession();
     }
 
-    // Restart = tear down the current session and start fresh (recompiles -g,
-    // reruns). stop() fully awaits teardown before start() spawns a new gdb.
-    async function restart() {
-        if (!isSessionLive()) return;
-        await stop();
-        await start();
-    }
-
     function endSession(reason) {
         if (state === 'idle') return;    // idempotent — programExited + terminated may both fire
         setStatus('idle');
@@ -715,8 +710,9 @@
         // Keep the panel OPEN with an idle message. Yanking it away the instant a
         // program finishes looked like a crash — the user closes it via ✕.
         setTreesPlaceholder(reason || 'Set a breakpoint, then F5.');
-        // keep breakpoints (their ids are now stale; clear ids)
-        for (const m of bpByFile.values()) for (const bp of m.values()) bp.id = null;
+        // keep breakpoints, but their gdb ids + pending flags are now stale.
+        for (const m of bpByFile.values()) for (const bp of m.values()) { bp.id = null; bp.pending = false; }
+        renderBreakpoints();
     }
 
     // ========================================================================
@@ -865,12 +861,6 @@
         varNodes.clear();
         evalNodes.length = 0;
         for (const n of names) { try { await api().debugVarDelete(n); } catch (_) { } }
-    }
-
-    function clearTrees() {
-        if (els.locals) els.locals.innerHTML = '';
-        if (els.watch) els.watch.innerHTML = '';
-        if (els.stack) els.stack.innerHTML = '';
     }
 
     /** Beginner-friendly empty state while there's nothing to show yet. */
