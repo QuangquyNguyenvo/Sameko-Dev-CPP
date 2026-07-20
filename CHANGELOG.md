@@ -7,6 +7,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- **Integrated C++ Debugger (GDB)**:
+  - The app now has a real source-level debugger built on the bundled MinGW GDB (Machine Interface), replacing the old "just run the exe" behavior. Debug a `-g` build without leaving the editor.
+  - **Breakpoints**: click the left gutter to toggle a red breakpoint (the line number turns into a badge and the line is tinted, Dev-C++/Visual Studio style). `Alt`+click sets a **conditional** breakpoint (e.g. `i == n-1`); `Ctrl`+click **enables/disables** one without removing it. gdb-relocated breakpoints (off blank/comment lines) move automatically.
+  - **Debug panel** (bug icon on the toolbar shows/hides it): a single smart **Run ▶ / Continue / Pause** button drives the whole session, plus **Step Over / Into / Out** and **Stop**. `F5` run/continue, `F10` step over, `F11` step into, `Shift+F11` step out, `Shift+F5` stop.
+  - **Variables & Watch**: locals and watch expressions are shown as expandable trees with full STL pretty-printing (`vector`, `map`, `string`, … expand to their elements). Values that changed since the last step are highlighted; double-click a numeric value to toggle **hex/decimal**.
+  - **Call Stack** with clickable frames, **hover-to-evaluate** (hover any variable while paused to see its value), and **Run to Cursor** (right-click a line).
+  - **Multi-file aware**: pausing in another file automatically opens/switches to it so the current-line arrow is visible.
+  - **Beginner-friendly**: a one-time 3-step coach mark, a nudge when you start with no breakpoints, a collapsible "Shortcuts & tips" reference, and program I/O routed cleanly to the terminal.
 - **Active Contest Auto-Collapsing & Top Prioritization**:
   - Double-clicking a contest, clicking its quick-activate button, or opening any file inside it sets it as the active contest, automatically collapses all other contests, and expands the active one.
   - The active contest temporarily jumps/bubbles to the very top of the CONTEST list. Upon deactivation, it returns to the chronological "newest-first" sorting order.
