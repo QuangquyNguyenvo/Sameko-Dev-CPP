@@ -17,9 +17,6 @@ const ThemeManager = {
     // User customization overrides
     userOverrides: {},
 
-    // Path to builtin themes (relative to app root)
-    builtinThemesPath: 'src/themes/builtin',
-
     builtinThemeIds: [
         'kawaii-dark',
         'kawaii-light',
@@ -38,8 +35,6 @@ const ThemeManager = {
         this._loadAllHardcodedThemes();
         this.loadUserThemes();
         console.log(`[ThemeManager] Loaded ${this.themes.size} themes (hardcoded)`);
-
-        this._loadJSONThemesInBackground();
     },
 
     /**
@@ -69,41 +64,6 @@ const ThemeManager = {
      */
     restoreAllBuiltinThemes() {
         this.builtinThemeIds.forEach(id => this._restoreBuiltinTheme(id));
-    },
-
-    /**
-     * Load JSON themes in background (non-blocking)
-     */
-    _loadJSONThemesInBackground() {
-        // Disabled in Electron - fetch() can't access local files with relative paths
-    },
-
-    /**
-     * Load builtin themes from JSON files (async, non-blocking)
-     */
-    async _loadBuiltinThemesAsync() {
-        const promises = this.builtinThemeIds.map(async (themeId) => {
-            try {
-                const themePath = `${this.builtinThemesPath}/${themeId}.json`;
-                const response = await fetch(themePath);
-                if (response.ok) {
-                    const themeData = await response.json();
-                    this.registerTheme(themeData);
-                }
-            } catch (error) {
-            }
-        });
-        await Promise.all(promises);
-    },
-
-    /**
-     * Load hardcoded theme definition
-     */
-    _loadHardcodedTheme(themeId) {
-        const hardcodedThemes = this._getHardcodedThemes();
-        if (hardcodedThemes[themeId]) {
-            this.registerTheme(hardcodedThemes[themeId]);
-        }
     },
 
     /**
