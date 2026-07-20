@@ -164,18 +164,20 @@
         /* Breakpoint — a solid red dot in the gutter (the universal IDE symbol,
            like Dev-C++ / Visual Studio) plus a red-tinted whole line, so a set
            breakpoint is unmistakable. */
-        .sameko-bp-linenum{color:#e51400!important;font-weight:900!important}
-        .sameko-bp-linenum-cond{color:#ff9e2c!important;font-weight:900!important}
+        /* The line number itself becomes a solid badge so a breakpoint stays
+           obvious even when the line-highlight sits on top of the gutter dot. */
+        .sameko-bp-linenum{color:#fff!important;font-weight:800!important;background:#e51400;border-radius:5px}
+        .sameko-bp-linenum-cond{color:#241300!important;font-weight:800!important;background:#ff9e2c;border-radius:5px}
         .sameko-bp-glyph{cursor:pointer;background:center/13px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Ccircle%20cx='12'%20cy='12'%20r='6.5'%20fill='%23e51400'/%3E%3C/svg%3E")!important}
         .sameko-bp-cond{cursor:pointer;background:center/13px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Ccircle%20cx='12'%20cy='12'%20r='6.5'%20fill='%23ff9e2c'/%3E%3C/svg%3E")!important}
         /* Red-tinted whole line for an armed breakpoint (Dev-C++ feel). */
         .sameko-bp-line{background:rgba(229,20,0,.13)}
         /* Unresolved / pending breakpoint: a hollow, dim gray ring. */
         .sameko-bp-pending{cursor:pointer;opacity:.6;background:center/13px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%238aa0b0'%20stroke-width='2.6'%3E%3Ccircle%20cx='12'%20cy='12'%20r='6.5'/%3E%3C/svg%3E")!important}
-        .sameko-bp-linenum-pending{color:#8aa0b0!important;font-weight:900!important}
+        .sameko-bp-linenum-pending{color:#11212e!important;font-weight:800!important;background:#8aa0b0;border-radius:5px}
         /* Disabled breakpoint: kept in place but off — hollow gray ring. */
         .sameko-bp-disabled{cursor:pointer;opacity:.5;background:center/13px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%237990a0'%20stroke-width='2.4'%3E%3Ccircle%20cx='12'%20cy='12'%20r='6.5'/%3E%3C/svg%3E")!important}
-        .sameko-bp-linenum-disabled{color:#7990a0!important;font-weight:900!important;opacity:.7}
+        .sameko-bp-linenum-disabled{color:#cfe0ea!important;font-weight:700!important;background:#5a6b78;border-radius:5px;opacity:.75}
         /* Hover affordance: a faint red dot under the cursor telling you "click
            here to set a breakpoint". Only on lines without a bp. */
         .sameko-bp-hover{cursor:pointer;opacity:.3;background:center/13px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%3E%3Ccircle%20cx='12'%20cy='12'%20r='6.5'%20fill='%23e51400'/%3E%3C/svg%3E")!important}
