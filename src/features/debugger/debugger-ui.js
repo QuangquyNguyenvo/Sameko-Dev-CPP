@@ -167,6 +167,9 @@
            an armed (solid check) breakpoint. */
         .sameko-bp-pending{cursor:pointer;opacity:.55;background:center/13px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%238aa0b0'%20stroke-width='2.6'%3E%3Ccircle%20cx='12'%20cy='12'%20r='7'/%3E%3C/svg%3E")!important}
         .sameko-bp-linenum-pending{color:#8aa0b0!important;font-weight:900!important}
+        /* Disabled breakpoint: kept in place but temporarily off — dim gray check. */
+        .sameko-bp-disabled{cursor:pointer;opacity:.4;background:center/15px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%237990a0'%20stroke-width='3.6'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M5%2013l4%204L19%207'/%3E%3C/svg%3E")!important}
+        .sameko-bp-linenum-disabled{color:#7990a0!important;font-weight:900!important;opacity:.7}
         .sameko-curline{background:rgba(255,207,94,.18)}
         .sameko-arrow{width:0!important;height:0!important;border-top:6px solid transparent;
           border-bottom:6px solid transparent;border-left:10px solid #ffcf5e;margin-left:5px;margin-top:5px}`;
@@ -217,10 +220,10 @@
           </div>
           <div class="sdbg-help">
             <div class="sdbg-help-h">How to debug</div>
-            <div><b>1.</b> Click the left gutter (next to a line) to drop a red breakpoint · <i>Alt+click</i> = conditional</div>
+            <div><b>1.</b> Click the left gutter (next to a line) to drop a red breakpoint · <i>Alt+click</i> = conditional · <i>Ctrl+click</i> = enable/disable</div>
             <div><b>2.</b> Press <kbd>F5</kbd> to run — the program stops at your breakpoint</div>
-            <div><b>3.</b> <kbd>F10</kbd> step over · <kbd>F11</kbd> step into · <kbd>Shift+F11</kbd> step out · <kbd>F5</kbd> continue</div>
-            <div><b>4.</b> Hover any variable in the code to see its value · watch expressions above</div>
+            <div><b>3.</b> <kbd>F10</kbd> step over · <kbd>F11</kbd> step into · <kbd>Shift+F11</kbd> step out · <kbd>F5</kbd> continue · right-click → <b>Run to Cursor</b></div>
+            <div><b>4.</b> Hover any variable to see its value · <i>double-click</i> a value = hex/dec · watch expressions above</div>
             <div><b>5.</b> <kbd>Shift+F5</kbd> to stop</div>
           </div>`;
         document.body.appendChild(p);
@@ -285,9 +288,44 @@
             if (!GUTTER.has(t)) return;
             const line = e.target.position && e.target.position.lineNumber;
             if (!line) return;
-            if (e.event && e.event.altKey) addConditionalBreakpoint(line);
+            const ev = e.event;
+            if (ev && ev.altKey) addConditionalBreakpoint(line);
+            else if (ev && (ev.ctrlKey || ev.metaKey)) toggleEnableBreakpoint(line);
             else toggleBreakpoint(line);
         });
+
+        // Run to Cursor — context-menu action, active only while stopped.
+        try {
+            ed.addAction({
+                id: 'sameko-run-to-cursor',
+                label: 'Debug: Run to Cursor',
+                contextMenuGroupId: 'debug',
+                contextMenuOrder: 1.5,
+                run: (edi) => {
+                    if (state !== 'stopped') return;
+                    const path = activePath();
+                    const pos = edi.getPosition && edi.getPosition();
+                    if (path && pos) { try { api().debugRunToLine(path, pos.lineNumber); } catch (_) { } }
+                },
+            });
+        } catch (_) { /* older Monaco without addAction — skip */ }
+    }
+
+    /** Ctrl/Cmd+click a breakpoint to toggle enabled/disabled (keeps the entry). */
+    async function toggleEnableBreakpoint(line) {
+        const path = activePath();
+        if (!path) return;
+        const m = bpByFile.get(norm(path));
+        const bp = m && m.get(line);
+        if (!bp) { toggleBreakpoint(line); return; }   // nothing there → fall back to add
+        bp.enabled = bp.enabled === false;             // flip (undefined/true -> false, false -> true)
+        renderBreakpoints();
+        if (bp.id != null && isSessionLive()) {
+            try {
+                if (bp.enabled) await api().debugEnableBreakpoint(bp.id);
+                else await api().debugDisableBreakpoint(bp.id);
+            } catch (_) { }
+        }
     }
 
     function fileMap(path) {
@@ -349,16 +387,20 @@
         const decos = [];
         if (m) {
             for (const [line, bp] of m.entries()) {
+                const disabled = bp.enabled === false;
                 decos.push({
                     range: new monaco.Range(line, 1, line, 1),
                     options: {
-                        lineNumberClassName: bp.pending ? 'sameko-bp-linenum-pending'
-                            : bp.condition ? 'sameko-bp-linenum-cond' : 'sameko-bp-linenum',
-                        glyphMarginClassName: bp.pending ? 'sameko-bp-pending'
-                            : bp.condition ? 'sameko-bp-cond' : 'sameko-bp-glyph',
+                        lineNumberClassName: disabled ? 'sameko-bp-linenum-disabled'
+                            : bp.pending ? 'sameko-bp-linenum-pending'
+                                : bp.condition ? 'sameko-bp-linenum-cond' : 'sameko-bp-linenum',
+                        glyphMarginClassName: disabled ? 'sameko-bp-disabled'
+                            : bp.pending ? 'sameko-bp-pending'
+                                : bp.condition ? 'sameko-bp-cond' : 'sameko-bp-glyph',
                         glyphMarginHoverMessage: {
-                            value: bp.pending ? 'Unresolved breakpoint'
-                                : bp.condition ? 'Breakpoint if `' + bp.condition + '`' : 'Breakpoint',
+                            value: disabled ? 'Breakpoint (disabled — Ctrl+click to enable)'
+                                : bp.pending ? 'Unresolved breakpoint'
+                                    : bp.condition ? 'Breakpoint if `' + bp.condition + '`' : 'Breakpoint',
                         },
                         stickiness: 1, // NeverGrowsWhenTypingAtEdges
                     },
@@ -457,6 +499,9 @@
                     m.delete(b.line);
                     m.set(b.resolvedLine, bp);
                 }
+                // Breakpoints toggled off before the session started: insert then
+                // disable so gdb won't stop on them.
+                if (bp.enabled === false) { try { await api().debugDisableBreakpoint(bp.id); } catch (_) { } }
             }
             renderBreakpoints();
         }
@@ -687,6 +732,7 @@
                 numchild, depth: 0, expanded: false, childRows: [], childNodes: [], kind,
             };
             varNodes.set(name, node);
+            attachFormatToggle(node);
             if (numchild > 0) attachExpander(node);
         }
     }
@@ -761,6 +807,24 @@
         return row;
     }
 
+    /** Double-click a value to toggle hexadecimal / decimal display (gdb -var-set-format). */
+    function attachFormatToggle(node) {
+        if (!node.valEl) return;
+        node.valEl.title = 'Double-click: toggle hex / dec';
+        node.valEl.addEventListener('dblclick', async (ev) => {
+            ev.preventDefault(); ev.stopPropagation();
+            if (state !== 'stopped') return;
+            const next = node.fmt === 'hex' ? 'decimal' : 'hexadecimal';
+            try {
+                const r = await api().debugVarSetFormat(node.name, next);
+                if (r && r.ok && r.value != null) {
+                    node.valEl.textContent = r.value;
+                    node.fmt = (next === 'hexadecimal') ? 'hex' : 'dec';
+                }
+            } catch (_) { }
+        });
+    }
+
     function attachExpander(node) {
         const tw = node.row.querySelector('.sdbg-tw');
         if (!tw || !node.numchild) return;
@@ -789,6 +853,7 @@
                 };
                 varNodes.set(c.name, child);
                 node.childNodes.push(child);
+                attachFormatToggle(child);
                 if (cn > 0) attachExpander(child);
             }
         }

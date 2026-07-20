@@ -111,7 +111,11 @@ function requireSession() {
 
 const setBreakpoint = (file, line, cond) => requireSession().setBreakpoint(file, line, cond);
 const removeBreakpoint = (id) => requireSession().removeBreakpoint(id);
+const enableBreakpoint = (id) => requireSession().enableBreakpoint(id);
+const disableBreakpoint = (id) => requireSession().disableBreakpoint(id);
 const setCondition = (id, cond) => requireSession().setCondition(id, cond);
+const runToLine = (file, line) => requireSession().runToLine(file, line);
+const varSetFormat = (name, fmt) => requireSession().varSetFormat(name, fmt);
 const cont = () => requireSession().cont();
 const next = () => requireSession().next();
 const step = () => requireSession().step();
@@ -134,7 +138,11 @@ module.exports = {
     stop,
     setBreakpoint,
     removeBreakpoint,
+    enableBreakpoint,
+    disableBreakpoint,
     setCondition,
+    runToLine,
+    varSetFormat,
     cont,
     next,
     step,

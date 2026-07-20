@@ -65,6 +65,18 @@ function registerHandlers() {
     ipcMain.handle(IPC.DEBUG.REMOVE_BREAKPOINT, async (event, { id }) =>
         guard(() => dbg.removeBreakpoint(id)));
 
+    ipcMain.handle(IPC.DEBUG.ENABLE_BREAKPOINT, async (event, { id }) =>
+        guard(() => dbg.enableBreakpoint(id)));
+
+    ipcMain.handle(IPC.DEBUG.DISABLE_BREAKPOINT, async (event, { id }) =>
+        guard(() => dbg.disableBreakpoint(id)));
+
+    ipcMain.handle(IPC.DEBUG.RUN_TO_LINE, async (event, { file, line }) =>
+        guard(() => dbg.runToLine(file, line)));
+
+    ipcMain.handle(IPC.DEBUG.VAR_SET_FORMAT, async (event, { name, fmt }) =>
+        guard(async () => { const r = await dbg.varSetFormat(name, fmt); return { value: r.value, format: r.format }; }));
+
     ipcMain.handle(IPC.DEBUG.SET_CONDITION, async (event, { id, condition }) =>
         guard(() => dbg.setCondition(id, condition)));
 
