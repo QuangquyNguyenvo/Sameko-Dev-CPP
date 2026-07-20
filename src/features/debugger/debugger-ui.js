@@ -38,6 +38,9 @@
     const bpByFile = new Map();         // normPath -> Map(line -> {condition, id})
     let bpDecoIds = [];
     let curLineDecoIds = [];
+    let hoverDecoIds = [];              // faint "ghost" glyph shown under the cursor in the gutter
+    let hoverLine = 0;                  // last gutter line hovered (0 = none)
+    let dbgStoppedCtx = null;           // Monaco context key: true only while stopped
     let hoverProviderReg = null;
     let varSeq = 0;
     // Registry of live GDB variable objects, keyed by varobj name. Each record
@@ -170,6 +173,9 @@
         /* Disabled breakpoint: kept in place but temporarily off — dim gray check. */
         .sameko-bp-disabled{cursor:pointer;opacity:.4;background:center/15px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%237990a0'%20stroke-width='3.6'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M5%2013l4%204L19%207'/%3E%3C/svg%3E")!important}
         .sameko-bp-linenum-disabled{color:#7990a0!important;font-weight:900!important;opacity:.7}
+        /* Hover affordance: a faint check under the cursor telling you "click here
+           to set a breakpoint" (VS Code style). Only on lines without a bp. */
+        .sameko-bp-hover{cursor:pointer;opacity:.28;background:center/15px no-repeat url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='%23ff5964'%20stroke-width='3.6'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M5%2013l4%204L19%207'/%3E%3C/svg%3E")!important}
         .sameko-curline{background:rgba(255,207,94,.18)}
         .sameko-arrow{width:0!important;height:0!important;border-top:6px solid transparent;
           border-bottom:6px solid transparent;border-left:10px solid #ffcf5e;margin-left:5px;margin-top:5px}`;
@@ -266,6 +272,7 @@
     function setStatus(s) {
         state = s;
         if (els.status) els.status.textContent = s;
+        if (dbgStoppedCtx) { try { dbgStoppedCtx.set(s === 'stopped'); } catch (_) { } }
         const live = (s === 'running' || s === 'stopped' || s === 'starting');
         els.panel && els.panel.querySelectorAll('[data-act]').forEach(b => {
             const act = b.dataset.act;
@@ -290,21 +297,38 @@
         ed.onMouseDown((e) => {
             const t = e.target && e.target.type;
             if (!GUTTER.has(t)) return;
+            const ev = e.event;
+            // Left button only — right/middle click in the gutter must not drop a
+            // breakpoint (it opens the context menu / does nothing).
+            if (ev && ev.leftButton === false) return;
             const line = e.target.position && e.target.position.lineNumber;
             if (!line) return;
-            const ev = e.event;
             if (ev && ev.altKey) addConditionalBreakpoint(line);
             else if (ev && (ev.ctrlKey || ev.metaKey)) toggleEnableBreakpoint(line);
             else toggleBreakpoint(line);
         });
 
-        // Run to Cursor — context-menu action, active only while stopped.
+        // Hover affordance: show a faint breakpoint under the cursor while it is
+        // over the gutter so it's obvious where to click.
+        ed.onMouseMove((e) => {
+            const t = e.target && e.target.type;
+            const line = (GUTTER.has(t) && e.target.position) ? e.target.position.lineNumber : 0;
+            if (line === hoverLine) return;
+            hoverLine = line;
+            renderHoverGlyph();
+        });
+        ed.onMouseLeave(() => { if (hoverLine) { hoverLine = 0; renderHoverGlyph(); } });
+
+        // Run to Cursor — context-menu action, visible only while stopped (via a
+        // context key) instead of always showing and no-oping.
         try {
+            if (ed.createContextKey) dbgStoppedCtx = ed.createContextKey('samekoDebugStopped', false);
             ed.addAction({
                 id: 'sameko-run-to-cursor',
                 label: 'Debug: Run to Cursor',
                 contextMenuGroupId: 'debug',
                 contextMenuOrder: 1.5,
+                precondition: dbgStoppedCtx ? 'samekoDebugStopped' : undefined,
                 run: (edi) => {
                     if (state !== 'stopped') return;
                     const path = activePath();
@@ -313,6 +337,22 @@
                 },
             });
         } catch (_) { /* older Monaco without addAction — skip */ }
+    }
+
+    /** Draw/clear the faint hover breakpoint (skipped on lines that already have one). */
+    function renderHoverGlyph() {
+        const ed = mainEditor();
+        const monaco = mon();
+        if (!ed || !monaco) return;
+        let decos = [];
+        const m = bpByFile.get(norm(activePath()));
+        if (hoverLine && !(m && m.has(hoverLine))) {
+            decos = [{
+                range: new monaco.Range(hoverLine, 1, hoverLine, 1),
+                options: { glyphMarginClassName: 'sameko-bp-hover' },
+            }];
+        }
+        hoverDecoIds = ed.deltaDecorations(hoverDecoIds, decos);
     }
 
     /** Ctrl/Cmd+click a breakpoint to toggle enabled/disabled (keeps the entry). */
@@ -419,6 +459,7 @@
             }
         }
         bpDecoIds = ed.deltaDecorations(bpDecoIds, decos);
+        renderHoverGlyph();   // keep the hover ghost consistent with real breakpoints
     }
 
     /** Re-render decorations when the visible file changes (tabs share one model). */
