@@ -108,11 +108,11 @@
           z-index:1400;display:none;flex-direction:column;font-family:'Nunito','Segoe UI',sans-serif;
           font-size:12.5px;box-shadow:0 12px 44px rgba(0,0,0,.4);overflow:hidden}
         #sameko-debug-panel.open{display:flex}
-        .sdbg-toolbar{display:flex;flex-wrap:nowrap;gap:4px;padding:9px 10px;align-items:center;overflow-x:auto;
+        .sdbg-toolbar{display:flex;flex-wrap:nowrap;gap:3px;padding:7px 8px;align-items:center;overflow-x:auto;
           background:var(--bg-header,rgba(21,37,53,.5));border-bottom:2px solid var(--border,#3a6075)}
         .sdbg-toolbar::-webkit-scrollbar{height:0}
         .sdbg-btn{background:var(--bg-button,#2a4050);border:none;color:var(--text-primary,#e0f0ff);
-          border-radius:9px;width:29px;height:29px;flex:0 0 auto;cursor:pointer;font-size:14px;line-height:1;
+          border-radius:7px;width:24px;height:24px;flex:0 0 auto;cursor:pointer;font-size:12px;line-height:1;
           display:inline-flex;align-items:center;justify-content:center;
           transition:background-color .12s,color .12s,transform .12s}
         .sdbg-btn:hover:not(:disabled){background:var(--accent,#88c9ea);color:#11212e;transform:translateY(-1px)}
@@ -286,11 +286,22 @@
                 if (state === 'stopped') refreshTrees();
             }
         });
+        // Friendly empty state before the first run (panel opened via the bug icon).
+        setTreesPlaceholder('Click the gutter to set a breakpoint, then press F5 to start.');
     }
 
     function wireToolbar() {
         const btn = document.getElementById('btn-debug');
-        if (btn) btn.addEventListener('click', () => start());
+        // The toolbar bug icon just SHOWS/HIDES the debug sidebar — it does not
+        // start a run. Runs begin with F5 or the ▶| button inside the panel.
+        if (btn) btn.addEventListener('click', () => togglePanel());
+    }
+
+    function togglePanel() {
+        const open = els.panel && els.panel.classList.contains('open');
+        if (open) { showPanel(false); return; }
+        showPanel(true);
+        maybeShowGuide();
     }
 
     function showPanel(show) { els.panel && els.panel.classList.toggle('open', show); }
