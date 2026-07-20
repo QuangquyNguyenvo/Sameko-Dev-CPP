@@ -191,6 +191,7 @@
             <button class="sdbg-btn" data-act="stepOver" title="Step Over (F10)">&#8631;</button>
             <button class="sdbg-btn" data-act="stepInto" title="Step Into (F11)">&#8615;</button>
             <button class="sdbg-btn" data-act="stepOut" title="Step Out (Shift+F11)">&#8613;</button>
+            <button class="sdbg-btn" data-act="restart" title="Restart (rebuild &amp; rerun)">&#8635;</button>
             <button class="sdbg-btn stop" data-act="stop" title="Stop (Shift+F5)">&#9632;</button>
             <span class="sdbg-status">idle</span>
           </div>
@@ -243,6 +244,7 @@
                 else if (a === 'stepOver') stepOver();
                 else if (a === 'stepInto') stepInto();
                 else if (a === 'stepOut') stepOut();
+                else if (a === 'restart') restart();
                 else if (a === 'stop') stop();
             });
         });
@@ -264,9 +266,11 @@
     function setStatus(s) {
         state = s;
         if (els.status) els.status.textContent = s;
+        const live = (s === 'running' || s === 'stopped' || s === 'starting');
         els.panel && els.panel.querySelectorAll('[data-act]').forEach(b => {
             const act = b.dataset.act;
             if (act === 'stop') { b.disabled = false; return; }        // stop always live
+            if (act === 'restart') { b.disabled = !live; return; }     // restart whenever a session exists
             if (act === 'pause') { b.disabled = (s !== 'running'); return; } // pause only while running
             b.disabled = (s !== 'stopped');                            // continue + steps
         });
@@ -345,15 +349,20 @@
             renderBreakpoints();            // instant visual feedback, before the gdb round-trip
             if (bp.id != null) { try { await api().debugRemoveBreakpoint(bp.id); } catch (_) { } }
         } else {
-            const bp = { condition: null, id: null };
+            const bp = { condition: null, id: null, enabled: true };
             m.set(line, bp);
             renderBreakpoints();            // instant visual feedback, before the gdb round-trip
-            if (isSessionLive()) {
+            // Only insert immediately when stopped. In all-stop mode gdb may not
+            // accept -break-insert while the inferior is running, so defer to the
+            // next stop (syncPendingBreakpoints picks up id==null entries).
+            if (state === 'stopped') {
                 const r = await api().debugSetBreakpoint({ file: path, line });
                 if (r && r.ok) {
                     bp.id = r.id;
                     if (r.line && r.line !== line) { m.delete(line); m.set(r.line, bp); renderBreakpoints(); }
                 }
+            } else if (state === 'running' || state === 'starting') {
+                sys('Breakpoint will apply on next pause.', 'system');
             }
         }
     }
@@ -364,16 +373,18 @@
         const cond = window.prompt('Breakpoint condition (e.g. i==n-1):', '');
         if (cond === null) return;
         const m = fileMap(path);
-        const bp = m.get(line) || { condition: null, id: null };
+        const bp = m.get(line) || { condition: null, id: null, enabled: true };
         bp.condition = cond.trim() || null;
         m.set(line, bp);
-        if (isSessionLive()) {
-            if (bp.id != null) { try { await api().debugRemoveBreakpoint(bp.id); } catch (_) { } }
+        if (state === 'stopped') {
+            if (bp.id != null) { try { await api().debugRemoveBreakpoint(bp.id); } catch (_) { } bp.id = null; }
             const r = await api().debugSetBreakpoint({ file: path, line, condition: bp.condition });
             if (r && r.ok) {
                 bp.id = r.id;
                 if (r.line && r.line !== line) { m.delete(line); m.set(r.line, bp); }
             }
+        } else if (state === 'running' || state === 'starting') {
+            sys('Breakpoint will apply on next pause.', 'system');
         }
         renderBreakpoints();
     }
@@ -525,6 +536,28 @@
         return t ? t.path : null;
     }
 
+    // Insert any breakpoints that were added/edited while the program was running
+    // (they were deferred with id==null). Called on each stop. Already-inserted
+    // breakpoints (id != null) are skipped.
+    async function syncPendingBreakpoints() {
+        let moved = false;
+        for (const [key, m] of bpByFile.entries()) {
+            const realPath = resolveRealPath(key) || key;
+            for (const [line, bp] of Array.from(m.entries())) {
+                if (bp.id != null) continue;
+                try {
+                    const r = await api().debugSetBreakpoint({ file: realPath, line, condition: bp.condition });
+                    if (r && r.ok) {
+                        bp.id = r.id;
+                        if (r.line && r.line !== line) { m.delete(line); m.set(r.line, bp); moved = true; }
+                        if (bp.enabled === false) { try { await api().debugDisableBreakpoint(bp.id); } catch (_) { } }
+                    }
+                } catch (_) { }
+            }
+        }
+        if (moved) renderBreakpoints();
+    }
+
     // Keep the trees (and their varobjs) intact across a continue so the next
     // stop can diff incrementally via -var-update. The values simply show the
     // last-known state while the program runs.
@@ -541,7 +574,16 @@
         endSession();
     }
 
+    // Restart = tear down the current session and start fresh (recompiles -g,
+    // reruns). stop() fully awaits teardown before start() spawns a new gdb.
+    async function restart() {
+        if (!isSessionLive()) return;
+        await stop();
+        await start();
+    }
+
     function endSession() {
+        if (state === 'idle') return;    // idempotent — programExited + terminated may both fire
         setStatus('idle');
         stopFile = stopLine = null;
         renderCurrentLine();
@@ -629,6 +671,8 @@
         if (d.reason && /signal/.test(d.reason)) sys('Paused.', 'system');
         renderCurrentLine();
         renderStack();
+        // Apply any breakpoints that were deferred while the program was running.
+        await syncPendingBreakpoints();
 
         // Incremental refresh when we are still in the same frame (same function
         // + same set of locals) as the trees currently show. Otherwise the whole
@@ -894,30 +938,34 @@
     // ========================================================================
     // HOVER EVALUATE
     // ========================================================================
+    async function provideHover(model, position) {
+        if (state !== 'stopped') return null;
+        let expr = null;
+        const sel = mainEditor() && mainEditor().getSelection();
+        if (sel && !sel.isEmpty() && sel.containsPosition(position)) {
+            expr = model.getValueInRange(sel);
+        } else {
+            const w = model.getWordAtPosition(position);
+            if (w) expr = w.word;
+        }
+        if (!expr) return null;
+        try {
+            const r = await api().debugEvaluate(expr);
+            if (r && r.ok && r.value != null) {
+                return { contents: [{ value: '**' + expr + '** = `' + r.value + '`' }] };
+            }
+        } catch (_) { }
+        return null;
+    }
+
     function wireHover() {
         const monaco = mon();
         if (!monaco || hoverProviderReg) return;
-        hoverProviderReg = monaco.languages.registerHoverProvider('cpp', {
-            provideHover: async (model, position) => {
-                if (state !== 'stopped') return null;
-                let expr = null;
-                const sel = mainEditor() && mainEditor().getSelection();
-                if (sel && !sel.isEmpty() && sel.containsPosition(position)) {
-                    expr = model.getValueInRange(sel);
-                } else {
-                    const w = model.getWordAtPosition(position);
-                    if (w) expr = w.word;
-                }
-                if (!expr) return null;
-                try {
-                    const r = await api().debugEvaluate(expr);
-                    if (r && r.ok && r.value != null) {
-                        return { contents: [{ value: '**' + expr + '** = `' + r.value + '`' }] };
-                    }
-                } catch (_) { }
-                return null;
-            },
-        });
+        // Register for both C++ and C so hover-to-evaluate works on .c files too.
+        for (const lang of ['cpp', 'c']) {
+            monaco.languages.registerHoverProvider(lang, { provideHover });
+        }
+        hoverProviderReg = true;
     }
 
     // ---- util --------------------------------------------------------------
