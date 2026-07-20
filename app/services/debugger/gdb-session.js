@@ -97,6 +97,11 @@ class GdbSession extends EventEmitter {
             this._cleanupTempFiles();
         });
 
+        // Asynchronous MI: gdb keeps reading commands WHILE the inferior runs.
+        // Without this, gdb (synchronous mode) ignores stdin until the program
+        // stops, so `-exec-interrupt` (Pause) is never processed on Windows and
+        // the program can't be paused. Best-effort — ignore if a target refuses.
+        try { await this.send('-gdb-set mi-async on'); } catch (_) { }
         // Enable pretty-printing for variable objects (REQUIRED for STL trees).
         // Registration of the printers themselves happens in the init file.
         await this.send('-enable-pretty-printing');

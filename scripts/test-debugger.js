@@ -173,6 +173,16 @@ const SAMPLE = [
 ].join('\n');
 const BP_LINE = 6;
 
+// A program that spins forever (no output) so we can verify -exec-interrupt.
+const LOOP_SAMPLE = [
+    'int main(){',
+    '    volatile long long x = 0;',
+    '    while (x >= 0) { x++; }',
+    '    return 0;',
+    '}',
+    '',
+].join('\n');
+
 async function partB() {
     console.log('\nPart B — gdb-session.js (integration)');
     const tc = locateToolchain();
@@ -266,10 +276,63 @@ async function partB() {
 }
 
 // ===========================================================================
+// PART C — interrupt / Pause (Windows sanity: does -exec-interrupt actually stop
+// a running inferior?). Bounded timeouts so a broken interrupt FAILS, never hangs.
+// ===========================================================================
+async function partC() {
+    console.log('\nPart C — interrupt / Pause');
+    const tc = locateToolchain();
+    if (!tc) { skip('interrupt E2E', 'bundled gdb/g++ not found'); return; }
+
+    const { GdbSession } = require(path.join(ROOT, 'app/services/debugger/gdb-session'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-dbgint-'));
+    const src = path.join(tmp, 'loop.cpp');
+    const exe = path.join(tmp, 'loop.exe');
+    fs.writeFileSync(src, LOOP_SAMPLE, 'utf8');
+    const env = { ...process.env, PATH: tc.bin + path.delimiter + process.env.PATH };
+
+    try {
+        execFileSync(tc.gpp, ['-g', '-O0', src, '-o', exe], { env, timeout: 60000, stdio: 'pipe' });
+    } catch (err) {
+        check('compile loop -g', () => { throw new Error('compile failed: ' + (err.message || err)); });
+        try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) { }
+        return;
+    }
+
+    const session = new GdbSession({ gdbPath: tc.gdb, exePath: exe, printerPythonDir: tc.printerDir, cwd: tmp, env });
+    session.on('programOut', () => { });
+    session.on('error', () => { });
+    try {
+        await session.start();
+        const runningP = waitForEvent(session, 'running', 10000);
+        await session.run();
+        await runningP;
+        await new Promise((r) => setTimeout(r, 400)); // let it spin
+        // Fire interrupt without awaiting its ack, and guard both promises so a
+        // broken interrupt FAILS the check cleanly instead of crashing the runner
+        // with an unhandled rejection.
+        const stoppedP = waitForEvent(session, 'stopped', 8000);
+        stoppedP.catch(() => { });
+        session.interrupt().catch(() => { });
+        let stop = null;
+        try { stop = await stoppedP; } catch (_) { }
+        check('interrupt() pauses a running program', () => {
+            assert.ok(stop && stop.reason != null, 'interrupt did not stop the program (mi-async / Windows)');
+        });
+    } catch (err) {
+        check('interrupt E2E completes', () => { throw err; });
+    } finally {
+        try { await session.dispose(); } catch (_) { }
+        try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) { }
+    }
+}
+
+// ===========================================================================
 (async function main() {
     console.log('Sameko debugger regression tests');
     try { partA(); } catch (err) { console.error('Part A crashed:', err); failed++; }
     try { await partB(); } catch (err) { console.error('Part B crashed:', err); failed++; }
+    try { await partC(); } catch (err) { console.error('Part C crashed:', err); failed++; }
 
     console.log('\n----------------------------------------');
     console.log(`PASSED ${passed} / FAILED ${failed} / SKIPPED ${skipped}`);
