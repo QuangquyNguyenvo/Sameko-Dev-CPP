@@ -3051,7 +3051,16 @@ function applyBackgroundSettings() {
 
     console.log('[BG] Theme:', theme, 'User BG:', userThemeBg, 'Default BG:', themeDefaultBg);
 
+    // Background ownership: ThemeManager._updateBackground drives the #app-bg-video
+    // element for video themes; app.js paints image/gradient backgrounds here. The
+    // one case where the two systems fought was a USER OVERRIDE on a video theme:
+    // the video (z-index -2) covered the user's image. Resolve it in one place — a
+    // user override always wins, so hide the video when an override is set. Video
+    // themes without an override still play; image themes are unchanged.
+    const bgVideo = document.getElementById('app-bg-video');
+
     if (userThemeBg) {
+        if (bgVideo) bgVideo.style.display = 'none';
         document.body.style.backgroundImage = `url('${userThemeBg.replace(/'/g, "\\'")}')`;
         document.body.style.backgroundRepeat = 'no-repeat';
         document.body.style.backgroundPosition = 'center center';
