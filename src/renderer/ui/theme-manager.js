@@ -649,6 +649,11 @@ const ThemeManager = {
         }
 
         document.documentElement.setAttribute('data-theme', themeId);
+        // Expose the light/dark variant so component CSS can target a theme *type*
+        // (e.g. [data-theme-variant="dark"] .menu-btn) instead of hardcoding each
+        // builtin id. This is what lets CUSTOM themes inherit the correct styling
+        // (they set their own tokens; the variant rules use var(--token)).
+        document.documentElement.setAttribute('data-theme-variant', theme.type || 'dark');
         this._applyCSSVariables(theme);
         this._updateBackground(theme);
 
