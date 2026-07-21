@@ -113,7 +113,13 @@ const ThemeManager = {
                     btnTextHover: '#88c9ea',
                     btnPrimaryBg: '#88c9ea',
                     btnPrimaryBgHover: '#5eb7e0',
-                    btnPrimaryText: '#ffffff'
+                    btnPrimaryText: '#ffffff',
+                    // Load-bearing tokens moved from themes.css [data-theme] (Phase 06)
+                    successDark: '#4caf50',
+                    successHover: '#45a045',
+                    errorDark: '#ff4444',
+                    borderGlassEdge: 'rgba(255, 255, 255, 0.1)',
+                    welcomeBoxBg: 'rgba(37, 64, 90, 0.4)'
                 },
                 editor: {
                     base: 'vs-dark', inherit: true,
@@ -235,7 +241,16 @@ const ThemeManager = {
                     btnTextHover: '#ff9aaf',
                     btnPrimaryBg: '#ff9aaf',
                     btnPrimaryBgHover: '#ff758f',
-                    btnPrimaryText: '#ffffff'
+                    btnPrimaryText: '#ffffff',
+                    // Load-bearing tokens moved from themes.css [data-theme] (Phase 06)
+                    successDark: '#4caf50',
+                    successHover: '#45a045',
+                    errorDark: '#e06060',
+                    danger: '#d84860',
+                    folderIconClosed: '#ffb7c5',
+                    folderIconOpen: '#ff9aaf',
+                    terminalText: '#f8e8f0',
+                    welcomeBoxBg: 'rgba(255, 182, 193, 0.4)'
                 },
                 editor: {
                     base: 'vs-dark', inherit: true,
@@ -300,7 +315,15 @@ const ThemeManager = {
                     btnTextHover: '#ff79c6',
                     btnPrimaryBg: '#ff79c6',
                     btnPrimaryBgHover: '#ff92d0',
-                    btnPrimaryText: '#ffffff'
+                    btnPrimaryText: '#ffffff',
+                    // Load-bearing tokens moved from themes.css [data-theme] (Phase 06)
+                    successDark: '#2ecc71',
+                    successHover: '#27ae60',
+                    errorDark: '#ff3333',
+                    folderIconClosed: '#f1fa8c',
+                    folderIconOpen: '#ffb86c',
+                    borderGlassEdge: 'rgba(255, 255, 255, 0.1)',
+                    welcomeBoxBg: 'rgba(40, 42, 54, 0.4)'
                 },
                 editor: {
                     base: 'vs-dark', inherit: true,
@@ -359,7 +382,15 @@ const ThemeManager = {
                     btnTextHover: '#a6e22e',
                     btnPrimaryBg: '#a6e22e',
                     btnPrimaryBgHover: '#b8f32e',
-                    btnPrimaryText: '#272822'
+                    btnPrimaryText: '#272822',
+                    // Load-bearing tokens moved from themes.css [data-theme] (Phase 06)
+                    successDark: '#8cc919',
+                    successHover: '#7ab918',
+                    errorDark: '#d91862',
+                    folderIconClosed: '#e6db74',
+                    folderIconOpen: '#fd971f',
+                    borderGlassEdge: 'rgba(255, 255, 255, 0.1)',
+                    welcomeBoxBg: 'rgba(39, 40, 34, 0.4)'
                 },
                 editor: {
                     base: 'vs-dark', inherit: true,
@@ -417,7 +448,15 @@ const ThemeManager = {
                     btnTextHover: '#88c0d0',
                     btnPrimaryBg: '#88c0d0',
                     btnPrimaryBgHover: '#8fbcbb',
-                    btnPrimaryText: '#2e3440'
+                    btnPrimaryText: '#2e3440',
+                    // Load-bearing tokens moved from themes.css [data-theme] (Phase 06)
+                    successDark: '#8fbf6a',
+                    successHover: '#7daf5a',
+                    errorDark: '#a5545c',
+                    folderIconClosed: '#ebcb8b',
+                    folderIconOpen: '#d08770',
+                    borderGlassEdge: 'rgba(255, 255, 255, 0.1)',
+                    welcomeBoxBg: 'rgba(46, 52, 64, 0.4)'
                 },
                 editor: {
                     base: 'vs-dark', inherit: true,

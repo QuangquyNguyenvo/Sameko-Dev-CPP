@@ -75,6 +75,18 @@ const ThemeTokens = {
         success: { cssVar: '--success', type: 'color', group: 'status' },
         error: { cssVar: '--error', type: 'color', group: 'status' },
         warning: { cssVar: '--warning', type: 'color', group: 'status' },
+        // Status extras — load-bearing per-theme tokens moved out of themes.css
+        // (no `group`: applied inline but not shown in the grouped color pickers).
+        successDark: { cssVar: '--success-dark', type: 'color' },
+        successHover: { cssVar: '--success-hover', type: 'color' },
+        errorDark: { cssVar: '--error-dark', type: 'color' },
+        danger: { cssVar: '--danger', type: 'color' },
+
+        // ============= EXPLORER / MISC (moved from themes.css [data-theme]) =============
+        folderIconClosed: { cssVar: '--folder-icon-closed', type: 'color' },
+        folderIconOpen: { cssVar: '--folder-icon-open', type: 'color' },
+        borderGlassEdge: { cssVar: '--border-glass-edge', type: 'color' },
+        terminalText: { cssVar: '--terminal-text', type: 'color' },
 
         // ============= SHADOW/EFFECTS =============
         shadowSoft: { cssVar: '--shadow-soft', type: 'raw' },
