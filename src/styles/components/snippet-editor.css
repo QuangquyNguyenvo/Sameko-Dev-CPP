@@ -428,39 +428,23 @@
 }
 
 /* Dark Theme Adjustments */
-[data-theme="kawaii-dark"] .snippet-item,
-[data-theme="dracula"] .snippet-item,
-[data-theme="monokai"] .snippet-item,
-[data-theme="nord"] .snippet-item,
-[data-theme="one-dark"] .snippet-item {
+[data-theme-variant="dark"] .snippet-item {
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="kawaii-dark"] .snippet-trigger,
-[data-theme="dracula"] .snippet-trigger,
-[data-theme="monokai"] .snippet-trigger,
-[data-theme="nord"] .snippet-trigger,
-[data-theme="one-dark"] .snippet-trigger {
+[data-theme-variant="dark"] .snippet-trigger {
     background: rgba(255, 255, 255, 0.1);
     color: var(--accent);
 }
 
-[data-theme="kawaii-dark"] .snippet-actions button,
-[data-theme="dracula"] .snippet-actions button,
-[data-theme="monokai"] .snippet-actions button,
-[data-theme="nord"] .snippet-actions button,
-[data-theme="one-dark"] .snippet-actions button {
+[data-theme-variant="dark"] .snippet-actions button {
     background: rgba(255, 255, 255, 0.05);
     border-color: rgba(255, 255, 255, 0.1);
     color: rgba(255, 255, 255, 0.7);
 }
 
-[data-theme="kawaii-dark"] .snippets-list-container,
-[data-theme="dracula"] .snippets-list-container,
-[data-theme="monokai"] .snippets-list-container,
-[data-theme="nord"] .snippets-list-container,
-[data-theme="one-dark"] .snippets-list-container {
+[data-theme-variant="dark"] .snippets-list-container {
     background: rgba(0, 0, 0, 0.2);
     border-color: rgba(255, 255, 255, 0.1);
 }
