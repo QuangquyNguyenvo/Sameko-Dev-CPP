@@ -195,7 +195,7 @@ const ThemeCustomizer = {
                 <div class="tc6-body">
                     <!-- Toolbar -->
                     <div class="tc6-toolbar">
-                        <button class="tc6-toolbar-btn active" data-category="ui">
+                        <button class="tc6-toolbar-btn" data-category="ui">
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="3" width="18" height="18" rx="2"/>
                                 <path d="M3 9h18M9 21V9"/>
@@ -209,7 +209,7 @@ const ThemeCustomizer = {
                             </svg>
                             Syntax
                         </button>
-                        <button class="tc6-toolbar-btn" data-category="backgrounds">
+                        <button class="tc6-toolbar-btn active" data-category="backgrounds">
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="3" width="18" height="18" rx="2"/>
                                 <circle cx="8.5" cy="8.5" r="1.5"/>
@@ -566,6 +566,49 @@ const ThemeCustomizer = {
             }
             .tc6-category-panel.active {
                 display: block;
+                position: relative;
+            }
+
+            /* Temporarily-locked (Coming Soon) color-editing panels */
+            .tc6-locked .tc6-locked-inner {
+                filter: blur(3px);
+                opacity: 0.45;
+                pointer-events: none;
+                user-select: none;
+            }
+            .tc6-locked-overlay {
+                position: absolute;
+                inset: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 5;
+                padding: 20px;
+            }
+            .tc6-locked-badge {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 8px;
+                text-align: center;
+                padding: 20px 26px;
+                border-radius: 14px;
+                background: var(--bg-panel, rgba(20,20,28,0.72));
+                border: 1px solid var(--border, rgba(255,255,255,0.12));
+                box-shadow: 0 8px 28px rgba(0,0,0,0.35);
+                backdrop-filter: blur(2px);
+                max-width: 260px;
+            }
+            .tc6-locked-badge svg { color: var(--accent, #7aa2f7); opacity: 0.9; }
+            .tc6-locked-badge .tc6-locked-title {
+                font-size: 13px;
+                font-weight: 700;
+                color: var(--text-primary, #e6e6e6);
+            }
+            .tc6-locked-badge .tc6-locked-sub {
+                font-size: 11px;
+                line-height: 1.4;
+                color: var(--text-muted, #9aa0aa);
             }
             
             .tc6-section {
@@ -2010,6 +2053,25 @@ const ThemeCustomizer = {
     /**
      * Render controls panel content with simplified color groups
      */
+    /**
+     * Overlay shown over temporarily-locked color-editing panels.
+     * Color editing is disabled for now; only Backgrounds + JSON editing are live.
+     */
+    _renderLockedOverlay() {
+        return `
+            <div class="tc6-locked-overlay">
+                <div class="tc6-locked-badge">
+                    <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    <div class="tc6-locked-title">Coming Soon</div>
+                    <div class="tc6-locked-sub">Color editing is temporarily disabled. Use the <strong>Backgrounds</strong> tab or edit the theme <strong>JSON</strong> for now.</div>
+                </div>
+            </div>
+        `;
+    },
+
     _renderControls() {
         const container = this.popup?.querySelector('#tc6-controls-content');
         if (!container) return;
@@ -2019,8 +2081,10 @@ const ThemeCustomizer = {
         const syn = this._getSyntaxColors();
 
         container.innerHTML = `
-            <!-- UI Colors Panel - Simplified Groups -->
-            <div class="tc6-category-panel active" data-panel="ui">
+            <!-- UI Colors Panel - Simplified Groups (temporarily locked) -->
+            <div class="tc6-category-panel tc6-locked" data-panel="ui">
+                ${this._renderLockedOverlay()}
+                <div class="tc6-locked-inner">
                 <div class="tc6-section">
                     <div class="tc6-section-title">Theme Info</div>
                     <div class="tc6-field">
@@ -2065,10 +2129,13 @@ const ThemeCustomizer = {
                         Status Colors <span style="font-size: 10px; background: var(--bg-panel); padding: 2px 6px; border-radius: 4px; margin-left: 8px;">Coming Soon</span>
                     </div>
                 </div>
+                </div><!-- /.tc6-locked-inner -->
             </div>
-            
-            <!-- Syntax Colors Panel -->
-            <div class="tc6-category-panel" data-panel="syntax">
+
+            <!-- Syntax Colors Panel (temporarily locked) -->
+            <div class="tc6-category-panel tc6-locked" data-panel="syntax">
+                ${this._renderLockedOverlay()}
+                <div class="tc6-locked-inner">
                 <div class="tc6-section">
                     <div class="tc6-section-title">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
@@ -2086,10 +2153,11 @@ const ThemeCustomizer = {
                         ${this._renderColorItem('syntaxBracket', 'Brackets')}
                     </div>
                 </div>
+                </div><!-- /.tc6-locked-inner -->
             </div>
             
             <!-- Backgrounds Panel -->
-            <div class="tc6-category-panel" data-panel="backgrounds">
+            <div class="tc6-category-panel active" data-panel="backgrounds">
                 <div class="tc6-section">
                     <div class="tc6-section-title">App Background</div>
                     <div class="tc6-field">
@@ -3522,14 +3590,10 @@ const ThemeCustomizer = {
 
         this._setupBgDrag();
 
+        // Color editing is temporarily locked (Coming Soon): the preview is
+        // view-only, so mockup elements no longer open the color editor.
         wrapper.querySelectorAll('.tc6-clickable[data-key]').forEach(el => {
-            el.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (this.bgDragMode) return; // Don't activate edit bar in drag mode
-                const key = el.dataset.key;
-                const label = el.dataset.label || key;
-                this._updateEditBar(key, label);
-            });
+            el.classList.remove('tc6-clickable');
         });
 
         this._injectAllPreviewVariables(options);
