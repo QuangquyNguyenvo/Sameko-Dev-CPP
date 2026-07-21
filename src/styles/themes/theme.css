@@ -2806,35 +2806,37 @@ body.split-active .editor-pane {
 }
 
 /* ===== TERMINAL LINE TYPES ===== */
+/* Token-driven (was hardcoded). Fallback = the dark palette default; themes
+   override via --term-line-* (e.g. kawaii-light). */
 /* Success messages (green) */
 .terminal-body .line.success {
-    color: #98c379;
+    color: var(--term-line-success, #98c379);
 }
 
 /* Error messages (red) */
 .terminal-body .line.error {
-    color: #e06c75;
+    color: var(--term-line-error, #e06c75);
 }
 
 /* Warning messages (yellow) */
 .terminal-body .line.warning {
-    color: #e5c07b;
+    color: var(--term-line-warning, #e5c07b);
 }
 
 /* Info messages (blue) */
 .terminal-body .line.info {
-    color: #61afef;
+    color: var(--term-line-info, #61afef);
 }
 
 /* System messages (gray/muted) */
 .terminal-body .line.system {
-    color: #5c6370;
+    color: var(--term-line-system, #5c6370);
     font-style: italic;
 }
 
 /* Input messages (cyan/lighter) */
 .terminal-body .line.input {
-    color: #56b6c2;
+    color: var(--term-line-input, #56b6c2);
     opacity: 0.85;
 }
 
@@ -3406,35 +3408,38 @@ body.split-active .editor-pane {
 }
 
 /* ===== DOCKED TERMINAL LINE TYPES ===== */
+/* Same tokens as the main terminal; fallbacks keep the docked panel's original
+   hardcoded values (note system defaulted to #7a8a9a here) when a theme leaves
+   the token unset, so builtins render identically. */
 /* Success messages (green) */
 .problems-panel .terminal-body .line.success {
-    color: #98c379;
+    color: var(--term-line-success, #98c379);
 }
 
 /* Error messages (red) */
 .problems-panel .terminal-body .line.error {
-    color: #e06c75;
+    color: var(--term-line-error, #e06c75);
 }
 
 /* Warning messages (yellow) */
 .problems-panel .terminal-body .line.warning {
-    color: #e5c07b;
+    color: var(--term-line-warning, #e5c07b);
 }
 
 /* Info messages (blue) - for build/settings info */
 .problems-panel .terminal-body .line.info {
-    color: #61afef;
+    color: var(--term-line-info, #61afef);
 }
 
 /* System messages (gray/muted) */
 .problems-panel .terminal-body .line.system {
-    color: #7a8a9a;
+    color: var(--term-line-system, #7a8a9a);
     font-style: italic;
 }
 
 /* Input messages (cyan/lighter) */
 .problems-panel .terminal-body .line.input {
-    color: #56b6c2;
+    color: var(--term-line-input, #56b6c2);
     opacity: 0.85;
 }
 

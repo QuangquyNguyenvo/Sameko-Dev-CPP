@@ -250,6 +250,14 @@ const ThemeManager = {
                     folderIconClosed: '#ffb7c5',
                     folderIconOpen: '#ff9aaf',
                     terminalText: '#f8e8f0',
+                    // Terminal line colors — kawaii-light overrides (were the
+                    // [data-theme="kawaii-light"] .terminal-body .line.* rules).
+                    termLineSuccess: '#a3d9a5',
+                    termLineError: '#ff8fab',
+                    termLineWarning: '#ebcb8b',
+                    termLineInfo: '#88c9ea',
+                    termLineSystem: '#6a8a9a',
+                    termLineInput: '#5fb9cf',
                     welcomeBoxBg: 'rgba(255, 182, 193, 0.4)'
                 },
                 editor: {

@@ -224,30 +224,8 @@
     -webkit-backdrop-filter: blur(var(--terminal-bg-blur, 0px));
 }
 
-[data-theme="kawaii-light"] .terminal-body .line.success {
-    color: #a3d9a5;
-}
-
-[data-theme="kawaii-light"] .terminal-body .line.error {
-    color: #ff8fab;
-}
-
-[data-theme="kawaii-light"] .terminal-body .line.warning {
-    color: #ebcb8b;
-}
-
-[data-theme="kawaii-light"] .terminal-body .line.info {
-    color: #88c9ea;
-}
-
-[data-theme="kawaii-light"] .terminal-body .line.system {
-    color: #6a8a9a;
-}
-
-[data-theme="kawaii-light"] .terminal-body .line.input {
-    color: #5fb9cf;
-    opacity: 0.85;
-}
+/* kawaii-light terminal line colors are now token-driven via --term-line-*
+   (set in ThemeManager); the per-theme override rules were removed here. */
 
 [data-theme="kawaii-light"] .terminal-input {
     background: var(--terminal-bg);

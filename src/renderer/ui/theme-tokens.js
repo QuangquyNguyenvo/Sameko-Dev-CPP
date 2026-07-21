@@ -88,6 +88,16 @@ const ThemeTokens = {
         borderGlassEdge: { cssVar: '--border-glass-edge', type: 'color' },
         terminalText: { cssVar: '--terminal-text', type: 'color' },
 
+        // Terminal line-type colors (success/error/warning/info/system/input).
+        // Previously hardcoded in theme.css/.themes.css → now token-driven so
+        // custom themes and the customizer preview follow the real terminal.
+        termLineSuccess: { cssVar: '--term-line-success', type: 'color', group: 'terminal' },
+        termLineError:   { cssVar: '--term-line-error',   type: 'color', group: 'terminal' },
+        termLineWarning: { cssVar: '--term-line-warning', type: 'color', group: 'terminal' },
+        termLineInfo:    { cssVar: '--term-line-info',    type: 'color', group: 'terminal' },
+        termLineSystem:  { cssVar: '--term-line-system',  type: 'color', group: 'terminal' },
+        termLineInput:   { cssVar: '--term-line-input',   type: 'color', group: 'terminal' },
+
         // ============= SHADOW/EFFECTS =============
         shadowSoft: { cssVar: '--shadow-soft', type: 'raw' },
         shadowCard: { cssVar: '--shadow-card', type: 'raw' },
@@ -383,6 +393,14 @@ const ThemeTokens = {
         d('folderIconOpen',   '#f5b942');
         d('borderGlassEdge',  'rgba(255, 255, 255, 0.4)');
         d('terminalText',     '#e0f0ff');
+
+        // Terminal line-type defaults = the dark palette that theme.css hardcoded.
+        d('termLineSuccess',  '#98c379');
+        d('termLineError',    '#e06c75');
+        d('termLineWarning',  '#e5c07b');
+        d('termLineInfo',     '#61afef');
+        d('termLineSystem',   '#5c6370');
+        d('termLineInput',    '#56b6c2');
     },
 
     /**
