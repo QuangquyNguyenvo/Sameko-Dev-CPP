@@ -90,6 +90,19 @@
     --btn-error-bg: var(--error, #ff8fab);
     --btn-error-text: #ffffff;
 
+    /* Competitive-programming status colors (uniform across themes; previously
+       hardcoded in ~25 .cp-badge/.cp-status/.cp-chip rules). SSOT here so they
+       are defined once and can be retargeted per theme if ever needed. */
+    --cp-status-todo: #888;
+    --cp-status-coding: #64b5f6;
+    --cp-status-testing: #ffb74d;
+    --cp-status-ac: #66bb6a;
+    --cp-status-wa: #ef5350;
+    --cp-status-tle: #ffa726;
+    --cp-status-re: #ab47bc;
+    --cp-status-working: #ffa726;
+    --cp-status-working-text: #e65100;
+
     /* Opacity Variables for Components */
     --terminal-opacity: 1;
     --panel-opacity: 1;
@@ -5963,7 +5976,7 @@ body.split-active .editor-pane {
 }
 
 .cp-problem-chip.cp-chip-selected {
-    border-color: #ef5350 !important;
+    border-color: var(--cp-status-wa) !important;
     background: rgba(239, 83, 80, 0.12) !important;
 }
 
@@ -6016,9 +6029,9 @@ body.split-active .editor-pane {
     gap: 4px;
     padding: 3px 8px;
     border-radius: 5px;
-    border: 1px solid #ef5350;
+    border: 1px solid var(--cp-status-wa);
     background: rgba(239, 83, 80, 0.1);
-    color: #ef5350;
+    color: var(--cp-status-wa);
     font-size: 11px;
     cursor: pointer;
     transition: background 0.15s;
@@ -6138,7 +6151,7 @@ body.split-active .editor-pane {
 }
 
 .cp-problem-row-item.cp-chip-selected {
-    border-color: #ef5350 !important;
+    border-color: var(--cp-status-wa) !important;
     background: rgba(239, 83, 80, 0.08) !important;
 }
 
@@ -6180,37 +6193,37 @@ body.split-active .editor-pane {
 
 .cp-row-badge.cp-badge-todo {
     background: rgba(85, 85, 85, 0.1);
-    color: #888;
+    color: var(--cp-status-todo);
 }
 
 .cp-row-badge.cp-badge-coding {
     background: rgba(100, 181, 246, 0.15);
-    color: #64b5f6;
+    color: var(--cp-status-coding);
 }
 
 .cp-row-badge.cp-badge-testing {
     background: rgba(255, 183, 77, 0.15);
-    color: #ffb74d;
+    color: var(--cp-status-testing);
 }
 
 .cp-row-badge.cp-badge-ac {
     background: rgba(102, 187, 106, 0.15);
-    color: #66bb6a;
+    color: var(--cp-status-ac);
 }
 
 .cp-row-badge.cp-badge-wa {
     background: rgba(239, 83, 80, 0.15);
-    color: #ef5350;
+    color: var(--cp-status-wa);
 }
 
 .cp-row-badge.cp-badge-tle {
     background: rgba(255, 167, 38, 0.15);
-    color: #ffa726;
+    color: var(--cp-status-tle);
 }
 
 .cp-row-badge.cp-badge-re {
     background: rgba(171, 71, 188, 0.15);
-    color: #ab47bc;
+    color: var(--cp-status-re);
 }
 
 .cp-row-time {
@@ -6275,27 +6288,27 @@ body.split-active .editor-pane {
 }
 
 .cp-prob-card.cp-status-ac {
-    border-left-color: #66bb6a;
+    border-left-color: var(--cp-status-ac);
 }
 
 .cp-prob-card.cp-status-wa {
-    border-left-color: #ef5350;
+    border-left-color: var(--cp-status-wa);
 }
 
 .cp-prob-card.cp-status-tle {
-    border-left-color: #ffa726;
+    border-left-color: var(--cp-status-tle);
 }
 
 .cp-prob-card.cp-status-re {
-    border-left-color: #ab47bc;
+    border-left-color: var(--cp-status-re);
 }
 
 .cp-prob-card.cp-status-coding {
-    border-left-color: #64b5f6;
+    border-left-color: var(--cp-status-coding);
 }
 
 .cp-prob-card.cp-status-testing {
-    border-left-color: #ffb74d;
+    border-left-color: var(--cp-status-testing);
 }
 
 .cp-prob-row {
@@ -6826,8 +6839,8 @@ body.split-active .editor-pane {
 .cp-problem-square.cp-status-working,
 .cp-problem-square.cp-status-coding {
     background: color-mix(in srgb, var(--warning, #fcd5ce) 25%, transparent) !important;
-    border-color: #ffa726 !important;
-    color: #e65100 !important;
+    border-color: var(--cp-status-working) !important;
+    color: var(--cp-status-working-text) !important;
 }
 
 /* Highlight active problem */
@@ -7270,37 +7283,37 @@ body.split-active .editor-pane {
 
 .cat-list-item-badge.cp-badge-todo {
     background: rgba(85, 85, 85, 0.1);
-    color: #888;
+    color: var(--cp-status-todo);
 }
 
 .cat-list-item-badge.cp-badge-coding {
     background: rgba(100, 181, 246, 0.15);
-    color: #64b5f6;
+    color: var(--cp-status-coding);
 }
 
 .cat-list-item-badge.cp-badge-testing {
     background: rgba(255, 183, 77, 0.15);
-    color: #ffb74d;
+    color: var(--cp-status-testing);
 }
 
 .cat-list-item-badge.cp-badge-ac {
     background: rgba(102, 187, 106, 0.15);
-    color: #66bb6a;
+    color: var(--cp-status-ac);
 }
 
 .cat-list-item-badge.cp-badge-wa {
     background: rgba(239, 83, 80, 0.15);
-    color: #ef5350;
+    color: var(--cp-status-wa);
 }
 
 .cat-list-item-badge.cp-badge-tle {
     background: rgba(255, 167, 38, 0.15);
-    color: #ffa726;
+    color: var(--cp-status-tle);
 }
 
 .cat-list-item-badge.cp-badge-re {
     background: rgba(171, 71, 188, 0.15);
-    color: #ab47bc;
+    color: var(--cp-status-re);
 }
 
 /* Status-specific list item backgrounds */
