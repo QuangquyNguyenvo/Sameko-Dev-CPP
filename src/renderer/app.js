@@ -3051,30 +3051,32 @@ function applyBackgroundSettings() {
 
     console.log('[BG] Theme:', theme, 'User BG:', userThemeBg, 'Default BG:', themeDefaultBg);
 
-    // Background ownership: ThemeManager._updateBackground drives the #app-bg-video
-    // element for video themes; app.js paints image/gradient backgrounds here. The
-    // one case where the two systems fought was a USER OVERRIDE on a video theme:
-    // the video (z-index -2) covered the user's image. Resolve it in one place — a
-    // user override always wins, so hide the video when an override is set. Video
-    // themes without an override still play; image themes are unchanged.
+    // Single background owner (Phase 07 §4). The still image — theme default OR a
+    // user override — is rendered through --app-bg-image on body::before, which is
+    // the layer that applies the opacity / blur / brightness / position controls.
+    // Video is rendered by ThemeManager (#app-bg-video). app.js no longer paints a
+    // duplicate full-opacity image onto document.body, so the two systems can no
+    // longer fight and the bg controls actually take effect.
+    // VISUAL NOTE: image themes (kawaii-light, sakura) now honour the bg-opacity
+    // setting (default 50%) instead of always showing at full opacity. If you want
+    // the old always-full look, revert this commit.
+    const root = document.documentElement;
     const bgVideo = document.getElementById('app-bg-video');
+    const toBgUrl = (u) => u.startsWith('data:') ? `url("${u}")` : `url('${u.replace(/'/g, "\\'")}')`;
+    document.body.style.backgroundImage = '';
 
     if (userThemeBg) {
+        // A user override wins over the theme's own background, including a video.
+        root.style.setProperty('--app-bg-image', toBgUrl(userThemeBg));
         if (bgVideo) bgVideo.style.display = 'none';
-        document.body.style.backgroundImage = `url('${userThemeBg.replace(/'/g, "\\'")}')`;
-        document.body.style.backgroundRepeat = 'no-repeat';
-        document.body.style.backgroundPosition = 'center center';
-        document.body.style.backgroundAttachment = 'fixed';
-        document.body.style.backgroundSize = 'cover';
+        document.body.style.background = '';
     } else if (themeDefaultBg) {
-        document.body.style.backgroundImage = `url('${themeDefaultBg.replace(/'/g, "\\'")}')`;
-        document.body.style.backgroundRepeat = 'no-repeat';
-        document.body.style.backgroundPosition = 'center center';
-        document.body.style.backgroundAttachment = 'fixed';
-        document.body.style.backgroundSize = 'cover';
+        // Owned by ThemeManager: --app-bg-image (still image) or #app-bg-video (video).
+        document.body.style.background = '';
     } else {
+        // No image/video for this theme → fallback gradient behind the empty layer.
+        root.style.setProperty('--app-bg-image', 'none');
         document.body.style.background = themeConfig.default;
-        document.body.style.backgroundImage = 'none';
     }
 
 
