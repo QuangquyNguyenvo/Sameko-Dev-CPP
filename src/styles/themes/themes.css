@@ -101,14 +101,8 @@
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
-[data-theme="kawaii-dark"] .tab.drag-over-left::before,
-[data-theme="kawaii-dark"] .tab.drag-over-right::after,
-[data-theme="dracula"] .tab.drag-over-left::before,
-[data-theme="dracula"] .tab.drag-over-right::after,
-[data-theme="monokai"] .tab.drag-over-left::before,
-[data-theme="monokai"] .tab.drag-over-right::after,
-[data-theme="nord"] .tab.drag-over-left::before,
-[data-theme="nord"] .tab.drag-over-right::after {
+[data-theme-variant="dark"] .tab.drag-over-left::before,
+[data-theme-variant="dark"] .tab.drag-over-right::after {
     background: var(--bg-ocean-deep);
 }
 
@@ -290,25 +284,13 @@
     border-top-color: var(--border);
 }
 
-[data-theme="kawaii-dark"] .terminal-input input,
-[data-theme="kawaii-dark"] .terminal-input textarea,
-[data-theme="dracula"] .terminal-input input,
-[data-theme="dracula"] .terminal-input textarea,
-[data-theme="monokai"] .terminal-input input,
-[data-theme="monokai"] .terminal-input textarea,
-[data-theme="nord"] .terminal-input input,
-[data-theme="nord"] .terminal-input textarea {
+[data-theme-variant="dark"] .terminal-input input,
+[data-theme-variant="dark"] .terminal-input textarea {
     color: var(--text-primary);
 }
 
-[data-theme="kawaii-dark"] .terminal-input input::placeholder,
-[data-theme="kawaii-dark"] .terminal-input textarea::placeholder,
-[data-theme="dracula"] .terminal-input input::placeholder,
-[data-theme="dracula"] .terminal-input textarea::placeholder,
-[data-theme="monokai"] .terminal-input input::placeholder,
-[data-theme="monokai"] .terminal-input textarea::placeholder,
-[data-theme="nord"] .terminal-input input::placeholder,
-[data-theme="nord"] .terminal-input textarea::placeholder {
+[data-theme-variant="dark"] .terminal-input input::placeholder,
+[data-theme-variant="dark"] .terminal-input textarea::placeholder {
     color: var(--text-muted);
 }
 
@@ -447,14 +429,8 @@
     color: var(--text-primary);
 }
 
-[data-theme="kawaii-dark"] select:focus,
-[data-theme="kawaii-dark"] input:focus,
-[data-theme="dracula"] select:focus,
-[data-theme="dracula"] input:focus,
-[data-theme="monokai"] select:focus,
-[data-theme="monokai"] input:focus,
-[data-theme="nord"] select:focus,
-[data-theme="nord"] input:focus {
+[data-theme-variant="dark"] select:focus,
+[data-theme-variant="dark"] input:focus {
     border-color: var(--bg-ocean-deep);
 }
 
