@@ -361,7 +361,7 @@ const ThemeCustomizer = {
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                background: rgba(200, 230, 250, 0.6);
+                background: rgba(10, 12, 16, 0.6);
                 backdrop-filter: blur(6px);
                 opacity: 0;
                 transition: opacity 0.3s ease;
