@@ -371,6 +371,18 @@ const ThemeTokens = {
         d('welcomeBoxBg',            'bgGlass', 'bgPanel', 'rgba(37, 64, 90, 0.4)');
         d('welcomeBtnBorder',        'borderStrong', 'border', '#88c9ea');
         d('welcomeBtnPrimaryBorder', 'accent', '#88c9ea');
+
+        // Load-bearing tokens promoted from themes.css in Phase 06. Defaults match
+        // the exact theme.css :root / usage fallback each resolves to today, so a
+        // theme missing them keeps rendering identically — just now self-contained.
+        d('successDark',      '#1b7d3f');
+        d('successHover',     '#219150');
+        d('errorDark',        '#a8071a');
+        d('danger',           'error', '#d84860');
+        d('folderIconClosed', '#f0c674');
+        d('folderIconOpen',   '#f5b942');
+        d('borderGlassEdge',  'rgba(255, 255, 255, 0.4)');
+        d('terminalText',     '#e0f0ff');
     },
 
     /**
