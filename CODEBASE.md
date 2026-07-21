@@ -116,13 +116,17 @@ Exposes `window.electronAPI` with groups of functions: file ops, file explorer, 
 | Settings | `settings/settings-manager.js` | Settings read/write & UI. |
 | Snippets | `snippets/snippets-manager.js`, `snippets/snippet-editor.js` | Manage & edit snippets. |
 | Suggestions | `suggestions/cpp-suggestions.js` | C++ suggestions/autocomplete. |
-| Themes | `themes/theme-manager.js` | Apply/switch themes. |
+| Themes | `renderer/ui/theme-*.js` (see Theme system below) | Apply/switch/customize themes. |
 
 #### `src/styles/` — CSS
 `base.css`, `animations.css`, `components/*` (confirm-dialog, local-history, snippet-editor, suggest-fix), `themes/*` (theme.css, themes.css, goldenlayout-dark-theme.css).
 
-#### `src/themes/builtin/` — Built-in themes (JSON)
-`dracula`, `kawaii-dark`, `kawaii-light`, `monokai`, `nord`, `sakura`, and `theme-schema.json` (theme schema).
+#### Theme system (SSOT — see `plans/theme-customizer/` for the refactor history)
+- **Data SSOT:** `ThemeManager._getHardcodedThemes()` (`src/renderer/ui/theme-manager.js`) defines the 6 builtin themes inline. There is **no** JSON theme source (the old `src/themes/builtin/*.json` were dead `fetch()`s and were removed).
+- **Token SSOT:** `ThemeTokens` (`src/renderer/ui/theme-tokens.js`) maps every token → CSS var + type, holds defaults (`fillDefaults`), and is the single apply path (`applyToElement`/`applyValue`/`applySyntax`).
+- **Apply:** `ThemeManager.setTheme(id, {editorScheme})` sets all `--vars` inline on `:root`, sets `data-theme` + `data-theme-variant` (light/dark), and applies the Monaco theme (`_applyMonacoTheme` — the only `monaco.editor.setTheme` caller in the theme path).
+- **CSS:** components style via `var(--token)` in `theme.css`/`themes.css`. Dark-theme-specific rules use `[data-theme-variant="dark"]` (NOT per-builtin-id), so custom themes render correctly. Avoid re-introducing `[data-theme="<id>"]` color rules.
+- **Customize/persist:** `theme-customizer.js` (edit UI), `theme-marketplace.js` (carousel). Custom themes in `localStorage['sameko-user-themes']`; builtin bg overrides in `localStorage['theme-bg-<id>']`.
 
 ### `Sameko-GCC/` & `mingw64/` — Bundled toolchain
 The MinGW GCC compiler shipped with the app. **Do not read** — thousands of generated files. `Sameko-GCC/` is copied into `extraResources` during packaging (see `package.json` > `build`).
@@ -161,7 +165,7 @@ The MinGW GCC compiler shipped with the app. **Do not read** — thousands of ge
 | Realtime syntax checking | `app/services/syntax/` |
 | Overall UI state & init | `src/renderer/app.js` (Grep to the part you need) |
 | Tabs / Terminal / Explorer / Settings... | `src/features/<name>/` |
-| Themes | `src/features/themes/`, `src/renderer/ui/theme-*.js`, `src/themes/builtin/*.json` |
+| Themes (colors/tokens/CSS) | Data: `theme-manager.js` `_getHardcodedThemes`; tokens/defaults: `theme-tokens.js`; CSS: `styles/themes/*.css` via `var(--token)` + `[data-theme-variant]` |
 | Channel names / paths / limits / compiler flags | `app/shared/constants.js` |
 
 ---

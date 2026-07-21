@@ -67,3 +67,8 @@ This repository is indexed by CodeGraph. Do **NOT** use grep/find unless CodeGra
 - Editing a renderer feature → look in `src/features/<name>/`.
 - Editing compile/run logic → `app/services/compiler/` and `app/ipc/compiler-handlers.js`.
 - Build/test manually with `npm start` since there is no automated suite.
+
+## Theme system (SSOT — do NOT re-hardcode)
+- **Builtin theme colors:** edit only `ThemeManager._getHardcodedThemes()` in `src/renderer/ui/theme-manager.js`. There is no JSON theme source.
+- **New token:** add it to `ThemeTokens.definitions` in `src/renderer/ui/theme-tokens.js` (+ a value in each of the 6 themes), then reference `var(--<cssVar>)` in CSS.
+- **CSS:** style via `var(--token)`. For dark-only styling use `[data-theme-variant="dark"]`, never `[data-theme="<builtin-id>"]` (that breaks custom themes). See `CODEBASE.md` › Theme system and `plans/theme-customizer/`.
