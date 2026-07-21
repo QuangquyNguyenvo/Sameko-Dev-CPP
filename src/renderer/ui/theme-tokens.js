@@ -301,6 +301,67 @@ const ThemeTokens = {
     },
 
     /**
+     * Fill all missing token defaults for a colors object (SSOT for defaults).
+     * Derives missing values from related keys where possible, then falls back
+     * to a literal. Order matters: dependents come after their sources.
+     * Mutates `c` in place. (Moved verbatim from ThemeCustomizer._fillAllDefaults.)
+     * @param {Object} c - theme.colors (mutated in place)
+     */
+    fillDefaults(c) {
+        // Helper: set key from first truthy fallback (string = key ref, other = literal)
+        const d = (key, ...fallbacks) => {
+            if (c[key] !== undefined && c[key] !== null) return;
+            for (const f of fallbacks) {
+                if (typeof f === 'string') {
+                    if (c[f] !== undefined && c[f] !== null) { c[key] = c[f]; return; }
+                } else {
+                    c[key] = f; return;
+                }
+            }
+        };
+
+        // Numeric / effect defaults
+        d('bgOpacity',           100);
+        d('bgBrightness',        100);
+        d('bgBlur',              0);
+        d('editorBgOpacity',     100);
+        d('editorBgBrightness',  100);
+        d('editorBgBlur',        0);
+        d('welcomeBoxOpacity',   0.4);
+
+        // Derived color defaults — order matters (dependents after their sources)
+        d('accentHover',             'accent', '#5eb7e0');
+        d('borderStrong',            'accent', '#88c9ea');
+        d('bgGlassBorder',           'border', 'borderStrong', '#3a6075');
+        d('bgBase',                  'bgOceanDark', 'editorBg', '#0d1a25');
+        d('bgSurface',               'bgOceanLight', 'bgPanel', '#1a3a50');
+        d('buttonTextOnAccent',      '#ffffff');
+        d('settingsLabelColor',      'textSecondary', 'textPrimary', '#a0c0d0');
+        d('settingsSectionColor',    'accent', '#88c9ea');
+        d('bgButton',                'bgOceanLight', '#243040');
+        d('bgButtonHover',           'bgOceanMedium', '#3a5060');
+
+        // Button tokens
+        d('btnBg',                   'bgButton',      'rgba(255, 255, 255, 0.1)');
+        d('btnBgHover',              'bgButtonHover', 'bgOceanLight', 'rgba(255, 255, 255, 0.15)');
+        d('btnBorder',               'border',        '#a0c8e0');
+        d('btnText',                 'textPrimary',   'textSecondary', '#e0f0ff');
+        d('btnTextHover',            'accent',        '#88c9ea');
+        d('btnPrimaryBg',            'accent',        'bgOceanDeep', '#4a9bc9');
+        d('btnPrimaryBgHover',       'accentHover',   'bgOceanMedium', '#3a8ab8');
+        d('btnPrimaryText',          'buttonTextOnAccent', '#ffffff');
+        d('btnSuccessBg',            'success',       '#50fa7b');
+        d('btnSuccessText',          'buttonTextOnAccent', '#ffffff');
+        d('btnErrorBg',              'error',         '#ff5555');
+        d('btnErrorText',            'buttonTextOnAccent', '#ffffff');
+
+        // Welcome box tokens
+        d('welcomeBoxBg',            'bgGlass', 'bgPanel', 'rgba(37, 64, 90, 0.4)');
+        d('welcomeBtnBorder',        'borderStrong', 'border', '#88c9ea');
+        d('welcomeBtnPrimaryBorder', 'accent', '#88c9ea');
+    },
+
+    /**
      * Exposed version of toOpaque for external callers (ThemeCustomizer etc.)
      * Forces alpha channel to 1 on any rgb/rgba color string.
      * @param {string} color
