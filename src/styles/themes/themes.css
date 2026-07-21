@@ -20,13 +20,13 @@
 
 /* Custom Toggle for Sakura (True Pastel) */
 [data-theme="sakura"] .switch input:checked+.slider {
-    background: #ffc2d1;
-    border-color: #ffb7c5;
+    background: #ffc2d1; /* sakura-only pastel; no semantic token */
+    border-color: var(--bg-ocean-deep);
 }
 
 [data-theme="sakura"] .switch input:checked+.slider::before {
     background: white;
-    filter: drop-shadow(0 0 4px #ffb7c5);
+    filter: drop-shadow(0 0 4px var(--bg-ocean-deep));
 }
 
 
