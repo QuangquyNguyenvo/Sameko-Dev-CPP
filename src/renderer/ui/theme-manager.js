@@ -613,8 +613,36 @@ const ThemeManager = {
     },
 
     /**
+     * Phase 08 §2.1 — persistence unification (ADDITIVE, zero data loss).
+     * Historically two stores held a per-theme background:
+     *   - `theme-bg-<id>` (localStorage): the full bg object the Customizer writes,
+     *     and the canonical store `_loadSavedBackground` reads at theme-apply time.
+     *   - `perTheme[id].bgUrl` (settings.json): a plain URL the Settings "Background
+     *     URL" input writes.
+     * This copies any `perTheme[id].bgUrl` into `theme-bg-<id>` when the latter is
+     * absent, so the canonical localStorage store becomes the single source of truth
+     * going forward. It NEVER deletes either store — existing data and both UIs keep
+     * working, so there is no regression ("như khi hardcode").
+     */
+    _migratePerThemeBackgrounds() {
+        try {
+            const perTheme = (typeof App !== 'undefined' && App.settings
+                && App.settings.appearance && App.settings.appearance.perTheme) || {};
+            for (const [id, cfg] of Object.entries(perTheme)) {
+                const url = cfg && cfg.bgUrl;
+                if (!url) continue;
+                const key = `theme-bg-${id}`;
+                if (localStorage.getItem(key)) continue; // canonical store already wins
+                localStorage.setItem(key, JSON.stringify({ appBackground: url }));
+            }
+        } catch (e) {
+            console.warn('[ThemeManager] perTheme bg migration skipped:', e);
+        }
+    },
+
+    /**
      * Apply a theme by ID
-     * @param {string} themeId 
+     * @param {string} themeId
      */
     setTheme(themeId, { editorScheme = null } = {}) {
         // Auto-initialize if themes not loaded yet (called before init())

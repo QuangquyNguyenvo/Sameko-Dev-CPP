@@ -475,6 +475,15 @@ function initMonaco(onReady) {
         // restore, or the user opened a file during the deferred load), show it.
         syncEditorToActiveTab();
 
+        // Phase 08 §2.1 — additively fold legacy Settings "Background URL"
+        // (perTheme[id].bgUrl) into the canonical `theme-bg-<id>` store before the
+        // first theme apply. Copy-only: never deletes, so both UIs keep working.
+        if (typeof ThemeManager !== 'undefined'
+            && typeof ThemeManager._migratePerThemeBackgrounds === 'function') {
+            try { ThemeManager._migratePerThemeBackgrounds(); }
+            catch (e) { console.warn('[ThemeManager] bg migration failed:', e); }
+        }
+
         // Apply saved theme
         if (typeof applyTheme === 'function') {
             applyTheme(App.settings.appearance.theme);
