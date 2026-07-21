@@ -577,7 +577,7 @@ const ThemeManager = {
      * Apply a theme by ID
      * @param {string} themeId 
      */
-    setTheme(themeId) {
+    setTheme(themeId, { editorScheme = null } = {}) {
         // Auto-initialize if themes not loaded yet (called before init())
         if (this.themes.size === 0) {
             this._loadAllHardcodedThemes();
@@ -613,25 +613,40 @@ const ThemeManager = {
         this._applyCSSVariables(theme);
         this._updateBackground(theme);
 
-        if (typeof monaco !== 'undefined') {
-            try {
-                monaco.editor.setTheme(themeId);
+        // Monaco: an explicit editor color scheme overrides the UI theme; otherwise
+        // the editor follows the UI theme. This is the single place that decides the
+        // editor theme, so switching themes no longer double-sets Monaco.
+        const monacoThemeId = (editorScheme && editorScheme !== 'auto' && this.themes.has(editorScheme))
+            ? editorScheme
+            : themeId;
+        this._applyMonacoTheme(monacoThemeId);
+    },
 
-                if (typeof App !== 'undefined' && App.editors) {
-                    Object.values(App.editors).forEach(editor => {
-                        if (editor && editor.updateOptions) {
-                            editor.updateOptions({ theme: themeId });
-                        }
-                    });
-                }
+    /**
+     * Apply a Monaco editor theme. The ONLY place that calls monaco.editor.setTheme.
+     * monaco.editor.setTheme is global (themes every editor at once); the per-editor
+     * updateOptions keep any editor tracking a `theme` option (splits, template) in sync.
+     * @param {string} monacoThemeId
+     */
+    _applyMonacoTheme(monacoThemeId) {
+        if (typeof monaco === 'undefined') return;
+        try {
+            monaco.editor.setTheme(monacoThemeId);
 
-                // Update template editor if exists
-                if (typeof templateEditor !== 'undefined' && templateEditor) {
-                    templateEditor.updateOptions({ theme: themeId });
-                }
-            } catch (e) {
-                console.warn('[ThemeManager] Monaco theme not ready:', e);
+            if (typeof App !== 'undefined' && App.editors) {
+                Object.values(App.editors).forEach(editor => {
+                    if (editor && editor.updateOptions) {
+                        editor.updateOptions({ theme: monacoThemeId });
+                    }
+                });
             }
+
+            // Update template editor if exists
+            if (typeof templateEditor !== 'undefined' && templateEditor) {
+                templateEditor.updateOptions({ theme: monacoThemeId });
+            }
+        } catch (e) {
+            console.warn('[ThemeManager] Monaco theme not ready:', e);
         }
     },
 

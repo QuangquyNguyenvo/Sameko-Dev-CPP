@@ -2992,43 +2992,18 @@ function applyDiscordSetting() {
 // THEME APPLICATION
 // ============================================================================
 function applyTheme(themeName) {
-    // Delegate to ThemeManager for UI theme
-    ThemeManager.setTheme(themeName);
-
-    // Apply editor color scheme (can be different from UI theme)
-    applyEditorColorScheme();
+    // ThemeManager owns the UI theme AND Monaco. An explicit editor color scheme
+    // (App.settings.editor.colorScheme) overrides the editor theme; 'auto' follows
+    // the UI theme. Passing it in lets ThemeManager set Monaco exactly once (no
+    // double-set / flash).
+    const editorScheme = App.settings.editor?.colorScheme || 'auto';
+    ThemeManager.setTheme(themeName, { editorScheme });
 
     // Additional app-specific background logic (opacity, image...)
     applyBackgroundSettings();
 
     // Re-color the xterm terminal to match the new theme.
     if (typeof syncTerminalTheme === 'function') syncTerminalTheme();
-}
-
-/**
- * Apply editor-specific color scheme (separate from UI theme)
- */
-function applyEditorColorScheme() {
-    const editorScheme = App.settings.editor?.colorScheme || 'auto';
-    const uiTheme = App.settings.appearance?.theme || 'kawaii-dark';
-
-    // Determine which theme to use for editor
-    const monacoTheme = (editorScheme === 'auto') ? uiTheme : editorScheme;
-
-    // Apply to Monaco editors
-    if (typeof monaco !== 'undefined') {
-        try {
-            // Ensure theme is registered in ThemeManager
-            if (ThemeManager.themes.has(monacoTheme)) {
-                monaco.editor.setTheme(monacoTheme);
-            } else {
-                // Fallback to UI theme
-                monaco.editor.setTheme(uiTheme);
-            }
-        } catch (e) {
-            console.warn('[Theme] Failed to apply editor color scheme:', e);
-        }
-    }
 }
 
 function applyBackgroundSettings() {
