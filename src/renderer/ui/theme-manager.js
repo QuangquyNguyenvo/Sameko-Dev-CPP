@@ -180,7 +180,15 @@ const ThemeManager = {
                     btnTextHover: '#4a9bc9',
                     btnPrimaryBg: '#4a9bc9',
                     btnPrimaryBgHover: '#3a8ab8',
-                    btnPrimaryText: '#ffffff'
+                    btnPrimaryText: '#ffffff',
+                    // Terminal line colors — kawaii-light overrides (were the
+                    // [data-theme="kawaii-light"] .terminal-body .line.* rules).
+                    termLineSuccess: '#a3d9a5',
+                    termLineError: '#ff8fab',
+                    termLineWarning: '#ebcb8b',
+                    termLineInfo: '#88c9ea',
+                    termLineSystem: '#6a8a9a',
+                    termLineInput: '#5fb9cf'
                 },
                 editor: {
                     base: 'vs-dark', inherit: true,
@@ -250,14 +258,11 @@ const ThemeManager = {
                     folderIconClosed: '#ffb7c5',
                     folderIconOpen: '#ff9aaf',
                     terminalText: '#f8e8f0',
-                    // Terminal line colors — kawaii-light overrides (were the
-                    // [data-theme="kawaii-light"] .terminal-body .line.* rules).
-                    termLineSuccess: '#a3d9a5',
-                    termLineError: '#ff8fab',
-                    termLineWarning: '#ebcb8b',
-                    termLineInfo: '#88c9ea',
-                    termLineSystem: '#6a8a9a',
-                    termLineInput: '#5fb9cf',
+                    // Sakura test-result colors — darker text for its light bg
+                    // (were the [data-theme="sakura"] .test-* hardcodes).
+                    testPass: '#2d8a2d',
+                    testFail: '#c0392b',
+                    testPending: '#7f8c8d',
                     welcomeBoxBg: 'rgba(255, 182, 193, 0.4)'
                 },
                 editor: {

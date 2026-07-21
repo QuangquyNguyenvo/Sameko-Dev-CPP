@@ -638,24 +638,11 @@
     border-color: var(--border);
 }
 
-/* Settings panel h3 titles */
-[data-theme="kawaii-dark"] .settings-panel h3 {
-    color: #88c9ea !important;
-    border-bottom-color: var(--border);
-}
-
-[data-theme="dracula"] .settings-panel h3 {
-    color: #bd93f9 !important;
-    border-bottom-color: var(--border);
-}
-
-[data-theme="monokai"] .settings-panel h3 {
-    color: #a6e22e !important;
-    border-bottom-color: var(--border);
-}
-
-[data-theme="nord"] .settings-panel h3 {
-    color: #88c0d0 !important;
+/* Settings panel h3 titles — token-driven. Each dark builtin's
+   --settings-section-color equals its former hardcoded value, so builtins are
+   unchanged; custom dark themes now follow their own section color. */
+[data-theme-variant="dark"] .settings-panel h3 {
+    color: var(--settings-section-color) !important;
     border-bottom-color: var(--border);
 }
 
@@ -670,25 +657,12 @@
     border-color: var(--border-strong);
 }
 
-/* Setting row labels - ensure text is readable */
-html[data-theme="kawaii-dark"] .setting-row label:first-child,
-html[data-theme="kawaii-dark"] .setting-row>label:not(.switch) {
-    color: #e0f0ff !important;
-}
-
-html[data-theme="dracula"] .setting-row label:first-child,
-html[data-theme="dracula"] .setting-row>label:not(.switch) {
-    color: #f8f8f2 !important;
-}
-
-html[data-theme="monokai"] .setting-row label:first-child,
-html[data-theme="monokai"] .setting-row>label:not(.switch) {
-    color: #f8f8f2 !important;
-}
-
-html[data-theme="nord"] .setting-row label:first-child,
-html[data-theme="nord"] .setting-row>label:not(.switch) {
-    color: #eceff4 !important;
+/* Setting row labels - ensure text is readable. Each dark builtin's former
+   hardcoded value equals its --text-primary, so this is byte-identical for
+   builtins and adaptive for custom dark themes. */
+[data-theme-variant="dark"] .setting-row label:first-child,
+[data-theme-variant="dark"] .setting-row>label:not(.switch) {
+    color: var(--text-primary) !important;
 }
 
 /* Appearance controls h3 */
@@ -929,40 +903,32 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     color: var(--error);
 }
 
-/* ===== SAKURA TEST RESULTS - Darker text for light background ===== */
-[data-theme="sakura"] .test-summary-stat.passed {
-    color: #2d8a2d;
-}
-
-[data-theme="sakura"] .test-summary-stat.failed {
-    color: #c0392b;
-}
-
+/* ===== SAKURA TEST RESULTS - Darker text for light background =====
+   Now token-driven: summary passed/failed and status.pending are handled by the
+   base rules reading --test-pass/--test-fail/--test-pending (set for sakura in
+   ThemeManager), so those per-theme overrides were removed. The translucent AC/WA
+   chips keep sakura's distinct light-chip style but reference the tokens. */
 [data-theme="sakura"] .test-result-status.AC {
     background: rgba(45, 138, 45, 0.15);
-    color: #2d8a2d;
+    color: var(--test-pass);
 }
 
 [data-theme="sakura"] .test-result-status.WA {
     background: rgba(192, 57, 43, 0.15);
-    color: #c0392b;
-}
-
-[data-theme="sakura"] .test-result-status.pending {
-    color: #7f8c8d;
+    color: var(--test-fail);
 }
 
 [data-theme="sakura"] .test-result-item.item-ac {
     background: rgba(45, 138, 45, 0.08);
-    border-left: 3px solid #2d8a2d;
+    border-left: 3px solid var(--test-pass);
 }
 
 [data-theme="sakura"] .run-all-btn {
-    color: #5d4a4d;
+    color: var(--text-primary);
 }
 
 [data-theme="sakura"] .run-all-btn.danger {
-    background: #c0392b;
+    background: var(--test-fail);
     color: white;
 }
 
@@ -1060,9 +1026,9 @@ html[data-theme="nord"] .setting-row>label:not(.switch) {
     background: var(--border);
 }
 
-/* Fix Nord sidebar text color contrast */
+/* Fix Nord sidebar text color contrast (nord's --text-primary = #eceff4) */
 [data-theme="nord"] .settings-tab {
-    color: #eceff4 !important;
+    color: var(--text-primary) !important;
 }
 
 /* ============================================================================

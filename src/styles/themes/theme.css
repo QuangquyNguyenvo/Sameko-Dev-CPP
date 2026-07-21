@@ -4454,7 +4454,7 @@ body.split-active .editor-pane {
 
 .test-result-status.pending {
     background: color-mix(in srgb, var(--text-muted) 18%, transparent);
-    color: var(--text-secondary);
+    color: var(--test-pending, var(--text-secondary));
 }
 
 .test-result-status.AC {
@@ -4562,12 +4562,12 @@ body.split-active .editor-pane {
 }
 
 .test-summary-stat.passed {
-    color: var(--success);
+    color: var(--test-pass, var(--success));
     background: color-mix(in srgb, var(--success) 12%, transparent);
 }
 
 .test-summary-stat.failed {
-    color: var(--danger);
+    color: var(--test-fail, var(--danger));
     background: color-mix(in srgb, var(--danger, var(--error)) 12%, transparent);
 }
 

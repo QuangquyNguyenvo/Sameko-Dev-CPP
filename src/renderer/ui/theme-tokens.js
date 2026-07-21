@@ -98,6 +98,13 @@ const ThemeTokens = {
         termLineSystem:  { cssVar: '--term-line-system',  type: 'color', group: 'terminal' },
         termLineInput:   { cssVar: '--term-line-input',   type: 'color', group: 'terminal' },
 
+        // Test/verdict result colors (pass/fail/pending). Base rules fall back to
+        // success/danger/text-secondary so builtins are unchanged; sakura sets the
+        // darker on-light values it used to hardcode.
+        testPass:    { cssVar: '--test-pass',    type: 'color', group: 'status' },
+        testFail:    { cssVar: '--test-fail',    type: 'color', group: 'status' },
+        testPending: { cssVar: '--test-pending', type: 'color', group: 'status' },
+
         // ============= SHADOW/EFFECTS =============
         shadowSoft: { cssVar: '--shadow-soft', type: 'raw' },
         shadowCard: { cssVar: '--shadow-card', type: 'raw' },
@@ -401,6 +408,11 @@ const ThemeTokens = {
         d('termLineInfo',     '#61afef');
         d('termLineSystem',   '#5c6370');
         d('termLineInput',    '#56b6c2');
+
+        // Test result colors inherit the theme's semantic colors by default.
+        d('testPass',    'success', '#2ecc71');
+        d('testFail',    'error',   '#e74c3c');
+        d('testPending', 'textSecondary', '#7f8c8d');
     },
 
     /**
