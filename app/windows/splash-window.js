@@ -30,6 +30,10 @@ function createSplashWindow() {
         height: 320,
         frame: false,
         transparent: true,
+        // Linux without a compositing WM ignores `transparent` and would paint an
+        // opaque black rectangle. A fully transparent backgroundColor keeps it
+        // looking intentional; it is invisible where transparency does work.
+        backgroundColor: '#00000000',
         resizable: false,
         movable: true,
         center: true,

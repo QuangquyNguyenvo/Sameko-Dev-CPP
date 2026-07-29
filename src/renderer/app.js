@@ -18,7 +18,7 @@
 const DEFAULT_SETTINGS = {
     editor: {
         fontSize: 14,
-        fontFamily: "Consolas, monospace",
+        fontFamily: "'JetBrains Mono', monospace",
         tabSize: 4,
         minimap: true,
         wordWrap: false,
@@ -2341,6 +2341,8 @@ const STARTUP_BEHAVIORS = Object.freeze({
     RESTORE_PREVIOUS: 'restore-previous-session'
 });
 
+// NOTE: only 'JetBrains Mono' is bundled (src/assets/fonts.css). The others fall back to
+// the generic monospace face when the user's OS doesn't ship them — very likely on Linux.
 const BUILTIN_FONT_FAMILIES = new Set([
     "'JetBrains Mono', monospace",
     "'Fira Code', monospace",

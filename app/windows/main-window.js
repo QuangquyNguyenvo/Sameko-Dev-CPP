@@ -5,6 +5,7 @@ const path = require('path');
 const http = require('http');
 const fs = require('fs');
 const { WINDOW } = require('../shared/constants');
+const { IS_WIN } = require('../shared/platform');
 
 let mainWindow = null;
 let devServer = null;
@@ -265,7 +266,16 @@ function createMainWindow() {
             contextIsolation: true,
             preload: path.join(appRoot, 'preload.js')
         },
-        icon: path.join(appRoot, 'src', 'assets', 'icon.ico'),
+        // Electron on Linux/macOS cannot read .ico for a window icon — it needs a PNG.
+        // It must be a SMALL one: Electron copies the bitmap into the X11 _NET_WM_ICON
+        // property, and the 2508x2508 source produced a 25 MB request that the X server
+        // rejected ("Cannot send request of length 25160288"). Weston's XWM then never
+        // finished setting up the window, so under WSLg the window existed in X but was
+        // never handed to the compositor — it simply never appeared. 256px is the size
+        // desktops actually use for taskbar/alt-tab.
+        icon: IS_WIN
+            ? path.join(appRoot, 'src', 'assets', 'icon.ico')
+            : path.join(appRoot, 'src', 'assets', 'icons', 'linux', '256x256.png'),
         backgroundColor: WINDOW.BACKGROUND_COLOR
     };
 
