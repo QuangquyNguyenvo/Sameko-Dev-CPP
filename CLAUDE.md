@@ -25,9 +25,13 @@ No test runner or linter is configured. Do not assume `npm test`.
 
 ## Plans folder
 - `plans/` is **gitignored** — a working area for phased implementation plans, not committed.
-- Organize by feature: `plans/<feature>/` (e.g. `plans/debugger/00-OVERVIEW.md`, `phase-01-*.md`).
+- Organize by feature: `plans/<feature>/` — `CONTEXT.md` + `CHECKLIST.md` + `phase-NN-*.md`.
 - Each phase file is written to be **self-contained** (paths, current-code snippets, conventions,
   acceptance criteria) so a fresh session can execute one phase without prior conversation context.
+- **Read `PLANNING.md` (repo root) before creating or executing any plan** — it defines the folder
+  layout, phase sizing, risk ratings, and the mandatory `## Deviations` / measurable-acceptance rules.
+- Existing plans (`debugger/`, `linux-support/`, `theme-customizer/`) use a merged `00-OVERVIEW.md`;
+  leave them as they are.
 
 ## Code Intelligence (CodeGraph)
 This repository is indexed by CodeGraph. Do **NOT** use grep/find unless CodeGraph fails.
