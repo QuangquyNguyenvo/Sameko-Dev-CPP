@@ -33,8 +33,10 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { parseLine } = require('./mi-parser');
+const { IS_WIN, killPosixTree } = require('../../shared/platform');
 
 const COMMAND_TIMEOUT_MS = 20000; // guard against a wedged gdb; generous for big containers
+const INFERIOR_PID_TIMEOUT_MS = 400; // dispose() must stay snappy; see _inferiorPid()
 
 class GdbSession extends EventEmitter {
     /**
@@ -64,6 +66,7 @@ class GdbSession extends EventEmitter {
         this._outOffset = 0;
         this._errOffset = 0;
         this._pumpTimer = null;
+        this._disposing = false;
     }
 
     // ---- lifecycle ---------------------------------------------------------
@@ -382,12 +385,47 @@ class GdbSession extends EventEmitter {
 
     // ---- teardown ----------------------------------------------------------
 
+    /**
+     * Best-effort: ask gdb for the inferior's OS pid via -list-thread-groups.
+     * Races the reply against a short deadline of its own -- send()'s normal
+     * 20s timeout is far too long to sit inside dispose(), and a wedged gdb
+     * (target running, MI not answering) would otherwise stall Stop.
+     * Returns null when there is no running inferior or the query fails.
+     * @returns {Promise<number|null>}
+     */
+    async _inferiorPid() {
+        try {
+            const r = await Promise.race([
+                this.send('-list-thread-groups'),
+                new Promise((resolve) => setTimeout(() => resolve(null), INFERIOR_PID_TIMEOUT_MS)),
+            ]);
+            const groups = r && r.groups;
+            const list = Array.isArray(groups) ? groups : (groups ? [groups] : []);
+            for (const g of list) {
+                const p = parseInt(g && g.pid, 10);
+                if (Number.isInteger(p) && p > 0) return p;
+            }
+        } catch (_) { /* gdb already gone / MI error */ }
+        return null;
+    }
+
     /** Gracefully quit gdb, then hard-kill the process tree so no inferior leaks. */
     async dispose() {
-        if (this.disposed) return;
-        this.disposed = true;
+        if (this.disposed || this._disposing) return;
+        this._disposing = true;
         this._stopPump();
         const pid = this.proc && this.proc.pid;
+
+        // POSIX has no `taskkill /t`, and with startup-with-shell the inferior is a
+        // grandchild of gdb -- so SIGKILLing gdb alone can leave the program running.
+        // Ask gdb for the inferior pid while it is still alive. This MUST happen
+        // before `disposed` is set, because send() rejects once that flag is true.
+        let inferiorPid = null;
+        if (!IS_WIN && this.proc && this.state !== 'terminated') {
+            inferiorPid = await this._inferiorPid();
+        }
+
+        this.disposed = true;
         try { if (this.proc && this.proc.stdin.writable) this.proc.stdin.write('-gdb-exit\n'); } catch (_) { }
 
         await new Promise((resolve) => {
@@ -397,11 +435,12 @@ class GdbSession extends EventEmitter {
             setTimeout(finish, 800);
         });
 
-        if (pid && process.platform === 'win32') {
+        if (pid && IS_WIN) {
             // /t kills the whole tree (gdb + inferior); ignore errors.
             try { execFile('taskkill', ['/pid', String(pid), '/f', '/t']); } catch (_) { }
         }
         try { if (this.proc) this.proc.kill('SIGKILL'); } catch (_) { }
+        if (inferiorPid) killPosixTree(inferiorPid);
         this._failAllPending(new Error('session disposed'));
         this._cleanupTempFiles();
         this.proc = null;

@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const { spawn, exec } = require('child_process');
 const { getCompilerEnv } = require('../compiler/detector');
 const { normalizeOutput, compareOutputs } = require('../../shared/judge');
+const { IS_WIN, IS_LINUX, readProcMemoryKB } = require('../../shared/platform');
 
 /**
  * Run a single test case
@@ -64,23 +65,29 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
         const pid = testProcess.pid;
         debugInfo.pid = pid || null;
 
-        // Memory polling (Windows)
+        // Memory polling. Windows: tasklist (instantaneous, keep running max).
+        // Linux: /proc/<pid>/status VmHWM = kernel-tracked peak.
         const pollMemory = () => {
             if (!testProcess || !pid) return;
-            exec(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`, (err, stdout) => {
-                if (!err && stdout) {
-                    const match = stdout.match(/"([0-9][0-9.,\s]*)\s*K"/i);
-                    if (match) {
-                        const memKB = parseInt(match[1].replace(/[,.\s]/g, ''), 10);
-                        if (memKB > peakMemoryKB) peakMemoryKB = memKB;
+            if (IS_WIN) {
+                exec(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`, (err, stdout) => {
+                    if (!err && stdout) {
+                        const match = stdout.match(/"([0-9][0-9.,\s]*)\s*K"/i);
+                        if (match) {
+                            const memKB = parseInt(match[1].replace(/[,.\s]/g, ''), 10);
+                            if (memKB > peakMemoryKB) peakMemoryKB = memKB;
+                        }
                     }
-                }
-            });
+                });
+            } else {
+                const memKB = readProcMemoryKB(pid);
+                if (memKB > peakMemoryKB) peakMemoryKB = memKB;
+            }
         };
 
-        if (pid && process.platform === 'win32') {
+        if (pid && (IS_WIN || IS_LINUX)) {
             pollMemory();
-            memoryPollInterval = setInterval(pollMemory, 500);
+            memoryPollInterval = setInterval(pollMemory, IS_WIN ? 500 : 100);
         }
 
         // Set timeout
@@ -88,6 +95,13 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
             killed = true;
             debugInfo.timeoutKilled = true;
             testProcess.kill();
+            // POSIX: kill() is SIGTERM, which a program can trap/ignore. Escalate to
+            // SIGKILL shortly after so one bad submission can't hang the whole batch.
+            if (!IS_WIN) {
+                setTimeout(() => {
+                    try { if (testProcess.exitCode === null && testProcess.signalCode === null) process.kill(testProcess.pid, 'SIGKILL'); } catch (_) { }
+                }, 200);
+            }
         }, timeLimit);
 
         // Send input and start timing

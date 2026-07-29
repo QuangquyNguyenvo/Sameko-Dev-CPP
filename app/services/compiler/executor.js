@@ -9,10 +9,12 @@
 const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const os = require('os');
 const { spawn, exec } = require('child_process');
 const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getBasePath, getUnbufferObjectPath } = require('./detector');
 const { ensurePCH } = require('./pch-manager');
 const { validateCompilerFlags } = require('../../shared/validators');
+const { EXE_SUFFIX, IS_WIN, IS_MAC, IS_LINUX, ensurePrivateDir, readProcMemoryKB, which } = require('../../shared/platform');
 
 let runningProcess = null;
 let activeCompilerProcess = null;
@@ -42,8 +44,13 @@ function setSendToRendererCallback(callback) {
 function cleanupOldBuildArtifacts(buildsDir) {
     try {
         if (!fs.existsSync(buildsDir)) return;
+        // buildsDir is app-owned (<temp>/cpp-ide-builds) and only ever holds
+        // compiler output: `<name>.exe` on Windows, extension-less `<name>` on POSIX.
+        const isArtifact = (name) => (IS_WIN
+            ? name.toLowerCase().endsWith('.exe')
+            : path.extname(name) === '');
         const entries = fs.readdirSync(buildsDir, { withFileTypes: true })
-            .filter((e) => e.isFile() && e.name.toLowerCase().endsWith('.exe'))
+            .filter((e) => e.isFile() && isArtifact(e.name))
             .map((e) => {
                 const fullPath = path.join(buildsDir, e.name);
                 const stat = fs.statSync(fullPath);
@@ -144,7 +151,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
     if (!filePath) {
         const tempDir = path.join(app.getPath('temp'), 'cpp-ide');
         if (!fs.existsSync(tempDir)) {
-            fs.mkdirSync(tempDir, { recursive: true });
+            ensurePrivateDir(tempDir);
         }
         actualFilePath = path.join(tempDir, 'temp_code.cpp');
         usingTempFile = true;
@@ -171,14 +178,15 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
     const dir = path.dirname(actualFilePath);
     const baseName = path.basename(actualFilePath, path.extname(actualFilePath));
 
-    // Use system temp directory for .exe output
+    // Use system temp directory for compiler output.
+    // On POSIX `temp` is the shared /tmp, so keep the dir private (0700).
     const buildsDir = path.join(app.getPath('temp'), 'cpp-ide-builds');
     if (!fs.existsSync(buildsDir)) {
-        fs.mkdirSync(buildsDir, { recursive: true });
+        ensurePrivateDir(buildsDir);
     }
     cleanupOldBuildArtifacts(buildsDir);
 
-    const outputPath = path.join(buildsDir, baseName + '.exe');
+    const outputPath = path.join(buildsDir, baseName + EXE_SUFFIX);
 
     // ===== MULTI-FILE PROJECT SUPPORT (fast lookup) =====
     let sourceFiles = [actualFilePath];
@@ -363,8 +371,10 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
 }
 
 /**
- * Run compiled executable in external CMD window (Windows only)
- * 
+ * Run compiled executable in an external terminal window.
+ * Dispatches to a per-platform implementation; Windows keeps the original
+ * `start /wait cmd /c` behaviour untouched.
+ *
  * @param {Object} options
  * @param {string} options.exePath - Path to executable
  * @param {string} [options.cwd] - Working directory
@@ -377,8 +387,19 @@ async function runExternal({ exePath, cwd }) {
 
     const workingDir = cwd || path.dirname(exePath);
     const env = getCompilerEnv();
-    const exeName = path.basename(exePath);
     const startTime = Date.now();
+
+    if (IS_WIN) return runExternalWindows({ exePath, workingDir, env, startTime });
+    if (IS_MAC) return runExternalMac({ exePath, workingDir, env, startTime });
+    return runExternalLinux({ exePath, workingDir, env, startTime });
+}
+
+/**
+ * Windows implementation — unchanged behaviour, just moved out of runExternal().
+ * @returns {Promise<import('../../../shared/types').RunResult>}
+ */
+async function runExternalWindows({ exePath, workingDir, env, startTime }) {
+    const exeName = path.basename(exePath);
     let peakMemoryKB = 0;
     let memoryPollInterval = null;
 
@@ -402,6 +423,9 @@ async function runExternal({ exePath, cwd }) {
         windowsHide: false
     });
 
+    // Windows-only: on POSIX the program runs as a grandchild of the terminal
+    // emulator (see phase-05), so we have no reliable pid to sample. External
+    // runs therefore report peakMemoryKB = 0 on Linux/macOS by design.
     const pollExternalMemory = () => {
         if (process.platform !== 'win32') return;
         exec(`tasklist /FI "IMAGENAME eq ${exeName}" /FO CSV /NH`, (err, stdout) => {
@@ -453,8 +477,162 @@ async function runExternal({ exePath, cwd }) {
 }
 
 /**
+ * Build the shell script that a POSIX terminal emulator will execute: run the
+ * program, show the exit code, then wait for a keypress so the window does not
+ * vanish instantly.
+ *
+ * Paths are single-quoted (with `'` escaped as `'\''`) so spaces, `$`, backticks
+ * and double quotes in the path are all inert.
+ *
+ * @param {string} exePath
+ * @param {string} workingDir
+ * @returns {string}
+ */
+function buildPosixRunnerScript(exePath, workingDir) {
+    const q = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
+    return [
+        '#!/usr/bin/env bash',
+        '# self-delete: the file stays readable via the open fd while bash runs it',
+        'rm -f -- "$0"',
+        `cd ${q(workingDir)} || exit 1`,
+        'clear',
+        `${q(exePath)}`,
+        'CODE=$?',
+        'echo',
+        'echo "--------------------------------"',
+        'echo "Program finished (exit code: $CODE). Press ENTER to close..."',
+        'read -r _',
+    ].join('\n') + '\n';
+}
+
+/** Remove leftover runner scripts (crash / terminal killed before self-delete). */
+function sweepStaleRunnerScripts() {
+    try {
+        const dir = os.tmpdir();
+        const cutoff = Date.now() - 6 * 60 * 60 * 1000;   // 6h
+        for (const name of fs.readdirSync(dir)) {
+            if (!/^sameko-run-.*\.(sh|command)$/.test(name)) continue;
+            const full = path.join(dir, name);
+            try {
+                if (fs.statSync(full).mtimeMs < cutoff) fs.unlinkSync(full);
+            } catch (_) { }
+        }
+    } catch (_) { }
+}
+
+// Ordered by "most likely to be installed AND behaves correctly".
+// `waits: true`  -> the spawned process stays alive until the window closes
+//                   => child 'exit' is a trustworthy end-of-run signal.
+// `waits: false` -> it forks immediately; we must NOT treat 'exit' as end-of-run.
+const LINUX_TERMINALS = [
+    { bin: 'konsole', waits: true, args: (s) => ['--nofork', '-e', 'bash', s] },
+    { bin: 'gnome-terminal', waits: true, args: (s) => ['--wait', '--', 'bash', s] },
+    { bin: 'xterm', waits: true, args: (s) => ['-e', 'bash', s] },
+    { bin: 'alacritty', waits: true, args: (s) => ['-e', 'bash', s] },
+    { bin: 'wezterm', waits: true, args: (s) => ['start', '--', 'bash', s] },
+    { bin: 'kitty', waits: true, args: (s) => ['bash', s] },
+    { bin: 'xfce4-terminal', waits: true, args: (s) => ['--disable-server', '-x', 'bash', s] },
+    { bin: 'mate-terminal', waits: false, args: (s) => ['--', 'bash', s] },
+    { bin: 'tilix', waits: false, args: (s) => ['-e', `bash ${s}`] },
+    // Debian's generic alternative — LAST on purpose: it may resolve to
+    // gnome-terminal, whose `-e` is deprecated/removed in newer versions, so we
+    // only reach for it when nothing above exists.
+    { bin: 'x-terminal-emulator', waits: false, args: (s) => ['-e', 'bash', s] },
+];
+
+/** @returns {{bin:string, waits:boolean, args:Function}|null} */
+function findLinuxTerminal() {
+    for (const t of LINUX_TERMINALS) {
+        if (which(t.bin)) return t;
+    }
+    return null;
+}
+
+/**
+ * Linux implementation — write a runner script to tmp, hand it to whichever
+ * terminal emulator is installed.
+ * @returns {Promise<import('../../../shared/types').RunResult>}
+ */
+async function runExternalLinux({ exePath, workingDir, env, startTime }) {
+    sweepStaleRunnerScripts();
+
+    const term = findLinuxTerminal();
+    if (!term) {
+        return {
+            success: false,
+            error: 'No terminal emulator found. Install one of: gnome-terminal, konsole, xterm — '
+                + 'or turn off "Run in external terminal" in Settings.',
+        };
+    }
+
+    const scriptPath = path.join(os.tmpdir(), `sameko-run-${process.pid}-${Date.now()}.sh`);
+    try {
+        fs.writeFileSync(scriptPath, buildPosixRunnerScript(exePath, workingDir), { mode: 0o700 });
+    } catch (err) {
+        return { success: false, error: `Failed to prepare runner script: ${err.message}` };
+    }
+
+    let child;
+    try {
+        // spawn (not exec) — no shell, so no quoting problems with the args array.
+        child = spawn(term.bin, term.args(scriptPath), { cwd: workingDir, env });
+    } catch (err) {
+        try { fs.unlinkSync(scriptPath); } catch (_) { }
+        return { success: false, error: `Failed to launch ${term.bin}: ${err.message}` };
+    }
+
+    child.on('error', (err) => {
+        console.warn(`[Run] external terminal error (${term.bin}):`, err.message);
+        try { fs.unlinkSync(scriptPath); } catch (_) { }
+        // Let the UI leave "running" state instead of hanging forever.
+        sendToRenderer('process-external-exit', { executionTime: Date.now() - startTime, peakMemoryKB: 0 });
+    });
+
+    child.on('exit', () => {
+        // NOTE: do NOT unlink scriptPath here — forking terminals fire 'exit'
+        // immediately and the script would vanish before bash reads it. The script
+        // deletes itself (`rm -f -- "$0"`); sweepStaleRunnerScripts() is the backstop.
+        if (!term.waits) return;   // meaningless timing for forking terminals
+        sendToRenderer('process-external-exit', {
+            executionTime: Date.now() - startTime,
+            peakMemoryKB: 0,       // no reliable pid through the terminal — see phase-04 4B
+        });
+    });
+
+    if (!term.waits) {
+        // The terminal detached; we will never learn when the program ends.
+        // Tell the UI right away so it doesn't sit in "running" forever.
+        sendToRenderer('process-external-exit', { executionTime: 0, peakMemoryKB: 0 });
+    }
+
+    sendToRenderer('process-external-started');
+    return { success: true, external: true, message: `Running in external terminal (${term.bin})` };
+}
+
+/**
+ * macOS implementation — hand a .command script to Terminal.app. `open` returns
+ * immediately, so there is no reliable exit signal.
+ * @returns {Promise<import('../../../shared/types').RunResult>}
+ */
+async function runExternalMac({ exePath, workingDir, env, startTime }) {
+    sweepStaleRunnerScripts();
+    const scriptPath = path.join(os.tmpdir(), `sameko-run-${process.pid}-${Date.now()}.command`);
+    try {
+        fs.writeFileSync(scriptPath, buildPosixRunnerScript(exePath, workingDir), { mode: 0o700 });
+    } catch (err) {
+        return { success: false, error: `Failed to prepare runner script: ${err.message}` };
+    }
+    const child = spawn('open', ['-a', 'Terminal', scriptPath], { cwd: workingDir, env });
+    child.on('error', () => { try { fs.unlinkSync(scriptPath); } catch (_) { } });
+
+    sendToRenderer('process-external-started');
+    sendToRenderer('process-external-exit', { executionTime: 0, peakMemoryKB: 0 });
+    return { success: true, external: true, message: 'Running in external terminal' };
+}
+
+/**
  * Run compiled executable
- * 
+ *
  * @param {Object} options
  * @param {string} options.exePath - Path to executable
  * @param {string} [options.cwd] - Working directory
@@ -482,26 +660,33 @@ async function run({ exePath, cwd }) {
 
     const pid = runningProcess.pid;
 
-    // Memory polling function (Windows only)
+    // Memory polling. Windows: `tasklist` (instantaneous working set, so we
+    // keep the running max). Linux: /proc/<pid>/status VmHWM, which IS the
+    // kernel-tracked peak — one successful read is enough.
     const pollMemory = () => {
         if (!runningProcess || !pid) return;
-        exec(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`, (err, stdout) => {
-            if (!err && stdout) {
-                const match = stdout.match(/"([0-9][0-9.,\s]*)\s*K"/i);
-                if (match) {
-                    const memKB = parseInt(match[1].replace(/[,.\s]/g, ''), 10);
-                    if (memKB > peakMemoryKB) {
-                        peakMemoryKB = memKB;
+        if (IS_WIN) {
+            exec(`tasklist /FI "PID eq ${pid}" /FO CSV /NH`, (err, stdout) => {
+                if (!err && stdout) {
+                    const match = stdout.match(/"([0-9][0-9.,\s]*)\s*K"/i);
+                    if (match) {
+                        const memKB = parseInt(match[1].replace(/[,.\s]/g, ''), 10);
+                        if (memKB > peakMemoryKB) {
+                            peakMemoryKB = memKB;
+                        }
                     }
                 }
-            }
-        });
+            });
+        } else {
+            const memKB = readProcMemoryKB(pid);   // VmHWM on Linux; 0 on macOS
+            if (memKB > peakMemoryKB) peakMemoryKB = memKB;
+        }
     };
 
     // Start memory polling
-    if (pid && process.platform === 'win32') {
+    if (pid && (IS_WIN || IS_LINUX)) {
         pollMemory();
-        runningMemoryPollInterval = setInterval(pollMemory, 500);
+        runningMemoryPollInterval = setInterval(pollMemory, IS_WIN ? 500 : 100);
     }
 
     // Coalesce program output: a tight `while(1) cout<<...` loop fires the
@@ -627,7 +812,11 @@ function stopProcess() {
         }
     }
 
-    // KILL STRATEGY 3: Node Process Kill (PID)
+    // KILL STRATEGY 3: Node Process Kill (PID) — also the primary path on POSIX.
+    // NOTE: this kills only the process itself, not a forked child tree. Killing a
+    // group would require spawning run() with `detached: true`, which risks breaking
+    // the stdin/stdout pipes the output panel depends on. Single-process programs
+    // (the CP use case) are fully covered. Revisit only if a real need appears.
     if (lastRunningPID) {
         try {
             process.kill(lastRunningPID, 'SIGKILL');

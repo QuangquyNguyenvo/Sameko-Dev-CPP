@@ -11,6 +11,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const { getDetectedCompiler, getCompilerInfo, getCompilerEnv } = require('./detector');
+const { ensurePrivateDir } = require('../../shared/platform');
 
 const pchDir = path.join(app.getPath('temp'), 'cpp-ide-pch');
 
@@ -38,16 +39,18 @@ function getPCHKey(flags = '') {
  * @returns {Promise<{ready: boolean, pchSubDir?: string, pchKey?: string}>}
  */
 async function ensurePCH(flags = '', onMessage = null) {
-    // Ensure base PCH directory exists
+    // Ensure base PCH directory exists.
+    // On POSIX `temp` is the shared /tmp, and the .gch here is -include'd into
+    // every compile, so keep it private (0700) to prevent cross-user tampering.
     if (!fs.existsSync(pchDir)) {
-        fs.mkdirSync(pchDir, { recursive: true });
+        ensurePrivateDir(pchDir);
     }
 
     const pchKey = getPCHKey(flags);
     const pchSubDir = path.join(pchDir, pchKey);
 
     if (!fs.existsSync(pchSubDir)) {
-        fs.mkdirSync(pchSubDir, { recursive: true });
+        ensurePrivateDir(pchSubDir);
     }
 
     const pchHeader = path.join(pchSubDir, 'stdc++.h');
