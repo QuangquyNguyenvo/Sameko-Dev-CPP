@@ -31,25 +31,43 @@ function watchFile(filePath) {
 
     try {
         const stats = fs.statSync(filePath);
+
+        const notifyIfChanged = () => {
+            const current = fileWatchers.get(filePath);
+            if (!current) return;
+            try {
+                const newMtime = fs.statSync(filePath).mtimeMs;
+                if (newMtime !== current.mtime) {
+                    current.mtime = newMtime;
+                    if (mainWindow && !mainWindow.isDestroyed()) {
+                        mainWindow.webContents.send(IPC.EVENTS.FILE_CHANGED_EXTERNAL, { path: filePath });
+                    }
+                }
+            } catch (e) {
+                // File might be deleted
+            }
+        };
+
         const watcher = fs.watch(filePath, (eventType) => {
             if (eventType === 'change') {
-                const current = fileWatchers.get(filePath);
-                if (!current) return;
-
-                try {
-                    const newStats = fs.statSync(filePath);
-                    const newMtime = newStats.mtimeMs;
-
-                    if (newMtime !== current.mtime) {
-                        current.mtime = newMtime;
-                        if (mainWindow && !mainWindow.isDestroyed()) {
-                            mainWindow.webContents.send(IPC.EVENTS.FILE_CHANGED_EXTERNAL, { path: filePath });
-                        }
-                    }
-                } catch (e) {
-                    // File might be deleted
-                }
+                notifyIfChanged();
+                return;
             }
+            // 'rename': on Linux fs.watch follows the INODE, so any external write that
+            // replaces the file (vim's default save, `git checkout/pull`, `sed -i`,
+            // atomic-save editors) kills this watcher permanently. Re-establish it on the
+            // new inode, then report the change. On Windows this branch is effectively
+            // unused because ReadDirectoryChangesW tracks the name, not the inode.
+            const hadWatcher = fileWatchers.has(filePath);
+            unwatchFile(filePath);
+            setTimeout(() => {
+                if (!fs.existsSync(filePath)) return;
+                watchFile(filePath);
+                // The file was replaced wholesale, so it changed by definition.
+                if (hadWatcher && mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.send(IPC.EVENTS.FILE_CHANGED_EXTERNAL, { path: filePath });
+                }
+            }, 50);
         });
 
         fileWatchers.set(filePath, { watcher, mtime: stats.mtimeMs });
