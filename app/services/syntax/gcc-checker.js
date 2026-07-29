@@ -14,6 +14,7 @@ const { getDetectedCompiler } = require('../compiler/detector');
 const { ensurePCH } = require('../compiler/pch-manager');
 const { getCompilerSettings } = require('../../shared/settings-reader');
 const { validateCompilerFlags } = require('../../shared/validators');
+const { ensurePrivateDir } = require('../../shared/platform');
 
 let activeChecker = null;
 
@@ -31,9 +32,10 @@ async function checkSyntax(content, filePath = null) {
     cancelSyntaxCheck();
 
     // Create temp file for checking
+    // On POSIX `temp` is the shared /tmp, so keep the dir private (0700).
     const tempDir = path.join(app.getPath('temp'), 'cpp-ide-check');
     if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
+        ensurePrivateDir(tempDir);
     }
 
     const tempFile = path.join(tempDir, 'check_temp.cpp');

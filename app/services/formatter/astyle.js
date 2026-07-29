@@ -10,6 +10,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const { getBasePath, getResourcesPath } = require('../compiler/detector');
+const { binName, systemBinDirs, which, IS_WIN } = require('../../shared/platform');
 
 let detectedAStyle = null;
 
@@ -24,19 +25,34 @@ function detectAStyle() {
 
     const possiblePaths = [
         // Bundled with app (in Sameko-GCC)
-        path.join(resourcesPath, 'Sameko-GCC', 'bin', 'astyle.exe'),
-        path.join(basePath, 'Sameko-GCC', 'bin', 'astyle.exe'),
-        // System paths
-        'C:\\TDM-GCC-64\\bin\\astyle.exe',
-        'C:\\Program Files\\AStyle\\bin\\astyle.exe',
-        'C:\\Program Files (x86)\\AStyle\\bin\\astyle.exe',
+        path.join(resourcesPath, 'Sameko-GCC', 'bin', binName('astyle')),
+        path.join(basePath, 'Sameko-GCC', 'bin', binName('astyle')),
     ];
+
+    if (IS_WIN) {
+        possiblePaths.push(
+            'C:\\TDM-GCC-64\\bin\\astyle.exe',
+            'C:\\Program Files\\AStyle\\bin\\astyle.exe',
+            'C:\\Program Files (x86)\\AStyle\\bin\\astyle.exe',
+        );
+    } else {
+        for (const dir of systemBinDirs()) {
+            possiblePaths.push(path.join(dir, 'astyle'));
+        }
+    }
 
     for (const p of possiblePaths) {
         if (fs.existsSync(p)) {
             console.log(`[AStyle] Found: ${p}`);
             return p;
         }
+    }
+
+    // Last chance: anywhere on PATH.
+    const fromPath = which('astyle');
+    if (fromPath) {
+        console.log(`[AStyle] Found on PATH: ${fromPath}`);
+        return fromPath;
     }
 
     console.log('[AStyle] Not found - format feature will be disabled');
@@ -71,7 +87,9 @@ async function formatCode(code, style = 'google') {
     if (!astylePath) {
         return {
             success: false,
-            error: 'AStyle was not found. Download astyle.exe and place it in Sameko-GCC\\bin\\.'
+            error: IS_WIN
+                ? 'AStyle was not found. Download astyle.exe and place it in Sameko-GCC\\bin\\.'
+                : 'AStyle was not found. Install it (e.g. `sudo apt install astyle`) or place an `astyle` binary in Sameko-GCC/bin/.'
         };
     }
 

@@ -14,6 +14,29 @@ const url = require('url');
 const { app } = require('electron');
 const { getCompilerBinDir, getBasePath, getDetectedCompiler } = require('../compiler/detector');
 const { getCompilerSettings } = require('../../shared/settings-reader');
+const { binName, NULL_DEVICE, IS_WIN, IS_MAC } = require('../../shared/platform');
+
+/**
+ * Working directory for the tools we spawn (g++, clangd).
+ *
+ * `getBasePath()` rewrites `app.asar` to `app.asar.unpacked`, but electron-builder
+ * only creates that tree for files it actually unpacks — so in a packaged build the
+ * path usually does NOT exist. Passing a non-existent `cwd` to spawn() makes Node
+ * fail with a misleading `ENOENT` naming the *binary*, which reads as "g++ is
+ * missing" when g++ is perfectly fine. That killed IntelliSense in packaged builds.
+ * Fall back to a directory that always exists.
+ * @returns {string}
+ */
+function getSpawnCwd() {
+    try {
+        const base = getBasePath();
+        if (base && fs.existsSync(base)) return base;
+    } catch (_) { /* fall through */ }
+    try {
+        if (process.resourcesPath && fs.existsSync(process.resourcesPath)) return process.resourcesPath;
+    } catch (_) { /* fall through */ }
+    return os.tmpdir();
+}
 
 let clangdProcess = null;
 let isEnabled = false;
@@ -43,22 +66,22 @@ let initializationPromise = null;
 let resolveInitialization = null;
 
 /**
- * Find clangd.exe location
+ * Find the clangd binary.
  * @returns {{clangdPath: string, binDir: string}|null}
  */
 function findClangd() {
-    // 1. Try to find clangd.exe in same directory as g++.exe
+    // 1. Try to find clangd in the same directory as g++
     const detectedBinDir = getCompilerBinDir();
     if (detectedBinDir) {
-        const p = path.join(detectedBinDir, 'clangd.exe');
+        const p = path.join(detectedBinDir, binName('clangd'));
         if (fs.existsSync(p)) {
             return { clangdPath: p, binDir: detectedBinDir };
         }
     }
-    // 2. Fallback: check Sameko-GCC/bin/clangd.exe relative to app base path
+    // 2. Fallback: check Sameko-GCC/bin/clangd relative to app base path
     const basePath = getBasePath();
     const fallbackBinDir = path.join(basePath, 'Sameko-GCC', 'bin');
-    const fallbackPath = path.join(fallbackBinDir, 'clangd.exe');
+    const fallbackPath = path.join(fallbackBinDir, binName('clangd'));
     if (fs.existsSync(fallbackPath)) {
         return { clangdPath: fallbackPath, binDir: fallbackBinDir };
     }
@@ -271,10 +294,14 @@ function getGccIncludePaths() {
             return;
         }
 
-        // Use nul as a no-op input. -E = preprocess only, -Wp,-v = verbose
-        // include path output (printed to stderr between markers).
-        const child = spawn(gpp, ['-E', '-Wp,-v', '-xc++', 'nul'], {
-            cwd: getBasePath()
+        // Use the platform null device as a no-op input ('NUL' on Windows,
+        // '/dev/null' on POSIX — 'nul' does NOT exist on Linux and makes g++
+        // bail out before printing the include search list).
+        // -E = preprocess only, -Wp,-v = verbose include path output (stderr,
+        // printed between the "search starts here:" / "End of search list."
+        // markers).
+        const child = spawn(gpp, ['-E', '-Wp,-v', '-xc++', NULL_DEVICE], {
+            cwd: getSpawnCwd()
         });
         let stderr = '';
         let settled = false;
@@ -369,7 +396,7 @@ async function spawnProcess() {
 
     try {
         clangdProcess = spawn(clangdPath, flags, {
-            cwd: getBasePath(),
+            cwd: getSpawnCwd(),
             env: process.env
         });
 
@@ -471,11 +498,12 @@ function buildClangdFlagsList(includePaths, opts = {}) {
     const stdFlag = cppStandard ? `-std=${cppStandard}` : '-std=gnu++17';
     const toPath = (p) => opts.posixPaths ? p.replace(/\\/g, '/') : p;
 
-    const flags = [
-        stdFlag,
-        '--target=x86_64-w64-mingw32',
-        ...includePaths.flatMap(p => ['-I', toPath(p)])
-    ];
+    const flags = [stdFlag];
+    // The MinGW triple describes the bundled Windows toolchain only. On
+    // Linux/macOS clangd's own default target already matches the system g++,
+    // and forcing mingw here makes it parse Windows headers that do not exist.
+    if (IS_WIN) flags.push('--target=x86_64-w64-mingw32');
+    flags.push(...includePaths.flatMap(p => ['-I', toPath(p)]));
     if (extraFlags) {
         flags.push(...extraFlags.split(/\s+/).filter(Boolean));
     }
@@ -515,8 +543,17 @@ function buildUserConfigYamlContent(includePaths) {
 }
 
 function getClangdUserConfigPath() {
-    const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
-    return path.join(localAppData, 'clangd', 'config.yaml');
+    let baseDir;
+    if (IS_WIN) {
+        baseDir = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
+    } else if (IS_MAC) {
+        baseDir = path.join(os.homedir(), 'Library', 'Preferences');
+    } else {
+        // XDG_CONFIG_HOME must be an absolute path per spec; ignore it otherwise.
+        const xdg = process.env.XDG_CONFIG_HOME;
+        baseDir = (xdg && path.isAbsolute(xdg)) ? xdg : path.join(os.homedir(), '.config');
+    }
+    return path.join(baseDir, 'clangd', 'config.yaml');
 }
 
 /**
@@ -602,7 +639,7 @@ async function init() {
     }
     const detected = findClangd();
     if (!detected) {
-        console.warn('[Clangd] clangd.exe not found. Clangd IntelliSense service is disabled.');
+        console.warn('[Clangd] clangd binary not found. Clangd IntelliSense service is disabled.');
         isEnabled = false;
         return;
     }

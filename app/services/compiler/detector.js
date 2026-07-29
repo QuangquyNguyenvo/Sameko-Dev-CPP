@@ -10,6 +10,7 @@ const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
+const { binName, systemCompilerPaths, which } = require('../../shared/platform');
 
 let detectedCompiler = null;
 
@@ -44,16 +45,16 @@ function getBundledCompilerPaths() {
     const portableDir = getPortableDir();
 
     if (app.isPackaged) {
-        paths.push(path.join(process.resourcesPath, 'Sameko-GCC', 'bin', 'g++.exe'));
+        paths.push(path.join(process.resourcesPath, 'Sameko-GCC', 'bin', binName('g++')));
     }
 
     if (portableDir) {
-        paths.push(path.join(portableDir, 'Sameko-GCC', 'bin', 'g++.exe'));
-        paths.push(path.join(portableDir, 'resources', 'Sameko-GCC', 'bin', 'g++.exe'));
+        paths.push(path.join(portableDir, 'Sameko-GCC', 'bin', binName('g++')));
+        paths.push(path.join(portableDir, 'resources', 'Sameko-GCC', 'bin', binName('g++')));
     }
 
     const basePath = getBasePath();
-    paths.push(path.join(basePath, 'Sameko-GCC', 'bin', 'g++.exe'));
+    paths.push(path.join(basePath, 'Sameko-GCC', 'bin', binName('g++')));
 
     return paths;
 }
@@ -78,18 +79,48 @@ function detectCompiler() {
             compilerInfo.bundled = true;
 
             const binDir = path.dirname(compilerPath);
-            compilerInfo.hasLLD = fs.existsSync(path.join(binDir, 'ld.lld.exe'));
+            compilerInfo.hasLLD = fs.existsSync(path.join(binDir, binName('ld.lld')));
 
             console.log(`[Compiler] Selected bundled: ${compilerPath} (LLD: ${compilerInfo.hasLLD})`);
             return compilerPath;
         }
     }
 
+    // No bundled toolchain: fall back to a SYSTEM g++.
+    // We must resolve an ABSOLUTE path here (not bare 'g++'), because
+    // getCompilerBinDir() returns '' for non-absolute compilers, which in turn
+    // disables clangd (it looks for `clangd` next to g++) and breaks
+    // --query-driver. See plans/linux-support/phase-02 "BLOCKER #1".
+    const systemCandidates = systemCompilerPaths();
+    let systemPath = null;
+    for (const candidate of systemCandidates) {
+        if (fs.existsSync(candidate)) { systemPath = candidate; break; }
+    }
+    if (!systemPath) {
+        // Not in the well-known locations — ask the OS (`which` / `where`).
+        systemPath = which('g++');
+    }
+
+    if (systemPath) {
+        detectedCompiler = systemPath;
+        compilerInfo.name = 'System GCC';
+        compilerInfo.path = systemPath;
+        compilerInfo.bundled = false;
+
+        const sysBinDir = path.dirname(systemPath);
+        compilerInfo.hasLLD = fs.existsSync(path.join(sysBinDir, binName('ld.lld')));
+
+        console.log(`[Compiler] Selected system: ${systemPath} (LLD: ${compilerInfo.hasLLD})`);
+        return systemPath;
+    }
+
+    // Last resort: bare 'g++' and hope it is on PATH. Degraded mode —
+    // clangd/IntelliSense will be unavailable because bin dir is unknown.
     detectedCompiler = 'g++';
     compilerInfo.name = 'System GCC';
     compilerInfo.path = 'g++ (from PATH)';
     compilerInfo.bundled = false;
-    console.log('[Compiler] Fallback to g++ from PATH');
+    console.warn('[Compiler] Fallback to bare g++ from PATH (clangd will be unavailable)');
     return 'g++';
 }
 
@@ -145,7 +176,7 @@ function getCompilerEnv() {
 function getDebuggerPath() {
     const binDir = getCompilerBinDir();
     if (binDir) {
-        const gdb = path.join(binDir, 'gdb.exe');
+        const gdb = path.join(binDir, binName('gdb'));
         if (fs.existsSync(gdb)) return gdb;
     }
     return 'gdb';
