@@ -144,6 +144,8 @@ const LIMITS = {
  * Compiler-related constants
  */
 const COMPILER = {
+    // NOTE: Windows-only literals. Not consumed by detector.js (which builds its own
+    // paths via app/shared/platform.js). Kept for backward compat only.
     BUNDLED_MIN_GW_PATHS: [
         'Sameko-GCC/bin/g++.exe',
         'mingw64/bin/g++.exe',
