@@ -12,6 +12,13 @@ let startTimestamp = null;
 let currentPresence = {};
 let reconnectTimer = null;
 let isDestroyed = false;
+let reconnectAttempts = 0;
+let hasLoggedConnectFailure = false;
+
+// Discord simply is not installed on most Linux desktops, so a fixed 15 s retry
+// meant an endless connect-and-log loop for the whole session. Back off instead,
+// but never give up entirely — the user may start Discord after the IDE.
+const RECONNECT_DELAYS_MS = [15000, 30000, 60000, 120000, 300000];
 
 const FILE_ICONS = {
     '.cpp': 'cpp',
@@ -54,6 +61,8 @@ async function connect() {
         rpcClient.on('ready', () => {
             console.log('[Discord RPC] Connected successfully!');
             isConnected = true;
+            reconnectAttempts = 0;
+            hasLoggedConnectFailure = false;
             if (!startTimestamp) startTimestamp = new Date();
             updatePresence(
                 currentPresence.fileName,
@@ -72,7 +81,11 @@ async function connect() {
 
         await rpcClient.login({ clientId: CLIENT_ID });
     } catch (error) {
-        console.log('[Discord RPC] Could not connect (Discord might not be running):', error.message);
+        // Only the first failure is worth a line; after that it is just noise.
+        if (!hasLoggedConnectFailure) {
+            console.log('[Discord RPC] Could not connect (Discord might not be running):', error.message);
+            hasLoggedConnectFailure = true;
+        }
         isConnected = false;
         rpcClient = null;
         if (isEnabled) scheduleReconnect();
@@ -83,12 +96,15 @@ function scheduleReconnect() {
     if (isDestroyed || !isEnabled) return;
     if (reconnectTimer) clearTimeout(reconnectTimer);
 
+    const idx = Math.min(reconnectAttempts, RECONNECT_DELAYS_MS.length - 1);
+    const delay = RECONNECT_DELAYS_MS[idx];
+    reconnectAttempts++;
+
     reconnectTimer = setTimeout(() => {
         if (!isDestroyed && !isConnected && isEnabled) {
-            console.log('[Discord RPC] Attempting to reconnect...');
             connect();
         }
-    }, 15000);
+    }, delay);
 }
 
 async function updatePresence(fileName, workspaceName, line, col) {
@@ -145,6 +161,10 @@ async function clearPresence() {
  */
 async function enable() {
     isEnabled = true;
+    // Turning the feature back on is an explicit user action: start the backoff
+    // from scratch instead of inheriting a 5-minute wait from an earlier session.
+    reconnectAttempts = 0;
+    hasLoggedConnectFailure = false;
     startTimestamp = new Date();
     await connect();
     console.log('[Discord RPC] Enabled');

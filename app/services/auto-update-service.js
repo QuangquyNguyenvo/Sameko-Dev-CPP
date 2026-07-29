@@ -10,10 +10,23 @@ const { autoUpdater } = require('electron-updater');
 const { app, dialog, BrowserWindow } = require('electron');
 const path = require('path');
 const log = require('electron-log');
+const { IS_LINUX } = require('../shared/platform');
 
 // Configure electron-log for autoUpdater
 autoUpdater.logger = log;
 autoUpdater.logger.transports.file.level = 'info';
+
+/**
+ * electron-updater's HttpError packs the whole response — every header plus a
+ * stack — into `message`, so logging the error object spills ~40 lines for a
+ * plain 404. Keep the first line; that is the part a human reads.
+ * @param {Error|*} err
+ * @returns {string}
+ */
+function shortUpdateError(err) {
+    const raw = (err && err.message) || String(err || 'unknown error');
+    return raw.split('\n')[0].trim();
+}
 
 class AutoUpdateService {
     constructor() {
@@ -55,6 +68,16 @@ class AutoUpdateService {
         this.setupEventHandlers();
     }
 
+    /**
+     * electron-updater can only self-update an AppImage on Linux; a .deb install is
+     * managed by apt and must not be touched. The AppImage runtime exports $APPIMAGE.
+     * @returns {boolean}
+     */
+    isUpdateSupportedOnThisPlatform() {
+        if (!IS_LINUX) return true;
+        return !!process.env.APPIMAGE;
+    }
+
     initialize(mainWindow) {
         this.mainWindow = mainWindow;
         log.info('[AutoUpdate] Service initialized');
@@ -70,15 +93,20 @@ class AutoUpdateService {
             return;
         }
 
+        const updatesSupported = this.isUpdateSupportedOnThisPlatform();
+        if (!updatesSupported) {
+            log.info('[AutoUpdate] Linux non-AppImage install (.deb/apt) — auto-update disabled.');
+        }
+
         // Check for pending update from previous version (1.0.2 fix)
-        if (app.isPackaged) {
+        if (app.isPackaged && updatesSupported) {
             setTimeout(() => {
                 this.checkPendingUpdate();
             }, 3000);
         }
 
         // Only check for updates in packaged app (skip in development/first run)
-        if (app.isPackaged || testUpdatesInDev) {
+        if ((app.isPackaged && updatesSupported) || testUpdatesInDev) {
             if (testUpdatesInDev) {
                 log.info('[AutoUpdate] Testing updates in development mode');
                 autoUpdater.forceDevUpdateConfig = true;
@@ -90,6 +118,9 @@ class AutoUpdateService {
                     log.warn('[AutoUpdate] Startup check failed (non-critical):', err.message);
                 });
             }, 10000);
+        } else if (app.isPackaged) {
+            // Packaged, but the platform opted out (e.g. a .deb owned by apt).
+            // The reason was already logged above; don't claim "development mode".
         } else {
             log.info('[AutoUpdate] Skipping update check in development mode');
             log.info('[AutoUpdate] To test updates in dev, run: npm start -- --test-updates');
@@ -132,8 +163,8 @@ class AutoUpdateService {
 
         // Error occurred
         autoUpdater.on('error', (err) => {
-            log.error('[AutoUpdate] Error:', err);
-            
+            log.error('[AutoUpdate] Error:', shortUpdateError(err));
+
             // Check if error is related to signature verification
             const errorMsg = err.message || err.toString();
             if (errorMsg.includes('not signed by the application owner') || 
@@ -202,6 +233,20 @@ class AutoUpdateService {
     }
 
     async checkForUpdates(showNoUpdateDialog = true) {
+        // A .deb install is owned by apt — electron-updater must not touch it.
+        // initialize() already skips the startup check, but the renderer can
+        // reach this through IPC, so the guard has to live here too.
+        if (!this.isUpdateSupportedOnThisPlatform()) {
+            log.info('[AutoUpdate] Skipped: this install is managed by the system package manager.');
+            if (showNoUpdateDialog) {
+                this.sendStatusToRenderer('update-not-available', {
+                    version: app.getVersion(),
+                    showMessage: true
+                });
+            }
+            return null;
+        }
+
         try {
             log.info('[AutoUpdate] Checking for updates manually...');
 
@@ -229,7 +274,7 @@ class AutoUpdateService {
 
             return result;
         } catch (error) {
-            log.error('[AutoUpdate] Check failed:', error);
+            log.error('[AutoUpdate] Check failed:', shortUpdateError(error));
 
             if (showNoUpdateDialog) {
                 this.sendStatusToRenderer('update-error', {
