@@ -67,7 +67,8 @@
         "rebuild:win": "npm run clean:dist && npm run build:win",
         "codegraph:sync": "codegraph sync",
         "codegraph:status": "codegraph status",
-        "test:debugger": "node scripts/test-debugger.js"
+        "test:debugger": "node scripts/test-debugger.js",
+        "test:gui": "node scripts/test-gui-smoke.js"
     },
     "dependencies": {
         "discord-rpc": "^4.0.1",
@@ -84,6 +85,7 @@
     "devDependencies": {
         "electron": "^28.0.0",
         "electron-builder": "^24.9.1",
+        "playwright-core": "^1.62.0",
         "sharp": "^0.34.5"
     },
     "build": {
@@ -99,7 +101,6 @@
             "shared/**/*",
             "src/**/*",
             "node_modules/**/*",
-            "mingw64/**/*",
             "!Sameko-GCC/**/*",
             "!node_modules/monaco-editor/dev/**",
             "!node_modules/monaco-editor/esm/**",
@@ -109,28 +110,36 @@
             "!node_modules/monaco-editor/ThirdPartyNotices.txt",
             "!node_modules/tree-sitter-cpp/src/**",
             "!node_modules/tree-sitter-cpp/*.wasm",
-            "!node_modules/tree-sitter-cpp/prebuilds/darwin-arm64/**",
-            "!node_modules/tree-sitter-cpp/prebuilds/darwin-x64/**",
-            "!node_modules/tree-sitter-cpp/prebuilds/linux-arm64/**",
-            "!node_modules/tree-sitter-cpp/prebuilds/linux-x64/**",
-            "!node_modules/tree-sitter-cpp/prebuilds/win32-arm64/**",
-            "!node_modules/tree-sitter/prebuilds/darwin-arm64/**",
-            "!node_modules/tree-sitter/prebuilds/darwin-x64/**",
-            "!node_modules/tree-sitter/prebuilds/linux-x64/**",
+            "!node_modules/tree-sitter-c/src/**",
+            "!node_modules/tree-sitter-c/*.wasm",
+            "!node_modules/tree-sitter/prebuilds/**",
+            "node_modules/tree-sitter/prebuilds/${platform}-${arch}/**",
+            "!node_modules/tree-sitter-cpp/prebuilds/**",
+            "node_modules/tree-sitter-cpp/prebuilds/${platform}-${arch}/**",
+            "!node_modules/tree-sitter-c/prebuilds/**",
+            "node_modules/tree-sitter-c/prebuilds/${platform}-${arch}/**",
+            "!plans/**",
+            "!docs/**",
+            "!scripts/**",
+            "!.agent/**",
+            "!.github/**",
+            "!.claudeprompt",
+            "!CLAUDE.md",
+            "!CODEBASE.md",
+            "!PLANNING.md",
+            "!CONTRIBUTING.md",
+            "!CHANGELOG.md",
+            "!setup-bundled-mingw.md",
+            "!build-local.ps1",
+            "!compile_error.log",
+            "!compile_flags.txt",
+            "!NUL.exe",
             "!**/*.js.map",
             "!**/*.ts.map",
             "!**/*.css.map"
         ],
-        "extraResources": [
-            {
-                "from": "Sameko-GCC",
-                "to": "Sameko-GCC",
-                "filter": [
-                    "**/*"
-                ]
-            }
-        ],
         "asar": true,
+        "npmRebuild": false,
         "publish": [
             {
                 "provider": "github",
@@ -152,7 +161,16 @@
             "publisherName": "Sameko Project",
             "verifyUpdateCodeSignature": false,
             "signDlls": false,
-            "signExts": []
+            "signExts": [],
+            "extraResources": [
+                {
+                    "from": "Sameko-GCC",
+                    "to": "Sameko-GCC",
+                    "filter": [
+                        "**/*"
+                    ]
+                }
+            ]
         },
         "nsis": {
             "artifactName": "sameko-dev-cpp-setup-${version}.${ext}",
@@ -176,7 +194,24 @@
                 "AppImage",
                 "deb"
             ],
-            "icon": "src/assets/icon.png"
+            "icon": "src/assets/icons/linux",
+            "category": "Development",
+            "synopsis": "A fast, modern C++ IDE",
+            "maintainer": "QuangquyNguyenvo <QuangquyNguyenvo@users.noreply.github.com>",
+            "desktop": {
+                "Name": "Sameko Dev C++",
+                "Comment": "A fast, modern C++ IDE",
+                "Categories": "Development;IDE;",
+                "StartupWMClass": "Sameko Dev C++"
+            }
+        },
+        "deb": {
+            "recommends": [
+                "g++",
+                "gdb",
+                "clangd",
+                "astyle"
+            ]
         }
     }
 }
