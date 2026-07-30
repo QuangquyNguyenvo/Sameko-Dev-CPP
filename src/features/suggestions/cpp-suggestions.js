@@ -31,6 +31,20 @@ window.registerCppIntellisense = function (monaco) {
         return 'untitled';
     };
 
+    // The Settings switches have to be honoured HERE, not only through Monaco's
+    // `suggest.showX` flags. Those filter by item kind, and clangd returns kinds
+    // the editor options never listed, so with "Intellisense (Code Suggestions)"
+    // off the popup kept coming back full of clangd results — and clangd was
+    // still queried on every keystroke to build a list nobody wanted.
+    // Read the settings live: the user can flip either switch mid-session and
+    // Monaco keeps the same provider registered.
+    const editorSetting = (key) => {
+        if (typeof App === 'undefined' || !App.settings || !App.settings.editor) return undefined;
+        return App.settings.editor[key];
+    };
+    const intellisenseEnabled = () => editorSetting('intellisense') !== false;
+    const snippetsEnabled = () => editorSetting('snippets') !== false;
+
     // ========================================================================
     // 1. DATA: SNIPPETS & TEMPLATES
     // ========================================================================
@@ -170,6 +184,16 @@ window.registerCppIntellisense = function (monaco) {
                 const range = { startLineNumber: position.lineNumber, endLineNumber: position.lineNumber, startColumn: word.startColumn, endColumn: word.endColumn };
                 const textUntilPosition = model.getValueInRange({ startLineNumber: position.lineNumber, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column });
                 const afterDot = /\.\s*$/.test(textUntilPosition);
+
+                if (!intellisenseEnabled()) {
+                    // Snippets are a separate switch, so they survive on their own.
+                    // Everything else here — clangd, keywords, headers, the
+                    // tree-sitter locals below — is what "Intellisense" means.
+                    if (!snippetsEnabled()) return { suggestions: [] };
+                    const snippetsOnly = createProposals(range, lang, textUntilPosition)
+                        .suggestions.filter(s => s.kind === monaco.languages.CompletionItemKind.Snippet);
+                    return { suggestions: snippetsOnly };
+                }
 
                 if (/[<>]{2}\s*$/.test(textUntilPosition)) {
                     return { suggestions: [] };
@@ -327,6 +351,12 @@ window.registerCppIntellisense = function (monaco) {
         // Hover (clangd only)
         monaco.languages.registerHoverProvider(lang, {
             provideHover: async (model, position) => {
+                // Quick-info tooltips are clangd's other half; a user who turned
+                // Intellisense off does not expect them either. The debugger
+                // registers its own hover provider for evaluating variables while
+                // stopped, and that one is unaffected.
+                if (!intellisenseEnabled()) return null;
+
                 const word = model.getWordAtPosition(position);
 
                 if (window.electronAPI && window.electronAPI.getClangdHover) {

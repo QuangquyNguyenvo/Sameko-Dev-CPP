@@ -29,7 +29,8 @@ const DEFAULT_SETTINGS = {
         liveCheck: false,  // Real-time syntax checking
         liveCheckDelay: 1000,  // milliseconds
         snippets: true,  // Enable snippet suggestions
-        keywords: true   // Enable keyword suggestions
+        keywords: true,  // Enable keyword suggestions
+        intellisense: true  // Clangd-backed completions + hover
     },
     compiler: {
         cppStandard: '',
@@ -569,6 +570,72 @@ function resolveMultiCursorModifier() {
     return navigator.platform?.toLowerCase().includes('mac') ? 'alt' : 'ctrlCmd';
 }
 
+/**
+ * Monaco's `suggest.showX` flags filter by item KIND, and any kind not listed
+ * here defaults to *shown*. The old list covered a dozen kinds but not the ones
+ * clangd hands back most often — Field, Struct, Enum, EnumMember, Constructor,
+ * Constant, Interface — so turning "Intellisense (Code Suggestions)" off still
+ * left a popup full of clangd results. Enumerate every kind Monaco knows about
+ * so the switch covers the whole widget.
+ *
+ * These flags are only the display filter; the provider in
+ * `features/suggestions/cpp-suggestions.js` also has to stop asking clangd, or
+ * we would pay for an LSP round-trip per keystroke just to throw it away.
+ * @returns {object}
+ */
+function buildSuggestOptions() {
+    const smart = App.settings.editor.intellisense !== false;
+    // "Keyword Suggestions" narrows the identifier-ish kinds further.
+    const keywords = smart && App.settings.editor.keywords !== false;
+    const snippets = App.settings.editor.snippets !== false;
+
+    return {
+        showKeywords: keywords,
+        showClasses: keywords,
+        showFunctions: keywords,
+        showSnippets: snippets,
+        showWords: smart,
+        showVariables: smart,
+        showValues: smart,
+        showMethods: smart,
+        showProperties: smart,
+        showModules: smart,
+        showOperators: smart,
+        showTypeParameters: smart,
+        showFields: smart,
+        showStructs: smart,
+        showEnums: smart,
+        showEnumMembers: smart,
+        showConstants: smart,
+        showConstructors: smart,
+        showInterfaces: smart,
+        showEvents: smart,
+        showUnits: smart,
+        showColors: smart,
+        showUsers: smart,
+        showIssues: smart,
+        showDeprecated: smart,
+        showFiles: smart,          // the header list inside `#include <`
+        showIcons: true,
+        showReferences: false,
+        showFolders: false,
+        showStatusBar: false,
+        preview: true,
+        insertMode: 'insert'
+    };
+}
+
+/**
+ * Quick suggestions are what makes the widget appear while typing, so they stay
+ * on as long as *either* source of suggestions is enabled.
+ * @returns {object}
+ */
+function buildQuickSuggestions() {
+    const on = App.settings.editor.intellisense !== false
+        || App.settings.editor.snippets !== false;
+    return { other: on, comments: false, strings: on };
+}
+
 function createEditor(containerId) {
     const editor = monaco.editor.create(document.getElementById(containerId), {
         value: '',
@@ -617,37 +684,14 @@ function createEditor(containerId) {
             scale: 1
         },
 
-        quickSuggestions: {
-            other: (App.settings.editor.intellisense !== false || App.settings.editor.snippets !== false),
-            comments: false,
-            strings: (App.settings.editor.intellisense !== false || App.settings.editor.snippets !== false)
-        },
-        suggestOnTriggerCharacters: true,
+        quickSuggestions: buildQuickSuggestions(),
+        suggestOnTriggerCharacters: App.settings.editor.intellisense !== false,
         acceptSuggestionOnEnter: 'on',
         tabCompletion: 'on',
         wordBasedSuggestions: 'off',
         parameterHints: { enabled: App.settings.editor.intellisense !== false },
         snippetSuggestions: 'top',
-        suggest: {
-            showKeywords: App.settings.editor.intellisense !== false && App.settings.editor.keywords !== false,
-            showSnippets: App.settings.editor.snippets !== false,
-            showWords: App.settings.editor.intellisense !== false,
-            showClasses: App.settings.editor.intellisense !== false && App.settings.editor.keywords !== false,
-            showFunctions: App.settings.editor.intellisense !== false && App.settings.editor.keywords !== false,
-            showVariables: App.settings.editor.intellisense !== false,
-            showValues: App.settings.editor.intellisense !== false,
-            showIcons: true,
-            showMethods: App.settings.editor.intellisense !== false,
-            showProperties: App.settings.editor.intellisense !== false,
-            showModules: App.settings.editor.intellisense !== false,
-            showOperators: App.settings.editor.intellisense !== false,
-            showReferences: false,
-            showFolders: false,
-            showTypeParameters: App.settings.editor.intellisense !== false,
-            showStatusBar: false,
-            preview: true,
-            insertMode: 'insert'
-        },
+        suggest: buildSuggestOptions(),
         suggestSelection: 'first',
         suggestFontSize: 13.5,
         suggestLineHeight: 26
@@ -2923,27 +2967,11 @@ function applySettings() {
         minimap: { enabled: App.settings.editor.minimap },
         wordWrap: App.settings.editor.wordWrap ? 'on' : 'off',
         multiCursorModifier: resolveMultiCursorModifier(),
-        quickSuggestions: {
-            other: (App.settings.editor.intellisense !== false || App.settings.editor.snippets !== false),
-            comments: false,
-            strings: (App.settings.editor.intellisense !== false || App.settings.editor.snippets !== false)
-        },
+        quickSuggestions: buildQuickSuggestions(),
+        suggestOnTriggerCharacters: App.settings.editor.intellisense !== false,
         wordBasedSuggestions: 'off',
         parameterHints: { enabled: App.settings.editor.intellisense !== false },
-        suggest: {
-            showKeywords: App.settings.editor.intellisense !== false && App.settings.editor.keywords !== false,
-            showSnippets: App.settings.editor.snippets !== false,
-            showWords: App.settings.editor.intellisense !== false,
-            showClasses: App.settings.editor.intellisense !== false && App.settings.editor.keywords !== false,
-            showFunctions: App.settings.editor.intellisense !== false && App.settings.editor.keywords !== false,
-            showVariables: App.settings.editor.intellisense !== false,
-            showValues: App.settings.editor.intellisense !== false,
-            showMethods: App.settings.editor.intellisense !== false,
-            showProperties: App.settings.editor.intellisense !== false,
-            showModules: App.settings.editor.intellisense !== false,
-            showOperators: App.settings.editor.intellisense !== false,
-            showTypeParameters: App.settings.editor.intellisense !== false
-        }
+        suggest: buildSuggestOptions()
     };
 
     // Editor zoom is driven only by fontSize + initCtrlWheelZoom; never let Monaco's
