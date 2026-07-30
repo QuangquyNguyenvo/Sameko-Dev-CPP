@@ -10,11 +10,7 @@ const { autoUpdater } = require('electron-updater');
 const { app, dialog, BrowserWindow } = require('electron');
 const path = require('path');
 const log = require('electron-log');
-const { IS_LINUX } = require('../shared/platform');
-
-// Configure electron-log for autoUpdater
-autoUpdater.logger = log;
-autoUpdater.logger.transports.file.level = 'info';
+const { IS_WIN, IS_LINUX } = require('../shared/platform');
 
 /**
  * electron-updater's HttpError packs the whole response — every header plus a
@@ -27,6 +23,25 @@ function shortUpdateError(err) {
     const raw = (err && err.message) || String(err || 'unknown error');
     return raw.split('\n')[0].trim();
 }
+
+function firstLine(value) {
+    if (value instanceof Error) return shortUpdateError(value);
+    if (typeof value === 'string' && value.includes('\n')) return value.split('\n')[0].trim();
+    return value;
+}
+
+// Configure electron-log for autoUpdater.
+// electron-updater also logs its OWN failures through this logger, and it
+// formats them as `Error: ${e.stack}` — so handing it `log` unchanged still
+// dumped the full HttpError (headers, body, stack) on every check, no matter
+// what our own handlers do. Collapse multi-line arguments to their first line.
+// Inherit from `log` so electron-updater still finds `logger.transports`.
+const updateLog = Object.create(log);
+for (const level of ['error', 'warn', 'info', 'debug']) {
+    updateLog[level] = (...args) => log[level](...args.map(firstLine));
+}
+autoUpdater.logger = updateLog;
+log.transports.file.level = 'info';
 
 class AutoUpdateService {
     constructor() {
@@ -390,12 +405,20 @@ class AutoUpdateService {
 
     /**
      * Check for pending update from previous version (hotfix for 1.0.2)
+     *
+     * Windows-only: it looks for an NSIS installer staged under
+     * %LOCALAPPDATA%, a directory that has no meaning elsewhere. Off Windows
+     * `app.getPath('localAppData')` throws outright, which is what the
+     * AppImage was logging ("Failed to get 'localAppData' path") on every
+     * launch.
      */
     checkPendingUpdate() {
+        if (!IS_WIN) return;
+
         const fs = require('fs');
         const path = require('path');
         const os = require('os');
-        
+
         try {
             const pendingDirs = [
                 path.join(app.getPath('localAppData'), 'sameko-dev-cpp-updater', 'pending'),
