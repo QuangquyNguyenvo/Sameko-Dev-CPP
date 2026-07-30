@@ -59,4 +59,11 @@ plans/
 
 # ===== CodeGraph =====
 .codegraph/
+.claudeprompt
+
+# ===== Generated at runtime =====
+# clangd's flag file: the app rewrites it on every launch with absolute
+# include paths from THIS machine's toolchain, so a committed copy is both
+# wrong for everyone else and a permanent dirty file in `git status`.
+compile_flags.txt
 
