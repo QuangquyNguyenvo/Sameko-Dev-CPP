@@ -3,6 +3,7 @@
 const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { appTempDir, ensurePrivateDir } = require('../shared/platform');
 
 let tsParser = null;
 let compilerStatus = { found: false, path: null, error: null };
@@ -21,14 +22,18 @@ function getTreeSitterParser() {
 function ensureDirectories() {
     const dirs = [
         path.join(app.getPath('userData'), 'local-history'),
-        path.join(app.getPath('temp'), 'cpp-ide'),
-        path.join(app.getPath('temp'), 'cpp-ide-pch'),
-        path.join(app.getPath('temp'), 'cpp-ide-builds'),
+        appTempDir('cpp-ide'),
+        appTempDir('cpp-ide-pch'),
+        appTempDir('cpp-ide-builds'),
     ];
 
     for (const dir of dirs) {
         if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
+            // The temp dirs live in the shared /tmp on POSIX, and this runs
+            // before pch-manager gets a chance to create its own directory —
+            // so create them privately here too, or the loose mode set here
+            // would be what sticks.
+            ensurePrivateDir(dir);
         }
     }
 }

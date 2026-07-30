@@ -8,6 +8,7 @@
 'use strict';
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
 
@@ -160,6 +161,20 @@ function ensurePrivateDir(dir) {
     fs.mkdirSync(dir, { recursive: true, mode: IS_WIN ? undefined : 0o700 });
 }
 
+/**
+ * Thư mục tạm của app, tách riêng theo user trên POSIX.
+ * `/tmp` dùng chung cho mọi user, nên một tên cố định như `/tmp/cpp-ide-pch`
+ * thuộc về user nào chạy app trước; user thứ hai chỉ nhận EACCES (gặp thật khi
+ * chạy bản .deb sau khi root đã chạy một lần). `%TEMP%` trên Windows vốn đã
+ * riêng từng user nên giữ nguyên tên, không đổi đường dẫn của bản Windows.
+ * @param {string} name
+ * @returns {string}
+ */
+function appTempDir(name) {
+    const suffix = IS_WIN ? '' : `-${process.getuid()}`;
+    return path.join(os.tmpdir(), name + suffix);
+}
+
 module.exports = {
     IS_WIN,
     IS_MAC,
@@ -174,4 +189,5 @@ module.exports = {
     readProcMemoryKB,
     killPosixTree,
     ensurePrivateDir,
+    appTempDir,
 };

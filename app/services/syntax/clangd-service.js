@@ -12,7 +12,7 @@ const fs = require('fs');
 const os = require('os');
 const url = require('url');
 const { app } = require('electron');
-const { getCompilerBinDir, getBasePath, getDetectedCompiler } = require('../compiler/detector');
+const { getCompilerBinDir, getBasePath, getWritableBasePath, getDetectedCompiler } = require('../compiler/detector');
 const { getCompilerSettings } = require('../../shared/settings-reader');
 const { binName, NULL_DEVICE, IS_WIN, IS_MAC } = require('../../shared/platform');
 
@@ -25,11 +25,15 @@ const { binName, NULL_DEVICE, IS_WIN, IS_MAC } = require('../../shared/platform'
  * fail with a misleading `ENOENT` naming the *binary*, which reads as "g++ is
  * missing" when g++ is perfectly fine. That killed IntelliSense in packaged builds.
  * Fall back to a directory that always exists.
+ *
+ * Use the writable base: with --background-index clangd writes its index under
+ * `.cache/clangd` in this directory, which a read-only install dir (a .deb in
+ * /opt, an AppImage mount) refuses.
  * @returns {string}
  */
 function getSpawnCwd() {
     try {
-        const base = getBasePath();
+        const base = getWritableBasePath();
         if (base && fs.existsSync(base)) return base;
     } catch (_) { /* fall through */ }
     try {
@@ -235,7 +239,7 @@ async function startLspInitialization() {
     });
 
     try {
-        const rootUri = url.pathToFileURL(getBasePath()).href;
+        const rootUri = url.pathToFileURL(getWritableBasePath()).href;
         await sendRequest('initialize', {
             processId: process.pid,
             rootUri: rootUri,
@@ -520,7 +524,7 @@ function yamlQuote(str) {
 
 /**
  * clangd only auto-discovers compile_flags.txt by walking up from a source
- * file's own directory — so a file saved anywhere outside getBasePath()
+ * file's own directory — so a file saved anywhere outside getWritableBasePath()
  * (Desktop, Documents, another project folder) gets NO include paths and
  * fails to resolve even <vector>. The global user config YAML (read via
  * --enable-config from a fixed OS-level path) applies to every file clangd
@@ -587,7 +591,7 @@ function writeIfChanged(filePath, desired, requireMarker = false) {
 }
 
 /**
- * (Re)write compile_flags.txt (for files under getBasePath()) and the
+ * (Re)write compile_flags.txt (for files under getWritableBasePath()) and the
  * global clangd user config YAML (for files saved anywhere else) if their
  * content differs from what the current settings/compiler would produce.
  * Safe to call repeatedly (e.g. every time the user saves Settings) — a
@@ -598,7 +602,7 @@ async function regenerateCompileFlags() {
     const includePaths = await getGccIncludePaths();
     if (includePaths.length === 0) return false;
 
-    const flagsFile = path.join(getBasePath(), 'compile_flags.txt');
+    const flagsFile = path.join(getWritableBasePath(), 'compile_flags.txt');
     const localChanged = writeIfChanged(flagsFile, buildCompileFlagsContent(includePaths));
 
     const userConfigFile = getClangdUserConfigPath();
@@ -697,7 +701,7 @@ function getFileUri(filePath) {
         ? filePath.replace(/[^a-zA-Z0-9-]/g, '_')
         : 'anon';
 
-    const mockPath = path.join(getBasePath(), `temp_untitled_${id}.cpp`);
+    const mockPath = path.join(getWritableBasePath(), `temp_untitled_${id}.cpp`);
     return url.pathToFileURL(mockPath).href;
 }
 

@@ -33,6 +33,44 @@ function getBasePath() {
     return path.join(__dirname, '..', '..', '..');
 }
 
+let writableBasePath = null;
+
+/**
+ * Directory for the files the app writes next to itself at runtime: clangd's
+ * compile_flags.txt, the mock paths backing untitled tabs, compile_error.log.
+ *
+ * getBasePath() is the install directory, and it is only writable by accident:
+ * a per-user NSIS install on Windows happens to be, but a .deb lands in
+ * root-owned /opt and an AppImage is a read-only squashfs mount — both gave
+ * `EACCES: permission denied` there. Fall back to userData, which is always
+ * ours. Keep the install dir when it genuinely is writable so existing Windows
+ * installs keep using the exact same paths as before.
+ *
+ * Everything that has to sit next to compile_flags.txt (the untitled mock
+ * files, clangd's root URI) must come from here too, or clangd walks up from a
+ * directory that has no compile_flags.txt in it and resolves no headers.
+ * @returns {string}
+ */
+function getWritableBasePath() {
+    if (writableBasePath) return writableBasePath;
+
+    const base = getBasePath();
+    try {
+        // In a packaged build `base` is the app.asar.unpacked path, which
+        // electron-builder only creates for files it actually unpacks — so it
+        // often does not exist yet and has to be created before it can be
+        // tested. On Windows that succeeds and the paths stay exactly where
+        // they have always been; on /opt or a squashfs mount it throws.
+        fs.mkdirSync(base, { recursive: true });
+        fs.accessSync(base, fs.constants.W_OK);
+        writableBasePath = base;
+        return writableBasePath;
+    } catch (_) { /* read-only install (deb /opt, AppImage mount) */ }
+
+    writableBasePath = app.getPath('userData');
+    return writableBasePath;
+}
+
 function getResourcesPath() {
     if (app.isPackaged) {
         return process.resourcesPath;
@@ -223,6 +261,7 @@ module.exports = {
     getCompilerBinDir,
     getCompilerEnv,
     getBasePath,
+    getWritableBasePath,
     getResourcesPath,
     getUnbufferObjectPath,
     getDebuggerPath,

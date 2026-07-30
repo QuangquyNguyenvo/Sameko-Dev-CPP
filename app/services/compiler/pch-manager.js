@@ -6,14 +6,13 @@
 
 'use strict';
 
-const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const { getDetectedCompiler, getCompilerInfo, getCompilerEnv } = require('./detector');
-const { ensurePrivateDir } = require('../../shared/platform');
+const { ensurePrivateDir, appTempDir } = require('../../shared/platform');
 
-const pchDir = path.join(app.getPath('temp'), 'cpp-ide-pch');
+const pchDir = appTempDir('cpp-ide-pch');
 
 /**
  * Generate PCH key based on compiler flags

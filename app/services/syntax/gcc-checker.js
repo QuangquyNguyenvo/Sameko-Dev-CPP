@@ -6,7 +6,6 @@
 
 'use strict';
 
-const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -14,7 +13,7 @@ const { getDetectedCompiler } = require('../compiler/detector');
 const { ensurePCH } = require('../compiler/pch-manager');
 const { getCompilerSettings } = require('../../shared/settings-reader');
 const { validateCompilerFlags } = require('../../shared/validators');
-const { ensurePrivateDir } = require('../../shared/platform');
+const { ensurePrivateDir, appTempDir } = require('../../shared/platform');
 
 let activeChecker = null;
 
@@ -32,8 +31,9 @@ async function checkSyntax(content, filePath = null) {
     cancelSyntaxCheck();
 
     // Create temp file for checking
-    // On POSIX `temp` is the shared /tmp, so keep the dir private (0700).
-    const tempDir = path.join(app.getPath('temp'), 'cpp-ide-check');
+    // On POSIX `temp` is the shared /tmp, so the dir is both per-user
+    // (appTempDir) and private (0700).
+    const tempDir = appTempDir('cpp-ide-check');
     if (!fs.existsSync(tempDir)) {
         ensurePrivateDir(tempDir);
     }

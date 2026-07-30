@@ -6,15 +6,14 @@
 
 'use strict';
 
-const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
 const { spawn, exec } = require('child_process');
-const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getBasePath, getUnbufferObjectPath } = require('./detector');
+const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getWritableBasePath, getUnbufferObjectPath } = require('./detector');
 const { ensurePCH } = require('./pch-manager');
 const { validateCompilerFlags } = require('../../shared/validators');
-const { EXE_SUFFIX, IS_WIN, IS_MAC, IS_LINUX, ensurePrivateDir, readProcMemoryKB, which } = require('../../shared/platform');
+const { EXE_SUFFIX, IS_WIN, IS_MAC, IS_LINUX, ensurePrivateDir, readProcMemoryKB, which, appTempDir } = require('../../shared/platform');
 
 let runningProcess = null;
 let activeCompilerProcess = null;
@@ -149,7 +148,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
     let usingTempFile = false;
 
     if (!filePath) {
-        const tempDir = path.join(app.getPath('temp'), 'cpp-ide');
+        const tempDir = appTempDir('cpp-ide');
         if (!fs.existsSync(tempDir)) {
             ensurePrivateDir(tempDir);
         }
@@ -179,8 +178,9 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
     const baseName = path.basename(actualFilePath, path.extname(actualFilePath));
 
     // Use system temp directory for compiler output.
-    // On POSIX `temp` is the shared /tmp, so keep the dir private (0700).
-    const buildsDir = path.join(app.getPath('temp'), 'cpp-ide-builds');
+    // On POSIX `temp` is the shared /tmp, so the dir is both per-user
+    // (appTempDir) and private (0700).
+    const buildsDir = appTempDir('cpp-ide-builds');
     if (!fs.existsSync(buildsDir)) {
         ensurePrivateDir(buildsDir);
     }
@@ -330,7 +330,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
             if (code !== 0) {
                 // Log error for debugging
                 try {
-                    fs.writeFileSync(path.join(getBasePath(), 'compile_error.log'), stderr);
+                    fs.writeFileSync(path.join(getWritableBasePath(), 'compile_error.log'), stderr);
                 } catch (e) { }
 
                 resolve({
