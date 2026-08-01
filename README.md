@@ -120,74 +120,98 @@ Then turn it **OFF** and build again.
 
 ## 📥 Download
 
-Get the latest build from [**sameko.dev**](https://sameko.dev/) or the
-[GitHub releases page](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases).
+<div align="center">
 
-### Windows
+<a href="https://sameko.dev/" target="_blank" rel="noopener noreferrer">
+  <img src="https://img.shields.io/badge/Official%20Site-sameko.dev-88c9ea?style=for-the-badge&logo=cloudflare&logoColor=white&labelColor=1a2530" alt="Official Website" />
+</a>
+<a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest" target="_blank" rel="noopener noreferrer">
+  <img src="https://img.shields.io/badge/GitHub-v1.2.0%20Release-88c9ea?style=for-the-badge&logo=github&logoColor=white&labelColor=1a2530" alt="Latest Release" />
+</a>
 
-| File | What it is |
-| :--- | :--- |
-| `sameko-dev-cpp-setup-<version>.exe` | Installer. Adds shortcuts and receives auto-updates. **Pick this if unsure.** |
-| `sameko-dev-cpp-<version>-portable.zip` | Portable build. Extract it anywhere — including a USB stick — and run `Sameko Dev C++.exe`. |
+</div>
 
-> **The compiler is bundled** on Windows (GCC 16). Nothing else to install.
+<br />
 
-### Linux
+### 🪟 Windows *(Compiler Bundled)*
 
-The Linux build **does not bundle a compiler** — Sameko uses the `g++` and `gdb` already on your
-system. Install them first:
+> 💡 **Zero setup required.** MinGW-w64 (GCC 16.1.0) is pre-packaged. Download and code!
 
-```bash
-# Debian / Ubuntu / Mint / Pop!_OS
-sudo apt update && sudo apt install g++ gdb
+| Package | Format | Description | Recommendation |
+| :--- | :---: | :--- | :--- |
+| **Installer** | `.exe` | Full setup with Start Menu shortcuts & auto-update support | **⭐ Recommended for most users** |
+| **Portable** | `.zip` | Standalone archive. Extract anywhere (including USB drives) and run | Ideal for school / restricted PCs |
 
-# Fedora
-sudo dnf install gcc-c++ gdb
+<br />
 
-# Arch / Manjaro
-sudo pacman -S gcc gdb
-```
+### 🐧 Linux Installation Guide
 
-Then pick one of the three packages:
+Sameko on Linux uses your system's compiler and debugger. Follow these 3 simple steps:
 
-**AppImage** — works on any distribution, nothing to install:
+#### 📌 Step 1: Install prerequisites (`g++` & `gdb`)
 
-```bash
-chmod +x sameko-dev-cpp-*-linux-*.AppImage
-./sameko-dev-cpp-*-linux-*.AppImage
-```
-
-> If it will not start, your distribution may be missing FUSE 2:
-> `sudo apt install libfuse2` (Ubuntu 22.04+), or run it with `--appimage-extract-and-run`.
-
-**`.deb`** — for Debian, Ubuntu and derivatives:
+Open your terminal and run the command for your Linux distribution:
 
 ```bash
-sudo apt install ./sameko-dev-cpp-*-linux-*.deb
-# then launch "Sameko Dev C++" from your app menu, or run:
-sameko-dev-cpp
+# Debian / Ubuntu / Linux Mint / Pop!_OS
+sudo apt update && sudo apt install -y g++ gdb
+
+# Fedora / RHEL
+sudo dnf install -y gcc-c++ gdb
+
+# Arch Linux / Manjaro
+sudo pacman -S --noconfirm gcc gdb
 ```
 
-**`.tar.gz`** — a plain folder, no installation:
+---
 
-```bash
-tar -xzf sameko-dev-cpp-1.2.0-linux-x64.tar.gz
-cd sameko-dev-cpp-1.2.0-linux-x64
-./sameko-dev-cpp
-```
+#### 📌 Step 2: Download your preferred package
 
-> **Sandbox note:** if it exits immediately with a `chrome-sandbox` / `SUID sandbox` error — most
-> likely on distributions that restrict unprivileged user namespaces, such as Ubuntu 24.04+ — fix
-> the helper's permissions inside the extracted folder:
->
-> ```bash
-> sudo chown root:root chrome-sandbox && sudo chmod 4755 chrome-sandbox
-> ```
->
-> The `.deb` package does this for you at install time. As a last resort, start the app with
-> `--no-sandbox`.
+Get the latest Linux release from [**sameko.dev**](https://sameko.dev/) or [**GitHub Releases**](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest).
 
-Settings, local history and snippets live in `~/.config/sameko-dev-cpp/`.
+---
+
+#### 📌 Step 3: Run or install the application
+
+- 🔹 **Option A: AppImage** *(Universal — no installation needed)*
+  ```bash
+  chmod +x sameko-dev-cpp-*.AppImage
+  ./sameko-dev-cpp-*.AppImage
+  ```
+
+- 🔹 **Option B: `.deb` Package** *(Debian / Ubuntu / Mint — auto-configures app menu & sandbox)*
+  ```bash
+  sudo apt install ./sameko-dev-cpp-*.deb
+  sameko-dev-cpp
+  ```
+
+- 🔹 **Option C: `.tar.gz` Archive** *(Standalone portable folder)*
+  ```bash
+  tar -xzf sameko-dev-cpp-*-linux-*.tar.gz
+  cd sameko-dev-cpp-*-linux-*
+  ./sameko-dev-cpp
+  ```
+
+---
+
+<details>
+<summary><b>🔍 Linux Troubleshooting Tips (FUSE 2 & Chrome Sandbox)</b></summary>
+
+<br />
+
+- **AppImage fails to open**: Ubuntu 22.04+ may require FUSE 2:
+  ```bash
+  sudo apt install libfuse2
+  ```
+  *(Or run with `./sameko-dev-cpp-*.AppImage --appimage-extract-and-run`)*
+
+- **Chrome Sandbox permission error**: If running unpacked `.tar.gz` on Ubuntu 24.04+:
+  ```bash
+  sudo chown root:root chrome-sandbox && sudo chmod 4755 chrome-sandbox
+  ```
+  *(The `.deb` installer configures sandbox permissions automatically).*
+
+</details>
 
 <br />
 
@@ -326,4 +350,5 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 <div align="center">
   <sub><strong>Keywords</strong>: C++ IDE • portable C++ compiler • Dev-C++ alternative • competitive programming IDE • beginner-friendly IDE • lightweight IDE • Windows C++ IDE • GCC compiler • Monaco Editor • Electron IDE • code editor • student IDE • educational software • free C++ IDE • C++11 • C++14 • C++17 • C++20 • C++23 • syntax highlighting • auto-completion • Codeforces • AtCoder • LeetCode • programming tools • MinGW • code runner • AStyle formatter</sub>
 </div>
+
 
