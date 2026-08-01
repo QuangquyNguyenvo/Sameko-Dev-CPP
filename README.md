@@ -317,6 +317,7 @@ as long as the session is live, and go back to Run / Compile & Run once it ends.
 **💖 Contributors**
 
 - **Yunchan** (Special thanks for designing the logo!)
+- **KingShiba3766** (Donated the `sameko.dev` domain)
 - **aiko-chan-ai** (Fixed G++ spawn issue on some machines)
 
 **📝 Want to contribute?**
