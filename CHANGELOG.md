@@ -6,7 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-08-01
+
 ### Added
+
 - **Integrated C++ Debugger (GDB)**:
   - The app now has a real source-level debugger built on the bundled MinGW GDB (Machine Interface), replacing the old "just run the exe" behavior. Debug a `-g` build without leaving the editor.
   - **Breakpoints**: click the left gutter to toggle a red breakpoint (the line number turns into a badge and the line is tinted, Dev-C++/Visual Studio style). `Alt`+click sets a **conditional** breakpoint (e.g. `i == n-1`); `Ctrl`+click **enables/disables** one without removing it. gdb-relocated breakpoints (off blank/comment lines) move automatically.
@@ -14,7 +17,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Variables & Watch**: locals and watch expressions are shown as expandable trees with full STL pretty-printing (`vector`, `map`, `string`, … expand to their elements). Values that changed since the last step are highlighted; double-click a numeric value to toggle **hex/decimal**.
   - **Call Stack** with clickable frames, **hover-to-evaluate** (hover any variable while paused to see its value), and **Run to Cursor** (right-click a line).
   - **Multi-file aware**: pausing in another file automatically opens/switches to it so the current-line arrow is visible.
-  - **Beginner-friendly**: a one-time 3-step coach mark, a nudge when you start with no breakpoints, a collapsible "Shortcuts & tips" reference, and program I/O routed cleanly to the terminal.
+  - **Beginner-friendly**: a one-time 3-step coach mark, a nudge when you start with no breakpoints, and program I/O routed cleanly to the terminal.
+  - **Auto dry run**: one button walks the program a line at a time on its own while the Variables tree updates, so a loop can be watched instead of stepped by hand a hundred times. It needs no breakpoint — it starts the session paused at `main()` — steps *into* your own functions, and comes with a speed slider (0.15–3s per line, default 1s). **Pause**, `Esc`, or any manual step stops it.
+  - **Back through the recording**: every pause is recorded (line + the values of the locals at that moment), and **Back** walks through that recording. GDB cannot run a program backwards on Windows, so this is an explicit read-only replay: the recorded line is marked with a hollow arrow, controls that would move the program are disabled, and **Back to live** (or `Esc`) returns to the present.
+  - **Restart** stops the session and runs the whole program again from the top.
+- **Linux support**: the app now runs on Linux, and the build produces Linux packages (AppImage, `.deb`, `.tar.gz`) alongside the Windows ones. Unlike the Windows build it does not bundle a compiler — install `g++` and `gdb` from your distribution and Sameko will detect them.
 - **Active Contest Auto-Collapsing & Top Prioritization**:
   - Double-clicking a contest, clicking its quick-activate button, or opening any file inside it sets it as the active contest, automatically collapses all other contests, and expands the active one.
   - The active contest temporarily jumps/bubbles to the very top of the CONTEST list. Upon deactivation, it returns to the chronological "newest-first" sorting order.
@@ -26,17 +33,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Additional Compile Flags (Settings → Compiler)**:
   - Added a free-text "Additional Compile Flags" field (`compiler.extraFlags`) whose contents are appended to every compile command (e.g. `-DLOCAL -DDEBUG`), validated against unsafe flags (`-B`, `-plugin`, `@`, `--specs=`) before reaching the compiler.
   - The same flags and the chosen C++ standard now also drive clangd's `compile_flags.txt` and the live `-fsyntax-only` diagnostics, so IntelliSense, editor squiggles, and real builds agree on macros and `#ifdef` branches (e.g. code guarded by `-DLOCAL`).
-
-### Performance
-- **Faster First-Launch (Packaging Trim)**:
-  - Excluded ~1,870 files / ~115 MB of never-loaded assets from the packaged app: Monaco's `dev/`, `esm/`, and `min-maps/` folders (the app only uses `min/vs` via the AMD loader), tree-sitter-cpp's `src/` parser source and `.wasm`, non-Windows tree-sitter prebuilds (macOS/Linux/ARM), and source maps.
-  - Smaller `app.asar` and far fewer files mean less to read from cold disk and less for Windows Defender to scan on the very first run — the slowest launch, before the OS file cache is warm.
-- **Deferred (Lazy) Monaco Editor Load**:
-  - Monaco (the editor engine) was the single biggest chunk of renderer startup (~46%, measured). It no longer blocks initial paint: the window shell, welcome screen, and UI theme appear first, and Monaco loads on demand the moment a file is opened/created (with an idle-time fallback so settings/snippet/theme-customizer/checkpoint panels still work if no file is opened).
-  - Session restore now syncs restored tab content into the editor via an explicit editor-ready hook instead of a fragile fixed 300 ms delay, so reopened/restored files show reliably regardless of how long Monaco takes to load.
-  - Measured `did-finish-load` dropped from ~1.44 s to ~1.0 s, with the shell interactive noticeably sooner.
+- **Realtime program output (`std::cout`/`printf` shown line-by-line)**:
+  - Rebuilt the output-unbuffering shim as C++ (`Sameko-GCC/lib/sameko_unbuffer.cpp`) so it also unit-buffers `std::cout`/`std::cerr`, not just C `stdio`. The old C-only `setvbuf` shim could not reach `std::cout`'s buffer, so programs using `ios_base::sync_with_stdio(false)` (standard in competitive programming) only showed output in one burst when the process exited.
+  - Added a **Realtime Output** setting (Settings > Execution, default on). When disabled, the shim is not linked, restoring full buffering for maximum throughput on heavy output.
+- **[[FEATURE] Add Save As support with Ctrl+Shift+S (Fixes #35)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/35)**:
+  - Added `File > Save As...` and `Ctrl+Shift+S` for saving the active tab to a new path.
+  - Updated tab title/path and file watching after Save As completes.
+  - Preserved regular `Ctrl+S` behavior for saving to the current file path.
 
 ### Changed
+
+- **Debug panel rebuilt around the data**:
+  - Variables / Watch / Call Stack are now a flat accordion — hairline separators instead of three nested bordered boxes, a count badge on each header, its own scrollbar per section, and the open/closed state remembered between runs. Call Stack folds itself away while there is only one frame.
+  - The static "Shortcuts & tips" footer, which cost about a fifth of the panel height, moved into a popover on a new **?** button. It now also explains what each mark in the gutter means.
+  - When there is nothing to show, one centred message replaces the three per-section dashes.
+  - The toolbar is a header row (title, status, **?**, close) over a transport row whose buttons share the width evenly and are 34px tall, so they stay easy to hit and cannot overflow at any panel width.
+- **Gutter marks now say which is which**: a red dot is a breakpoint, a solid yellow arrow is where execution is paused, and the two combined (arrow inside the dot) is paused *on* a breakpoint. The first pause of each session also spells out the point beginners most often miss — the lines above a breakpoint have already run; a breakpoint stops the program, it does not start it.
+- **Terminal input grows with its content**: the stdin box was clipped to one visible row, so a pasted multi-line test case could not be read back. It now grows up to a ceiling that adapts to the panel height, and always leaves room for the output above it.
+- **Build produces every artifact in one command**: `npm run build` now emits the NSIS installer, a portable `.exe`, a zipped portable, the Linux `.tar.gz`, and the update metadata (`latest.yml` + `.blockmap`). `npm run build:linux` produces AppImage/deb/tar.gz (run it on Linux or WSL — AppImage needs symlinks and `.deb` needs `fpm`, neither of which work from Windows), and `npm run build:all` does both.
 - **Clangd-Driven IntelliSense (Removed Hardcoded STL Tables)**:
   - Removed the hardcoded `STL_DOCS`, `STL_TYPE_METHODS`, and `STL_KEYWORDS` tables, the after-dot STL method completion logic, the STL hover provider, and the STL-only signature help provider from the C/C++ suggestion provider.
   - Member completions (e.g. `.push_back`, `.size`), hover info, and signature help are now served entirely by clangd, which is accurate and context-aware instead of pattern-matched.
@@ -67,8 +81,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Settings Layout and C++26 Standard Option**:
   - Removed the "(Beta)" suffix from the C++26 compiler standard selector to reflect the official release status of the bundled GCC 16.1.0.
   - Cleaned up duplicate nested HTML `div` elements within the compiler settings block.
+- **Bundled GCC 16.1.0 toolchain refresh and cleanup**:
+  - Replaced the local `Sameko-GCC` bundle with the official WinLibs GCC 16.1.0 MinGW-w64 14.0.0 toolchain for newer C++ standard support.
+  - Removed unused documentation, locale, Python test/GUI modules, and non-integrated helper tools from the bundled toolchain, reducing `Sameko-GCC` from ~918 MB to ~737 MB while preserving IDE compilation, syntax checking, `bits/stdc++.h`, and the realtime-output shim.
+- **Faster app startup by bundling fonts locally (no Google Fonts CDN)**:
+  - Replaced the runtime Google Fonts requests (`<link>` in `src/index.html` and the render-blocking `@import` in `src/styles/base.css`) with locally bundled `woff2` files served from `src/assets/fonts/` via `src/assets/fonts.css`.
+  - Startup no longer waits on a network round-trip to `fonts.googleapis.com`/`fonts.gstatic.com`, so the IDE opens reliably and consistently even on a slow connection or fully offline. Measured `did-finish-load` dropped from ~1190ms to ~1004ms (~16% faster) in dev mode.
+  - Bundled only the `latin` + `latin-ext` subsets of the three fonts in use (Fredoka, Nunito, JetBrains Mono), totaling ~596KB.
+- **Terminal now renders with xterm.js instead of per-line DOM nodes**:
+  - Output is written to an xterm.js terminal (canvas-based) rather than creating a `<pre>` element per output chunk. A tight `while(1) std::cout << ...` loop previously created thousands of DOM nodes per second and froze the UI.
+  - Program output is written verbatim (program controls its own newlines/ANSI); IDE status/build messages render as discrete colored lines using the existing terminal color palette.
+  - Kept the existing terminal UI: header, clear button, input textarea + send button, command history, Ctrl+C, docking, and per-theme colors.
+  - The terminal now defaults to being docked at the bottom panel.
+
+### Performance
+
+- **Faster First-Launch (Packaging Trim)**:
+  - Excluded ~1,870 files / ~115 MB of never-loaded assets from the packaged app: Monaco's `dev/`, `esm/`, and `min-maps/` folders (the app only uses `min/vs` via the AMD loader), tree-sitter-cpp's `src/` parser source and `.wasm`, non-Windows tree-sitter prebuilds (macOS/Linux/ARM), and source maps.
+  - Smaller `app.asar` and far fewer files mean less to read from cold disk and less for Windows Defender to scan on the very first run — the slowest launch, before the OS file cache is warm.
+- **Deferred (Lazy) Monaco Editor Load**:
+  - Monaco (the editor engine) was the single biggest chunk of renderer startup (~46%, measured). It no longer blocks initial paint: the window shell, welcome screen, and UI theme appear first, and Monaco loads on demand the moment a file is opened/created (with an idle-time fallback so settings/snippet/theme-customizer/checkpoint panels still work if no file is opened).
+  - Session restore now syncs restored tab content into the editor via an explicit editor-ready hook instead of a fragile fixed 300 ms delay, so reopened/restored files show reliably regardless of how long Monaco takes to load.
+  - Measured `did-finish-load` dropped from ~1.44 s to ~1.0 s, with the shell interactive noticeably sooner.
 
 ### Fixed
+
+- **Breakpoint marks were never actually visible**: the editor was created without `glyphMargin`, which Monaco defaults to `false`, collapsing the glyph strip to zero width. Every mark drawn there — the breakpoint dot, the paused-line arrow, the hover ghost, the compiler error glyph — was being painted into nothing, so a set breakpoint showed only as a tinted line.
+- **Building while debugging failed with a linker error**: the debugger holds the program file open, so a build hit `cannot open output file … Permission denied` from `ld`, which reads like a broken toolchain. Compile / Build & Run / Run / Run tests are now refused with an explanation while a session is live. The old hint claimed it was "stopping background process..." while stopping nothing.
+- **Stop then immediately run again could kill the new session**: a late `terminated`/`exited` event from the previous gdb arrived after the next session had started and tore it down.
+- **Debug toolbar buttons no longer strobe** while auto-stepping — the session flickers between paused and running many times a second, and a click could land in a millisecond where the button was disabled.
+- **`npm run clean` and `clean:dist` deleted the wrong directories**: `clean` removed `%APPDATA%/cpp-ide` while the settings folder is `sameko-dev-cpp`, and `clean:dist` removed `release_build` while the build output goes to `samekodevcpp` — so `rebuild:win` was not rebuilding from scratch. Both now use `scripts/clean.js` and work on Linux and macOS too.
+- **Right-clicking the terminal input pasted the clipboard twice** (the handler was registered both directly and at the document level).
 - **IntelliSense Completions & Hover Were Silently Disabled**:
   - clangd-backed member completions (`v.` → `push_back`, `size`, …) and hover never fired: the C/C++ provider gated both features on `window.TabManager`, a module `index.html` never loads, so the condition was always false and the editor silently fell back to buffer-word suggestions (showing `main`/`v` instead of real STL members).
   - Rewrote the provider to resolve the active document from the app's own `App` tab state via a `clangdFileId(model)` helper that always yields a valid identifier (saved path → tab id → Monaco model URI), and removed the tab-existence gate so clangd is queried unconditionally — a missing or stale tab can no longer drop IntelliSense to the fallback.
@@ -89,33 +132,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added an option in the CC popup to choose where imported tests land: **"Open in a new tab"** (default, existing behavior) or **"Import into current tab"** (keeps your code, only updates tests).
   - When importing into the current tab, users can choose to **replace** existing tests or **append** new ones.
   - Setting is persisted in `settings.json` under `oj.importTarget` and `oj.importMerge`.
-
-## [1.2.0] - 2026-06-06
-
-### Added
-- **Realtime program output (`std::cout`/`printf` shown line-by-line)**:
-  - Rebuilt the output-unbuffering shim as C++ (`Sameko-GCC/lib/sameko_unbuffer.cpp`) so it also unit-buffers `std::cout`/`std::cerr`, not just C `stdio`. The old C-only `setvbuf` shim could not reach `std::cout`'s buffer, so programs using `ios_base::sync_with_stdio(false)` (standard in competitive programming) only showed output in one burst when the process exited.
-  - Added a **Realtime Output** setting (Settings > Execution, default on). When disabled, the shim is not linked, restoring full buffering for maximum throughput on heavy output.
-- **[[FEATURE] Add Save As support with Ctrl+Shift+S (Fixes #35)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/35)**:
-  - Added `File > Save As...` and `Ctrl+Shift+S` for saving the active tab to a new path.
-  - Updated tab title/path and file watching after Save As completes.
-  - Preserved regular `Ctrl+S` behavior for saving to the current file path.
-
-### Changed
-- **Bundled GCC 16.1.0 toolchain refresh and cleanup**:
-  - Replaced the local `Sameko-GCC` bundle with the official WinLibs GCC 16.1.0 MinGW-w64 14.0.0 toolchain for newer C++ standard support.
-  - Removed unused documentation, locale, Python test/GUI modules, and non-integrated helper tools from the bundled toolchain, reducing `Sameko-GCC` from ~918 MB to ~737 MB while preserving IDE compilation, syntax checking, `bits/stdc++.h`, and the realtime-output shim.
-- **Faster app startup by bundling fonts locally (no Google Fonts CDN)**:
-  - Replaced the runtime Google Fonts requests (`<link>` in `src/index.html` and the render-blocking `@import` in `src/styles/base.css`) with locally bundled `woff2` files served from `src/assets/fonts/` via `src/assets/fonts.css`.
-  - Startup no longer waits on a network round-trip to `fonts.googleapis.com`/`fonts.gstatic.com`, so the IDE opens reliably and consistently even on a slow connection or fully offline. Measured `did-finish-load` dropped from ~1190ms to ~1004ms (~16% faster) in dev mode.
-  - Bundled only the `latin` + `latin-ext` subsets of the three fonts in use (Fredoka, Nunito, JetBrains Mono), totaling ~596KB.
-- **Terminal now renders with xterm.js instead of per-line DOM nodes**:
-  - Output is written to an xterm.js terminal (canvas-based) rather than creating a `<pre>` element per output chunk. A tight `while(1) std::cout << ...` loop previously created thousands of DOM nodes per second and froze the UI.
-  - Program output is written verbatim (program controls its own newlines/ANSI); IDE status/build messages render as discrete colored lines using the existing terminal color palette.
-  - Kept the existing terminal UI: header, clear button, input textarea + send button, command history, Ctrl+C, docking, and per-theme colors.
-  - The terminal now defaults to being docked at the bottom panel.
-
-### Fixed
 - **Main-process output flooding**: stdout/stderr chunks are now coalesced and flushed on a short timer (or at a 64KB threshold) instead of emitting one IPC message per `data` event, with a guaranteed flush before process exit.
 - **Unbounded memory growth on infinite output**: removed the write-only `output`/`errorOutput` accumulators that grew without limit under `while(1)`-style loops.
 - **Docked terminal height**: the xterm terminal now fills the full panel height when docked and re-fits after dock/undock/resize/show transitions.

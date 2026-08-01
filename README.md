@@ -44,7 +44,7 @@
   <p>
     <a href="#-features">Features</a> •
     <a href="#-screenshots">Screenshots</a> •
-    <a href="https://samekocpp.wibu.me/" target="_blank" rel="noopener noreferrer">Download</a> •
+    <a href="#-download">Download</a> •
     <a href="#-development">Development</a> •
     <a href="#-shortcuts">Shortcuts</a>
   </p>
@@ -57,7 +57,7 @@
 <table>
   <tr>
     <td width="70%">
-      <p><b>Sameko IDE</b> is a lightweight C++ IDE for Windows, built for competitive programming and learning. It comes with GCC 16 pre-configured — no MinGW installation needed. Just download, extract, and start coding.</p>
+      <p><b>Sameko IDE</b> is a lightweight C++ IDE for Windows and Linux, built for competitive programming and learning. The Windows build comes with GCC 16 pre-configured — no MinGW installation needed. Just download, extract, and start coding.</p>
       <blockquote>💡 Think of it as a modern Dev-C++ alternative: simple interface, fast compilation, works out of the box.</blockquote>
     </td>
     <td width="30%" align="center">
@@ -70,8 +70,9 @@
 
 ## ✨ Features
 
-- 🚀 GCC 16 bundled, no setup required
+- 🚀 GCC 16 bundled on Windows, no setup required (on Linux it uses your distro's `g++`)
 - ⚡ Press F11 to compile and run instantly
+- 🐞 Real GDB debugger: breakpoints, watches, STL-aware variable trees, and an **Auto dry run** that walks your program line by line on its own
 - 🏆 Fetch test cases from Codeforces, AtCoder, LeetCode via Competitive Companion
 - 🔗 Auto-links .cpp files when you `#include` custom headers
 - 🎨 6 themes: Kawaii, Dracula, Monokai, Nord, One Dark, Sakura
@@ -97,13 +98,17 @@
 
 <br />
 
-## 🆕 What's New in v1.1.0
+## 🆕 What's New in v1.2.0
 
-- Faster real-world compile flow with startup warm-up + default PCH prebuild.
-- New **Single-file Compile Mode** (default ON) for faster CP-style builds.
-- Smarter linker guidance: if a build needs multi-file linking, Sameko now shows a hint.
-- More reliable external terminal run completion reporting (with time + memory summary).
-- Auto-update UX stability improvements to avoid premature "Restart to Update" state.
+- **A real debugger.** Breakpoints in the gutter, watches, STL-aware variable trees, call stack, hover-to-evaluate, Run to Cursor — all on the bundled GDB.
+- **Auto dry run.** One button walks your program a line at a time while the values update, so you can watch a loop run instead of pressing F10 a hundred times. No breakpoint needed; it starts at `main()`.
+- **Step back through a recording.** Every pause is recorded, so **Back** lets you look at the previous steps and the values they held.
+- **Linux support.** AppImage, `.deb` and `.tar.gz` builds.
+- **Realtime output** — `cout`/`printf` appear line by line while the program runs, not all at once when it exits.
+- **Clangd-powered IntelliSense**, replacing the old hardcoded STL tables.
+- **Faster startup**: Monaco loads on demand and ~115 MB of never-used files were dropped from the package.
+
+See [CHANGELOG.md](CHANGELOG.md) for the full list.
 
 ### Multi-file project note
 
@@ -115,13 +120,75 @@ Then turn it **OFF** and build again.
 
 ## 📥 Download
 
-### Windows (Portable)
+Get the latest build from [**samekocpp.wibu.me**](https://samekocpp.wibu.me/) or the
+[GitHub releases page](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases).
 
-1. Go to [**samekocpp.wibu.me**](https://samekocpp.wibu.me/)
-2. Download the latest `.rar` or `.exe` file
-3. Extract and run — that's it!
+### Windows
 
-> **Note:** Compiler is bundled. No additional setup required.
+| File | What it is |
+| :--- | :--- |
+| `sameko-dev-cpp-setup-<version>.exe` | Installer. Adds shortcuts and receives auto-updates. **Pick this if unsure.** |
+| `sameko-dev-cpp-<version>-portable.exe` | Single-file portable build — run it from anywhere, including a USB stick. |
+| `sameko-dev-cpp-<version>-portable.zip` | The same app as a plain folder. Extract and run `Sameko Dev C++.exe`. |
+
+> **The compiler is bundled** on Windows (GCC 16). Nothing else to install.
+
+### Linux
+
+The Linux build **does not bundle a compiler** — Sameko uses the `g++` and `gdb` already on your
+system. Install them first:
+
+```bash
+# Debian / Ubuntu / Mint / Pop!_OS
+sudo apt update && sudo apt install g++ gdb
+
+# Fedora
+sudo dnf install gcc-c++ gdb
+
+# Arch / Manjaro
+sudo pacman -S gcc gdb
+```
+
+Then pick one of the three packages:
+
+**AppImage** — works on any distribution, nothing to install:
+
+```bash
+chmod +x sameko-dev-cpp-*-linux-*.AppImage
+./sameko-dev-cpp-*-linux-*.AppImage
+```
+
+> If it will not start, your distribution may be missing FUSE 2:
+> `sudo apt install libfuse2` (Ubuntu 22.04+), or run it with `--appimage-extract-and-run`.
+
+**`.deb`** — for Debian, Ubuntu and derivatives:
+
+```bash
+sudo apt install ./sameko-dev-cpp-*-linux-*.deb
+# then launch "Sameko Dev C++" from your app menu, or run:
+sameko-dev-cpp
+```
+
+**`.tar.gz`** — a plain folder, no installation:
+
+```bash
+tar -xzf sameko-dev-cpp-1.2.0-linux-x64.tar.gz
+cd sameko-dev-cpp-1.2.0-linux-x64
+./sameko-dev-cpp
+```
+
+> **Sandbox note:** if it exits immediately with a `chrome-sandbox` / `SUID sandbox` error — most
+> likely on distributions that restrict unprivileged user namespaces, such as Ubuntu 24.04+ — fix
+> the helper's permissions inside the extracted folder:
+>
+> ```bash
+> sudo chown root:root chrome-sandbox && sudo chmod 4755 chrome-sandbox
+> ```
+>
+> The `.deb` package does this for you at install time. As a last resort, start the app with
+> `--no-sandbox`.
+
+Settings, local history and snippets live in `~/.config/sameko-dev-cpp/`.
 
 <br />
 
@@ -130,6 +197,7 @@ Then turn it **OFF** and build again.
 ### Prerequisites
 - Node.js v18+
 - npm or yarn
+- On Linux: `g++` and `gdb` (see [Linux](#linux) above)
 
 ### Setup
 
@@ -143,9 +211,38 @@ npm install
 
 # Run in development mode
 npm start
+```
 
-# Build for Windows (NSIS installer + update metadata)
-npm run build
+### Building
+
+```bash
+npm run build        # Windows installer + portable + zipped portable, and the Linux .tar.gz
+npm run build:win    # Windows only
+npm run build:linux  # AppImage + .deb + .tar.gz  (run this on Linux or WSL)
+npm run build:all    # everything, in one pass
+```
+
+Everything lands in `samekodevcpp/`. A full `npm run build` produces:
+
+| Artifact | Notes |
+| :--- | :--- |
+| `sameko-dev-cpp-setup-<version>.exe` | NSIS installer |
+| `sameko-dev-cpp-<version>-portable.exe` | Single-file portable |
+| `sameko-dev-cpp-<version>-portable.zip` | Zipped portable folder |
+| `sameko-dev-cpp-<version>-linux-x64.tar.gz` | Linux portable |
+| `latest.yml` + `.blockmap` | Update metadata the in-app updater reads |
+
+> **Building the Linux packages from Windows does not work.** AppImage needs to create symlinks
+> (blocked unless Developer Mode is on) and `.deb` needs `fpm`, which has no Windows build — which
+> is why `npm run build` only takes the `.tar.gz` from Linux. Run `npm run build:linux` inside WSL
+> or on a real Linux machine to get the other two.
+
+### Housekeeping
+
+```bash
+npm run clean        # wipe settings/history/snippets (the app's user-data folder)
+npm run clean:dist   # wipe samekodevcpp/
+npm run rebuild      # clean:dist, then a full build
 ```
 
 <br />
@@ -160,11 +257,29 @@ npm run build
 | `Ctrl + N`         | New file             |
 | `Ctrl + O`         | Open file            |
 | `Ctrl + S`         | Save file            |
+| `Ctrl + Shift + S` | Save As              |
 | `Ctrl + J`         | Toggle Panel         |
 | `Ctrl + \`         | Split Editor         |
 | `Ctrl + Shift + A` | Auto Format (AStyle) |
 | `Ctrl + Alt + S`   | Toggle Auto-Save     |
 | `Ctrl + Shift + P` | Command Palette      |
+
+### While debugging
+
+Click the left gutter to set a breakpoint, then press `F5`. `F10` and `F11` switch to stepping for
+as long as the session is live, and go back to Run / Compile & Run once it ends.
+
+| Key               | Action                                        |
+| :---------------- | :-------------------------------------------- |
+| `F5`              | Start debugging · Continue                    |
+| `F10`             | Step over                                     |
+| `F11`             | Step into                                     |
+| `Shift + F11`     | Step out                                      |
+| `Shift + F5`      | Stop debugging                                |
+| `Esc`             | Stop an Auto dry run · leave the step history |
+| `Alt` + gutter    | Conditional breakpoint                        |
+| `Ctrl` + gutter   | Enable / disable a breakpoint                 |
+| Right-click a line | Run to Cursor                                |
 
 <br />
 
