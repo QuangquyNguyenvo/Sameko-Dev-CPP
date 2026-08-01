@@ -286,6 +286,14 @@ class GdbSession extends EventEmitter {
         return { id: parseInt(bkpt.number, 10), line: parseInt(bkpt.line, 10), raw: bkpt };
     }
 
+    /**
+     * Temporary breakpoint on `main`, so a run stops at the program's first line
+     * even when the user set no breakpoints. Used by Auto dry run, which has to
+     * start somewhere. Auto-deletes when hit; `main` is a function name, not a
+     * path, so none of the Windows linespec quoting problems apply.
+     */
+    breakAtMain() { return this.send('-break-insert -t main'); }
+
     removeBreakpoint(id) { return this.send(`-break-delete ${id}`); }
     enableBreakpoint(id) { return this.send(`-break-enable ${id}`); }
     disableBreakpoint(id) { return this.send(`-break-disable ${id}`); }

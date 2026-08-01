@@ -655,6 +655,11 @@ function createEditor(containerId) {
         cursorBlinking: App.settings.appearance.performanceMode ? 'solid' : 'smooth',
         smoothScrolling: !App.settings.appearance.performanceMode,
         bracketPairColorization: { enabled: !App.settings.appearance.performanceMode },
+        // Monaco defaults this to false, which silently collapses the glyph margin
+        // to 0px — every `glyphMarginClassName` decoration (debugger breakpoint
+        // dots, the paused-line arrow, compiler error glyphs) was being drawn into
+        // a strip with no width. Breakpoints only ever showed as a tinted line.
+        glyphMargin: true,
         padding: { top: 12 },
         // Editor zoom is handled solely by initCtrlWheelZoom + fontSize. Monaco's
         // built-in mouseWheelZoom applies a separate global zoom that re-applies on
@@ -4730,6 +4735,24 @@ async function saveAs(tabIdOverride = null) {
 
 let isBuilding = false;
 
+/**
+ * A live debug session holds the .exe open, so any build would fail at the LINK
+ * step with a raw "cannot open output file … Permission denied" from ld — which
+ * reads like a broken toolchain to a beginner. Catch it here and say what is
+ * actually going on, in plain words.
+ * @param {string} action - what the user was trying to do ("Build", "Run", …)
+ * @returns {boolean} true if the action must be refused
+ */
+function blockedByDebugSession(action) {
+    if (!(window.Debugger && typeof window.Debugger.isActive === 'function' && window.Debugger.isActive())) {
+        return false;
+    }
+    log(`${action} is unavailable while debugging — the debugger is using the program file.`, 'warning');
+    log('Stop the debug session first: press Shift+F5, or the ■ button in the debug panel.', 'system');
+    setStatus('Debug session active', 'warning');
+    return true;
+}
+
 function setBuildingState(building) {
     isBuilding = building;
     const btnBuildRun = document.getElementById('btn-buildrun');
@@ -4761,6 +4784,7 @@ async function compileOnly() {
         log('Build in progress...', 'warning');
         return;
     }
+    if (blockedByDebugSession('Compile')) return;
 
     const tabId = App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId;
     const editor = App.activeEditor === 2 && App.editor2 ? App.editor2 : App.editor;
@@ -4828,8 +4852,16 @@ async function compileOnly() {
             log('Compile failed', 'error');
             log(r.error, 'error');
 
-            const linkerLikeError = /undefined reference|ld returned|collect2\.exe: error/i.test(String(r.error || ''));
-            if ((App.settings.compiler.singleFileMode !== false) && linkerLikeError) {
+            const errText = String(r.error || '');
+            const isFileLocked = /permission denied|cannot open output file/i.test(errText);
+            const isMultiDef = /multiple definition of/i.test(errText);
+            const linkerLikeError = /undefined reference|ld returned|collect2\.exe: error/i.test(errText);
+
+            if (isFileLocked) {
+                log('Hint: your program is still running and is holding the .exe open. Press ■ Stop (or Shift+F5 if you are debugging), then build again.', 'warning');
+            } else if (isMultiDef) {
+                log('Hint: Multiple symbol definitions detected. Check for duplicate main() or functions.', 'warning');
+            } else if ((App.settings.compiler.singleFileMode !== false) && linkerLikeError) {
                 log('Hint: This may require multi-file linking. Retry with Single-file mode OFF in Compiler settings.', 'warning');
             }
 
@@ -4855,6 +4887,7 @@ async function buildRun() {
         log('Build in progress...', 'warning');
         return;
     }
+    if (blockedByDebugSession('Build & Run')) return;
 
 
     const tabId = App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId;
@@ -4933,8 +4966,16 @@ async function buildRun() {
             log('Build failed', 'error');
             log(r.error, 'error');
 
-            const linkerLikeError = /undefined reference|ld returned|collect2\.exe: error/i.test(String(r.error || ''));
-            if ((App.settings.compiler.singleFileMode !== false) && linkerLikeError) {
+            const errText = String(r.error || '');
+            const isFileLocked = /permission denied|cannot open output file/i.test(errText);
+            const isMultiDef = /multiple definition of/i.test(errText);
+            const linkerLikeError = /undefined reference|ld returned|collect2\.exe: error/i.test(errText);
+
+            if (isFileLocked) {
+                log('Hint: your program is still running and is holding the .exe open. Press ■ Stop (or Shift+F5 if you are debugging), then build again.', 'warning');
+            } else if (isMultiDef) {
+                log('Hint: Multiple symbol definitions detected. Check for duplicate main() or functions.', 'warning');
+            } else if ((App.settings.compiler.singleFileMode !== false) && linkerLikeError) {
                 log('Hint: This may require multi-file linking. Retry with Single-file mode OFF in Compiler settings.', 'warning');
             }
 
@@ -4953,6 +4994,7 @@ async function buildRun() {
 }
 
 async function run(clearTerminal = true) {
+    if (blockedByDebugSession('Run')) return;
     if (!App.exePath) { log('Build first (F11)', 'warning'); return; }
 
     if (!App.showTerm) {
@@ -6495,6 +6537,8 @@ async function runAllTests() {
         log('Tests are already running...', 'warning');
         return;
     }
+
+    if (blockedByDebugSession('Running tests')) return;
 
     const runAllBtn = document.getElementById('btn-run-all-tests');
     if (runAllBtn) {

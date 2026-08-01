@@ -110,6 +110,7 @@ function requireSession() {
 }
 
 const setBreakpoint = (file, line, cond) => requireSession().setBreakpoint(file, line, cond);
+const breakAtMain = () => requireSession().breakAtMain();
 const removeBreakpoint = (id) => requireSession().removeBreakpoint(id);
 const enableBreakpoint = (id) => requireSession().enableBreakpoint(id);
 const disableBreakpoint = (id) => requireSession().disableBreakpoint(id);
@@ -137,6 +138,7 @@ module.exports = {
     start,
     stop,
     setBreakpoint,
+    breakAtMain,
     removeBreakpoint,
     enableBreakpoint,
     disableBreakpoint,
