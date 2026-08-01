@@ -130,13 +130,8 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
         await new Promise(r => setTimeout(r, 10));
     }
 
-    // Kill any running process first (to release .exe lock)
-    if (runningProcess) {
-        runningProcess.kill();
-        runningProcess = null;
-        // Minimal delay - just enough to release file lock
-        await new Promise(r => setTimeout(r, 10));
-    }
+    // Terminate any running process and release executable locks
+    stopProcess();
 
     try {
         const syntax = require('../syntax');
@@ -187,6 +182,24 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
     cleanupOldBuildArtifacts(buildsDir);
 
     const outputPath = path.join(buildsDir, baseName + EXE_SUFFIX);
+
+    // Release file lock on target output executable if it exists
+    if (fs.existsSync(outputPath)) {
+        try {
+            fs.unlinkSync(outputPath);
+        } catch (e) {
+            if (process.platform === 'win32') {
+                const exeName = path.basename(outputPath);
+                try {
+                    exec(`taskkill /im "${exeName}" /f`, () => { });
+                } catch (_) { }
+                await new Promise(r => setTimeout(r, 150));
+                try {
+                    fs.unlinkSync(outputPath);
+                } catch (_) { }
+            }
+        }
+    }
 
     // ===== MULTI-FILE PROJECT SUPPORT (fast lookup) =====
     let sourceFiles = [actualFilePath];
@@ -274,6 +287,12 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
 
     // Apply resolved flags
     args.push(...resolvedFlags.split(' ').filter(f => f.trim()));
+
+    // Link libstdc++exp for C++23/C++26 experimental stdlib features (such as std::print, std::println, <stacktrace>)
+    const isCpp23Or26 = /-std=(c\+\+|gnu\+\+)(23|26|2b|2c)/.test(resolvedFlags) || /#include\s*<print>|#include\s*<stacktrace>/.test(content);
+    if (isCpp23Or26 && !args.includes('-lstdc++exp')) {
+        args.push('-lstdc++exp');
+    }
 
     const compilerExe = getDetectedCompiler() || 'g++';
     const compilerInfo = getCompilerInfo();

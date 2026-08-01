@@ -540,6 +540,9 @@ body::after {
     background: var(--terminal-bg, #1e2933);
     color: var(--text-primary, #e0f0ff);
     flex: 1;
+    /* flex items default to min-height:auto — without this the body refuses to
+       shrink when the input row auto-grows, and the input gets pushed/clipped. */
+    min-height: 0;
     padding: 12px;
     font-family: 'JetBrains Mono', monospace;
     font-size: var(--panel-font-size, 13px);

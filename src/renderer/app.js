@@ -3588,7 +3588,9 @@ function initPanels() {
 
     setupRightClickPaste(document.getElementById('input-area'));
     setupRightClickPaste(document.getElementById('expected-area'));
-    setupRightClickPaste(document.getElementById('terminal-in'));
+    // NOTE: #terminal-in is handled by initTerminalUX()'s document-level handler
+    // (right-click anywhere in the terminal pastes). Registering it here too
+    // would paste the clipboard twice.
 
     // IO textareas are the real elements — no sync needed even when docked
     initDockablePanels();
@@ -5417,7 +5419,10 @@ async function sendInput() {
             await window.electronAPI.sendInput(line);
         }
         inp.value = '';
-        inp.style.height = 'auto';
+        // drop the inline sizing the auto-grow left behind (see initTerminalUX)
+        inp.style.height = '';
+        inp.style.maxHeight = '';
+        inp.scrollTop = 0;
     }
 }
 
@@ -6970,6 +6975,9 @@ function buildCompileFlags() {
     const flags = [];
     if (App.settings.compiler.cppStandard) {
         flags.push(`-std=${App.settings.compiler.cppStandard}`);
+        if (['c++23', 'c++26'].includes(App.settings.compiler.cppStandard)) {
+            flags.push('-lstdc++exp');
+        }
     }
 
     const fastDebugMode = App.settings.compiler.fastDebugMode !== false;
@@ -7122,7 +7130,6 @@ function initXtermTerminal() {
 }
 
 function initTerminalUX() {
-    const termSection = document.getElementById('terminal-section');
     const termInput = document.getElementById('terminal-in');
 
     // Mount the xterm.js terminal into the #terminal element (output display only).
@@ -7130,13 +7137,35 @@ function initTerminalUX() {
 
     if (termInput) {
 
+        // Auto-grow with the content so a pasted multi-line test case is fully
+        // visible instead of being clipped to one row. The ceiling is dynamic:
+        // never taller than TERM_INPUT_MAX_PX, and always leaving
+        // TERM_OUTPUT_RESERVE_PX of the panel for the output above — otherwise a
+        // short (or docked) panel would be swallowed whole by the input.
+        // CSS keeps a static max-height as the fallback before this ever runs.
+        const TERM_INPUT_MAX_PX = 220;
+        const TERM_INPUT_MIN_PX = 88;
+        const TERM_OUTPUT_RESERVE_PX = 120; // panel head + a few lines of output
+
         const handleResize = function () {
             if (this.value === '') {
                 this.style.height = '';
+                this.style.maxHeight = '';
+                this.scrollTop = 0;
                 return;
             }
-            this.style.height = 0; // Set to 0 first to correctly calculate scrollHeight
-            this.style.height = (this.scrollHeight) + 'px';
+            const panel = this.closest('.terminal-section, .problems-panel');
+            const panelH = panel ? panel.clientHeight : 0;
+            const cap = panelH
+                ? Math.min(TERM_INPUT_MAX_PX, Math.max(TERM_INPUT_MIN_PX, panelH - TERM_OUTPUT_RESERVE_PX))
+                : TERM_INPUT_MAX_PX;
+
+            this.style.maxHeight = cap + 'px';
+            this.style.height = 'auto'; // collapse first so scrollHeight is the real content height
+            this.style.height = Math.min(this.scrollHeight, cap) + 'px';
+            if (this.selectionStart === this.value.length) {
+                this.scrollTop = this.scrollHeight;
+            }
         };
         termInput.addEventListener('input', handleResize);
         termInput.addEventListener('paste', function () {
@@ -7205,13 +7234,24 @@ function initTerminalUX() {
         });
 
 
-        if (termSection && !termSection.dataset.contextMenuInitialized) {
-            termSection.dataset.contextMenuInitialized = 'true';
+        // Right-click anywhere in the terminal — output area OR the input row —
+        // pastes into the input, like a real console.
+        // Bound on `document` (not #terminal-section) on purpose: docking moves
+        // #terminal and .terminal-input into #problems-panel, which would put
+        // them outside a section-scoped listener. Also note xterm.js parks its
+        // hidden helper <textarea> under the mouse on right-click, so the event
+        // target inside the output area is often a TEXTAREA — we must not skip it.
+        if (!document.body.dataset.termContextMenuInitialized) {
+            document.body.dataset.termContextMenuInitialized = 'true';
 
-            termSection.addEventListener('contextmenu', async (e) => {
-                if (e.target.tagName === 'BUTTON' || e.target.closest('button') || e.target.tagName === 'TEXTAREA') {
-                    if (e.target.tagName === 'TEXTAREA') return;
-                }
+            document.addEventListener('contextmenu', async (e) => {
+                const target = e.target;
+                if (!target || typeof target.closest !== 'function') return;
+                // Only the terminal output body and the terminal input row.
+                const inTerminal = target.closest('#terminal') ||
+                    target.closest('.terminal-input')?.contains(termInput);
+                if (!inTerminal) return;
+                if (target.closest('button')) return;
 
                 e.preventDefault();
                 try {
@@ -7223,14 +7263,13 @@ function initTerminalUX() {
 
                         termInput.value = currentValue.substring(0, startPos) + text + currentValue.substring(endPos);
 
-
-                        termInput.dispatchEvent(new Event('input'));
-
                         termInput.focus();
-
 
                         const newPos = startPos + text.length;
                         termInput.setSelectionRange(newPos, newPos);
+
+                        // after setSelectionRange, so the auto-grow can scroll to the caret
+                        termInput.dispatchEvent(new Event('input'));
                     }
                 } catch (err) {
                     console.warn('Paste failed:', err);

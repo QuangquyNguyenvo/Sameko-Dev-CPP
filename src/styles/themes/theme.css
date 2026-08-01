@@ -1923,7 +1923,10 @@ input[type="color"] {
     line-height: 1.4;
     padding: 4px 0;
     min-height: 20px;
-    max-height: 100px;
+    /* Auto-grow ceiling (JS sets the exact height). Roomy enough for a pasted
+       multi-line test case; past it the box scrolls instead of swallowing the
+       terminal output above. */
+    max-height: min(40vh, 220px);
     overflow-y: auto;
 }
 
@@ -3396,7 +3399,7 @@ body.split-active .editor-pane {
     line-height: 1.4;
     padding: 4px 0;
     min-height: 20px;
-    max-height: 100px;
+    max-height: min(40vh, 220px);
     overflow-y: auto;
 }
 
@@ -7724,7 +7727,7 @@ body.split-active .editor-pane {
     }
 
     .terminal-input textarea {
-        max-height: 64px;
+        max-height: min(30vh, 110px);
     }
 
     .settings-popup {
