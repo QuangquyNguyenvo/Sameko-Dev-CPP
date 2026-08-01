@@ -59,11 +59,12 @@
         "dev": "electron . --enable-logging",
         "clean": "node scripts/clean.js settings",
         "clean-start": "npm run clean && npm start",
-        "build": "electron-builder --win nsis portable zip --linux tar.gz",
-        "build:win": "electron-builder --win nsis portable zip",
+        "build": "npm run build:win && npm run build:appimage",
+        "build:win": "electron-builder --win nsis zip",
+        "build:appimage": "node scripts/build-appimage.js",
         "build:mac": "electron-builder --mac",
         "build:linux": "electron-builder --linux AppImage deb tar.gz",
-        "build:all": "electron-builder --win nsis portable zip --linux AppImage deb tar.gz",
+        "build:all": "npm run build:win && electron-builder --linux AppImage deb tar.gz",
         "clean:dist": "node scripts/clean.js dist",
         "rebuild:win": "npm run clean:dist && npm run build:win",
         "rebuild": "npm run clean:dist && npm run build",
@@ -159,12 +160,6 @@
                     ]
                 },
                 {
-                    "target": "portable",
-                    "arch": [
-                        "x64"
-                    ]
-                },
-                {
                     "target": "zip",
                     "arch": [
                         "x64"
@@ -196,9 +191,6 @@
             "shortcutName": "Sameko Dev C++",
             "perMachine": false,
             "allowElevation": true
-        },
-        "portable": {
-            "artifactName": "sameko-dev-cpp-${version}-portable.${ext}"
         },
         "mac": {
             "target": "dmg",

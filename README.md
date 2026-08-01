@@ -128,8 +128,7 @@ Get the latest build from [**samekocpp.wibu.me**](https://samekocpp.wibu.me/) or
 | File | What it is |
 | :--- | :--- |
 | `sameko-dev-cpp-setup-<version>.exe` | Installer. Adds shortcuts and receives auto-updates. **Pick this if unsure.** |
-| `sameko-dev-cpp-<version>-portable.exe` | Single-file portable build — run it from anywhere, including a USB stick. |
-| `sameko-dev-cpp-<version>-portable.zip` | The same app as a plain folder. Extract and run `Sameko Dev C++.exe`. |
+| `sameko-dev-cpp-<version>-portable.zip` | Portable build. Extract it anywhere — including a USB stick — and run `Sameko Dev C++.exe`. |
 
 > **The compiler is bundled** on Windows (GCC 16). Nothing else to install.
 
@@ -216,7 +215,7 @@ npm start
 ### Building
 
 ```bash
-npm run build        # Windows installer + portable + zipped portable, and the Linux .tar.gz
+npm run build        # the three release artifacts: Windows installer + portable .zip + Linux AppImage
 npm run build:win    # Windows only
 npm run build:linux  # AppImage + .deb + .tar.gz  (run this on Linux or WSL)
 npm run build:all    # everything, in one pass
@@ -226,16 +225,22 @@ Everything lands in `samekodevcpp/`. A full `npm run build` produces:
 
 | Artifact | Notes |
 | :--- | :--- |
-| `sameko-dev-cpp-setup-<version>.exe` | NSIS installer |
-| `sameko-dev-cpp-<version>-portable.exe` | Single-file portable |
-| `sameko-dev-cpp-<version>-portable.zip` | Zipped portable folder |
-| `sameko-dev-cpp-<version>-linux-x64.tar.gz` | Linux portable |
+| `sameko-dev-cpp-setup-<version>.exe` | Windows installer (NSIS) |
+| `sameko-dev-cpp-<version>-portable.zip` | Windows portable folder, zipped |
+| `sameko-dev-cpp-<version>-linux-x86_64.AppImage` | Linux, runs on any distribution |
 | `latest.yml` + `.blockmap` | Update metadata the in-app updater reads |
 
-> **Building the Linux packages from Windows does not work.** AppImage needs to create symlinks
-> (blocked unless Developer Mode is on) and `.deb` needs `fpm`, which has no Windows build — which
-> is why `npm run build` only takes the `.tar.gz` from Linux. Run `npm run build:linux` inside WSL
-> or on a real Linux machine to get the other two.
+> **How the AppImage gets built on Windows.** Packing an AppImage requires creating symlinks, which
+> Windows only allows from an elevated terminal or with Developer Mode on; otherwise electron-builder
+> stops at `A required privilege is not held by the client`. `scripts/build-appimage.js` checks for
+> that permission up front and, when it is missing, runs the same build **through WSL** — which has
+> no such restriction and can build in place from `/mnt/<drive>`. So `npm run build` produces all
+> three artifacts on a plain terminal as long as WSL is installed; if it is not, the script prints
+> every way to fix it. The Windows targets are built first either way, so they survive a Linux-side
+> failure.
+>
+> `.deb` additionally needs `fpm`, which has no Windows build — run `npm run build:linux` inside WSL
+> or on a real Linux machine for the `.deb` and `.tar.gz`.
 
 ### Housekeeping
 
