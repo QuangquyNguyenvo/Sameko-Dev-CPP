@@ -1,0 +1,3 @@
+# Cloudflare Pages redirects
+# Old GitHub Pages project path -> site root
+/Sameko-Dev-CPP/* / 301

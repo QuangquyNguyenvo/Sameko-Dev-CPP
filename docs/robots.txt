@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://samekocpp.wibu.me/sitemap.xml
+Sitemap: https://sameko.dev/sitemap.xml
 
 
 
