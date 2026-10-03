@@ -1,7 +1,7 @@
 # CODEBASE.md — Sameko Dev C++
 
-A map of where things live. Rules and conventions are in `AGENTS.md`; this file only answers
-"which file do I open?".
+A map of where things live; it answers "which file do I open?". Contribution guidelines are in
+`CONTRIBUTING.md`.
 
 **Sameko Dev C++** is a C++ IDE built on Electron 28 + Monaco Editor. It ships a bundled MinGW GCC
 toolchain (`Sameko-GCC/`) and adds a GDB debugger, clangd IntelliSense, competitive-programming
@@ -141,7 +141,7 @@ in October 2026.)
 | `Sameko-GCC/` | Bundled toolchain (gitignored). Copied into the Windows build as an extra resource. |
 | `scripts/` | `clean.js`, `build-appimage.js`, `test-debugger.js`, `test-gui-smoke.js`. |
 | `docs/` | The sameko.dev website (landing page and wiki). Not part of the app. |
-| `plans/` | Gitignored working plans; see `PLANNING.md`. |
+| `plans/` | Gitignored working plans. |
 | `samekodevcpp/` | electron-builder output (gitignored). |
 | `setup-bundled-mingw.md` | How to obtain and place the bundled compiler. |
 | `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md` | User and contributor docs. |

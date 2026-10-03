@@ -1,6 +1,0 @@
-[mcp_servers.electron-test]
-command = "npx"
-args = [
-    "-y",
-    "electron-test-mcp@0.1.0",
-]

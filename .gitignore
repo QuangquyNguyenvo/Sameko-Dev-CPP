@@ -52,11 +52,13 @@ yarn-error.log*
 *.bak
 
 # ===== AI Agent =====
-# Rules are committed (AGENTS.md, CLAUDE.md, PLANNING.md); only per-machine state is ignored.
+# Agent rules and settings are personal, not part of the repo.
 plans/
-.claude/settings.local.json
-.claude/worktrees/
-.claude/scheduled_tasks.lock
+AGENTS.md
+CLAUDE.md
+PLANNING.md
+.claude/
+.codex/
 
 # ===== CodeGraph =====
 .codegraph/
