@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="assets/css/fonts.css">
+    <link rel="preload" href="assets/fonts/quicksand-700.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/quicksand-500.woff2" as="font" type="font/woff2" crossorigin>
 
     <title>Sameko Dev C++ | Lightweight C++ IDE for Windows</title>
     <meta name="description"
@@ -14,13 +16,11 @@
         content="C++ IDE, portable C++ compiler, lightweight IDE, Dev-C++ alternative, competitive programming IDE, Windows IDE, GCC 16">
     <meta name="author" content="QuangquyNguyenvo">
     <meta name="google-site-verification" content="qhHZsB3wWbPMabTTEiDGclupbVZCNy1GHtSfSX8JC74" />
-    <meta name="theme-color" content="#64B5F6">
+    <meta name="theme-color" content="#88c9ea">
     <meta name="robots" content="index, follow">
 
     <link rel="icon" href="assets/favicon-32.png" sizes="32x32">
     <link rel="icon" href="assets/logo-48.png" sizes="48x48">
-    <link rel="icon" type="image/svg+xml" href="assets/readme-header.svg">
-    <!-- Fallback to SVG if available or valid -->
     <link rel="apple-touch-icon" href="assets/icon-192.png">
     <link rel="canonical" href="https://sameko.dev/">
 
@@ -30,7 +30,7 @@
     <meta property="og:description"
         content="Free portable C++ IDE with built-in GCC 16 compiler. Perfect for competitive programming and students.">
     <meta property="og:image"
-        content="https://sameko.dev/assets/icon.png">
+        content="https://sameko.dev/assets/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="Sameko Dev C++">
@@ -40,7 +40,7 @@
     <meta name="twitter:description"
         content="Free portable C++ IDE with built-in GCC 16 compiler. Perfect for competitive programming and students.">
     <meta name="twitter:image"
-        content="https://sameko.dev/assets/icon.png">
+        content="https://sameko.dev/assets/og-image.png">
 
     <script type="application/ld+json">
     [
@@ -72,7 +72,8 @@
 
     <link rel="preconnect" href="https://api.github.com">
     <link rel="preload" as="image" href="assets/a.webp" type="image/webp">
-    <link rel="stylesheet" href="styles.min.css">
+    <link rel="stylesheet" href="assets/css/tokens.css">
+    <link rel="stylesheet" href="assets/css/home.css">
     <noscript>
         <style>
             .reveal { opacity: 1 !important; transform: none !important; animation: none !important; }
@@ -97,6 +98,8 @@
 </head>
 
 <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
     <!-- Theme Toggle Button -->
     <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark/light mode">
         <!-- Sun Icon (shown in dark mode) -->
@@ -128,41 +131,79 @@
     </button>
 
 
+    <!-- Thanh icon dọc -->
+    <aside class="rail" aria-label="Quick links">
+        <a class="rail__item" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP" target="_blank"
+            rel="noopener" aria-label="GitHub repository" title="GitHub">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path
+                    d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
+                </path>
+            </svg>
+        </a>
+        <a class="rail__item" href="wiki.html" aria-label="Read the wiki" title="Wiki">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+        </a>
+        <a class="rail__item" href="#download-trigger" aria-label="Jump to download" title="Download">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+        </a>
+    </aside>
+
     <!-- Navigation -->
-    <nav>
-        <div class="logo">
-            <a href="#" style="display: flex; align-items: center; gap: 12px; color: inherit; text-decoration: none;">
-                <img src="assets/logo-48.png" alt="Sameko Dev C++ Logo" width="32" height="32">
+    <nav class="nav">
+        <div class="wrap nav__inner">
+            <a class="nav__brand" href="#">
+                <img src="assets/logo-48.png" alt="" width="32" height="32">
                 Sameko Dev C++
             </a>
-        </div>
-        <div class="nav-links">
-            <a href="#benchmark">Benchmarks</a>
-            <a href="#features">Features</a>
-            <a href="#faq">FAQ</a>
-            <a href="wiki.html">Wiki</a>
-            <a href="#download-trigger">Download</a>
+            <div class="nav__links">
+                <a href="#features">Features</a>
+                <a href="#benchmark">Benchmarks</a>
+                <a href="#comparison">Compare</a>
+                <a href="wiki.html">Wiki</a>
+                <a href="#faq">FAQ</a>
+            </div>
+            <div class="nav__actions">
+                <a class="btn btn--primary" href="#download-trigger">Download</a>
+            </div>
         </div>
     </nav>
 
-    <main>
+    <main id="main">
 
         <!-- ZONE 1: HERO -->
-        <div class="hero-wrapper">
-            <header class="container hero">
-                <div class="hero-content reveal fade-up">
-                    <div class="hero-badge" id="hero-badge">
-                        New: Sameko GCC 16.0
-                    </div>
-                    <h1>The Aesthetic <br><span>Competitive Programming</span> IDE</h1>
-                    <p class="hero-desc">
-                        Blazing fast 500ms builds with <b>GCC 16 + LLD</b>. Pre-configured environment, Kawaii themes,
-                        and
-                        zero setup required.
+        <header class="hero-band">
+            <div class="hero__bg" aria-hidden="true"></div>
+            <div class="hero__glow" aria-hidden="true"></div>
+            <div class="wrap hero__inner">
+                <div class="hero__content reveal fade-up">
+                    <span class="badge badge--star hero__badge" id="hero-badge">Sameko Dev C++ v1.2.0</span>
+
+                    <h1 class="h-display hero__title">
+                        <span class="stack-text">
+                            <span class="stack-text__ghost" aria-hidden="true">The Aesthetic</span>
+                            <span class="stack-text__solid">The Aesthetic</span>
+                        </span>
+                        <span class="text-brand">Competitive Programming</span>
+                        <span class="mark-under">IDE</span>
+                    </h1>
+
+                    <p class="lede hero__lede">
+                        Blazing fast 500&nbsp;ms builds with <strong>GCC&nbsp;16 + LLD</strong>.
+                        A pre-configured environment, kawaii themes, and zero setup required.
                     </p>
-                    <div class="btn-group">
+
+                    <div class="hero__actions">
                         <div class="dropdown-wrapper">
-                            <button id="download-trigger" class="btn btn-primary shimmer-effect">
+                            <button id="download-trigger" class="btn btn--primary" aria-haspopup="true"
+                                aria-expanded="false">
                                 <svg class="icon" viewBox="0 0 24 24">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                                     <polyline points="7 10 12 15 17 10"></polyline>
@@ -174,49 +215,109 @@
                                 </svg>
                             </button>
                             <div class="drop-menu">
-                                <a id="dl-installer" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases"
-                                    target="_blank" class="drop-item">
-                                    <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
-                                        <rect x="9" y="9" width="6" height="6"></rect>
-                                        <line x1="9" y1="1" x2="9" y2="4"></line>
-                                        <line x1="15" y1="1" x2="15" y2="4"></line>
-                                        <line x1="9" y1="20" x2="9" y2="23"></line>
-                                        <line x1="15" y1="20" x2="15" y2="23"></line>
-                                        <line x1="20" y1="9" x2="23" y2="9"></line>
-                                        <line x1="20" y1="14" x2="23" y2="14"></line>
-                                        <line x1="1" y1="9" x2="4" y2="9"></line>
-                                        <line x1="1" y1="14" x2="4" y2="14"></line>
-                                    </svg>
-                                    <div class="item-content">
-                                        <div class="item-top">
-                                            <span class="drop-title">Installer</span>
-                                            <span class="badge-rec">Recommended</span>
+                                <div class="drop-group drop-group--win">
+                                    <p class="drop-group__label">Windows</p>
+
+                                    <a id="dl-installer" class="drop-item" target="_blank" rel="noopener"
+                                        href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases">
+                                        <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                                            <rect x="9" y="9" width="6" height="6"></rect>
+                                            <line x1="9" y1="1" x2="9" y2="4"></line>
+                                            <line x1="15" y1="1" x2="15" y2="4"></line>
+                                            <line x1="9" y1="20" x2="9" y2="23"></line>
+                                            <line x1="15" y1="20" x2="15" y2="23"></line>
+                                            <line x1="20" y1="9" x2="23" y2="9"></line>
+                                            <line x1="20" y1="14" x2="23" y2="14"></line>
+                                            <line x1="1" y1="9" x2="4" y2="9"></line>
+                                            <line x1="1" y1="14" x2="4" y2="14"></line>
+                                        </svg>
+                                        <div class="item-content">
+                                            <div class="item-top">
+                                                <span class="drop-title">Installer</span>
+                                                <span class="badge-rec">Recommended</span>
+                                            </div>
+                                            <span class="drop-desc">.exe &middot; Auto-updates &middot; Easiest</span>
                                         </div>
-                                        <span class="drop-desc">.exe • Auto-updates • Best for PC</span>
-                                    </div>
-                                </a>
-                                <a id="dl-portable" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases"
-                                    target="_blank" class="drop-item">
-                                    <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                        stroke-width="2">
-                                        <path
-                                            d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
-                                        </path>
-                                    </svg>
-                                    <div class="item-content">
-                                        <div class="item-top">
-                                            <span class="drop-title">Portable</span>
+                                        <span class="drop-size"></span>
+                                    </a>
+
+                                    <a id="dl-portable" class="drop-item" target="_blank" rel="noopener"
+                                        href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases">
+                                        <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <path
+                                                d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                                            </path>
+                                        </svg>
+                                        <div class="item-content">
+                                            <div class="item-top">
+                                                <span class="drop-title">Portable</span>
+                                            </div>
+                                            <span class="drop-desc">.zip &middot; Unzip &amp; run &middot; USB
+                                                ready</span>
                                         </div>
-                                        <span class="drop-desc">.rar • Unzip & Run • USB ready</span>
-                                    </div>
-                                </a>
+                                        <span class="drop-size"></span>
+                                    </a>
+                                </div>
+
+                                <div class="drop-group drop-group--linux">
+                                    <p class="drop-group__label">Linux</p>
+
+                                    <a id="dl-appimage" class="drop-item" target="_blank" rel="noopener"
+                                        href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases">
+                                        <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <path d="M12 2 3 7v10l9 5 9-5V7z"></path>
+                                            <path d="M3 7l9 5 9-5"></path>
+                                            <path d="M12 12v10"></path>
+                                        </svg>
+                                        <div class="item-content">
+                                            <div class="item-top">
+                                                <span class="drop-title">AppImage</span>
+                                                <span class="badge-rec">Recommended</span>
+                                            </div>
+                                            <span class="drop-desc">chmod +x, then run &middot; any distro</span>
+                                        </div>
+                                        <span class="drop-size"></span>
+                                    </a>
+
+                                    <a id="dl-deb" class="drop-item" target="_blank" rel="noopener"
+                                        href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases">
+                                        <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                        </svg>
+                                        <div class="item-content">
+                                            <div class="item-top">
+                                                <span class="drop-title">Debian / Ubuntu</span>
+                                            </div>
+                                            <span class="drop-desc">.deb &middot; sudo apt install ./file.deb</span>
+                                        </div>
+                                        <span class="drop-size"></span>
+                                    </a>
+
+                                    <a id="dl-targz" class="drop-item" target="_blank" rel="noopener"
+                                        href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases">
+                                        <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                        </svg>
+                                        <div class="item-content">
+                                            <div class="item-top">
+                                                <span class="drop-title">Tarball</span>
+                                            </div>
+                                            <span class="drop-desc">.tar.gz &middot; extract manually</span>
+                                        </div>
+                                        <span class="drop-size"></span>
+                                    </a>
+                                </div>
                             </div>
                         </div>
                         <a target="_blank" rel="noopener noreferrer"
-                            href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP" class="btn btn-secondary">
-                            <svg class="icon" viewBox="0 0 24 24">
+                            href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP" class="btn btn--ghost">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path
                                     d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
                                 </path>
@@ -224,391 +325,416 @@
                             GitHub
                         </a>
                     </div>
-                    <p style="margin-top: 16px; font-size: 13px; color: var(--text-light); opacity: 0.8;">
-                        Windows 10/11 • Portable .exe • No Installation
+
+                    <p class="dl-hint" id="dl-hint">Windows 10/11 &middot; Linux x64 &middot; Free &amp; open source</p>
+                </div>
+
+                <div class="hero__visual reveal zoom-in delay-200">
+                    <span class="hero__spark hero__spark--1" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0l2.6 8.4L23 11l-8.4 2.6L12 22l-2.6-8.4L1 11l8.4-2.6z" />
+                        </svg>
+                    </span>
+                    <span class="hero__spark hero__spark--2" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0l2.6 8.4L23 11l-8.4 2.6L12 22l-2.6-8.4L1 11l8.4-2.6z" />
+                        </svg>
+                    </span>
+                    <span class="hero__spark hero__spark--3" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0l2.6 8.4L23 11l-8.4 2.6L12 22l-2.6-8.4L1 11l8.4-2.6z" />
+                        </svg>
+                    </span>
+                    <img class="float-animation" src="assets/a.webp" alt="Sameko mascot" width="600" height="848"
+                        fetchpriority="high" decoding="async">
+                </div>
+            </div>
+        </header>
+
+        <!-- ==== SECTION: benchmark      (phase 06) ==== -->
+        <section id="benchmark" class="band">
+            <div class="wrap">
+                <div class="band__head reveal fade-up">
+                    <span class="eyebrow">Performance</span>
+                    <h2 class="h-section">Builds that finish before you look away</h2>
+                    <p class="lede">Time to compile and link a single file that pulls in
+                        <code>&lt;bits/stdc++.h&gt;</code>, measured on the same machine.
                     </p>
                 </div>
 
-                <div class="hero-visual reveal zoom-in delay-200">
-                    <div class="hero-card float-animation">
-                        <picture>
-                            <source srcset="assets/a.webp" type="image/webp">
-                            <img src="assets/a.png" alt="Sameko Character" width="600" height="848">
-                        </picture>
-                    </div>
-                </div>
-            </header>
-
-        </div>
-
-
-        <!-- ZONE 2: CONTENT -->
-        <div class="content-wrapper">
-            <div class="wave-divider">
-                <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"
-                    preserveAspectRatio="none">
-                    <path
-                        d="M321.39,56.44c58-10.79,114.16-30.13,172-41.86,82.39-16.72,168.19-17.73,250.45-.39C823.78,31,906.67,72,985.66,92.83c70.05,18.48,146.53,26.09,214.34,3V0H0V27.35A600.21,600.21,0,0,0,321.39,56.44Z"
-                        class="shape-fill"></path>
-                </svg>
-            </div>
-            <div class="blob blob-1"></div>
-            <div class="blob blob-2"></div>
-
-            <section id="benchmark" class="container">
-                <div class="section-title reveal fade-up">
-                    <h2>Performance & Standards</h2>
-                    <p>Built on Next-Gen Technology for Maximum Speed</p>
-                </div>
-
-                <div class="benchmark-layout">
-                    <div class="box-card reveal zoom-in" id="benchmark-card">
-                        <h3 class="card-title" style="margin-bottom: 30px; font-size: 18px;">Build Speed
-                            (<code><span class="code-directive">#include</span><span class="code-bracket">&lt;</span><span class="code-header">bits/stdc++.h</span><span class="code-bracket">&gt;</span></code>)
-                        </h3>
+                <div class="bench reveal fade-up">
+                    <div class="card card--flat" id="benchmark-card">
+                        <h3>Build speed</h3>
                         <div class="chart-item">
                             <div class="chart-header">
-                                <span>Sameko (GCC 16 + Cache)</span>
-                                <span style="color: #039BE5; font-weight: 800;">500ms</span>
+                                <span><strong>Sameko</strong> (GCC 16 + cache)</span>
+                                <span class="bench__best">500 ms</span>
                             </div>
                             <div class="bar-track">
                                 <div class="bar-value bar-sameko" style="--w: 20%"></div>
                             </div>
                         </div>
                         <div class="chart-item">
-                            <div class="chart-header"><span>Embarcadero Dev-C++ 6.3</span><span>1200ms</span></div>
+                            <div class="chart-header"><span>Embarcadero Dev-C++ 6.3</span><span>1200 ms</span></div>
                             <div class="bar-track">
                                 <div class="bar-value bar-devcpp6" style="--w: 48%"></div>
                             </div>
                         </div>
                         <div class="chart-item">
-                            <div class="chart-header"><span>Dev-C++ 5.11 (Classic)</span><span>1500ms</span></div>
+                            <div class="chart-header"><span>Dev-C++ 5.11 (classic)</span><span>1500 ms</span></div>
                             <div class="bar-track">
                                 <div class="bar-value bar-devcpp5" style="--w: 60%"></div>
                             </div>
                         </div>
                         <div class="chart-item">
-                            <div class="chart-header"><span>Code::Blocks 20.03</span><span>1800ms</span></div>
+                            <div class="chart-header"><span>Code::Blocks 20.03</span><span>1800 ms</span></div>
                             <div class="bar-track">
                                 <div class="bar-value bar-codeblocks" style="--w: 72%"></div>
                             </div>
                         </div>
                         <div class="chart-item">
-                            <div class="chart-header"><span>VS Code (Default MinGW)</span><span>2500ms+</span></div>
+                            <div class="chart-header"><span>VS Code (default MinGW)</span><span>2500 ms+</span></div>
                             <div class="bar-track">
                                 <div class="bar-value bar-vscode" style="--w: 100%"></div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="box-card reveal zoom-in delay-200">
-                        <h3 class="card-title" style="margin-bottom: 24px; font-size: 18px;">C++ Support</h3>
-                        <div class="standard-item"><span>C++26 (Sameko GCC)</span><span
-                                class="tag-supported">Beta</span>
-                        </div>
-                        <div class="standard-item"><span>C++23 (std::print)</span><span
-                                class="tag-supported">Full</span>
-                        </div>
-                        <div class="standard-item"><span>C++20 (Concepts)</span><span class="tag-supported">Full</span>
-                        </div>
-                        <div class="standard-item"><span>C++17 (Default)</span><span class="tag-supported">Full</span>
-                        </div>
-                        <div class="standard-item"><span>C++14/11/98</span><span class="tag-supported">Full</span></div>
-                        <div class="standard-item"><span style="opacity:0.7">Default VS Code C++</span><span
-                                class="tag-limited">Limited</span></div>
+                    <div class="card card--flat">
+                        <h3>C++ standards</h3>
+                        <ul class="std-list">
+                            <li><span>C++26</span><span class="badge">Beta</span></li>
+                            <li><span>C++23 &mdash; <code>std::print</code></span><span class="badge">Full</span></li>
+                            <li><span>C++20 &mdash; concepts</span><span class="badge">Full</span></li>
+                            <li><span>C++17 &mdash; default</span><span class="badge">Full</span></li>
+                            <li><span>C++14 / 11 / 98</span><span class="badge">Full</span></li>
+                        </ul>
+                        <p class="bench__note">Set per project in Compiler Settings &mdash; no flags to memorise.</p>
                     </div>
                 </div>
-            </section>
-
-            <div class="wave-divider-2 wave-divider-bottom">
-                <svg data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 120"
-                    preserveAspectRatio="none">
-                    <path
-                        d="M985.66,92.83C906.67,72,823.78,31,743.84,14.19c-82.26-17.34-168.06-16.33-250.45.39-57.84,11.73-114,31.07-172,41.86A600.21,600.21,0,0,1,0,27.35V120H1200V95.8C1132.19,118.92,1055.71,111.31,985.66,92.83Z"
-                        class="shape-fill"></path>
-                </svg>
             </div>
-        </div>
-
-        <!-- ZONE 3: HOW IT WORKS -->
-        <div class="features-wrapper">
-            <section id="how-it-works" class="container">
-                <div class="section-title reveal fade-up">
-                    <h2>Up and Running in 2 Minutes</h2>
-                    <p>No MinGW installation, no PATH configuration, no headaches</p>
+        </section>
+        <!-- ==== SECTION: how-it-works   (phase 05) ==== -->
+        <section id="how-it-works" class="band band--alt">
+            <div class="wrap">
+                <div class="band__head reveal fade-up">
+                    <span class="eyebrow">Getting started</span>
+                    <h2 class="h-section">Up and running in two minutes</h2>
+                    <p class="lede">No MinGW install. No PATH surgery. No <code>tasks.json</code>.</p>
                 </div>
 
-                <div class="workflow-grid">
-                    <div class="workflow-step reveal fade-up">
-                        <div class="workflow-badge">Step 1</div>
-                        <div class="workflow-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                        </div>
+                <ol class="steps reveal fade-up">
+                    <li class="steps__item">
+                        <span class="steps__num">1</span>
                         <h3>Download</h3>
-                        <p>Click <b>Download</b> at the top to choose Installer or Portable. Under 300MB.</p>
-                    </div>
-                    <div class="workflow-step reveal fade-up delay-200">
-                        <div class="workflow-badge">Step 2</div>
-                        <div class="workflow-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                        <p>Grab the installer or the portable zip. The GCC&nbsp;16 toolchain ships inside &mdash;
+                            nothing else to install.</p>
+                    </li>
+                    <li class="steps__item">
+                        <span class="steps__num">2</span>
+                        <h3>Open a <code>.cpp</code></h3>
+                        <p>Drop in a file or start a new one. clangd indexes it immediately; no project
+                            file to configure.</p>
+                    </li>
+                    <li class="steps__item">
+                        <span class="steps__num">3</span>
+                        <h3>Press <kbd>F11</kbd></h3>
+                        <p>Compile and run. Output streams line by line while the program is still running.</p>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- ==== SECTION: features       (phase 05) ==== -->
+        <section id="features" class="band">
+            <div class="wrap">
+                <div class="band__head reveal fade-up">
+                    <span class="eyebrow">Features</span>
+                    <h2 class="h-section">Everything a <span class="mark-under">competitive</span> setup needs</h2>
+                    <p class="lede">Built around the loop you actually run a hundred times a day:
+                        write, build, run, inspect, fix.</p>
+                </div>
+
+                <!-- 3 card lon -->
+                <div class="feat-grid feat-grid--lead reveal fade-up">
+                    <article class="card card--feature">
+                        <div class="card__icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polyline>
+                            </svg>
+                        </div>
+                        <h3>500&nbsp;ms builds</h3>
+                        <p>GCC&nbsp;16 paired with the LLD linker and a warm cache. Compile-and-run is fast enough
+                            that you stop thinking about it.</p>
+                    </article>
+
+                    <article class="card card--feature">
+                        <div class="card__icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                            </svg>
+                        </div>
+                        <h3>Real clangd IntelliSense</h3>
+                        <p>Actual language-server completion, diagnostics and go-to-definition &mdash; not a
+                            hardcoded list of STL names.</p>
+                    </article>
+
+                    <article class="card card--feature">
+                        <div class="card__icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M12 1v6m0 10v6M4.2 4.2l4.3 4.3m7 7l4.3 4.3M1 12h6m10 0h6M4.2 19.8l4.3-4.3m7-7l4.3-4.3">
                                 </path>
                             </svg>
                         </div>
-                        <h3>Extract & Open</h3>
-                        <p>Install or unzip, then open Sameko.exe. No setup needed.</p>
-                    </div>
-                    <div class="workflow-step reveal fade-up delay-400">
-                        <div class="workflow-badge">Step 3</div>
-                        <div class="workflow-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <polyline points="16 18 22 12 16 6"></polyline>
-                                <polyline points="8 6 2 12 8 18"></polyline>
-                            </svg>
-                        </div>
-                        <h3>Write Code</h3>
-                        <p>IntelliSense, snippets, and highlighting are ready immediately.</p>
-                    </div>
-                    <div class="workflow-step reveal fade-up delay-400">
-                        <div class="workflow-badge">Step 4</div>
-                        <div class="workflow-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                            </svg>
-                        </div>
-                        <h3>Press F11</h3>
-                        <p>Compile & Run in ~500ms. Output appears instantly.</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- ZONE 4: FEATURES -->
-            <section id="features" class="container">
-                <div class="section-title reveal fade-up">
-                    <h2>Features Designed for Competitive</h2>
-                    <p>Everything you need to reach Grandmaster</p>
+                        <h3>A debugger you'll use</h3>
+                        <p>Gutter breakpoints, watches, STL-aware variable trees, call stack, hover-to-evaluate and
+                            Run&nbsp;to&nbsp;Cursor &mdash; on the bundled GDB.</p>
+                    </article>
                 </div>
 
-                <div class="features-grid">
-                    <div class="feature-card reveal fade-up">
-                        <div class="feature-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                <polyline points="14 2 14 8 20 8"></polyline>
-                                <line x1="16" y1="13" x2="8" y2="13"></line>
-                                <line x1="16" y1="17" x2="8" y2="17"></line>
-                                <polyline points="10 9 9 9 8 9"></polyline>
+                <!-- 6 card nho -->
+                <div class="feat-grid reveal fade-up">
+                    <article class="card">
+                        <div class="card__icon card__icon--accent">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="6 9 12 15 18 9"></polyline>
                             </svg>
                         </div>
-                        <h3>Custom Snippets</h3>
-                        <p>Define fast shortcuts for templates, algorithms (BFS, DFS, Segment Tree). Type less, solve
-                            faster.</p>
-                    </div>
-                    <div class="feature-card reveal fade-up">
-                        <div class="feature-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <polyline points="4 7 4 4 20 4 20 7"></polyline>
-                                <line x1="9" y1="20" x2="15" y2="20"></line>
-                                <line x1="12" y1="4" x2="12" y2="20"></line>
+                        <h3>Auto dry run</h3>
+                        <p>Walks your program a line at a time while the values update, so you can watch a loop
+                            run instead of pressing F10 a hundred times. Starts at <code>main()</code>.</p>
+                    </article>
+
+                    <article class="card">
+                        <div class="card__icon card__icon--accent">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="1 4 1 10 7 10"></polyline>
+                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
                             </svg>
                         </div>
-                        <h3>AStyle Formatting</h3>
-                        <p>Clean up messy code instantly with <b>Ctrl+Shift+A</b>. Supports Google, LLVM, and Mozilla
-                            styles.</p>
-                    </div>
-                    <div class="feature-card reveal fade-up">
-                        <div class="feature-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                                <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                                <polyline points="7 3 7 8 15 8"></polyline>
+                        <h3>Step back</h3>
+                        <p>Every pause is recorded, so <strong>Back</strong> lets you revisit earlier steps and the
+                            values they held.</p>
+                    </article>
+
+                    <article class="card">
+                        <div class="card__icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
                             </svg>
                         </div>
-                        <h3>Checkpoints System</h3>
-                        <p>Never lose progress. Auto-backups on every save. View history and restore any previous
-                            version.
-                        </p>
-                    </div>
-                    <div class="feature-card reveal fade-up">
-                        <div class="feature-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                        <h3>Competitive Companion</h3>
+                        <p>Pull problems and test cases straight from Codeforces, AtCoder, CSES and friends, then
+                            run them all in one click.</p>
+                    </article>
+
+                    <article class="card">
+                        <div class="card__icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 20h9"></path>
+                                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path>
                             </svg>
                         </div>
-                        <h3>Live Error Checker</h3>
-                        <p>Real-time syntax diagnostics powered by Tree-sitter + GCC. Catch errors before you
-                            build.</p>
-                    </div>
-                    <div class="feature-card reveal fade-up">
-                        <div class="feature-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                <polyline points="21 15 16 10 5 21"></polyline>
-                            </svg>
-                        </div>
-                        <h3>7 Kawaii Themes</h3>
-                        <p>Sameko Blue, Sakura Pink, Dracula, Monokai, Nord, One Dark. Plus custom backgrounds & a live
-                            Theme Customizer.</p>
-                    </div>
-                    <div class="feature-card reveal fade-up">
-                        <div class="feature-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
+                        <h3>Snippets</h3>
+                        <p>Built-in templates for BFS, DFS, segment trees and the rest &mdash; plus your own,
+                            expanded by prefix.</p>
+                    </article>
+
+                    <article class="card">
+                        <div class="card__icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 8v4l3 3"></path>
                                 <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="22" y1="12" x2="18" y2="12"></line>
-                                <line x1="6" y1="12" x2="2" y2="12"></line>
-                                <line x1="12" y1="6" x2="12" y2="2"></line>
-                                <line x1="12" y1="22" x2="12" y2="18"></line>
                             </svg>
                         </div>
-                        <h3>Test Case Manager</h3>
-                        <p>Parse tests from Competitive Companion. Run AC/WA/TLE/RE/MLE checks automatically in one
-                            click.</p>
-                    </div>
-                </div>
-            </section>
+                        <h3>Checkpoints</h3>
+                        <p>Local history that saves as you work. Browse previous versions and restore any of them
+                            without touching git.</p>
+                    </article>
 
-            <!-- ZONE 5: TECH STACK -->
-            <section id="tech-stack" class="container">
-                <div class="section-title reveal fade-up">
-                    <h2>Built with Modern Technology</h2>
-                    <p>Industry-standard tools powering a lightweight package</p>
-                </div>
-
-                <div class="tech-grid">
-                    <div class="tech-item reveal fade-up">
-                        <div class="tech-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <circle cx="12" cy="12" r="4"></circle>
-                                <line x1="4.93" y1="4.93" x2="9.17" y2="9.17"></line>
-                                <line x1="14.83" y1="14.83" x2="19.07" y2="19.07"></line>
-                                <line x1="14.83" y1="9.17" x2="19.07" y2="4.93"></line>
-                                <line x1="4.93" y1="19.07" x2="9.17" y2="14.83"></line>
-                            </svg>
-                        </div>
-                        <div class="tech-info">
-                            <h4>Electron 28</h4>
-                            <p>Cross-platform desktop framework</p>
-                        </div>
-                    </div>
-                    <div class="tech-item reveal fade-up">
-                        <div class="tech-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <polyline points="16 18 22 12 16 6"></polyline>
-                                <polyline points="8 6 2 12 8 18"></polyline>
-                            </svg>
-                        </div>
-                        <div class="tech-info">
-                            <h4>Monaco Editor</h4>
-                            <p>The engine behind VS Code</p>
-                        </div>
-                    </div>
-                    <div class="tech-item reveal fade-up">
-                        <div class="tech-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <path
-                                    d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z">
+                    <article class="card">
+                        <div class="card__icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="13.5" cy="6.5" r=".5"></circle>
+                                <circle cx="17.5" cy="10.5" r=".5"></circle>
+                                <circle cx="8.5" cy="7.5" r=".5"></circle>
+                                <circle cx="6.5" cy="12.5" r=".5"></circle>
+                                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z">
                                 </path>
                             </svg>
                         </div>
-                        <div class="tech-info">
-                            <h4>GCC 16 (Sameko Build)</h4>
-                            <p>Latest C++ compiler with LLD linker</p>
-                        </div>
-                    </div>
-                    <div class="tech-item reveal fade-up">
-                        <div class="tech-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
-                            </svg>
-                        </div>
-                        <div class="tech-info">
-                            <h4>Tree-sitter</h4>
-                            <p>Incremental parsing for real-time diagnostics</p>
-                        </div>
-                    </div>
-                    <div class="tech-item reveal fade-up">
-                        <div class="tech-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <polyline points="4 17 10 11 4 5"></polyline>
-                                <line x1="12" y1="19" x2="20" y2="19"></line>
-                            </svg>
-                        </div>
-                        <div class="tech-info">
-                            <h4>Xterm.js</h4>
-                            <p>Full terminal emulator with interactive I/O</p>
-                        </div>
-                    </div>
-                    <div class="tech-item reveal fade-up">
-                        <div class="tech-icon-box">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <polyline points="4 7 4 4 20 4 20 7"></polyline>
-                                <line x1="9" y1="20" x2="15" y2="20"></line>
-                                <line x1="12" y1="4" x2="12" y2="20"></line>
-                            </svg>
-                        </div>
-                        <div class="tech-info">
-                            <h4>AStyle</h4>
-                            <p>Professional C++ code formatter</p>
-                        </div>
-                    </div>
+                        <h3>Six themes, plus yours</h3>
+                        <p>Kawaii Dark/Light, Sakura, Dracula, Monokai and Nord &mdash; or build your own in the
+                            theme customizer.</p>
+                    </article>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <!-- ZONE 6: KEYBOARD SHORTCUTS -->
-            <section id="shortcuts" class="container">
-                <div class="section-title reveal fade-up">
-                    <h2>Keyboard-First Workflow</h2>
-                    <p>Every action is one shortcut away — fully customizable</p>
+        <!-- ==== SECTION: tech-stack     (phase 05) ==== -->
+        <section id="tech-stack" class="band band--alt band--tight">
+            <div class="wrap">
+                <div class="band__head reveal fade-up">
+                    <span class="eyebrow">Under the hood</span>
+                    <h2 class="h-section">Boring, proven pieces</h2>
+                    <p class="lede">Nothing exotic. Every part is something you could look up and verify.</p>
                 </div>
 
-                <div class="shortcuts-grid reveal fade-up">
-                    <div class="shortcut-item">
-                        <div class="shortcut-keys"><kbd>F9</kbd></div>
-                        <span>Compile</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <div class="shortcut-keys"><kbd>F10</kbd></div>
-                        <span>Run</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <div class="shortcut-keys"><kbd>F11</kbd></div>
-                        <span>Compile & Run</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <div class="shortcut-keys"><kbd>Shift</kbd> + <kbd>F5</kbd></div>
-                        <span>Stop</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <div class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>N</kbd></div>
-                        <span>New File</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <div class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>S</kbd></div>
-                        <span>Save</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <div class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd></div>
-                        <span>Format Code</span>
-                    </div>
-                    <div class="shortcut-item">
-                        <div class="shortcut-keys"><kbd>Ctrl</kbd> + <kbd>J</kbd></div>
-                        <span>Toggle Panel</span>
-                    </div>
-                </div>
-                <p class="shortcuts-note">All shortcuts are customizable in Settings → Keybindings</p>
-            </section>
+                <ul class="stack-list reveal fade-up">
+                    <li><strong>GCC 16</strong><span>Bundled compiler, LLD linker</span></li>
+                    <li><strong>clangd</strong><span>Language server for IntelliSense</span></li>
+                    <li><strong>GDB (MI3)</strong><span>Debugger backend</span></li>
+                    <li><strong>Monaco</strong><span>The editor from VS Code</span></li>
+                    <li><strong>Tree-sitter</strong><span>Incremental syntax highlighting</span></li>
+                    <li><strong>Electron</strong><span>Cross-platform desktop shell</span></li>
+                    <li><strong>xterm.js</strong><span>Terminal with interactive I/O</span></li>
+                    <li><strong>AStyle</strong><span>Code formatter</span></li>
+                </ul>
+            </div>
+        </section>
 
-            <!-- ZONE 7: FAQ -->
-            <section id="faq" class="container">
-                <div class="section-title reveal fade-up">
-                    <h2>Frequently Asked Questions</h2>
-                    <p>Quick answers to common questions</p>
+        <!-- ==== SECTION: comparison     (phase 05) ==== -->
+        <section id="comparison" class="band">
+            <div class="wrap">
+                <div class="band__head reveal fade-up">
+                    <span class="eyebrow">Compare</span>
+                    <h2 class="h-section">How it stacks up</h2>
+                    <p class="lede">Default configuration, out of the box &mdash; no extensions installed,
+                        no config files written.</p>
+                </div>
+
+                <div class="cmp reveal fade-up">
+                    <table class="cmp__table">
+                        <caption class="sr-only">Feature comparison between Sameko Dev C++, Dev-C++, Code::Blocks
+                            and VS Code in their default configurations</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Out of the box</th>
+                                <th scope="col" class="cmp__me">Sameko Dev C++ <span class="badge">You are here</span>
+                                </th>
+                                <th scope="col">Dev-C++</th>
+                                <th scope="col">Code::Blocks</th>
+                                <th scope="col">VS Code</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">Compiler included</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span>
+                                    <span class="sr-only">Yes.</span> GCC&nbsp;16
+                                </td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span>
+                                    <span class="sr-only">Yes,</span> varies by build
+                                </td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span>
+                                    <span class="sr-only">Yes,</span> varies by build
+                                </td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span>
+                                    <span class="sr-only">No.</span> Install separately
+                                </td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Works with zero config</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span>
+                                    <span class="sr-only">Yes</span></td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span>
+                                    <span class="sr-only">Yes</span></td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span>
+                                    <span class="sr-only">Partly.</span> Some setup</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span>
+                                    <span class="sr-only">No.</span> tasks.json + extensions</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Language-server IntelliSense</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span>
+                                    <span class="sr-only">Yes,</span> clangd</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span>
+                                    <span class="sr-only">Partly.</span> Basic</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span>
+                                    <span class="sr-only">Partly.</span> Basic</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span>
+                                    <span class="sr-only">Yes,</span> via extension</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Competitive Companion built in</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span>
+                                    <span class="sr-only">Yes</span></td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span>
+                                    <span class="sr-only">No</span></td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span>
+                                    <span class="sr-only">No</span></td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span>
+                                    <span class="sr-only">Partly.</span> via extension</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Theme customizer</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span>
+                                    <span class="sr-only">Yes,</span> 6 built in</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span>
+                                    <span class="sr-only">Partly.</span> Limited</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span>
+                                    <span class="sr-only">Yes</span></td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span>
+                                    <span class="sr-only">Yes</span></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Runs from a USB stick</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span>
+                                    <span class="sr-only">Yes,</span> portable zip</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span>
+                                    <span class="sr-only">Yes</span></td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span>
+                                    <span class="sr-only">Partly</span></td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span>
+                                    <span class="sr-only">Partly.</span> Portable build</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="cmp__note">Comparison reflects each project's default install as of August&nbsp;2026.
+                    Dev-C++ and Code::Blocks ship different compiler versions depending on the build you pick, so
+                    those cells say &ldquo;varies&rdquo; rather than guessing a number.</p>
+            </div>
+        </section>
+
+        <!-- ==== SECTION: shortcuts      (phase 06) ==== -->
+        <section id="shortcuts" class="band band--alt">
+            <div class="wrap">
+                <div class="band__head reveal fade-up">
+                    <span class="eyebrow">Keyboard first</span>
+                    <h2 class="h-section">Hands stay on the keys</h2>
+                    <p class="lede">Every one of these is remappable in Settings &rarr; Keybindings.</p>
+                </div>
+
+                <ul class="keys reveal fade-up">
+                    <li><span class="keys__combo"><kbd>F9</kbd></span><span class="keys__label">Compile</span></li>
+                    <li><span class="keys__combo"><kbd>F10</kbd></span><span class="keys__label">Run</span></li>
+                    <li><span class="keys__combo"><kbd>F11</kbd></span><span class="keys__label">Compile &amp;
+                                run</span></li>
+                    <li><span class="keys__combo"><kbd>Shift</kbd><kbd>F5</kbd></span><span
+                            class="keys__label">Stop</span></li>
+                    <li><span class="keys__combo"><kbd>Ctrl</kbd><kbd>N</kbd></span><span class="keys__label">New
+                            file</span></li>
+                    <li><span class="keys__combo"><kbd>Ctrl</kbd><kbd>S</kbd></span><span
+                            class="keys__label">Save</span></li>
+                    <li><span class="keys__combo"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>A</kbd></span><span
+                            class="keys__label">Format code</span></li>
+                    <li><span class="keys__combo"><kbd>Ctrl</kbd><kbd>J</kbd></span><span class="keys__label">Toggle
+                            panel</span></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ==== SECTION: faq            (phase 06) ==== -->
+        <section id="faq" class="band">
+            <div class="wrap">
+                <div class="band__head reveal fade-up">
+                    <span class="eyebrow">FAQ</span>
+                    <h2 class="h-section">Questions people actually ask</h2>
                 </div>
 
                 <div class="faq-list reveal fade-up">
@@ -714,126 +840,146 @@
                         </div>
                     </div>
                 </div>
-            </section>
+﻿            </div>
+        </section>
 
-            <!-- ZONE 8: OPEN SOURCE -->
-            <section id="open-source" class="container">
-                <div class="section-title reveal fade-up">
-                    <h2>Open Source & Community</h2>
-                    <p>Built in the open, for everyone</p>
+        <!-- ==== SECTION: open-source    (phase 06) ==== -->
+        <section id="open-source" class="band band--alt">
+            <div class="wrap">
+                <div class="band__head reveal fade-up">
+                    <span class="eyebrow">Open source</span>
+                    <h2 class="h-section">Built in the open</h2>
+                    <p class="lede">MIT licensed. No telemetry, no ads, no account. Read the code, file a bug,
+                        or send a patch.</p>
                 </div>
 
-                <div class="open-source-grid">
-                    <div class="os-card reveal fade-up">
-                        <div class="os-icon">
-                            <svg class="icon" viewBox="0 0 24 24">
+                <div class="feat-grid reveal fade-up">
+                    <a class="card"
+                        href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP" target="_blank" rel="noopener">
+                        <div class="card__icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path
                                     d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
                                 </path>
                             </svg>
                         </div>
-                        <h3>Source Code</h3>
-                        <p>Browse the full source on GitHub. Fork it, study it, and contribute improvements.</p>
-                        <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP" target="_blank"
-                            rel="noopener noreferrer" class="os-link">View Repository →</a>
-                    </div>
-                    <div class="os-card reveal fade-up delay-200">
-                        <div class="os-icon">
-                            <svg class="icon" viewBox="0 0 24 24">
+                        <h3>Source code</h3>
+                        <p>Browse the whole thing on GitHub. Fork it, study it, or build your own version.</p>
+                    </a>
+
+                    <a class="card"
+                        href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues" target="_blank" rel="noopener">
+                        <div class="card__icon card__icon--accent">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"></circle>
                                 <line x1="12" y1="8" x2="12" y2="12"></line>
                                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
                             </svg>
                         </div>
-                        <h3>Report Issues</h3>
-                        <p>Found a bug or have a feature request? Open an issue on GitHub and help improve the IDE.</p>
-                        <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues" target="_blank"
-                            rel="noopener noreferrer" class="os-link">Open an Issue →</a>
-                    </div>
-                    <div class="os-card reveal fade-up delay-400">
-                        <div class="os-icon">
-                            <svg class="icon" viewBox="0 0 24 24">
+                        <h3>Report a bug</h3>
+                        <p>Found something broken or missing? Open an issue &mdash; bug reports are how most of
+                            this got fixed.</p>
+                    </a>
+
+                    <a class="card"
+                        href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/CONTRIBUTING.md"
+                        target="_blank" rel="noopener">
+                        <div class="card__icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
                                 <circle cx="9" cy="7" r="4"></circle>
-                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"></path>
                             </svg>
                         </div>
-                        <h3>Contributors</h3>
-                        <p>Sameko is built by volunteers who contribute code, design, bug fixes, and ideas. Every
-                            contribution matters.</p>
-                        <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/graphs/contributors" target="_blank"
-                            rel="noopener noreferrer" class="os-link">See Contributors →</a>
-                    </div>
+                        <h3>Contribute</h3>
+                        <p>Code, design, docs and ideas all count. The logo and the <code>sameko.dev</code> domain
+                            were both gifts from the community.</p>
+                    </a>
                 </div>
-            </section>
+            </div>
+        </section>
 
-            <!-- ZONE 9: CTA BANNER -->
-            <section class="container">
-                <div class="cta-banner reveal zoom-in">
-                    <h2>Ready to Start Coding?</h2>
-                    <p>Download Sameko Dev C++ and start solving problems in under 2 minutes. Free, portable, and
-                        open-source.</p>
-                    <div class="btn-group" style="justify-content: center;">
-                        <a href="#download-trigger" class="btn btn-primary shimmer-effect cta-download">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                            Download Now
-                        </a>
-                        <a href="wiki.html" class="btn btn-secondary">
-                            <svg class="icon" viewBox="0 0 24 24">
-                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
-                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
-                            </svg>
-                            Read the Docs
-                        </a>
-                    </div>
+        <!-- ==== SECTION: cta            (phase 06) ==== -->
+        <section id="cta" class="band band--sunk">
+            <div class="wrap cta reveal fade-up">
+                <h2 class="h-section">Ready to start <span class="mark-under">coding</span>?</h2>
+                <p class="lede">Download Sameko Dev C++ and be solving problems in under two minutes.
+                    Free, portable, open source.</p>
+                <div class="cta__actions">
+                    <a href="#download-trigger" class="btn btn--primary btn--lg">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Download now
+                    </a>
+                    <a href="wiki.html" class="btn btn--ghost btn--lg">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                        </svg>
+                        Read the docs
+                    </a>
                 </div>
-            </section>
-
-            <footer>
-                <div class="footer-content">
-                    <div class="footer-main">
-                        <div class="footer-brand">
-                            <div class="footer-logo">
-                                <img src="assets/logo-48.png" alt="Sameko Dev C++ Logo" width="28" height="28">
-                                <span>Sameko Dev C++</span>
-                            </div>
-                            <p>A free, portable C++ IDE for competitive programming and education.</p>
-                            <p class="footer-license">Open Source under MIT License</p>
-                        </div>
-                        <div class="footer-links-grid">
-                            <div class="footer-col">
-                                <h4>Product</h4>
-                                <a href="#benchmark">Benchmarks</a>
-                                <a href="#features">Features</a>
-                                <a href="#faq">FAQ</a>
-                                <a href="#download-trigger">Download</a>
-                                <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/CHANGELOG.md"
-                                    target="_blank" rel="noopener noreferrer">Changelog</a>
-                            </div>
-                            <div class="footer-col">
-                                <h4>Resources</h4>
-                                <a href="wiki.html">Documentation</a>
-                                <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP" target="_blank"
-                                    rel="noopener noreferrer">GitHub</a>
-                                <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues" target="_blank"
-                                    rel="noopener noreferrer">Report Bug</a>
-                                <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/CONTRIBUTING.md"
-                                    target="_blank" rel="noopener noreferrer">Contributing</a>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="footer-bottom">
-                        <p>© 2026 Sameko Dev C++ Project. Built with 💙 by QuangquyNguyenvo</p>
-                    </div>
-                </div>
-            </footer>
-        </div>
+            </div>
+        </section>
     </main>
+
+    <footer class="foot">
+        <div class="wrap">
+            <div class="foot__cols">
+                <div class="foot__brand">
+                    <a class="nav__brand" href="#">
+                        <img src="assets/logo-48.png" alt="" width="32" height="32">
+                        Sameko Dev C++
+                    </a>
+                    <p>A free, portable C++ IDE for competitive programming and education.
+                        Ships with GCC&nbsp;16, a real debugger, and themes that don't hurt your eyes.</p>
+                </div>
+
+                <div class="foot__col">
+                    <h3>Product</h3>
+                    <ul>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#benchmark">Benchmarks</a></li>
+                        <li><a href="#comparison">Compare</a></li>
+                        <li><a href="#download-trigger">Download</a></li>
+                    </ul>
+                </div>
+
+                <div class="foot__col">
+                    <h3>Docs</h3>
+                    <ul>
+                        <li><a href="wiki.html">Wiki (English)</a></li>
+                        <li><a href="wiki-vi.html">Wiki (Ti&#7871;ng Vi&#7879;t)</a></li>
+                        <li><a href="#faq">FAQ</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/CHANGELOG.md"
+                                target="_blank" rel="noopener">Changelog</a></li>
+                    </ul>
+                </div>
+
+                <div class="foot__col">
+                    <h3>Project</h3>
+                    <ul>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP" target="_blank"
+                                rel="noopener">GitHub</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues" target="_blank"
+                                rel="noopener">Report a bug</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases" target="_blank"
+                                rel="noopener">Releases</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/CONTRIBUTING.md"
+                                target="_blank" rel="noopener">Contributing</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="foot__bottom">
+                <p>&copy; 2026 Sameko Dev C++ &middot; MIT License</p>
+                <p>Made with &#128153; in Vietnam by QuangquyNguyenvo</p>
+            </div>
+        </div>
+    </footer>
 
     <!-- Logic -->
     <script src="script.js"></script>

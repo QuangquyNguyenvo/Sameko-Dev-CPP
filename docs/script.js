@@ -25,9 +25,16 @@ try {
 var dlTrigger = document.getElementById('download-trigger');
 var dlWrapper = document.querySelector('.dropdown-wrapper');
 
+function syncDownloadMenuAria() {
+    if (dlTrigger && dlWrapper) {
+        dlTrigger.setAttribute('aria-expanded', dlWrapper.classList.contains('active') ? 'true' : 'false');
+    }
+}
+
 function openDownloadMenu() {
     if (dlWrapper && !dlWrapper.classList.contains('active')) {
         dlWrapper.classList.add('active');
+        syncDownloadMenuAria();
     }
 }
 
@@ -37,50 +44,103 @@ if (dlTrigger && dlWrapper) {
     dlTrigger.addEventListener('click', (e) => {
         e.stopPropagation();
         dlWrapper.classList.toggle('active');
+        syncDownloadMenuAria();
     });
 
     document.addEventListener('click', (e) => {
         if (!dlWrapper.contains(e.target)) {
             dlWrapper.classList.remove('active');
+            syncDownloadMenuAria();
+        }
+    });
+
+    // Esc đóng menu và trả focus về nút mở
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && dlWrapper.classList.contains('active')) {
+            dlWrapper.classList.remove('active');
+            syncDownloadMenuAria();
+            dlTrigger.focus();
         }
     });
 }
 
-// Fetch Releases
+// Fetch Releases — gán URL cho từng artifact theo nền tảng
 fetch('https://api.github.com/repos/QuangquyNguyenvo/Sameko-Dev-CPP/releases')
     .then(res => res.json())
     .then(data => {
-        if (data && data.length > 0) {
-            const latest = data[0];
+        if (!Array.isArray(data) || data.length === 0) return;
 
-            const installerBtn = document.getElementById('dl-installer');
-            const portableBtn = document.getElementById('dl-portable');
+        // Bỏ qua draft và prerelease; nếu không còn gì thì mới dùng data[0]
+        const latest = data.find(r => !r.draft && !r.prerelease) || data[0];
+        const fallback = latest.html_url;
 
-            let installerUrl = latest.html_url;
-            let portableUrl = latest.html_url;
+        // id phần tử -> hàm nhận diện tên file (đã toLowerCase)
+        const MATCHERS = {
+            'dl-installer': n => n.endsWith('.exe'),
+            'dl-portable': n => n.endsWith('.zip'),
+            'dl-appimage': n => n.endsWith('.appimage'),
+            'dl-deb': n => n.endsWith('.deb'),
+            'dl-targz': n => n.endsWith('.tar.gz')
+        };
 
-            if (latest.assets && latest.assets.length > 0) {
-                latest.assets.forEach(asset => {
-                    const name = asset.name.toLowerCase();
-                    if (name.endsWith('.exe')) {
-                        installerUrl = asset.browser_download_url;
-                    } else if (name.endsWith('.rar') || name.endsWith('.zip')) {
-                        portableUrl = asset.browser_download_url;
-                    }
-                });
+        const assets = Array.isArray(latest.assets) ? latest.assets : [];
+
+        Object.keys(MATCHERS).forEach(id => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const hit = assets.find(a => MATCHERS[id](a.name.toLowerCase()));
+
+            if (hit) {
+                el.href = hit.browser_download_url;
+                if (hit.size) {
+                    const sizeEl = el.querySelector('.drop-size');
+                    if (sizeEl) sizeEl.textContent = (hit.size / 1048576).toFixed(1) + ' MB';
+                }
+                return;
             }
 
-            if (installerBtn) installerBtn.href = installerUrl;
-            if (portableBtn) portableBtn.href = portableUrl;
+            // Không tìm thấy asset khớp.
+            // - Nếu release CÓ asset (nghĩa là dữ liệu đáng tin) mà vẫn không khớp
+            //   => định dạng này chưa được phát hành => ẩn hẳn, đừng dẫn người dùng vào ngõ cụt.
+            // - Nếu release KHÔNG có asset nào (API lỗi / rate-limit) => giữ nguyên,
+            //   href mặc định đã trỏ trang Releases.
+            el.href = fallback;
+            if (assets.length > 0) el.hidden = true;
+            else el.classList.add('drop-item--fallback');
+        });
 
-            // Dynamic hero badge with release name
-            const heroBadge = document.getElementById('hero-badge');
-            if (heroBadge && latest.name) {
-                heroBadge.textContent = latest.name;
-            }
+        // Nhóm nào không còn mục nào hiện thì ẩn cả nhóm (kể cả nhãn)
+        document.querySelectorAll('.drop-group').forEach(group => {
+            const alive = group.querySelectorAll('.drop-item:not([hidden])').length;
+            if (alive === 0) group.hidden = true;
+        });
+
+        // Dynamic hero badge with release name
+        const heroBadge = document.getElementById('hero-badge');
+        if (heroBadge && latest.name) {
+            heroBadge.textContent = latest.name;
         }
     })
     .catch(e => console.log('GitHub API warning: ', e));
+
+// Đoán nền tảng để làm nổi nhóm phù hợp trong dropdown
+(function detectOS() {
+    const ua = navigator.userAgent;
+    const plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';
+    let os = 'other';
+    if (/Win/i.test(plat) || /Windows/i.test(ua)) os = 'windows';
+    else if (/Linux/i.test(plat) && !/Android/i.test(ua)) os = 'linux';
+    else if (/Mac/i.test(plat)) os = 'mac';
+
+    document.documentElement.setAttribute('data-os', os);
+
+    const hint = document.getElementById('dl-hint');
+    if (!hint) return;
+    if (os === 'windows') hint.textContent = 'Windows 10/11 · 64-bit · Free & open source';
+    else if (os === 'linux') hint.textContent = 'Linux x64 · AppImage, .deb, tar.gz · Free & open source';
+    else if (os === 'mac') hint.textContent = 'No official macOS build yet — see the wiki to build from source';
+    else hint.textContent = 'Windows 10/11 · Linux x64 · Free & open source';
+})();
 } catch (e) { console.warn('Dropdown/fetch section error:', e); }
 
 try {
@@ -315,7 +375,12 @@ document.querySelectorAll('.wiki-content table').forEach(table => {
 /* ===== DYNAMIC BACKGROUND (Anti-Gravity Dots) ===== */
 try {
 document.addEventListener('DOMContentLoaded', () => {
-    const heroWrapper = document.querySelector('.hero-wrapper');
+    // Người dùng tắt animation thì không dựng canvas — rAF không tự dừng theo
+    // media query, phải chặn từ đây.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    // .hero-wrapper đã bị bỏ khi viết lại hero; giờ container là .hero-band.
+    const heroWrapper = document.querySelector('.hero-band');
     if (!heroWrapper) return;
 
     const canvas = document.createElement('canvas');
@@ -416,3 +481,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 } catch (e) { console.warn('Dynamic background error:', e); }
 
+/* ===== NAV: đổi trạng thái khi rời khỏi đỉnh trang =====
+   Dùng IntersectionObserver thay vì thêm scroll listener thứ hai
+   (script.js đã có một cái cho nút scroll-to-top). */
+try {
+(function navOnScroll() {
+    const nav = document.querySelector('.nav');
+    if (!nav || !('IntersectionObserver' in window)) return;
+    const sentinel = document.createElement('div');
+    sentinel.setAttribute('aria-hidden', 'true');
+    sentinel.style.cssText = 'position:absolute;top:0;left:0;height:1px;width:1px;pointer-events:none;';
+    document.body.prepend(sentinel);
+    new IntersectionObserver(([e]) => {
+        nav.classList.toggle('nav--scrolled', !e.isIntersecting);
+    }).observe(sentinel);
+})();
+} catch (e) { console.warn('Nav scroll state error:', e); }

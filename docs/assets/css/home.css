@@ -1,0 +1,1540 @@
+/* ============================================================
+   Sameko Dev C++ — Home page
+   Chỉ tiêu thụ token từ tokens.css. KHÔNG hardcode màu ở đây.
+   ============================================================ */
+
+/* ===== 1. Base =====
+   Reset tối thiểu. Trước phase 07 trang này nhờ `* { margin: 0; padding: 0 }`
+   của styles.css; sau khi gỡ file đó, body lấy lại margin 8px mặc định của UA
+   và làm trang tràn ngang đúng 16px trên mobile. */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body,
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote {
+    margin: 0;
+}
+
+ul,
+ol {
+    margin: 0;
+    padding: 0;
+}
+
+img,
+svg {
+    display: block;
+    max-width: 100%;
+}
+
+button {
+    font: inherit;
+    color: inherit;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: var(--fs-base);
+    line-height: 1.6;
+    color: var(--c-text);
+    background: var(--c-page);
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+}
+
+::selection {
+    background: var(--c-brand-soft);
+    color: var(--c-text);
+}
+
+section[id] {
+    scroll-margin-top: 88px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.skip-link {
+    position: absolute;
+    left: var(--sp-4);
+    top: calc(-1 * var(--sp-16));
+    z-index: 200;
+    padding: var(--sp-3) var(--sp-6);
+    border-radius: var(--r-pill);
+    background: var(--c-btn-primary-bg);
+    color: var(--c-btn-primary-text);
+    font-weight: 700;
+    text-decoration: none;
+    transition: top var(--dur-fast) var(--ease-out);
+}
+
+.skip-link:focus {
+    top: var(--sp-4);
+}
+
+/* ===== 2. Layout ===== */
+.wrap {
+    width: 100%;
+    max-width: var(--max-w);
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 4vw, 2rem);
+}
+
+.band {
+    position: relative;
+    padding-block: var(--sp-24);
+    background: var(--c-page);
+}
+
+.band--alt {
+    background: var(--c-surface-alt);
+}
+
+.band--sunk {
+    background: var(--c-surface-sunk);
+}
+
+.band--tight {
+    padding-block: var(--sp-16);
+}
+
+/* Divider sóng giữa 2 band — SVG inline qua mask, không dùng ảnh */
+.band__wave {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 48px;
+    pointer-events: none;
+}
+
+.band__wave svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.band__head {
+    text-align: center;
+    margin-bottom: var(--sp-16);
+}
+
+/* ===== 3. Typography ===== */
+.eyebrow {
+    display: inline-block;
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--c-brand-strong);
+    margin-bottom: var(--sp-3);
+}
+
+.h-display {
+    font-size: var(--fs-3xl);
+    font-weight: 700;
+    line-height: 0.98;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.h-section {
+    font-size: var(--fs-2xl);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    margin: 0;
+}
+
+.lede {
+    font-size: var(--fs-lg);
+    line-height: 1.6;
+    color: var(--c-text-soft);
+    max-width: var(--max-w-prose);
+    margin-inline: auto;
+}
+
+.band__head .lede {
+    margin-top: var(--sp-4);
+}
+
+/* Chữ chồng lớp: lớp viền lệch nằm dưới lớp chữ đặc */
+.stack-text {
+    position: relative;
+    display: block;
+}
+
+.stack-text__ghost {
+    position: absolute;
+    inset: 0;
+    /* Lệch đủ lớn để đọc như chủ ý, không phải bị nhoè */
+    transform: translate(12px, 10px);
+    color: transparent;
+    -webkit-text-stroke: 2px var(--c-accent);
+    opacity: 0.75;
+    z-index: 0;
+    user-select: none;
+}
+
+.stack-text__solid {
+    position: relative;
+    z-index: 1;
+}
+
+.text-brand {
+    color: var(--c-brand-strong);
+}
+
+.text-accent {
+    color: var(--c-accent-strong);
+}
+
+/* CSS cũ có `h1 span { background-clip: text; -webkit-text-fill-color: transparent }`
+   (styles.css:538) — nó biến MỌI <span> trong h1 thành chữ gradient, làm .mark-under
+   bị clip thành chữ vàng và .text-brand mất màu. Vô hiệu hoá trong phạm vi title mới.
+   Xoá được khối này sau khi phase 07 gỡ styles.css khỏi index.html. */
+.h-display span,
+.h-section span {
+    background: none;
+    -webkit-background-clip: border-box;
+    background-clip: border-box;
+    -webkit-text-fill-color: currentColor;
+}
+
+/* Gạch chân nhấn màu butter */
+.mark-under,
+.h-display .mark-under,
+.h-section .mark-under {
+    background-image: linear-gradient(var(--c-highlight), var(--c-highlight));
+    background-repeat: no-repeat;
+    background-position: 0 88%;
+    background-size: 100% 0.3em;
+    -webkit-background-clip: border-box;
+    background-clip: border-box;
+    -webkit-text-fill-color: currentColor;
+}
+
+/* Lớp viền phải trong suốt trở lại sau khi reset ở trên */
+.h-display .stack-text__ghost,
+.stack-text__ghost {
+    -webkit-text-fill-color: transparent;
+}
+
+/* ===== 4. Button ===== */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+    padding: var(--sp-3) var(--sp-6);
+    border: 1px solid transparent;
+    border-radius: var(--r-pill);
+    font: inherit;
+    font-weight: 700;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        background-color var(--dur-fast) var(--ease-out),
+        border-color var(--dur-fast) var(--ease-out),
+        color var(--dur-fast) var(--ease-out),
+        transform var(--dur-fast) var(--ease-out),
+        box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn--primary {
+    background: var(--c-btn-primary-bg);
+    color: var(--c-btn-primary-text);
+    box-shadow: var(--shadow-md);
+}
+
+.btn--primary:hover {
+    background: var(--c-btn-primary-bg-hover);
+}
+
+.btn--ghost {
+    background: var(--c-surface);
+    color: var(--c-text);
+    border-color: var(--c-border);
+}
+
+.btn--ghost:hover {
+    border-color: var(--c-brand);
+    color: var(--c-brand-strong);
+}
+
+.btn--lg {
+    padding: var(--sp-4) var(--sp-8);
+    font-size: var(--fs-lg);
+}
+
+.btn .icon {
+    width: 20px;
+    height: 20px;
+    flex: none;
+}
+
+/* Focus ring — bắt buộc, dùng chung cho mọi phần tử tương tác */
+.btn:focus-visible,
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+    outline: 3px solid var(--c-accent);
+    outline-offset: 2px;
+    border-radius: var(--r-sm);
+}
+
+/* ===== 5. Card ===== */
+.card {
+    position: relative;
+    padding: var(--sp-6);
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm);
+    transition:
+        transform var(--dur-base) var(--ease-out),
+        box-shadow var(--dur-base) var(--ease-out),
+        border-color var(--dur-base) var(--ease-out);
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+    border-color: var(--c-brand);
+}
+
+.card--flat:hover {
+    transform: none;
+}
+
+/* Card dạng link: đừng lấy màu link mặc định của trình duyệt */
+a.card {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+}
+
+.card--feature {
+    border-color: var(--c-brand);
+    background: var(--c-brand-soft);
+}
+
+.card__icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: var(--sp-4);
+    border-radius: var(--r-md);
+    background: var(--c-brand-soft);
+    color: var(--c-brand-strong);
+}
+
+.card__icon svg {
+    width: 24px;
+    height: 24px;
+}
+
+.card__icon--accent {
+    background: var(--c-accent-soft);
+    color: var(--c-accent-strong);
+}
+
+.card h3 {
+    font-size: var(--fs-lg);
+    font-weight: 700;
+    margin: 0 0 var(--sp-2);
+}
+
+.card p {
+    margin: 0;
+    color: var(--c-text-muted);
+    line-height: 1.6;
+}
+
+/* ===== 6. Badge ===== */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: var(--sp-1) var(--sp-3);
+    border-radius: var(--r-pill);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    background: var(--c-brand-soft);
+    color: var(--c-brand-strong);
+}
+
+.badge--star {
+    background: var(--c-highlight);
+    color: var(--ink-900);
+}
+
+.badge--new {
+    background: var(--c-accent-soft);
+    color: var(--c-accent-strong);
+}
+
+/* ===== 7. Nav ===== */
+.nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--c-page);
+    background: color-mix(in srgb, var(--c-page) 82%, transparent);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid transparent;
+    transition: border-color var(--dur-base) var(--ease-soft),
+        box-shadow var(--dur-base) var(--ease-soft);
+}
+
+.nav--scrolled {
+    border-bottom-color: var(--c-border);
+    box-shadow: var(--shadow-sm);
+}
+
+.nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-6);
+    min-height: 68px;
+}
+
+.nav__brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-3);
+    font-weight: 700;
+    white-space: nowrap;
+    color: var(--c-text);
+    text-decoration: none;
+}
+
+.nav__brand img {
+    width: 32px;
+    height: 32px;
+}
+
+.nav__links {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-6);
+}
+
+.nav__links a {
+    position: relative;
+    color: var(--c-text-soft);
+    font-weight: 600;
+    font-size: var(--fs-sm);
+    text-decoration: none;
+    padding-block: var(--sp-2);
+    transition: color var(--dur-fast) var(--ease-out);
+}
+
+.nav__links a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 100%;
+    bottom: 0;
+    height: 2px;
+    border-radius: var(--r-pill);
+    background: var(--c-accent);
+    transition: right var(--dur-base) var(--ease-out);
+}
+
+.nav__links a:hover {
+    color: var(--c-text);
+}
+
+.nav__links a:hover::after {
+    right: 0;
+}
+
+.nav__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+}
+
+/* ===== 8. Thanh icon dọc ===== */
+.rail {
+    position: fixed;
+    left: var(--sp-4);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+    padding: var(--sp-2);
+    border-radius: var(--r-pill);
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    box-shadow: var(--shadow-sm);
+}
+
+.rail__item {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    color: var(--c-text-muted);
+    text-decoration: none;
+    transition: background-color var(--dur-fast) var(--ease-out),
+        color var(--dur-fast) var(--ease-out);
+}
+
+.rail__item:hover {
+    background: var(--c-brand-soft);
+    color: var(--c-brand-strong);
+}
+
+.rail__item svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* ===== 9. Hero ===== */
+.hero-band {
+    position: relative;
+    overflow: hidden;
+    padding-block: clamp(3rem, 6vw, 6rem) clamp(4rem, 8vw, 7rem);
+}
+
+/* Dải chéo -12deg, thuần gradient, không ảnh */
+.hero__bg {
+    position: absolute;
+    inset: -20% -10%;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(102deg,
+            transparent 0 18%,
+            var(--c-brand-soft) 18% 46%,
+            transparent 46% 58%,
+            var(--c-accent-soft) 58% 74%,
+            transparent 74%);
+    opacity: 0.9;
+}
+
+/* Canvas particle do script.js chèn vào đầu .hero-band */
+#bg-canvas {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.55;
+}
+
+.hero__glow {
+    position: absolute;
+    z-index: 0;
+    width: 60vw;
+    max-width: 720px;
+    aspect-ratio: 1;
+    right: -10%;
+    top: -20%;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--c-brand-dim) 0%, transparent 68%);
+    pointer-events: none;
+}
+
+.hero__inner {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    align-items: center;
+    gap: var(--sp-12);
+}
+
+.hero__badge {
+    margin-bottom: var(--sp-6);
+}
+
+.hero__title {
+    margin-bottom: var(--sp-6);
+}
+
+.hero__lede {
+    margin: 0 0 var(--sp-8);
+    margin-inline: 0;
+}
+
+.hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--sp-4);
+}
+
+.dl-hint {
+    margin: var(--sp-4) 0 0;
+    font-size: var(--fs-xs);
+    color: var(--c-text-muted);
+}
+
+.hero__visual {
+    position: relative;
+    display: grid;
+    place-items: center;
+}
+
+.hero__visual img {
+    width: 100%;
+    max-width: 460px;
+    height: auto;
+}
+
+/* Ngôi sao kawaii rắc quanh mascot */
+.hero__spark {
+    position: absolute;
+    color: var(--c-highlight);
+    opacity: 0.9;
+    pointer-events: none;
+}
+
+.hero__spark svg {
+    width: 100%;
+    height: 100%;
+}
+
+.hero__spark--1 {
+    width: 28px;
+    height: 28px;
+    top: 8%;
+    left: 6%;
+}
+
+.hero__spark--2 {
+    width: 18px;
+    height: 18px;
+    top: 26%;
+    right: 8%;
+    color: var(--c-accent);
+}
+
+.hero__spark--3 {
+    width: 22px;
+    height: 22px;
+    bottom: 14%;
+    left: 12%;
+    color: var(--c-brand);
+}
+
+/* ===== 9b. Dropdown download =====
+   home.css sở hữu hẳn khối này. CSS cũ ẩn menu bằng `.hero-wrapper .drop-menu`,
+   mà `.hero-wrapper` đã bị bỏ ở phase 03 ⇒ menu sẽ luôn hiện nếu không có rule dưới đây. */
+.dropdown-wrapper {
+    position: relative;
+}
+
+.drop-menu {
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0;
+    z-index: 60;
+    width: min(360px, calc(100vw - 2rem));
+    padding: var(--sp-2);
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-8px);
+    transition:
+        opacity var(--dur-fast) var(--ease-out),
+        transform var(--dur-fast) var(--ease-out),
+        visibility var(--dur-fast) var(--ease-out);
+}
+
+.dropdown-wrapper.active .drop-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.drop-group+.drop-group {
+    margin-top: var(--sp-2);
+    padding-top: var(--sp-2);
+    border-top: 1px solid var(--c-border-soft);
+}
+
+.drop-group__label {
+    margin: 0 0 var(--sp-1);
+    padding-inline: var(--sp-3);
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+}
+
+.drop-item {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-3);
+    border-radius: var(--r-md);
+    text-decoration: none;
+    color: var(--c-text);
+    transition: background-color var(--dur-fast) var(--ease-out);
+}
+
+.drop-item:hover {
+    background: var(--c-brand-soft);
+}
+
+/* `display: flex` ở trên đè mất `[hidden]` của UA stylesheet.
+   Cần selector đủ specificity để script.js ẩn được mục chưa phát hành. */
+.drop-item[hidden],
+.drop-group[hidden] {
+    display: none;
+}
+
+.drop-item .item-icon {
+    width: 24px;
+    height: 24px;
+    flex: none;
+    color: var(--c-brand-strong);
+}
+
+.item-content {
+    display: grid;
+    gap: 2px;
+    flex: 1;
+}
+
+.item-top {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+.drop-title {
+    font-weight: 700;
+}
+
+.drop-desc {
+    font-size: var(--fs-xs);
+    color: var(--c-text-muted);
+}
+
+.drop-size {
+    font-size: var(--fs-xs);
+    color: var(--c-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.badge-rec {
+    padding: 1px var(--sp-2);
+    border-radius: var(--r-pill);
+    background: var(--c-highlight);
+    color: var(--ink-900);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.drop-item--fallback {
+    opacity: 0.72;
+}
+
+/* Nhóm không khớp OS thì mờ đi, KHÔNG ẩn (phase 04 đặt data-os) */
+[data-os="linux"] .drop-group--win,
+[data-os="windows"] .drop-group--linux {
+    opacity: 0.62;
+}
+
+/* ===== 9c. Steps (how-it-works) ===== */
+.steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-8);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: step;
+}
+
+.steps__item {
+    position: relative;
+    padding-top: var(--sp-8);
+}
+
+/* Đường nối giữa các bước */
+.steps__item::before {
+    content: "";
+    position: absolute;
+    top: 22px;
+    left: calc(50% + 32px);
+    right: calc(-50% + 32px);
+    height: 2px;
+    background: var(--c-border);
+}
+
+.steps__item:last-child::before {
+    display: none;
+}
+
+.steps__num {
+    position: absolute;
+    top: 0;
+    left: calc(50% - 22px);
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: var(--c-btn-primary-bg);
+    color: var(--c-btn-primary-text);
+    font-weight: 700;
+    font-size: var(--fs-lg);
+}
+
+.steps__item h3 {
+    margin: var(--sp-6) 0 var(--sp-2);
+    font-size: var(--fs-lg);
+    font-weight: 700;
+    text-align: center;
+}
+
+.steps__item p {
+    margin: 0;
+    color: var(--c-text-muted);
+    line-height: 1.6;
+    text-align: center;
+}
+
+/* ===== 9d. Feature grid ===== */
+.feat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--sp-6);
+}
+
+.feat-grid+.feat-grid {
+    margin-top: var(--sp-6);
+}
+
+.feat-grid--lead .card {
+    padding: var(--sp-8);
+}
+
+/* ===== 9e. Tech stack ===== */
+.stack-list {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--sp-4);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.stack-list li {
+    display: grid;
+    gap: 2px;
+    padding: var(--sp-4);
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-md);
+    background: var(--c-surface);
+}
+
+.stack-list strong {
+    font-size: var(--fs-base);
+}
+
+.stack-list span {
+    font-size: var(--fs-xs);
+    color: var(--c-text-muted);
+}
+
+/* ===== 9f. Comparison ===== */
+.cmp {
+    overflow-x: auto;
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-lg);
+    background: var(--c-surface);
+}
+
+.cmp__table {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+    font-size: var(--fs-sm);
+}
+
+.cmp__table th,
+.cmp__table td {
+    padding: var(--sp-4);
+    text-align: left;
+    border-bottom: 1px solid var(--c-border-soft);
+    vertical-align: top;
+}
+
+.cmp__table thead th {
+    font-size: var(--fs-xs);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+    white-space: nowrap;
+}
+
+/* Cột đầu dính khi cuộn ngang */
+.cmp__table tbody th {
+    position: sticky;
+    left: 0;
+    background: var(--c-surface);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.cmp__table thead th:first-child {
+    position: sticky;
+    left: 0;
+    background: var(--c-surface);
+    z-index: 1;
+}
+
+/* Cột Sameko nổi bật */
+.cmp__me {
+    background: var(--c-brand-soft);
+}
+
+.cmp__table thead .cmp__me {
+    color: var(--c-brand-strong);
+    font-size: var(--fs-sm);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.cmp__yes {
+    color: var(--c-brand-strong);
+    font-weight: 700;
+}
+
+.cmp__no {
+    color: var(--c-text-muted);
+}
+
+.cmp__part {
+    color: var(--c-highlight-strong);
+    font-weight: 700;
+}
+
+.cmp__note {
+    margin: var(--sp-4) 0 0;
+    font-size: var(--fs-xs);
+    color: var(--c-text-muted);
+    max-width: var(--max-w-prose);
+}
+
+/* ===== 9g. Benchmark =====
+   .bar-track / .bar-value / .chart-item vẫn đến từ styles.css (JS gắn .animate
+   để chạy keyframe bar-load dùng --w). Ở đây chỉ thay MÀU vì bản cũ hardcode
+   #039BE5 và các sắc xám Material. */
+.bench {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr;
+    gap: var(--sp-6);
+    align-items: start;
+}
+
+.bench .card h3 {
+    margin-bottom: var(--sp-6);
+}
+
+.bench__best {
+    color: var(--c-brand-strong);
+    font-weight: 800;
+}
+
+.bench__note {
+    margin-top: var(--sp-4);
+    font-size: var(--fs-xs);
+    color: var(--c-text-muted);
+}
+
+.bench .bar-sameko {
+    background: var(--c-brand);
+    box-shadow: var(--glow);
+}
+
+.bench .bar-devcpp6,
+.bench .bar-devcpp5,
+.bench .bar-codeblocks,
+.bench .bar-vscode {
+    background: var(--c-border);
+    box-shadow: none;
+}
+
+.std-list {
+    display: grid;
+    gap: var(--sp-2);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.std-list li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    padding: var(--sp-2) 0;
+    border-bottom: 1px solid var(--c-border-soft);
+}
+
+.std-list li:last-child {
+    border-bottom: 0;
+}
+
+/* ===== 9h. Shortcuts ===== */
+.keys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--sp-4);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.keys li {
+    display: grid;
+    justify-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-6) var(--sp-4);
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-md);
+}
+
+.keys__combo {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-2);
+}
+
+.keys__label {
+    font-size: var(--fs-sm);
+    color: var(--c-text-muted);
+    text-align: center;
+}
+
+kbd {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: var(--r-sm);
+    background: var(--c-surface-sunk);
+    border: 1px solid var(--c-border);
+    box-shadow: 0 2px 0 var(--c-border);
+    font-family: var(--font-mono);
+    font-size: var(--fs-xs);
+    font-weight: 500;
+    line-height: 1.5;
+    color: var(--c-text);
+}
+
+/* ===== 9i. CTA ===== */
+.cta {
+    text-align: center;
+}
+
+.cta .lede {
+    margin-top: var(--sp-4);
+}
+
+.cta__actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--sp-4);
+    margin-top: var(--sp-8);
+}
+
+/* ===== 10. Footer ===== */
+.foot {
+    padding-block: var(--sp-16) var(--sp-8);
+    background: var(--c-surface-alt);
+    border-top: 1px solid var(--c-border);
+}
+
+.foot__cols {
+    display: grid;
+    grid-template-columns: 1.6fr repeat(3, 1fr);
+    gap: var(--sp-12);
+}
+
+.foot__brand p {
+    margin: var(--sp-3) 0 0;
+    color: var(--c-text-muted);
+    font-size: var(--fs-sm);
+    line-height: 1.6;
+    max-width: 34ch;
+}
+
+.foot__col h3 {
+    font-size: var(--fs-xs);
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--c-text-muted);
+    margin: 0 0 var(--sp-4);
+}
+
+.foot__col ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--sp-3);
+}
+
+.foot__col a {
+    color: var(--c-text-soft);
+    text-decoration: none;
+    font-size: var(--fs-sm);
+    transition: color var(--dur-fast) var(--ease-out);
+}
+
+.foot__col a:hover {
+    color: var(--c-brand-strong);
+}
+
+.foot__bottom {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    margin-top: var(--sp-12);
+    padding-top: var(--sp-6);
+    border-top: 1px solid var(--c-border);
+    font-size: var(--fs-xs);
+    color: var(--c-text-muted);
+}
+
+/* ============================================================
+   12. Port từ styles.css — để index.html thôi phụ thuộc file cũ
+   Hợp đồng với script.js:
+   - `.reveal`  : JS thêm `.active` khi phần tử vào viewport
+   - `.bar-value`: JS thêm `.animate` để chạy keyframe bar-load (dùng --w)
+   - `.faq-item`: JS toggle `.active` trên item, KHÔNG dùng [hidden]
+   ============================================================ */
+
+/* --- Reveal --- */
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity var(--dur-slow) var(--ease-out), transform var(--dur-slow) var(--ease-out);
+    /* Dự phòng: nếu JS không chạy, sau 2s vẫn hiện nội dung */
+    animation: revealFallback 0s 2s forwards;
+}
+
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    animation: none;
+}
+
+@keyframes revealFallback {
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.zoom-in {
+    transform: translateY(20px) scale(0.97);
+}
+
+.fade-up {
+    transform: translateY(30px);
+}
+
+.delay-200 {
+    transition-delay: 0.2s;
+}
+
+/* --- Float mascot --- */
+.float-animation {
+    animation: float-hero 6s var(--ease-soft) infinite;
+}
+
+@keyframes float-hero {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-16px);
+    }
+}
+
+/* --- Nút nổi: theme toggle + scroll to top --- */
+.theme-toggle,
+.scroll-top {
+    position: fixed;
+    left: var(--sp-6);
+    z-index: 95;
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid var(--c-border);
+    background: var(--c-surface);
+    color: var(--c-text-soft);
+    box-shadow: var(--shadow-md);
+    cursor: pointer;
+    transition: color var(--dur-fast) var(--ease-out),
+        border-color var(--dur-fast) var(--ease-out),
+        transform var(--dur-fast) var(--ease-out);
+}
+
+.theme-toggle {
+    bottom: var(--sp-6);
+}
+
+.scroll-top {
+    left: auto;
+    right: var(--sp-6);
+    bottom: var(--sp-6);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(8px);
+    transition: opacity var(--dur-base) var(--ease-out),
+        visibility var(--dur-base) var(--ease-out),
+        transform var(--dur-base) var(--ease-out);
+}
+
+.scroll-top.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.theme-toggle:hover,
+.scroll-top:hover {
+    color: var(--c-brand-strong);
+    border-color: var(--c-brand);
+}
+
+.theme-toggle svg,
+.scroll-top svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Mặt trời hiện ở dark, mặt trăng hiện ở light */
+.sun-icon {
+    display: none;
+}
+
+.moon-icon {
+    display: block;
+}
+
+[data-theme="dark"] .sun-icon {
+    display: block;
+}
+
+[data-theme="dark"] .moon-icon {
+    display: none;
+}
+
+/* --- Biểu đồ benchmark --- */
+.chart-item+.chart-item {
+    margin-top: var(--sp-6);
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-2);
+    font-size: var(--fs-sm);
+}
+
+.bar-track {
+    height: 14px;
+    border-radius: var(--r-pill);
+    background: var(--c-surface-sunk);
+    overflow: hidden;
+}
+
+.bar-value {
+    width: 0;
+    height: 100%;
+    border-radius: var(--r-pill);
+    background: var(--c-border);
+}
+
+.bar-value.animate {
+    animation: bar-load 1s var(--ease-out) forwards;
+}
+
+@keyframes bar-load {
+    to {
+        width: var(--w);
+    }
+}
+
+/* --- FAQ accordion --- */
+.faq-list {
+    display: grid;
+    gap: var(--sp-3);
+    max-width: 860px;
+    margin-inline: auto;
+}
+
+.faq-item {
+    border: 1px solid var(--c-border);
+    border-radius: var(--r-md);
+    background: var(--c-surface);
+    overflow: hidden;
+}
+
+.faq-item.active {
+    border-color: var(--c-brand);
+}
+
+.faq-question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    width: 100%;
+    padding: var(--sp-4) var(--sp-6);
+    border: 0;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    color: var(--c-text);
+    cursor: pointer;
+}
+
+.faq-question:hover {
+    color: var(--c-brand-strong);
+}
+
+.faq-chevron {
+    width: 20px;
+    height: 20px;
+    flex: none;
+    transition: transform var(--dur-base) var(--ease-out);
+}
+
+.faq-item.active .faq-chevron {
+    transform: rotate(180deg);
+}
+
+/* Dùng max-height, KHÔNG dùng [hidden] — JS chỉ toggle class .active */
+.faq-answer {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height var(--dur-base) var(--ease-soft);
+}
+
+.faq-item.active .faq-answer {
+    max-height: 420px;
+}
+
+.faq-answer p {
+    margin: 0;
+    padding: 0 var(--sp-6) var(--sp-6);
+    color: var(--c-text-muted);
+    line-height: 1.65;
+}
+
+/* --- Linh tinh --- */
+.chevron {
+    width: 16px;
+    height: 16px;
+    transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.dropdown-wrapper.active .chevron {
+    transform: rotate(180deg);
+}
+
+code {
+    padding: 2px 6px;
+    border-radius: var(--r-sm);
+    background: var(--c-surface-sunk);
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+}
+
+/* ===== 11. Responsive ===== */
+@media (max-width: 1100px) {
+    .hero__inner {
+        gap: var(--sp-8);
+    }
+
+    .foot__cols {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--sp-8);
+    }
+
+    .stack-list {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 960px) {
+    .feat-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .bench {
+        grid-template-columns: 1fr;
+    }
+
+    .keys {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 720px) {
+
+    /* Timeline chuyển sang dọc */
+    .steps {
+        grid-template-columns: 1fr;
+        gap: var(--sp-6);
+    }
+
+    .steps__item {
+        padding-top: 0;
+        padding-left: 64px;
+        min-height: 44px;
+    }
+
+    .steps__num {
+        top: 0;
+        left: 0;
+    }
+
+    .steps__item::before {
+        top: 52px;
+        bottom: calc(-1 * var(--sp-6));
+        left: 21px;
+        right: auto;
+        width: 2px;
+        height: auto;
+    }
+
+    .steps__item h3,
+    .steps__item p {
+        text-align: left;
+    }
+
+    .steps__item h3 {
+        margin-top: var(--sp-1);
+    }
+}
+
+@media (max-width: 900px) {
+    .rail {
+        display: none;
+    }
+}
+
+@media (max-width: 860px) {
+    .band {
+        padding-block: var(--sp-16);
+    }
+
+    .hero__inner {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .hero__lede {
+        margin-inline: auto;
+    }
+
+    .hero__actions {
+        justify-content: center;
+    }
+
+    .hero__visual {
+        order: -1;
+    }
+
+    .hero__visual img {
+        max-width: 300px;
+    }
+
+    .nav__links {
+        display: none;
+    }
+}
+
+@media (max-width: 560px) {
+
+    .foot__cols,
+    .feat-grid,
+    .stack-list,
+    .keys {
+        grid-template-columns: 1fr;
+    }
+
+    .foot__cols {
+        gap: var(--sp-8);
+    }
+
+    .stack-text__ghost {
+        transform: translate(3px, 3px);
+        -webkit-text-stroke-width: 1.5px;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .hero__actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

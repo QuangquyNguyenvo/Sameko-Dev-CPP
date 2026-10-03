@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>404 — Page not found | Sameko Dev C++</title>
     <meta name="robots" content="noindex">
+    <link rel="stylesheet" href="/assets/css/tokens.css">
     <link rel="stylesheet" href="/assets/css/fonts.css">
     <link rel="icon" href="/assets/favicon-32.png" sizes="32x32">
     <style>
@@ -17,9 +18,9 @@
             align-items: center;
             justify-content: center;
             gap: 12px;
-            background: #0f1720;
-            color: #e6edf3;
-            font-family: Quicksand, system-ui, sans-serif;
+            background: var(--c-page);
+            color: var(--c-text);
+            font-family: var(--font-sans);
             text-align: center;
             padding: 24px;
         }
@@ -27,7 +28,7 @@
         h1 {
             font-size: 5rem;
             margin: 0;
-            color: #64B5F6;
+            color: var(--c-brand);
         }
 
         p {
@@ -37,12 +38,12 @@
 
         a {
             margin-top: 16px;
-            color: #0f1720;
-            background: #64B5F6;
+            color: var(--c-btn-primary-text);
+            background: var(--c-btn-primary-bg);
             text-decoration: none;
             font-weight: 600;
             padding: 10px 22px;
-            border-radius: 8px;
+            border-radius: var(--r-sm);
         }
     </style>
 </head>

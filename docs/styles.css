@@ -1,69 +1,59 @@
+/* Bảng màu nạp từ assets/css/tokens.css — xem <link> trong mỗi file HTML.
+   Các biến dưới đây là lớp tương thích cho CSS cũ; code mới dùng thẳng --c-*. */
+
 :root {
-    /* Light Mode Colors */
-    --primary: #0288D1;
-    --primary-dim: rgba(2, 136, 209, 0.1);
-    --text-main: #1A202C;
-    --text-light: #2D3748;
-    /* Darker than #4A5568 */
-    /* Darker than #718096 */
-    --text-muted: #2D3748;
-    /* Darker than #718096 */
-    --card-bg: #FFFFFF;
-    --body-bg: #F5F7FA;
-    --hero-gradient-start: #E3F2FD;
-    --hero-gradient-mid: #BBDEFB;
-    --hero-gradient-end: rgba(144, 202, 249, 0.6);
-    --feature-zone-bg: #F5F7FA;
-    --wave-fill-1: #E3F2FD;
-    --wave-fill-2: #F5F7FA;
-    --bar-track-bg: #E2E8F0;
-    --border-color: rgba(0, 0, 0, 0.08);
-    --border-secondary: #F0F4F8;
-    --shadow-color: rgba(137, 207, 240, 0.25);
-    --feature-icon-bg: #E3F2FD;
-    --badge-bg: white;
-    --badge-border: #E3F2FD;
-    --btn-secondary-bg: white;
-    --blob-1: #FFEBEE;
-    --blob-2: #E0F7FA;
-    --tag-supported-bg: #E1F4FF;
-    --tag-supported-text: #0288D1;
-    --tag-limited-bg: #FFEBEE;
-    --tag-limited-text: #E57373;
-    --radius-l: 32px;
+    /* Light Mode — ánh xạ sang token brand.
+       --primary dùng cho CHỮ ở phần lớn rule của file này, nên phải trỏ vào
+       --c-brand-strong (đạt AA ở cả 2 mode), không phải --c-brand. */
+    --primary: var(--c-brand-strong);
+    --primary-dim: var(--c-brand-dim);
+    --text-main: var(--c-text);
+    --text-light: var(--c-text-soft);
+    --text-muted: var(--c-text-muted);
+    --card-bg: var(--c-surface);
+    --body-bg: var(--c-page);
+    --hero-gradient-start: var(--sky-100);
+    --hero-gradient-mid: var(--sky-200);
+    --hero-gradient-end: rgba(136, 201, 234, 0.45);
+    --feature-zone-bg: var(--c-surface-alt);
+    --wave-fill-1: var(--sky-100);
+    --wave-fill-2: var(--c-surface-alt);
+    --bar-track-bg: var(--sky-200);
+    --border-color: var(--c-border);
+    --border-secondary: var(--c-border-soft);
+    --shadow-color: rgba(136, 201, 234, 0.25);
+    --feature-icon-bg: var(--sky-100);
+    --badge-bg: var(--c-surface);
+    --badge-border: var(--sky-200);
+    --btn-secondary-bg: var(--c-surface);
+    --blob-1: var(--sakura-100);
+    --blob-2: var(--sky-100);
+    --tag-supported-bg: var(--sky-100);
+    --tag-supported-text: var(--c-brand-strong);
+    --tag-limited-bg: var(--sakura-100);
+    --tag-limited-text: var(--c-accent-strong);
+    --radius-l: var(--r-xl);
     --radius-m: 20px;
-    --max-width: 1200px;
+    --max-width: var(--max-w);
 }
 
-/* Dark Mode Colors */
+/* Dark Mode — chỉ override cái nào không tự đổi theo --c-* */
 [data-theme="dark"] {
-    --primary: #64B5F6;
-    --primary-dim: rgba(100, 181, 246, 0.15);
-    --text-main: #E0E0E0;
-    --text-light: #9E9E9E;
-    --text-muted: #B0BEC5;
-    --card-bg: #1E2A32;
-    --body-bg: #0D1117;
-    --hero-gradient-start: #131A22;
-    --hero-gradient-mid: #1a2733;
-    --hero-gradient-end: rgba(22, 36, 51, 0.95);
-    --feature-zone-bg: #0D1117;
-    --wave-fill-1: #131A22;
-    --wave-fill-2: #0D1117;
-    --bar-track-bg: #263238;
-    --border-color: rgba(255, 255, 255, 0.08);
-    --border-secondary: #263238;
+    --hero-gradient-start: #101c26;
+    --hero-gradient-mid: #16232f;
+    --hero-gradient-end: rgba(16, 28, 38, 0.95);
+    --wave-fill-1: #101c26;
+    --wave-fill-2: var(--c-page);
+    --bar-track-bg: #22333f;
     --shadow-color: rgba(0, 0, 0, 0.4);
-    --feature-icon-bg: rgba(100, 181, 246, 0.15);
-    --badge-bg: #1E2A32;
-    --badge-border: #37474F;
-    --btn-secondary-bg: #1E2A32;
-    --blob-1: rgba(255, 64, 129, 0.1);
-    --blob-2: rgba(100, 181, 246, 0.1);
-    --tag-supported-bg: rgba(100, 181, 246, 0.15);
-    --tag-supported-text: #64B5F6;
-    --tag-limited-bg: rgba(244, 67, 54, 0.15);
-    --tag-limited-text: #EF5350;
+    --feature-icon-bg: var(--c-brand-soft);
+    --badge-border: var(--c-border);
+    --blob-1: rgba(255, 154, 175, 0.1);
+    --blob-2: rgba(136, 201, 234, 0.1);
+    --tag-supported-bg: var(--c-brand-soft);
+    --tag-supported-text: var(--c-brand);
+    --tag-limited-bg: var(--c-accent-soft);
+    --tag-limited-text: var(--c-accent);
 }
 
 /* Language Visibility Logic */
@@ -584,9 +574,9 @@ h1 span {
 }
 
 .btn-primary {
-    background: var(--primary);
-    color: white;
-    box-shadow: 0 8px 20px rgba(137, 207, 240, 0.4);
+    background: var(--c-btn-primary-bg);
+    color: var(--c-btn-primary-text);
+    box-shadow: 0 8px 20px rgba(136, 201, 234, 0.4);
 }
 
 .btn-secondary {

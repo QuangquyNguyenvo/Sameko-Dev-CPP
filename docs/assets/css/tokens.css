@@ -1,0 +1,178 @@
+/* ============================================================
+   Sameko Dev C++ — Design Tokens
+   Nguồn màu: ThemeManager._getHardcodedThemes() trong
+   src/renderer/ui/theme-manager.js. Đổi màu ở đây, không đổi
+   rải rác trong component CSS.
+   ============================================================ */
+
+:root {
+    /* ---------- Brand scale (giống nhau ở light & dark) ---------- */
+    --sky-50: #f2fafd;
+    --sky-100: #e8f4fc;
+    --sky-200: #d0e8f5;
+    --sky-300: #a8d8f0;
+    --sky-400: #88c9ea;
+    /* ★ Brand blue — accent của Kawaii Dark */
+    --sky-500: #5eb7e0;
+    --sky-600: #4a9bc9;
+    /* accent của Kawaii Light */
+    --sky-700: #2a7ab0;
+    /* an toàn cho chữ trên nền sáng — 4.66:1 với #fff */
+    --sky-800: #1f6491;
+    --sky-900: #152535;
+
+    --sakura-100: #fff5f8;
+    --sakura-200: #ffe4e1;
+    --sakura-300: #ffcad4;
+    --sakura-400: #ffb7c5;
+    --sakura-500: #ff9aaf;
+    /* ★ accent phụ */
+    --sakura-600: #ff758f;
+    --sakura-700: #d94f6b;
+    /* an toàn cho chữ trên nền sáng */
+
+    --butter-300: #fff9c4;
+    --butter-500: #ebcb8b;
+    /* ★ accent thứ 3 — chỉ chi tiết nhỏ */
+    --butter-700: #a8802f;
+    /* an toàn cho chữ trên nền sáng */
+
+    --ink-900: #1a2530;
+    --ink-800: #2a4a5a;
+    --ink-600: #4a6a7a;
+    --ink-400: #7a9aaa;
+    --paper: #ffffff;
+
+    /* ---------- Spacing (thang 4px) ---------- */
+    --sp-1: 0.25rem;
+    --sp-2: 0.5rem;
+    --sp-3: 0.75rem;
+    --sp-4: 1rem;
+    --sp-6: 1.5rem;
+    --sp-8: 2rem;
+    --sp-12: 3rem;
+    --sp-16: 4rem;
+    --sp-24: 6rem;
+
+    /* ---------- Bo góc ---------- */
+    --r-sm: 8px;
+    --r-md: 16px;
+    --r-lg: 24px;
+    --r-xl: 32px;
+    --r-pill: 999px;
+
+    /* ---------- Type scale ---------- */
+    --fs-xs: 0.8125rem;
+    --fs-sm: 0.9375rem;
+    --fs-base: 1rem;
+    --fs-lg: 1.25rem;
+    --fs-xl: 1.75rem;
+    --fs-2xl: clamp(2rem, 1.4rem + 2.6vw, 3.25rem);
+    --fs-3xl: clamp(2.6rem, 1.6rem + 4.4vw, 5rem);
+    --font-sans: 'Quicksand', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+
+    /* ---------- Motion ---------- */
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
+    --dur-fast: 160ms;
+    --dur-base: 280ms;
+    --dur-slow: 520ms;
+
+    /* ---------- Layout ---------- */
+    --max-w: 1200px;
+    --max-w-prose: 68ch;
+}
+
+/* ============================================================
+   Semantic tokens — LIGHT (mặc định)
+   ============================================================ */
+:root {
+    --c-brand: var(--sky-600);
+    --c-brand-strong: var(--sky-700);
+    /* dùng cho CHỮ trên nền sáng */
+    --c-brand-soft: var(--sky-100);
+    --c-brand-dim: rgba(74, 155, 201, 0.12);
+
+    --c-accent: var(--sakura-500);
+    --c-accent-strong: var(--sakura-700);
+    --c-accent-soft: var(--sakura-100);
+
+    --c-highlight: var(--butter-500);
+    --c-highlight-strong: var(--butter-700);
+
+    --c-text: var(--ink-900);
+    --c-text-soft: var(--ink-800);
+    --c-text-muted: var(--ink-600);
+    --c-text-on-brand: #ffffff;
+
+    /* Nền nút primary PHẢI dùng --c-btn-primary-bg, KHÔNG dùng --c-brand.
+       Trắng trên --c-brand (#4a9bc9) chỉ đạt 3.08:1 → trượt WCAG AA.
+       Trắng trên --sky-700 (#2a7ab0) đạt 4.66:1 → đạt AA. */
+    --c-btn-primary-bg: var(--sky-700);
+    --c-btn-primary-bg-hover: var(--sky-800);
+    --c-btn-primary-text: #ffffff;
+
+    --c-surface: #ffffff;
+    --c-surface-alt: #f4f9fd;
+    --c-surface-sunk: var(--sky-100);
+    --c-page: #f7fbfe;
+
+    --c-border: rgba(42, 74, 90, 0.12);
+    --c-border-soft: rgba(42, 74, 90, 0.06);
+
+    --shadow-sm: 0 1px 2px rgba(42, 74, 90, 0.06);
+    --shadow-md: 0 4px 16px rgba(74, 155, 201, 0.14);
+    --shadow-lg: 0 16px 48px rgba(74, 155, 201, 0.18);
+    --glow: 0 0 24px rgba(136, 201, 234, 0.35);
+}
+
+/* ============================================================
+   Semantic tokens — DARK
+   Kích hoạt bởi script.js: html[data-theme="dark"]
+   ============================================================ */
+[data-theme="dark"] {
+    --c-brand: var(--sky-400);
+    --c-brand-strong: var(--sky-300);
+    --c-brand-soft: rgba(136, 201, 234, 0.14);
+    --c-brand-dim: rgba(136, 201, 234, 0.16);
+
+    --c-accent: var(--sakura-500);
+    --c-accent-strong: var(--sakura-400);
+    --c-accent-soft: rgba(255, 154, 175, 0.14);
+
+    --c-highlight: var(--butter-500);
+    --c-highlight-strong: var(--butter-300);
+
+    --c-text: #e0f0ff;
+    --c-text-soft: #a0c0d0;
+    --c-text-muted: #7990a0;
+    --c-text-on-brand: #10202c;
+
+    /* Dark: #10202c trên #88c9ea đạt 9.08:1 */
+    --c-btn-primary-bg: var(--sky-400);
+    --c-btn-primary-bg-hover: var(--sky-300);
+    --c-btn-primary-text: #10202c;
+
+    --c-surface: #16232f;
+    --c-surface-alt: #1a2a38;
+    --c-surface-sunk: #101c26;
+    --c-page: #0d1a25;
+
+    --c-border: rgba(136, 201, 234, 0.16);
+    --c-border-soft: rgba(136, 201, 234, 0.08);
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.55);
+    --glow: 0 0 24px rgba(136, 201, 234, 0.4);
+}
+
+/* Tôn trọng người dùng tắt animation */
+@media (prefers-reduced-motion: reduce) {
+    :root {
+        --dur-fast: 0ms;
+        --dur-base: 0ms;
+        --dur-slow: 0ms;
+    }
+}
