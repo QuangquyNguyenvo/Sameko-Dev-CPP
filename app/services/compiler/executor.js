@@ -66,6 +66,58 @@ function cleanupOldBuildArtifacts(buildsDir) {
     } catch (_) { }
 }
 
+// Last good build per output path: { key, size, mtimeMs, warnings }. In memory
+// only, so the first build after a restart always runs the compiler.
+const buildCache = new Map();
+
+// Flags that make a build read files the cache key cannot see.
+const UNCACHEABLE_FLAG = /^(-I|-iquote|-isystem|-idirafter|-include|-imacros|-L|-l(?!stdc\+\+exp$)|-Wl,|-Wa,|-Wp,|-T|-B|-specs|--sysroot|@)/;
+
+/**
+ * Hash of everything that decides the output of this build, or null when the
+ * build also reads inputs the hash cannot see: a local header (`#include "x.h"`,
+ * or `<x.h>` found next to the source through `-I <dir>`), or a user flag that
+ * adds include/library paths, linker scripts or response files.
+ */
+function buildCacheKey(compilerExe, args, content, dir) {
+    if (/#\s*include\s*"/.test(content)) return null;
+    const angleIncludes = content.match(/#\s*include\s*<[^>]+>/g) || [];
+    for (const inc of angleIncludes) {
+        const name = inc.slice(inc.indexOf('<') + 1, -1).trim();
+        if (fs.existsSync(path.join(dir, name))) return null;
+    }
+    // args holds `-I <dir>` itself; only flags after it come from the user.
+    const userArgs = args.slice(args.indexOf('-pipe') + 1);
+    if (userArgs.some((a) => UNCACHEABLE_FLAG.test(a))) return null;
+    let compilerStamp = '';
+    try {
+        const st = fs.statSync(compilerExe);
+        compilerStamp = `${st.size}:${st.mtimeMs}`;
+    } catch (_) { return null; }
+    return crypto.createHash('sha1')
+        .update(JSON.stringify([compilerExe, compilerStamp, args, content]))
+        .digest('hex');
+}
+
+/** The cached build for this key, if its executable is still the one we wrote. */
+function reusableBuild(outputPath, key) {
+    const entry = buildCache.get(outputPath);
+    if (!entry || entry.key !== key) return null;
+    try {
+        const st = fs.statSync(outputPath);
+        if (st.size === entry.size && st.mtimeMs === entry.mtimeMs) return entry;
+    } catch (_) { }
+    buildCache.delete(outputPath);
+    return null;
+}
+
+function rememberBuild(outputPath, key, warnings) {
+    try {
+        const st = fs.statSync(outputPath);
+        buildCache.set(outputPath, { key, size: st.size, mtimeMs: st.mtimeMs, warnings: warnings || '' });
+    } catch (_) { }
+}
+
 function sanitizeUserFlags(flags, content) {
     const tokens = (flags || '').split(' ').filter((f) => f.trim());
     const hasMain = /\b(?:int\s+)?main\s*\(/.test(content);
@@ -207,23 +259,6 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
         : '-' + crypto.createHash('sha1').update(path.resolve(actualFilePath).toLowerCase()).digest('hex').slice(0, 8);
     const outputPath = path.join(buildsDir, baseName + outputTag + EXE_SUFFIX);
 
-    // Release file lock on target output executable if it exists
-    if (fs.existsSync(outputPath)) {
-        try {
-            fs.unlinkSync(outputPath);
-        } catch (e) {
-            if (IS_WIN) {
-                // Something still holds the file — typically a previous run in an
-                // external terminal, which we have no handle for. Terminate only
-                // processes whose image IS this exact file, never by name alone.
-                await killProcessesByExePath(outputPath);
-                try {
-                    fs.unlinkSync(outputPath);
-                } catch (_) { }
-            }
-        }
-    }
-
     // ===== MULTI-FILE PROJECT SUPPORT (fast lookup) =====
     let sourceFiles = [actualFilePath];
     let linkedFiles = [];
@@ -287,11 +322,6 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
         resolvedFlags = '-std=c++17 -O0 -w';
     }
 
-    // PCH optimization - use resolvedFlags so PCH matches actual compilation
-    const pch = (!noBuildCache && content.includes('bits/stdc++.h'))
-        ? await ensurePCH(resolvedFlags, (msg) => sendToRenderer('system-message', msg))
-        : { ready: false };
-
     const unbufferObj = getUnbufferObjectPath();
 
     const args = [
@@ -330,6 +360,48 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
     if (hasOptimization) {
         args.push('-s');
     }
+
+    // Nothing that decides the output changed since the last good build of this
+    // file: reuse the executable instead of spending ~0.7 s on an identical one.
+    const cacheKey = noBuildCache ? null : buildCacheKey(compilerExe, args, content, dir);
+    const cached = cacheKey && reusableBuild(outputPath, cacheKey);
+    if (cached) {
+        console.log(`[Compile] Unchanged, reusing ${outputPath}`);
+        return {
+            success: true,
+            cached: true,
+            message: 'Compilation successful!',
+            outputPath,
+            warnings: cached.warnings,
+            compiler: compilerInfo.name,
+            linker: (useLLD !== false && compilerInfo.hasLLD) ? 'LLD' : null,
+            time: Date.now() - startTime,
+            linkedFiles
+        };
+    }
+    buildCache.delete(outputPath);
+
+    // Release file lock on target output executable if it exists
+    if (fs.existsSync(outputPath)) {
+        try {
+            fs.unlinkSync(outputPath);
+        } catch (e) {
+            if (IS_WIN) {
+                // Something still holds the file — typically a previous run in an
+                // external terminal, which we have no handle for. Terminate only
+                // processes whose image IS this exact file, never by name alone.
+                await killProcessesByExePath(outputPath);
+                try {
+                    fs.unlinkSync(outputPath);
+                } catch (_) { }
+            }
+        }
+    }
+
+    // PCH optimization - use resolvedFlags so PCH matches actual compilation
+    const pch = (!noBuildCache && content.includes('bits/stdc++.h'))
+        ? await ensurePCH(resolvedFlags, (msg) => sendToRenderer('system-message', msg))
+        : { ready: false };
 
     if (pch.ready) {
         args.push('-I', pch.pchSubDir);
@@ -383,6 +455,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
                     linkedFiles: linkedFiles
                 });
             } else {
+                if (cacheKey) rememberBuild(outputPath, cacheKey, stderr);
                 resolve({
                     success: true,
                     message: 'Compilation successful!',

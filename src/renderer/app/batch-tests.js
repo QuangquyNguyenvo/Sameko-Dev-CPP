@@ -148,7 +148,7 @@ async function runAllTests() {
 
         App.exePath = compileResult.outputPath;
         tab.exePath = compileResult.outputPath;
-        log(`Compiled in ${compileResult.time}ms`, 'success');
+        log(compileResult.cached ? 'Source unchanged: reused the last build' : `Compiled in ${compileResult.time}ms`, 'success');
 
         const timeLimit = ccProblem.timeLimit || (App.settings.execution.timeLimitSeconds * 1000) || 3000;
 

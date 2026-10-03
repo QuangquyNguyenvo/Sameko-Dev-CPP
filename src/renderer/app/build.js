@@ -128,7 +128,7 @@ async function buildActiveTab({ runAfter }) {
             if (r.linkedFiles && r.linkedFiles.length > 0) {
                 log(`Linked: ${r.linkedFiles.join(', ')}`, 'system');
             }
-            log(`${verb} OK (${ms}ms)`, 'success');
+            log(r.cached ? `${verb} OK (${ms}ms, source unchanged: reused the last build)` : `${verb} OK (${ms}ms)`, 'success');
             if (r.warnings) {
                 log(r.warnings, 'warning');
                 parseProblems(r.warnings, 'warning');

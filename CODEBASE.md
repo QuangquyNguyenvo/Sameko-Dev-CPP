@@ -192,6 +192,12 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   one build; at most four variants are kept (each `.gch` is 110–120 MB). A default PCH is prebuilt
   1.5 s after launch.
 - `sameko_unbuffer.o` from the toolchain is linked unless "Realtime Output" is off.
+- Build cache (`buildCacheKey` / `reusableBuild` in `executor.js`, in memory): when the full g++
+  argument list, the source text and the compiler's size+mtime match the last successful build of
+  that output path and the `.exe` still has the size and mtime it was built with, `compile()`
+  returns `{ cached: true }` without running g++. Sources with `#include "…"`, an `<…>` include
+  found next to the file, or user `-I`/`-L`/`-l`/`-Wl,`/`@file` flags are never cached;
+  `execution.noBuildCache` turns it (and the PCH) off.
 - With single-file mode off, `#include "x.h"` also compiles a sibling `x.cpp`.
 - `compile()` stops a still-running program first; `process-stopped` is only emitted when one was
   actually running.
