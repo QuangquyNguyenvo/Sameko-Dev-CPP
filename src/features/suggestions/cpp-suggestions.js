@@ -1,5 +1,4 @@
 window.registerCppIntellisense = function (monaco) {
-    console.log('[Intellisense] Registering C/C++ Provider (Snippets + Clangd)...');
 
     // Resolve the tab that owns the given Monaco model. The app tracks tabs on
     // the global `App` object (App.tabs / App.activeTabId), NOT window.TabManager
@@ -7,6 +6,9 @@ window.registerCppIntellisense = function (monaco) {
     // matching the model against App.editor2 when present.
     const getActiveTabForModel = (model) => {
         if (typeof App === 'undefined' || !Array.isArray(App.tabs)) return null;
+        // Each tab owns its model, so the model identifies the tab directly.
+        const owner = App.tabs.find(t => t.model && t.model === model);
+        if (owner) return owner;
         let tabId = App.activeTabId;
         try {
             if (App.editor2 && model && App.editor2.getModel && model === App.editor2.getModel()) {
@@ -187,8 +189,8 @@ window.registerCppIntellisense = function (monaco) {
 
                 if (!intellisenseEnabled()) {
                     // Snippets are a separate switch, so they survive on their own.
-                    // Everything else here — clangd, keywords, headers, the
-                    // tree-sitter locals below — is what "Intellisense" means.
+                    // Everything else here — clangd, keywords, headers — is what
+                    // "Intellisense" means.
                     if (!snippetsEnabled()) return { suggestions: [] };
                     const snippetsOnly = createProposals(range, lang, textUntilPosition)
                         .suggestions.filter(s => s.kind === monaco.languages.CompletionItemKind.Snippet);
@@ -312,38 +314,7 @@ window.registerCppIntellisense = function (monaco) {
                     }
                 }
 
-                if (window.electronAPI && window.electronAPI.getSmartSuggestions) {
-                    try {
-                        const content = model.getValue();
-                        const context = await window.electronAPI.getSmartSuggestions(content, position.lineNumber - 1, position.column - 1);
-
-                        if (context && context.available) {
-                            if (context.isComment || context.isString) {
-                                return { suggestions: [] };
-                            }
-
-                            if (context.locals && context.locals.length > 0) {
-                                const query = word.word.toLowerCase();
-                                const smartVars = context.locals
-                                    .filter(l => l.toLowerCase().startsWith(query))
-                                    .map(l => {
-                                        return {
-                                            label: l,
-                                            kind: monaco.languages.CompletionItemKind.Variable,
-                                            insertText: l,
-                                            detail: 'Local / Global Variable',
-                                            range: range,
-                                            sortText: '000_' + l
-                                        };
-                                    });
-                                baseProposals.suggestions = [...smartVars, ...baseProposals.suggestions];
-                            }
-                        }
-                    } catch (e) {
-                        console.warn('[SmartSuggest] Error:', e);
-                    }
-                }
-
+                // clangd unavailable or silent: built-in snippets, keywords and headers.
                 return baseProposals;
             }
         });

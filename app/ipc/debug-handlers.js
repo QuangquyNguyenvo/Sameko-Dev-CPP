@@ -80,9 +80,6 @@ function registerHandlers() {
     ipcMain.handle(IPC.DEBUG.VAR_SET_FORMAT, async (event, { name, fmt }) =>
         guard(async () => { const r = await dbg.varSetFormat(name, fmt); return { value: r.value, format: r.format }; }));
 
-    ipcMain.handle(IPC.DEBUG.SET_CONDITION, async (event, { id, condition }) =>
-        guard(() => dbg.setCondition(id, condition)));
-
     ipcMain.handle(IPC.DEBUG.CONTINUE, async () => guard(() => dbg.cont()));
     ipcMain.handle(IPC.DEBUG.INTERRUPT, async () => guard(() => dbg.interrupt()));
     ipcMain.handle(IPC.DEBUG.STEP_OVER, async () => guard(() => dbg.next()));
@@ -102,12 +99,6 @@ function registerHandlers() {
             return { value: r.value };
         }));
 
-    ipcMain.handle(IPC.DEBUG.VAR_CREATE, async (event, { name, expr }) =>
-        guard(async () => {
-            const r = await dbg.varCreate(name, expr);
-            return { var: r };
-        }));
-
     ipcMain.handle(IPC.DEBUG.VAR_CHILDREN, async (event, { name, from, to }) =>
         guard(async () => {
             const r = await dbg.varListChildren(name, from, to);
@@ -125,8 +116,11 @@ function registerHandlers() {
             return { changed: r.changelist || [] };
         }));
 
-    ipcMain.handle(IPC.DEBUG.VAR_DELETE, async (event, { name }) =>
-        guard(() => dbg.varDelete(name)));
+    ipcMain.handle(IPC.DEBUG.VAR_CREATE_MANY, async (event, { items }) =>
+        guard(async () => ({ vars: await dbg.varCreateMany(items) })));
+
+    ipcMain.handle(IPC.DEBUG.VAR_DELETE_MANY, async (event, { names }) =>
+        guard(() => dbg.varDeleteMany(names)));
 }
 
 module.exports = { registerHandlers, setMainWindow };

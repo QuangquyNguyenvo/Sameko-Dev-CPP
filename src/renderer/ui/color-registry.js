@@ -353,4 +353,3 @@ Object.freeze(ColorRegistry);
 // Make globally available
 window.ColorRegistry = ColorRegistry;
 
-console.log(`[ColorRegistry v2] Initialized with ${Object.keys(ColorRegistry.groups).length} color groups`);

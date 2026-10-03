@@ -89,6 +89,11 @@ function partA() {
         assert.strictEqual(r.results.bkpt.line, '12');
     });
 
+    check('octal escapes decode as UTF-8 (non-ASCII strings)', () => {
+        // gdb prints "chào" as ch\303\240o; \0 and other escapes still work.
+        const r = parseLine('^done,value="ch\\303\\240o \\101\\0\\t"');
+        assert.strictEqual(r.results.value, 'chào A\0\t');
+    });
     check('stream: console / log / target', () => {
         const con = parseLine('~"hello\\n"');
         assert.deepStrictEqual(con, { type: 'stream', stream: 'console', text: 'hello\n' });

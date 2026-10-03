@@ -11,6 +11,7 @@ const updateHandlers = require('./update-handlers');
 const historyHandlers = require('./history-handlers');
 const discordHandlers = require('./discord-handlers');
 const debugHandlers = require('./debug-handlers');
+const stateHandlers = require('./state-handlers');
 
 function registerAllHandlers(mainWindow) {
     fileHandlers.setMainWindow(mainWindow);
@@ -30,6 +31,7 @@ function registerAllHandlers(mainWindow) {
     historyHandlers.registerHistoryHandlers();
     discordHandlers.registerHandlers();
     debugHandlers.registerHandlers();
+    stateHandlers.registerHandlers();
 }
 
 module.exports = registerAllHandlers;

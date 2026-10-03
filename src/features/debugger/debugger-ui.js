@@ -1086,7 +1086,22 @@
         renderCurrentLine(false);
     }
 
-    /** Re-render decorations when the visible file changes (tabs share one model). */
+    /**
+     * The editor is about to show another file. Decoration ids are only valid
+     * for the model they were created on, so remove ours while that model is
+     * still attached — otherwise they would stay behind on the old file.
+     */
+    function onFileHidden() {
+        const ed = mainEditor();
+        if (!ed) return;
+        bpDecoIds = ed.deltaDecorations(bpDecoIds, []);
+        curLineDecoIds = ed.deltaDecorations(curLineDecoIds, []);
+        hoverDecoIds = ed.deltaDecorations(hoverDecoIds, []);
+        histDecoIds = ed.deltaDecorations(histDecoIds, []);
+        hoverLine = 0;
+    }
+
+    /** Re-render decorations when the visible file changes (each tab has its own model). */
     function onFileShown() {
         renderBreakpoints();
         renderCurrentLine(true);
@@ -1176,7 +1191,9 @@
         const r = await api().compile({
             filePath: tab.path, content: tab.content, flags,
             singleFileMode: (window.App.settings?.compiler?.singleFileMode !== false),
-            useLLD: false, noBuildCache: true, realtimeOutput: false,
+            // The PCH is keyed by every relevant flag (incl. -g), so a debug
+            // build gets its own and no longer has to parse bits/stdc++.h.
+            useLLD: false, realtimeOutput: false,
         });
         if (!r || !r.success) {
             sys('Debug build failed.', 'error');
@@ -1517,7 +1534,9 @@
         const names = Array.from(varNodes.keys());
         varNodes.clear();
         evalNodes.length = 0;
-        for (const n of names) { try { await api().debugVarDelete(n); } catch (_) { } }
+        if (!names.length) return;
+        // One round trip for the whole set (was one per variable object).
+        try { await api().debugVarDeleteMany(names); } catch (_) { }
     }
 
     /** Beginner-friendly empty state while there's nothing to show yet.
@@ -1576,11 +1595,18 @@
                 + (kind === 'watch' ? 'nothing watched yet' : 'no locals in this frame') + '</div>';
             return;
         }
-        for (const e of entries) {
-            const name = 'v' + (++varSeq);
-            let created = null;
-            try { const r = await api().debugVarCreate(name, e.expr); if (r && r.ok) created = r.var; }
-            catch (_) { }
+        // Create every variable object of this scope in ONE round trip; a
+        // frame change with N locals used to cost N renderer<->gdb round trips.
+        const names = entries.map(() => 'v' + (++varSeq));
+        let createdList = [];
+        try {
+            const r = await api().debugVarCreateMany(entries.map((e, i) => ({ name: names[i], expr: e.expr })));
+            if (r && r.ok && Array.isArray(r.vars)) createdList = r.vars;
+        } catch (_) { }
+        for (let i = 0; i < entries.length; i++) {
+            const e = entries[i];
+            const name = names[i];
+            const created = (createdList[i] && createdList[i].ok) ? createdList[i].var : null;
             if (!created) {
                 // evaluate fallback (e.g. watch expr not addressable as a varobj)
                 let val = e.value;
@@ -1825,6 +1851,7 @@
         stop: () => { stopAuto(null); return stop(); },
         toggleAutoDryRun: toggleAuto,
         onFileShown,
+        onFileHidden,
         isActive: () => isSessionLive(),
     };
 

@@ -7,16 +7,13 @@
 'use strict';
 
 const { ipcMain, app } = require('electron');
-const path = require('path');
-const fs = require('fs');
 const { IPC } = require('../shared/constants');
-
-const settingsPath = path.join(app.getPath('userData'), 'settings.json');
+const { readSettings, saveRendererSettings } = require('../shared/settings-store');
 
 function registerHandlers() {
     ipcMain.handle(IPC.SETTINGS.SAVE, async (event, settings) => {
         try {
-            fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
+            saveRendererSettings(settings);
             try {
                 // Keep clangd's compile_flags.txt (cppStandard/extraFlags) in
                 // sync so IntelliSense matches the compiler settings the user
@@ -32,12 +29,7 @@ function registerHandlers() {
 
     ipcMain.on(IPC.SETTINGS.LOAD, (event) => {
         try {
-            if (fs.existsSync(settingsPath)) {
-                const data = fs.readFileSync(settingsPath, 'utf-8');
-                event.returnValue = JSON.parse(data);
-            } else {
-                event.returnValue = null;
-            }
+            event.returnValue = readSettings();
         } catch (error) {
             console.error('Failed to load settings:', error);
             event.returnValue = null;

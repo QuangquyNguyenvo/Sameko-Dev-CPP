@@ -14,6 +14,82 @@ let terminal = null;
 let fitAddon = null;
 let isProcessRunning = false;
 
+// xterm.js costs ~140 ms of main-thread time to load and mount (more on a slow
+// machine) and shows nothing until a program prints, so it is not part of
+// startup: initTerminal() only records where it goes, and the library is
+// loaded once the editor is up and the page is idle, or on the first write
+// after start-up. Writes made before then are queued and replayed in order.
+const XTERM_PATHS = {
+    xterm: '../node_modules/xterm/lib/xterm',
+    'xterm-addon-fit': '../node_modules/xterm-addon-fit/lib/xterm-addon-fit',
+};
+let mountTarget = null;  // { el, opts } recorded by initTerminal
+let queued = [];         // (term) => void calls waiting for the terminal
+let xtermLoading = null;
+
+// Monaco's AMD loader is on the page by now, so xterm's UMD bundles would register
+// as anonymous AMD modules instead of setting window.Terminal / window.FitAddon.
+// Load them through that loader and publish the globals the code below uses.
+function loadXterm() {
+    if (window.Terminal) return Promise.resolve();
+    if (!xtermLoading) {
+        xtermLoading = new Promise((resolve) => {
+            window.require.config({ paths: XTERM_PATHS });
+            window.require(['xterm', 'xterm-addon-fit'], (xterm, fit) => {
+                window.Terminal = xterm.Terminal;
+                window.FitAddon = fit;
+                resolve();
+            }, (err) => {
+                console.error('[Terminal] Failed to load xterm.js:', err && err.message ? err.message : err);
+                resolve();
+            });
+        });
+    }
+    return xtermLoading;
+}
+
+function mountNow() {
+    if (terminal || !mountTarget) return Promise.resolve(terminal);
+    return loadXterm().then(() => {
+        if (!terminal && mountTarget) createTerminal(mountTarget.el, mountTarget.opts);
+        const calls = queued;
+        queued = [];
+        if (terminal) for (const call of calls) call(terminal);
+        return terminal;
+    });
+}
+
+/** True once the app has finished starting (the editor is up). */
+function appStarted() {
+    return typeof App === 'undefined' || App.ready === true;
+}
+
+/**
+ * Run `fn(terminal)` now, or once the terminal has been mounted. Messages
+ * written while the app is still starting only queue: the scheduled mount
+ * replays them, so they do not pull xterm in ahead of the editor.
+ */
+function withTerminal(fn) {
+    if (terminal) { fn(terminal); return; }
+    if (!mountTarget) return;
+    queued.push(fn);
+    if (appStarted()) mountNow();
+}
+
+/** Mount when the editor is up and the page is idle (at the latest after ~8 s). */
+function scheduleMount() {
+    const idle = typeof window.requestIdleCallback === 'function'
+        ? (cb) => window.requestIdleCallback(cb, { timeout: 1000 })
+        : (cb) => setTimeout(cb, 250);
+    const deadline = Date.now() + 8000;
+    const attempt = () => {
+        if (terminal || !mountTarget) return;
+        if (!appStarted() && Date.now() < deadline) { idle(attempt); return; }
+        mountNow();
+    };
+    idle(attempt);
+}
+
 // Plain-text line buffer mirroring what was written, used by compareOutput()
 // (the xterm canvas isn't DOM-queryable). Program output is reconstructed into
 // complete logical lines (split on real newlines) with a trailing partial held
@@ -30,7 +106,8 @@ const ANSI_RE = /\x1b\[[0-9;]*m/g;
 // ============================================================================
 
 /**
- * Initialize terminal
+ * Set up the terminal in `container`. The xterm instance itself is created when
+ * the page is idle or on the first write (see loadXterm above).
  * @param {HTMLElement|string} container
  * @param {Object} [opts]
  * @param {number} [opts.fontSize]
@@ -40,8 +117,13 @@ function initTerminal(container, opts = {}) {
     const containerEl = typeof container === 'string'
         ? document.getElementById(container)
         : container;
+    if (!containerEl) return;
+    mountTarget = { el: containerEl, opts: Object.assign({}, opts) };
+    scheduleMount();
+}
 
-    if (!containerEl || !window.Terminal) {
+function createTerminal(containerEl, opts) {
+    if (!window.Terminal) {
         console.warn('[Terminal] Xterm.js not available');
         return null;
     }
@@ -76,7 +158,6 @@ function initTerminal(container, opts = {}) {
     terminal.open(containerEl);
     fit();
 
-    console.log('[Terminal] Initialized (xterm.js)');
     return terminal;
 }
 
@@ -144,7 +225,7 @@ function bufferPushLine(text, type) {
  * @param {string} type           buffer line type ('' or 'error')
  */
 function writeProgram(rawData, hexColor, colorEnabled, type) {
-    if (!terminal) return;
+    if (!terminal && !mountTarget) return;
     let text = String(rawData);
     const hasOwnAnsi = colorEnabled && text.includes('\x1b[');
 
@@ -155,7 +236,7 @@ function writeProgram(rawData, hexColor, colorEnabled, type) {
         if (rgb) text = `\x1b[38;2;${rgb}m${text}\x1b[0m`;
     }
 
-    terminal.write(text); // verbatim, no synthetic newline
+    withTerminal((t) => t.write(text)); // verbatim, no synthetic newline
     bufferAppendProgram(rawData, type);
 }
 
@@ -168,7 +249,7 @@ function writeProgram(rawData, hexColor, colorEnabled, type) {
  * @param {string} type
  */
 function writeMessage(msg, hexColor, colorEnabled, type) {
-    if (!terminal) return;
+    if (!terminal && !mountTarget) return;
     let text = String(msg);
     const hasOwnAnsi = colorEnabled && text.includes('\x1b[');
 
@@ -179,7 +260,7 @@ function writeMessage(msg, hexColor, colorEnabled, type) {
         if (rgb) text = `\x1b[38;2;${rgb}m${text}\x1b[0m`;
     }
 
-    terminal.write(text + '\r\n');
+    withTerminal((t) => t.write(text + '\r\n'));
     bufferPushLine(msg, type);
 }
 
@@ -200,7 +281,7 @@ function resetBuffer() {
  * @param {string} data
  */
 function write(data) {
-    if (terminal) terminal.write(data);
+    withTerminal((t) => t.write(data));
 }
 
 /**
@@ -208,7 +289,7 @@ function write(data) {
  * @param {string} line
  */
 function writeLine(line) {
-    if (terminal) terminal.writeln(line);
+    withTerminal((t) => t.writeln(line));
 }
 
 /**
@@ -216,6 +297,7 @@ function writeLine(line) {
  */
 function clear() {
     if (terminal) terminal.clear();
+    else queued = []; // nothing shown yet: drop what was waiting
     resetBuffer();
 }
 
@@ -233,8 +315,11 @@ function fit() {
  * @param {Object} theme - xterm ITheme partial
  */
 function applyTheme(theme) {
-    if (terminal && theme) {
+    if (!theme) return;
+    if (terminal) {
         try { terminal.options.theme = Object.assign({}, terminal.options.theme, theme); } catch (e) { }
+    } else if (mountTarget) {
+        mountTarget.opts.theme = Object.assign({}, mountTarget.opts.theme, theme);
     }
 }
 
@@ -243,8 +328,11 @@ function applyTheme(theme) {
  * @param {number} size
  */
 function setFontSize(size) {
-    if (terminal && size) {
+    if (!size) return;
+    if (terminal) {
         try { terminal.options.fontSize = size; fit(); } catch (e) { }
+    } else if (mountTarget) {
+        mountTarget.opts.fontSize = size;
     }
 }
 
@@ -252,6 +340,8 @@ function setFontSize(size) {
  * Dispose terminal
  */
 function dispose() {
+    queued = [];
+    mountTarget = null;
     if (terminal) {
         terminal.dispose();
         terminal = null;

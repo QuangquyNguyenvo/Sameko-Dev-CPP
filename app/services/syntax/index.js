@@ -1,12 +1,11 @@
 /**
  * Sameko Dev C++ IDE - Syntax Services Index
- * Combines Tree-sitter and GCC checking
+ * Live diagnostics (clangd, with a g++ fallback) and the clangd bridge
  * @module app/services/syntax
  */
 
 'use strict';
 
-const treeSitter = require('./tree-sitter');
 const gccChecker = require('./gcc-checker');
 const clangdService = require('./clangd-service');
 
@@ -14,57 +13,44 @@ const clangdService = require('./clangd-service');
 clangdService.init();
 
 /**
- * Perform combined syntax check using Tree-sitter and GCC
- * Tree-sitter provides fast syntax errors, GCC provides semantic errors
- * 
+ * Diagnostics for the live check.
+ *
  * @param {string} content - Source code
- * @param {string} [filePath] - Original file path
- * @returns {Promise<{success: boolean, diagnostics: import('../../shared/types').SyntaxError[]}>}
+ * @param {string} [filePath] - Saved path (null for an untitled tab)
+ * @param {string} [docId] - Stable id of the tab, used when there is no path
+ * @returns {Promise<{success: boolean, diagnostics: Array, source?: string}>}
  */
-async function checkSyntax(content, filePath = null) {
-    let allDiagnostics = [];
+async function checkSyntax(content, filePath = null, docId = null) {
+    // Preferred: clangd already parses the open document for completions, so
+    // its diagnostics are free. Fall back to g++ -fsyntax-only only when
+    // clangd is not running or does not answer.
+    if (clangdService.isAvailable()) {
+        try {
+            const diagnostics = await clangdService.getDiagnostics(filePath || docId || 'live-check', content);
+            if (diagnostics) {
+                return { success: diagnostics.length === 0, diagnostics, source: 'clangd' };
+            }
+        } catch (err) {
+            console.error('[Syntax] clangd diagnostics failed, using g++:', err && err.message);
+        }
+    }
 
-    // 1. Tree-sitter (fast syntax check)
-    const tsDiagnostics = treeSitter.checkSyntax(content);
-    allDiagnostics.push(...tsDiagnostics);
-
-    // 2. GCC (semantic check)
-    let gccDiagnostics = [];
+    let diagnostics = [];
     try {
-        gccDiagnostics = await gccChecker.checkSyntax(content, filePath);
+        diagnostics = await gccChecker.checkSyntax(content, filePath);
     } catch (err) {
         console.error('[Syntax] GCC checkSyntax error:', err);
     }
-
-    // 3. Merge results - deduplicate by line/column
-    if (Array.isArray(gccDiagnostics)) {
-        gccDiagnostics.forEach(d => {
-            const exists = allDiagnostics.some(
-                ts => ts.line === d.line && Math.abs(ts.column - d.column) < 5
-            );
-            if (!exists) {
-                allDiagnostics.push(d);
-            }
-        });
-    }
+    if (!Array.isArray(diagnostics)) diagnostics = [];
 
     return {
-        success: allDiagnostics.length === 0,
-        diagnostics: allDiagnostics
+        success: diagnostics.length === 0,
+        diagnostics
     };
 }
 
 module.exports = {
-    // Combined
     checkSyntax,
-
-    // Tree-sitter
-    initTreeSitter: treeSitter.initTreeSitter,
-    getParser: treeSitter.getParser,
-    isTreeSitterAvailable: treeSitter.isAvailable,
-    checkSyntaxTreeSitter: treeSitter.checkSyntax,
-    parse: treeSitter.parse,
-    getSmartSuggestions: treeSitter.getSmartSuggestions,
 
     // GCC
     checkSyntaxGcc: gccChecker.checkSyntax,
@@ -75,6 +61,7 @@ module.exports = {
     initClangd: clangdService.init,
     getClangdCompletions: clangdService.getCompletions,
     getClangdHover: clangdService.getHover,
+    closeClangdDocument: clangdService.closeDocument,
     shutdownClangd: clangdService.shutdown,
     isClangdAvailable: clangdService.isAvailable,
     onClangdSettingsChanged: clangdService.onSettingsChanged,

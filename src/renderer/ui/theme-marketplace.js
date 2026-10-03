@@ -11,7 +11,6 @@ const ThemeMarketplace = {
      * Initialize
      */
     async init() {
-        console.log('[ThemeMarketplace] Initializing v3.0...');
         this._setupCarousel();
         this._setupButtons();
         this.renderCarousel();
@@ -84,7 +83,7 @@ const ThemeMarketplace = {
 
         if (hiddenSelect) {
             hiddenSelect.innerHTML = themes.map(t =>
-                `<option value="${t.id}" ${t.id === currentTheme ? 'selected' : ''}>${t.name}</option>`
+                `<option value="${escHtml(t.id)}" ${t.id === currentTheme ? 'selected' : ''}>${escHtml(t.name)}</option>`
             ).join('');
         }
 
@@ -95,14 +94,14 @@ const ThemeMarketplace = {
             const isCustom = !theme.isBuiltin;
 
             return `
-                <div class="theme-carousel-card ${isActive ? 'active' : ''}" data-theme-id="${theme.id}">
+                <div class="theme-carousel-card ${isActive ? 'active' : ''}" data-theme-id="${escHtml(theme.id)}">
                     <div class="theme-carousel-preview" style="background: ${preview.bg};">
                         ${preview.html}
                     </div>
                     <div class="theme-carousel-info">
-                        <div class="theme-carousel-name">${theme.name}</div>
+                        <div class="theme-carousel-name">${escHtml(theme.name)}</div>
                         <div class="theme-carousel-meta">
-                            <span class="theme-carousel-type">${theme.type}</span>
+                            <span class="theme-carousel-type">${escHtml(theme.type)}</span>
                             ${isCustom ? '<span class="theme-carousel-badge">Custom</span>' : ''}
                         </div>
                     </div>
@@ -135,13 +134,17 @@ const ThemeMarketplace = {
 
         const editor = theme.editor || {};
         const syntax = editor.syntax || {};
-        const bg = editor.background || theme.colors?.editorBg || '#1a2530';
-        const fg = editor.foreground || '#e0f0ff';
+        // These values go into style="" attributes and may come from an imported
+        // theme file, so anything that is not a plain CSS colour is replaced.
+        const css = (value, fallback) => (/^[#\w(),.%\s-]{1,64}$/.test(String(value || '')) ? String(value) : fallback);
+        const hex = (value, fallback) => '#' + (/^[0-9a-fA-F]{3,8}$/.test(String(value || '')) ? value : fallback);
+        const bg = css(editor.background || theme.colors?.editorBg, '#1a2530');
+        const fg = css(editor.foreground, '#e0f0ff');
 
-        const kw = '#' + (syntax.keyword?.color || '88c9ea');
-        const str = '#' + (syntax.string?.color || 'a3d9a5');
-        const fn = '#' + (syntax.function?.color || '7ec8e3');
-        const type = '#' + (syntax.type?.color || 'e8a8b8');
+        const kw = hex(syntax.keyword?.color, '88c9ea');
+        const str = hex(syntax.string?.color, 'a3d9a5');
+        const fn = hex(syntax.function?.color, '7ec8e3');
+        const type = hex(syntax.type?.color, 'e8a8b8');
 
         const html = `
             <div class="mini-code" style="color: ${fg}; font-size: 9px; line-height: 1.4; padding: 6px;">
@@ -271,16 +274,16 @@ const ThemeMarketplace = {
         const desc = themeData?.description || '';
 
         return `
-            <div class="mp-card ${isActive ? 'active' : ''}" data-theme-id="${theme.id}">
+            <div class="mp-card ${isActive ? 'active' : ''}" data-theme-id="${escHtml(theme.id)}">
                 <div class="mp-card-preview" style="background: ${preview.bg};">
                     ${preview.html}
                     ${isActive ? '<div class="mp-active-badge">Active</div>' : ''}
                 </div>
                 <div class="mp-card-info">
-                    <div class="mp-card-name">${theme.name}</div>
-                    ${desc ? `<div class="mp-card-desc">${desc}</div>` : ''}
+                    <div class="mp-card-name">${escHtml(theme.name)}</div>
+                    ${desc ? `<div class="mp-card-desc">${escHtml(desc)}</div>` : ''}
                     <div class="mp-card-meta">
-                        <span>${theme.type}</span>
+                        <span>${escHtml(theme.type)}</span>
                         <span>by ${theme.author || 'Unknown'}</span>
                     </div>
                     <div class="mp-card-actions">
@@ -460,11 +463,11 @@ const ThemeMarketplace = {
             overlay.innerHTML = `
                 <div class="note-dialog input-dialog">
                     <div class="note-dialog-header">
-                        <h3>${title}</h3>
+                        <h3>${escHtml(title)}</h3>
                         <button class="note-dialog-close" title="Close">×</button>
                     </div>
                     <div class="note-dialog-body">
-                        <input type="text" class="input-dialog-field" value="" placeholder="${placeholder}" />
+                        <input type="text" class="input-dialog-field" value="" placeholder="${escHtml(placeholder)}" />
                     </div>
                     <div class="note-dialog-footer">
                         <button class="note-dialog-btn note-dialog-cancel">Cancel</button>

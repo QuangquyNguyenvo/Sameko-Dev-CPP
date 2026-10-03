@@ -61,6 +61,13 @@ const pendingRequests = new Map(); // id -> { resolve, reject, timeout }
 
 const openedDocuments = new Set();
 const documentVersions = {}; // uri -> version
+const documentText = new Map(); // uri -> text clangd currently has
+
+// Diagnostics clangd publishes after each (re)parse. It computes them anyway;
+// they used to be thrown away while a separate g++ process was spawned to
+// produce the same information for the live check.
+const publishedDiagnostics = new Map(); // uri -> { version, items }
+const diagnosticWaiters = new Map();    // uri -> [{ version, resolve, timer }]
 
 let crashTimestamps = [];
 let restartTimer = null;
@@ -155,6 +162,26 @@ class LSPParser {
  * @param {object} message 
  */
 function handleMessage(message) {
+    if (message.method === 'textDocument/publishDiagnostics' && message.params) {
+        const { uri, version, diagnostics } = message.params;
+        const entry = { version: Number.isInteger(version) ? version : null, items: diagnostics || [] };
+        publishedDiagnostics.set(uri, entry);
+        const waiters = diagnosticWaiters.get(uri);
+        if (waiters) {
+            const still = [];
+            for (const w of waiters) {
+                // Without a version we cannot tell; accept the first publish.
+                if (entry.version === null || entry.version >= w.version) {
+                    clearTimeout(w.timer);
+                    w.resolve(entry.items);
+                } else {
+                    still.push(w);
+                }
+            }
+            if (still.length) diagnosticWaiters.set(uri, still); else diagnosticWaiters.delete(uri);
+        }
+        return;
+    }
     if (message.id !== undefined && message.id !== null) {
         const pending = pendingRequests.get(message.id);
         if (pending) {
@@ -255,10 +282,16 @@ async function startLspInitialization() {
                     },
                     hover: {
                         contentFormat: ['markdown', 'plaintext']
+                    },
+                    publishDiagnostics: {
+                        versionSupport: true
                     }
                 }
             },
-            initializationOptions: {}
+            // Flags for every file that has no compile_commands.json /
+            // compile_flags.txt of its own — i.e. practically every file the
+            // IDE opens. This replaces writing a machine-wide clangd config.
+            initializationOptions: { fallbackFlags: currentFallbackFlags }
         });
 
         sendNotification('initialized', {});
@@ -375,18 +408,15 @@ async function spawnProcess() {
     }
 
     const queryDriverPath = path.join(binDir, 'g++*').replace(/\\/g, '/');
-    // NOTE: clangd does NOT accept -I as command-line argument (rejected at
-    // startup). Include paths are supplied two ways: compile_flags.txt
-    // written to the base path (covers untitled/temp files and anything
-    // saved under the app dir), and the global clangd user config YAML
-    // written by regenerateCompileFlags() (covers files saved ANYWHERE else
-    // on disk — Desktop, Documents, another project folder — which would
-    // otherwise get zero include paths and fail to resolve even <vector>).
-    // --enable-config is required for clangd to read that user config file.
+    // Include paths and language flags are NOT passed here (clangd rejects -I
+    // on its command line); they go in the LSP `initialize` request as
+    // `fallbackFlags`. --enable-config stays on so a user's own clangd config
+    // is still honoured.
+    // No --clang-tidy: its checks cost CPU on every reparse and are style
+    // advice a compile would never report.
     const flags = [
         '--background-index',
         '--background-index-priority=low',
-        '--clang-tidy',
         // bundled groups function overloads into a single entry ("assign(…)
         // [3 overloads]") instead of one line per overload — a shorter, less
         // noisy completion list, better suited to competitive programming.
@@ -436,6 +466,12 @@ async function spawnProcess() {
             isInitializing = false;
             parser.clear();
             openedDocuments.clear();
+            documentText.clear();
+            publishedDiagnostics.clear();
+            for (const waiters of diagnosticWaiters.values()) {
+                for (const w of waiters) { clearTimeout(w.timer); w.resolve(null); }
+            }
+            diagnosticWaiters.clear();
             for (const key of Object.keys(documentVersions)) {
                 delete documentVersions[key];
             }
@@ -486,8 +522,7 @@ async function spawnProcess() {
  * flags) from the user's compiler settings plus MinGW's system include
  * paths. Mirrors what executor.js actually passes to g++ so clangd's
  * diagnostics/completions (macros, #ifdef branches like -DLOCAL) match real
- * compiles. Shared by both compile_flags.txt (one flag per line) and the
- * global user config YAML (flow-sequence list) writers below.
+ * compiles. Sent to clangd as `fallbackFlags`.
  * @param {string[]} includePaths
  * @param {{posixPaths?: boolean}} [opts] - convert `-I` paths to forward
  *   slashes; needed for YAML since backslashes are escape characters there.
@@ -507,6 +542,10 @@ function buildClangdFlagsList(includePaths, opts = {}) {
     // Linux/macOS clangd's own default target already matches the system g++,
     // and forcing mingw here makes it parse Windows headers that do not exist.
     if (IS_WIN) flags.push('--target=x86_64-w64-mingw32');
+    // The live check takes its diagnostics from clangd, so ask for the same
+    // warnings the g++ check used; silence the clang-only complaint about a
+    // GNU extension that g++ accepts and competitive code uses all the time.
+    flags.push('-Wall', '-Wextra', '-Wno-unknown-warning-option', '-Wno-vla-cxx-extension', '-Wno-vla-extension');
     flags.push(...includePaths.flatMap(p => ['-I', toPath(p)]));
     if (extraFlags) {
         flags.push(...extraFlags.split(/\s+/).filter(Boolean));
@@ -514,37 +553,17 @@ function buildClangdFlagsList(includePaths, opts = {}) {
     return flags;
 }
 
-function buildCompileFlagsContent(includePaths) {
-    return buildClangdFlagsList(includePaths).join('\n') + '\n';
-}
+// Flags handed to clangd at initialize time. Null until first computed.
+let currentFallbackFlags = [];
 
-function yamlQuote(str) {
-    return '"' + str.replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
-}
-
-/**
- * clangd only auto-discovers compile_flags.txt by walking up from a source
- * file's own directory — so a file saved anywhere outside getWritableBasePath()
- * (Desktop, Documents, another project folder) gets NO include paths and
- * fails to resolve even <vector>. The global user config YAML (read via
- * --enable-config from a fixed OS-level path) applies to every file clangd
- * opens regardless of location, so it's the only way to make IntelliSense
- * work for files saved outside the app's install directory.
- * @param {string[]} includePaths
- * @returns {string}
- */
-// %LOCALAPPDATA%\clangd\config.yaml is THE canonical global clangd user
-// config — shared by every clangd process on the machine (VSCode's clangd
-// extension, CLion, other IDEs, other C++ projects), not scoped to this app.
-// We mark our writes so we only ever touch a file we created ourselves;
-// if the user already has an unrelated clangd config there, we leave it
-// alone rather than risk breaking IntelliSense in their other projects.
-const USER_CONFIG_MARKER = '# Managed by Sameko Dev C++ — safe to delete, will be regenerated.';
-
-function buildUserConfigYamlContent(includePaths) {
-    const flags = buildClangdFlagsList(includePaths, { posixPaths: true });
-    return `${USER_CONFIG_MARKER}\nCompileFlags:\n  Add: [${flags.map(yamlQuote).join(', ')}]\n`;
-}
+// Earlier versions wrote the flags to two files instead: compile_flags.txt in
+// the app's base directory, and — to cover files saved anywhere else —
+// %LOCALAPPDATA%\clangd\config.yaml, which is the machine-wide clangd config
+// shared with VS Code, CLion and every other clangd on the PC. That forced a
+// MinGW target and our include paths onto unrelated projects. Both are removed
+// once; the global one only if it still carries our marker.
+const USER_CONFIG_MARKER = '# Managed by Sameko Dev C++';
+let legacyFilesCleaned = false;
 
 function getClangdUserConfigPath() {
     let baseDir;
@@ -553,70 +572,55 @@ function getClangdUserConfigPath() {
     } else if (IS_MAC) {
         baseDir = path.join(os.homedir(), 'Library', 'Preferences');
     } else {
-        // XDG_CONFIG_HOME must be an absolute path per spec; ignore it otherwise.
         const xdg = process.env.XDG_CONFIG_HOME;
         baseDir = (xdg && path.isAbsolute(xdg)) ? xdg : path.join(os.homedir(), '.config');
     }
     return path.join(baseDir, 'clangd', 'config.yaml');
 }
 
-/**
- * Write a file if its content differs from what's on disk. No-op otherwise.
- * @param {boolean} [requireMarker] - if true, refuse to overwrite an
- *   existing file that doesn't start with USER_CONFIG_MARKER (i.e. one we
- *   didn't create) to avoid clobbering unrelated config.
- * @returns {boolean} whether the file was written
- */
-function writeIfChanged(filePath, desired, requireMarker = false) {
+function removeLegacyFlagFiles() {
+    if (legacyFilesCleaned) return;
+    legacyFilesCleaned = true;
     try {
-        const current = fs.existsSync(filePath) ? fs.readFileSync(filePath, 'utf-8') : null;
-        if (current === desired) {
-            return false;
+        const userConfig = getClangdUserConfigPath();
+        if (fs.existsSync(userConfig) && fs.readFileSync(userConfig, 'utf-8').startsWith(USER_CONFIG_MARKER)) {
+            fs.unlinkSync(userConfig);
+            console.log('[Clangd] Removed the global clangd config written by an earlier version');
         }
-        if (requireMarker && current !== null && !current.startsWith(USER_CONFIG_MARKER)) {
-            console.warn(`[Clangd] ${filePath} exists and wasn't created by this app — leaving it untouched.`);
-            return false;
-        }
-        const dir = path.dirname(filePath);
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        fs.writeFileSync(filePath, desired, 'utf-8');
-        console.log(`[Clangd] ${current === null ? 'Wrote' : 'Updated'} ${filePath}`);
-        return true;
     } catch (err) {
-        console.warn(`[Clangd] Failed to write ${filePath}:`, err.message);
-        return false;
+        console.warn('[Clangd] Could not remove legacy global config:', err.message);
     }
+    try {
+        // A stale compile_flags.txt here would take precedence over fallbackFlags
+        // for untitled tabs (their mock paths live in this directory).
+        const flagsFile = path.join(getWritableBasePath(), 'compile_flags.txt');
+        if (fs.existsSync(flagsFile)) fs.unlinkSync(flagsFile);
+    } catch (_) { }
 }
 
 /**
- * (Re)write compile_flags.txt (for files under getWritableBasePath()) and the
- * global clangd user config YAML (for files saved anywhere else) if their
- * content differs from what the current settings/compiler would produce.
- * Safe to call repeatedly (e.g. every time the user saves Settings) — a
- * no-op when nothing changed.
- * @returns {Promise<boolean>} whether either file's content actually changed
+ * Recompute the flags clangd should use (C++ standard, target, MinGW include
+ * paths, extra flags from Settings). They take effect when clangd is
+ * (re)initialised.
+ * @returns {Promise<boolean>} whether the flags changed
  */
 async function regenerateCompileFlags() {
+    removeLegacyFlagFiles();
     const includePaths = await getGccIncludePaths();
     if (includePaths.length === 0) return false;
 
-    const flagsFile = path.join(getWritableBasePath(), 'compile_flags.txt');
-    const localChanged = writeIfChanged(flagsFile, buildCompileFlagsContent(includePaths));
-
-    const userConfigFile = getClangdUserConfigPath();
-    const globalChanged = writeIfChanged(userConfigFile, buildUserConfigYamlContent(includePaths), true);
-
-    return localChanged || globalChanged;
+    const next = buildClangdFlagsList(includePaths, { posixPaths: true });
+    const changed = JSON.stringify(next) !== JSON.stringify(currentFallbackFlags);
+    currentFallbackFlags = next;
+    return changed;
 }
 
 /**
- * Called after the user saves Settings. Refreshes compile_flags.txt to
+ * Called after the user saves Settings. Recomputes the flags to
  * match the (possibly changed) cppStandard/extraFlags, and cleanly restarts
- * the clangd process so it re-reads the file — clangd only parses
- * compile_flags.txt at startup, so without a restart e.g. a new -DLOCAL
- * would silently not affect completions/diagnostics until next app launch.
+ * clangd when they changed — fallback flags are only read at initialise time,
+ * so without a restart e.g. a new -DLOCAL would not affect completions or
+ * diagnostics until the next app launch.
  * @returns {Promise<void>}
  */
 async function onSettingsChanged() {
@@ -653,13 +657,9 @@ async function init() {
     isEnabled = true;
     isShuttingDown = false;
 
-    // Pre-warm GCC include paths cache and write compile_flags.txt so clangd
-    // can resolve system headers (MinGW). clangd walks up from each source
-    // file's directory looking for this file; the base path is the root URI
-    // so it covers untitled files and any saved files under the app dir.
-    // clangd's --query-driver alone does NOT pick up MinGW include paths on
-    // Windows, and clangd rejects -I as a command-line argument — this file
-    // is the only way to pass them.
+    // Query GCC's include paths and compute the flags clangd needs so it
+    // can resolve system headers. --query-driver alone does NOT pick up the
+    // MinGW include paths on Windows, so they are passed explicitly.
     await regenerateCompileFlags();
 
     spawnProcess();
@@ -723,7 +723,12 @@ function syncDocument(fileUri, content) {
         sendNotification('textDocument/didOpen', didOpenParams);
         openedDocuments.add(fileUri);
         documentVersions[fileUri] = 1;
+        documentText.set(fileUri, content);
     } else {
+        // Hover and repeated completions usually arrive with unchanged text;
+        // re-sending it made clangd rebuild the AST for nothing.
+        if (documentText.get(fileUri) === content) return;
+        documentText.set(fileUri, content);
         documentVersions[fileUri] = (documentVersions[fileUri] || 1) + 1;
         const didChangeParams = {
             textDocument: {
@@ -738,6 +743,74 @@ function syncDocument(fileUri, content) {
         };
         sendNotification('textDocument/didChange', didChangeParams);
     }
+}
+
+/**
+ * Tell clangd a document is no longer open so it can drop the AST and
+ * preamble it keeps for it. Without this every tab ever shown stayed loaded
+ * in clangd for the whole session.
+ * @param {string} filePath - same identifier that was used for completions
+ */
+function closeDocument(filePath) {
+    if (!isEnabled || !isInitialized) return;
+    const fileUri = getFileUri(filePath);
+    if (!openedDocuments.has(fileUri)) return;
+    sendNotification('textDocument/didClose', { textDocument: { uri: fileUri } });
+    openedDocuments.delete(fileUri);
+    documentText.delete(fileUri);
+    publishedDiagnostics.delete(fileUri);
+    delete documentVersions[fileUri];
+}
+
+/**
+ * Diagnostics for a document, taken from what clangd publishes after parsing
+ * it — no extra compiler process. Resolves with null when clangd is not
+ * available or does not answer in time, so the caller can fall back to g++.
+ *
+ * @param {string} filePath - saved path, or the stable id of an untitled tab
+ * @param {string} content
+ * @param {number} [timeoutMs=6000]
+ * @returns {Promise<Array<{line:number,column:number,endLine:number,endColumn:number,severity:string,message:string,source:string}>|null>}
+ */
+async function getDiagnostics(filePath, content, timeoutMs = 6000) {
+    const ready = await ensureReady();
+    if (!ready) return null;
+
+    const fileUri = getFileUri(filePath);
+    syncDocument(fileUri, content);
+    const wanted = documentVersions[fileUri] || 1;
+
+    const cached = publishedDiagnostics.get(fileUri);
+    let items;
+    if (cached && cached.version !== null && cached.version >= wanted) {
+        items = cached.items;
+    } else {
+        items = await new Promise((resolve) => {
+            const waiter = { version: wanted, resolve, timer: null };
+            waiter.timer = setTimeout(() => {
+                const list = (diagnosticWaiters.get(fileUri) || []).filter((w) => w !== waiter);
+                if (list.length) diagnosticWaiters.set(fileUri, list); else diagnosticWaiters.delete(fileUri);
+                resolve(null);
+            }, timeoutMs);
+            const list = diagnosticWaiters.get(fileUri) || [];
+            list.push(waiter);
+            diagnosticWaiters.set(fileUri, list);
+        });
+    }
+    if (!items) return null;
+
+    const SEVERITY = { 1: 'error', 2: 'warning', 3: 'note' };
+    return items
+        .filter((d) => SEVERITY[d.severity] && d.range)   // 4 = hint: not shown
+        .map((d) => ({
+            line: d.range.start.line + 1,
+            column: d.range.start.character + 1,
+            endLine: d.range.end.line + 1,
+            endColumn: d.range.end.character + 1,
+            severity: SEVERITY[d.severity],
+            message: String(d.message || '').split('\n')[0].replace(/\s*\(fix(es)? available\)\s*$/, ''),
+            source: 'clangd'
+        }));
 }
 
 /**
@@ -863,6 +936,8 @@ module.exports = {
     init,
     getCompletions,
     getHover,
+    getDiagnostics,
+    closeDocument,
     shutdown,
     isAvailable,
     onSettingsChanged

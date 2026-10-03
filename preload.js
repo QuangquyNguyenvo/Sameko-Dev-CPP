@@ -30,7 +30,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openFile: () => ipcRenderer.invoke('open-file-dialog'),
     saveFile: (data) => ipcRenderer.invoke('save-file', data),
     saveFileDialog: (payload) => ipcRenderer.invoke('save-file-dialog', payload),
-    getCurrentFile: () => ipcRenderer.invoke('get-current-file'),
 
     // File Explorer operations
     showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),
@@ -53,7 +52,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     run: (data) => ipcRenderer.invoke('run', data),
     sendInput: (input) => ipcRenderer.invoke('send-input', input),
     stopProcess: () => ipcRenderer.invoke('stop-process'),
-    getCompilerInfo: () => ipcRenderer.invoke('get-compiler-info'),
     getCompilerStatus: () => ipcRenderer.invoke('get-compiler-status'),
     cleanPCHCache: (options) => ipcRenderer.invoke('clean-pch-cache', options),
 
@@ -64,12 +62,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Event listeners
     onFileOpened: (callback) => ipcRenderer.on('file-opened', (event, data) => callback(data)),
-    onSaveFileAs: (callback) => ipcRenderer.on('save-file-as', (event, path) => callback(path)),
-    onMenuNew: (callback) => ipcRenderer.on('menu-new', () => callback()),
-    onMenuSave: (callback) => ipcRenderer.on('menu-save', () => callback()),
-    onMenuCompile: (callback) => ipcRenderer.on('menu-compile', () => callback()),
-    onMenuRun: (callback) => ipcRenderer.on('menu-run', () => callback()),
-    onMenuCompileRun: (callback) => ipcRenderer.on('menu-compile-run', () => callback()),
 
     // Process events
     onProcessStarted: (callback) => ipcRenderer.on('process-started', () => callback()),
@@ -87,7 +79,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     debugRemoveBreakpoint: (id) => ipcRenderer.invoke('debug:removeBreakpoint', { id }),
     debugEnableBreakpoint: (id) => ipcRenderer.invoke('debug:enableBreakpoint', { id }),
     debugDisableBreakpoint: (id) => ipcRenderer.invoke('debug:disableBreakpoint', { id }),
-    debugSetCondition: (id, condition) => ipcRenderer.invoke('debug:setCondition', { id, condition }),
     debugRunToLine: (file, line) => ipcRenderer.invoke('debug:runToLine', { file, line }),
     debugVarSetFormat: (name, fmt) => ipcRenderer.invoke('debug:varSetFormat', { name, fmt }),
     debugContinue: () => ipcRenderer.invoke('debug:continue'),
@@ -97,11 +88,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     debugStepOut: () => ipcRenderer.invoke('debug:stepOut'),
     debugSelectFrame: (level) => ipcRenderer.invoke('debug:selectFrame', { level }),
     debugEvaluate: (expr) => ipcRenderer.invoke('debug:evaluate', { expr }),
-    debugVarCreate: (name, expr) => ipcRenderer.invoke('debug:varCreate', { name, expr }),
     debugVarChildren: (name, from, to) => ipcRenderer.invoke('debug:varChildren', { name, from, to }),
     debugVarUpdate: () => ipcRenderer.invoke('debug:varUpdate'),
-    debugVarDelete: (name) => ipcRenderer.invoke('debug:varDelete', { name }),
-    onDebugReady: (cb) => ipcRenderer.on('debug:ready', (e, d) => cb(d)),
+    debugVarCreateMany: (items) => ipcRenderer.invoke('debug:varCreateMany', { items }),
+    debugVarDeleteMany: (names) => ipcRenderer.invoke('debug:varDeleteMany', { names }),
     onDebugStopped: (cb) => ipcRenderer.on('debug:stopped', (e, d) => cb(d)),
     onDebugRunning: (cb) => ipcRenderer.on('debug:running', (e, d) => cb(d)),
     onDebugOutput: (cb) => ipcRenderer.on('debug:output', (e, d) => cb(d)),
@@ -113,8 +103,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Competitive Companion
     ccStartServer: () => ipcRenderer.invoke('cc-start-server'),
-    ccStopServer: () => ipcRenderer.invoke('cc-stop-server'),
-    ccGetStatus: () => ipcRenderer.invoke('cc-get-status'),
     ccOpenExtensionPage: () => ipcRenderer.invoke('cc-open-extension-page'),
     onProblemReceived: (callback) => ipcRenderer.on('problem-received', (event, data) => callback(data)),
 
@@ -145,27 +133,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
         }
         return fallback;
     },
-    judgeCompareOutputs: (actual, expected) => {
-        if (judge && typeof judge.compareOutputs === 'function') {
-            return judge.compareOutputs(actual, expected);
-        }
-
-        const normalize = (value) => String(value ?? '')
-            .replace(/\r\n/g, '\n')
-            .replace(/\r/g, '\n')
-            .split('\n')
-            .map(l => l.trimEnd())
-            .join('\n')
-            .trim();
-
-        const actualNorm = normalize(actual);
-        const expectedNorm = normalize(expected);
-        return {
-            matched: actualNorm === expectedNorm,
-            actualNorm,
-            expectedNorm,
-        };
-    },
 
     // Auto-update
     checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
@@ -178,13 +145,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     // Code formatting (AStyle)
     formatCode: (code, style) => ipcRenderer.invoke('format-code', { code, style }),
-    checkAStyle: () => ipcRenderer.invoke('check-astyle'),
 
     // Real-time syntax checking
-    syntaxCheck: (content, filePath) => ipcRenderer.invoke('syntax-check', { content, filePath }),
-    getSmartSuggestions: (content, row, column) => ipcRenderer.invoke('smart-suggestions', { content, row, column }),
+    syntaxCheck: (content, filePath, docId) => ipcRenderer.invoke('syntax-check', { content, filePath, docId }),
     getClangdCompletions: (filePath, content, line, character) => ipcRenderer.invoke('get-clangd-completions', { filePath, content, line, character }),
     getClangdHover: (filePath, content, line, character) => ipcRenderer.invoke('get-clangd-hover', { filePath, content, line, character }),
+    clangdCloseDocument: (filePath) => ipcRenderer.invoke('clangd-close-document', filePath),
 
     // Local History - backup before save
     createHistoryBackup: (data) => ipcRenderer.invoke('create-history-backup', data),
@@ -192,10 +158,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getHistoryContent: (backupPath) => ipcRenderer.invoke('get-history-content', backupPath),
     clearFileHistory: (filePath) => ipcRenderer.invoke('clear-file-history', filePath),
 
+    // Small JSON documents kept under userData/state (session, untitled checkpoints)
+    stateRead: (name) => ipcRenderer.invoke('state-read', name),
+    stateWrite: (name, data) => ipcRenderer.invoke('state-write', { name, data }),
+    stateWriteSync: (name, data) => ipcRenderer.sendSync('state-write-sync', { name, data }),
+    stateDelete: (name) => ipcRenderer.invoke('state-delete', name),
+    saveThemeAsset: (dataUrl) => ipcRenderer.invoke('theme-asset-save', dataUrl),
+
     // Discord Rich Presence
     discordUpdatePresence: (data) => ipcRenderer.invoke('discord-update-presence', data),
-    discordClearPresence: () => ipcRenderer.invoke('discord-clear-presence'),
-    discordGetStatus: () => ipcRenderer.invoke('discord-get-status'),
     discordEnable: () => ipcRenderer.invoke('discord-enable'),
     discordDisable: () => ipcRenderer.invoke('discord-disable'),
 
@@ -207,5 +178,4 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // System info
     getSystemVersions: () => process.versions
 });
-
 

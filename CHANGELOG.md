@@ -6,11 +6,92 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+Result of a full code audit. Numbers were measured on the bundled GCC 16.1 toolchain (16-core Windows machine).
+
+### Performance
+
+- **Live Code Checking is ~10× faster**: diagnostics now come from the clangd process that already parses the open file for IntelliSense, instead of spawning `g++ -fsyntax-only` after every pause in typing. A check takes ~100–130 ms (was 1.5–2.2 s). `g++` remains the fallback when clangd is unavailable, and that path was fixed too (see below): ~0.6 s instead of ~1.5 s.
+- **Accurate run time and memory**: programs are started through a small native launcher (built once with the bundled compiler) that reports the program's own wall time and peak memory as recorded by Windows. A 23 ms program used to be shown as 88–168 ms with no memory figure; it now shows ~20 ms and its real peak memory. The `tasklist` sampler it replaces cost ~150 ms per sample.
+- **Run All Tests runs tests in parallel** on up to 4 workers: 8 tests went from 5.2 s to 2.7 s. Any test that times out or comes close to the limit is re-run on its own, so a time verdict is never taken from a crowded run. Set `execution.parallelTests` to `false` in `settings.json` to keep the old one-at-a-time behaviour.
+- **Debug builds use a precompiled header**: the PCH is now keyed by every flag that affects it, so `-g` builds get their own instead of re-parsing `bits/stdc++.h` (1.9 s → ~0.9 s). The same fix restores the PCH for builds with `-D_GLIBCXX_DEBUG`, `-fsanitize=…` or `-Ofast` in Additional Compile Flags, which were silently compiled without it.
+- **Debugger steps faster across function calls**: all variable objects of a frame are created and deleted in one round trip instead of one per variable.
+- **Smaller install**: README screenshots (16 MB), two oversized source images and the unused `golden-layout` dependency are no longer packaged; the logo shown in the splash and About is a 256 px image instead of 2508 px.
+- **Downloads and the installed app are a third smaller** than 1.2.0: installer 271 → 173 MB, portable zip 370 → 238 MB, installed size 1,122 → 766 MB in 4,794 files instead of 7,589:
+  - the bundled toolchain (825 → 540 MB) no longer ships what the IDE never runs: the Fortran and Objective-C compilers, `ld.lld`, the WinLibs package manager and extra tools (ccache, nasm/yasm, ninja, premake, ctags…) together with the 55 DLLs only they use, Python's test suite and IDLE/Tk (gdb's Python keeps its standard library), GCC plugin headers, `.idl` sources and static Python/Fortran libraries. The C/C++ compilers, LTO, OpenMP and the other runtime libraries a program may link, gdb, clangd and AStyle are all still there;
+  - only the English Chromium locale is packaged (36 MB → 0.4 MB; the UI is English);
+  - Monaco's TypeScript/CSS/HTML language services and non-English UI strings, which the editor never loads, are left out; with the removals listed above, `app.asar` is 10 MB (1.2.0: 48 MB).
+- **Faster startup**: `electron-updater`, `electron-log` and `discord-rpc` were loaded before the window could answer the page — ~170 ms of the ~220 ms the main process spent loading modules. They are now loaded when first used, and the compiler warm-up, PCH build, update check and Discord connection start only after the window has loaded, so on a slow machine they no longer compete with the editor while it opens. The output terminal (xterm.js, ~140 ms of the page's start-up work) is loaded when the window is idle or on the first output instead of before the page is shown. Measured on the packaged app, launch until the editor is ready (median): 2.03 → 1.82 s on a 16-core machine, 3.49 → 2.69 s when the app is limited to 2 cores; memory use is 2–4% lower.
+- Chromium's spellchecker is turned off (it underlined identifiers typed in the app's text fields and used memory for nothing in a code editor).
+- **File, checkpoint and app-state operations no longer block the main process**: opening, saving, listing folders, checkpoints and the saved app state use asynchronous file I/O, so a slow disk or a large file does not stall builds, output and the debugger while it is read or written.
+- **The explorer saves its state in batches** instead of rewriting everything (including saved approaches, i.e. whole files) to browser storage on every click.
+- Smaller wins: settings are written once when Ctrl+wheel zoom stops (not on every tick), clicking in the editor no longer rebuilds the tab strip, and clangd is not asked to re-parse a document whose text did not change.
+
+### Fixed
+
+- **A program printing in an infinite loop froze the whole IDE** (window unresponsive for ~25 s, Stop unreachable). Output is now rate-limited with back-pressure: the window stays responsive and Stop answers immediately. Nothing is dropped.
+- **Undo history was lost when switching tabs.** Every tab now has its own editor document, so Ctrl+Z, markers and scroll position stay with the file; the same file shown in both split panes is one live document.
+- **F10 / F11 / Shift+F5 did the wrong thing while debugging** when the cursor was in the editor (F10 tried to Run instead of Step Over), and keybindings changed in Settings had no effect inside the editor. All shortcuts now go through one table, and a changed keybinding applies immediately.
+- **Stop could kill unrelated programs**: stopping or rebuilding ran `taskkill` by executable *name*, so a source file named `explorer.cpp` would take down Windows Explorer. Only the process started by the IDE is terminated now.
+- **Text containing `<…>` was mangled** in the Problems panel (`std::vector<int>` showed as `std::vector`), the snippet list, tabs, test results, the explorer and theme lists.
+- **Live Code Checking reported a false error on any code using `try`/`catch`** ("exception handling disabled").
+- **"--- Stopped ---" was printed on every build** even when nothing was running.
+- **Two files with the same name overwrote each other's executable** (every contest has an `A.cpp`), and "Run only" ran whichever file was built last instead of the current tab.
+- **Buttons that did nothing**: the GitHub button, the portable "Download" button and the update dialog link had no handler; the portable link also pointed to the wrong repository.
+- **The "compiler not found" warning at startup was never shown** (it crashed on an undefined function).
+- **"Delete After (days)" for Checkpoints was ignored**, so old checkpoints were never removed; small checkpoints were listed as "0 KB".
+- **Settings could be lost or reverted**: `settings.json` is now written atomically with a backup copy, and saving settings no longer overwrites the saved window position.
+- **External changes were only detected for files opened through the Open dialog**, not for files opened from the explorer or restored from the previous session.
+- **Test cases were shared by every tab**: switching tabs kept the other file's tests, and typing in INPUT overwrote them. Each tab now has its own test cases, selected test and results, and they are restored with the session.
+- **The app changed clangd for the whole machine**: it wrote `%LOCALAPPDATA%\clangd\config.yaml`, forcing a MinGW target and its include paths onto clangd in VS Code, CLion and other projects. Flags are now passed to the app's own clangd only, and the file written by earlier versions is removed (only if it still carries the app's marker).
+- **Session restore could silently stop working** once browser storage filled up (a large background image or many untitled checkpoints were enough). The session checkpoint, checkpoints of untitled tabs and theme background images/videos are now stored as files in the app's data folder; existing data is migrated automatically.
+- **Restoring a checkpoint wiped the undo history** of the file. It is now a single edit: Ctrl+Z brings back the text from before the restore.
+- **Opening a very large file could freeze the IDE.** Files over 16 MB are refused with a message instead; previously a failed open from the explorer or session showed nothing at all.
+- Explorer state (folders, notes, statuses, collections, saved approaches) moved from browser storage to `userData/state/explorer.json` for the same reason as the session; existing data is migrated automatically.
+- Previewing checkpoints created a new hidden editor every time and never freed it, and could switch the editor colour theme; the preview now reuses one editor.
+- Checkpoints of an untitled tab were kept forever after the tab was closed; closed tabs stayed loaded in clangd for the whole session.
+- Non-ASCII strings in the debugger's Variables panel were shown as digits.
+- Dragging the split divider threw an error on release; resetting keybindings did not take effect until Settings was saved; Escape did not close Settings while the editor had focus; pasting many lines into the terminal input was slow; the app checked for updates three times per launch; Compile Only and Run All Tests ignored the "Use LLD Linker" setting.
+
+### Security
+
+- **Competitive Companion listener** now refuses requests coming from web pages (any site could previously push a "problem" into the IDE, creating files and stealing focus), limits the request size and validates the payload.
+- Added a Content-Security-Policy (no inline scripts or inline event handlers) and blocked navigation and new windows in the main window.
+- Imported themes and `.sameko` contest files can no longer inject markup into the UI.
+- The checkpoint reader only reads checkpoint files; it used to read any path the renderer asked for.
+
+### Removed
+
+- **tree-sitter** (`tree-sitter`, `tree-sitter-cpp`): its only remaining jobs — a pre-check before the live syntax check and a fallback list of local variables for completion — are covered by clangd. Two native dependencies less to build and ship.
+- Unused IPC surface: 18 preload functions nobody called, 13 handlers nothing could reach, and the constants, validators and legacy history channels behind them.
+- `build-local.ps1`, superseded by `npm run build:win` (it pointed at an output folder that no longer exists).
+- Eight renderer modules that were never loaded by `index.html` (`tab-manager.js`, `settings-manager.js`, `shortcuts-manager.js`, `panel-manager.js`, `build-system.js`, `snippets-manager.js`, `editor-core.js`, `split-manager.js`), the unused golden-layout theme, and a development HTTP server that was started but never used.
+
+### Developer notes
+
+- `npm run test:gui` now runs on a temporary profile instead of the developer's real session.
+- **`src/renderer/app.js` (7,900 lines) is split into 17 files under `src/renderer/app/`**, cut at its existing section banners and loaded in the same order — no logic was moved between sections. `CODEBASE.md` §9 lists what is where.
+- About 45 trace `console.log` calls removed from renderer code (theme customizer, explorer, update checks, init banners); warnings and errors are kept.
+- Compile Only and Build & Run share one implementation (`buildActiveTab`) instead of two ~100-line copies.
+- New: `app/shared/settings-store.js`, `app/ipc/state-handlers.js`, `app/services/compiler/run-launcher.js`, `src/renderer/boot.js`.
+- `ld.lld.exe` is picked up from `Sameko-GCC/bin` when present, but measured only ~5% faster builds (link 154 → 122 ms) for +71 MB, so the packaging filter leaves it out even when a local toolchain has it.
+- New `scripts/check-toolchain-deps.js`: after changing the toolchain filter in `package.json` or updating `Sameko-GCC`, build with `electron-builder --win dir` and run it; it fails if any packaged executable or DLL imports a DLL that was filtered out.
+
 ## [1.2.0] - 2026-08-01
+
+### 🚀 Highlights & Major Features
+
+- 🐛 **Integrated C++ Debugger (GDB)** ([`1ea1e5b`](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/commit/1ea1e5b)): Real source-level debugging inside Sameko! Features breakpoint gutters, conditional breakpoints, variable trees with STL pretty-printing (`vector`, `map`, `string`), Call Stack, hover evaluation, Auto dry run, and step history replay.
+- 🐧 **Cross-Platform Linux Support** ([`1e0d1d6`](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/commit/1e0d1d6)): Sameko now natively supports Linux! Ships AppImage, `.deb`, and `.tar.gz` packages and auto-detects system `g++` and `gdb`.
+- ⚡ **Blazing Fast Startup & Local Fonts** ([`b3f845c`](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/commit/b3f845c)): ~16% faster launch times via locally bundled fonts (no Google Fonts CDN dependency) and deferred Monaco editor loading.
+- 📟 **Realtime Terminal Output Engine** ([`1588ea6`](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/commit/1588ea6)): High-performance xterm.js integration with C++ `std::cout` unbuffering for instant line-by-line output in competitive programming.
+- 🎨 **SSOT Theme Architecture & Customizer** ([`74f5a9e`](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/commit/74f5a9e)): Single Source of Truth theme tokens, new dark backdrop customizer popup, and clean theme consistency.
+- 🛠️ **GCC 16.1.0 Toolchain & C++26 Standard**: Updated WinLibs GCC 16.1.0 MinGW toolchain with official C++26 standard support.
+- 📌 **Fixed Issues Sweep**: Fixes [#35](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/35), [#36](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/36), [#38](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/38), [#39](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/39), [#41](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/41), [#42](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/42), [#43](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/43), [#44](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/44), [#45](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/45), [#46](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/46), [#47](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/47), [#48](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/48).
+
 
 ### Added
 
-- **Integrated C++ Debugger (GDB)**:
+- **[[FEATURE] Integrated C++ Debugger (GDB)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/commit/1ea1e5b)**:
   - The app now has a real source-level debugger built on the bundled MinGW GDB (Machine Interface), replacing the old "just run the exe" behavior. Debug a `-g` build without leaving the editor.
   - **Breakpoints**: click the left gutter to toggle a red breakpoint (the line number turns into a badge and the line is tinted, Dev-C++/Visual Studio style). `Alt`+click sets a **conditional** breakpoint (e.g. `i == n-1`); `Ctrl`+click **enables/disables** one without removing it. gdb-relocated breakpoints (off blank/comment lines) move automatically.
   - **Debug panel** (bug icon on the toolbar shows/hides it): a single smart **Run ▶ / Continue / Pause** button drives the whole session, plus **Step Over / Into / Out** and **Stop**. `F5` run/continue, `F10` step over, `F11` step into, `Shift+F11` step out, `Shift+F5` stop. Step Into stays in *your* code — it skips standard-library internals instead of diving into `std::` template guts.
@@ -21,7 +102,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - **Auto dry run**: one button walks the program a line at a time on its own while the Variables tree updates, so a loop can be watched instead of stepped by hand a hundred times. It needs no breakpoint — it starts the session paused at `main()` — steps *into* your own functions, and comes with a speed slider (0.15–3s per line, default 1s). **Pause**, `Esc`, or any manual step stops it.
   - **Back through the recording**: every pause is recorded (line + the values of the locals at that moment), and **Back** walks through that recording. GDB cannot run a program backwards on Windows, so this is an explicit read-only replay: the recorded line is marked with a hollow arrow, controls that would move the program are disabled, and **Back to live** (or `Esc`) returns to the present.
   - **Restart** stops the session and runs the whole program again from the top.
-- **Linux support**: the app now runs on Linux, and the build produces Linux packages (AppImage, `.deb`, `.tar.gz`) alongside the Windows ones. Unlike the Windows build it does not bundle a compiler — install `g++` and `gdb` from your distribution and Sameko will detect them.
+- **[[FEATURE] Cross-Platform Linux Support](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/commit/1e0d1d6)**: the app now runs on Linux, and the build produces Linux packages (AppImage, `.deb`, `.tar.gz`) alongside the Windows ones. Unlike the Windows build it does not bundle a compiler — install `g++` and `gdb` from your distribution and Sameko will detect them.
 - **Active Contest Auto-Collapsing & Top Prioritization**:
   - Double-clicking a contest, clicking its quick-activate button, or opening any file inside it sets it as the active contest, automatically collapses all other contests, and expands the active one.
   - The active contest temporarily jumps/bubbles to the very top of the CONTEST list. Upon deactivation, it returns to the chronological "newest-first" sorting order.
@@ -30,10 +111,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **PCH Cache-Clear with Background Rebuild**:
   - Added a "Clear PCH Cache" action to settings to delete corrupted or slow Precompiled Header files.
   - Wired it to an IPC call that runs asynchronously in the background to re-optimize/precompile libraries using the active compiler flags, keeping the UI smooth while restoring 200-400ms C++ compile speed.
-- **Additional Compile Flags (Settings → Compiler)**:
+- **[[FEATURE] Additional Compile Flags & Clangd Diagnostics Synchronization](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/commit/3a64f21)**:
   - Added a free-text "Additional Compile Flags" field (`compiler.extraFlags`) whose contents are appended to every compile command (e.g. `-DLOCAL -DDEBUG`), validated against unsafe flags (`-B`, `-plugin`, `@`, `--specs=`) before reaching the compiler.
   - The same flags and the chosen C++ standard now also drive clangd's `compile_flags.txt` and the live `-fsyntax-only` diagnostics, so IntelliSense, editor squiggles, and real builds agree on macros and `#ifdef` branches (e.g. code guarded by `-DLOCAL`).
-- **Realtime program output (`std::cout`/`printf` shown line-by-line)**:
+- **[[FEATURE] Realtime program output with xterm.js & std::cout unbuffering](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/commit/1588ea6)**:
   - Rebuilt the output-unbuffering shim as C++ (`Sameko-GCC/lib/sameko_unbuffer.cpp`) so it also unit-buffers `std::cout`/`std::cerr`, not just C `stdio`. The old C-only `setvbuf` shim could not reach `std::cout`'s buffer, so programs using `ios_base::sync_with_stdio(false)` (standard in competitive programming) only showed output in one burst when the process exited.
   - Added a **Realtime Output** setting (Settings > Execution, default on). When disabled, the shim is not linked, restoring full buffering for maximum throughput on heavy output.
 - **[[FEATURE] Add Save As support with Ctrl+Shift+S (Fixes #35)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/35)**:
@@ -112,7 +193,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Debug toolbar buttons no longer strobe** while auto-stepping — the session flickers between paused and running many times a second, and a click could land in a millisecond where the button was disabled.
 - **`npm run clean` and `clean:dist` deleted the wrong directories**: `clean` removed `%APPDATA%/cpp-ide` while the settings folder is `sameko-dev-cpp`, and `clean:dist` removed `release_build` while the build output goes to `samekodevcpp` — so `rebuild:win` was not rebuilding from scratch. Both now use `scripts/clean.js` and work on Linux and macOS too.
 - **Right-clicking the terminal input pasted the clipboard twice** (the handler was registered both directly and at the document level).
-- **IntelliSense Completions & Hover Were Silently Disabled**:
+- **[[BUG] IntelliSense Completions & Hover Were Silently Disabled](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/commit/a9e6b69)**:
   - clangd-backed member completions (`v.` → `push_back`, `size`, …) and hover never fired: the C/C++ provider gated both features on `window.TabManager`, a module `index.html` never loads, so the condition was always false and the editor silently fell back to buffer-word suggestions (showing `main`/`v` instead of real STL members).
   - Rewrote the provider to resolve the active document from the app's own `App` tab state via a `clangdFileId(model)` helper that always yields a valid identifier (saved path → tab id → Monaco model URI), and removed the tab-existence gate so clangd is queried unconditionally — a missing or stale tab can no longer drop IntelliSense to the fallback.
   - Fixed a latent `afterDot is not defined` ReferenceError in the completion provider (the flag was declared only in a sibling function's scope) that would otherwise throw the moment the clangd branch became reachable.
@@ -124,7 +205,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Completion items now use clangd's `textEdit.range` when present (for correct insertion at member-access points like `v.b|` → `v.begin()`), falling back to the current word range otherwise.
 - **Monaco Word-Based Suggestions Conflict**:
   - Set `wordBasedSuggestions: 'off'` in `src/renderer/app.js` (both editor instances) so Monaco no longer pollutes the dropdown with tokens scraped from the document (e.g. showing `main` when typing `v`). clangd's results are complete enough on their own; the previous `'allDocuments'` setting caused duplicate, context-free suggestions to out-rank clangd's typed results.
-- **Premature Auto-Update Restart Trigger**:
+- **[[BUG] Premature Auto-Update Restart Trigger](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/commit/f5f9f02)**:
   - Prevented the "Restart to Update" button from appearing before an update is completely downloaded by requiring both the installer `.exe` and the corresponding `update-info.json` file to exist in the pending directory before declaring it as downloaded from a previous session.
   - Reset the `updateDownloaded` state and hid the restart button on update check start, update availability, download start, and update errors to ensure users cannot click the restart button while a new download is in progress.
   - Reverted update button styling to a flat ocean theme color with clean hover animations (1px translation and soft shadow) without visual gradients or outer glow animations to keep it consistent with the overall IDE theme.
@@ -132,6 +213,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Added an option in the CC popup to choose where imported tests land: **"Open in a new tab"** (default, existing behavior) or **"Import into current tab"** (keeps your code, only updates tests).
   - When importing into the current tab, users can choose to **replace** existing tests or **append** new ones.
   - Setting is persisted in `settings.json` under `oj.importTarget` and `oj.importMerge`.
+- **[[BUG] Snippet button position, empty selection copy & Ctrl+C output pollution (Fixes #38, #44, #45)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/38)**:
+  - Fixed snippet button placement in editor toolbar.
+  - Prevented empty text selection copy operations from overwriting clipboard content with empty strings.
+  - Prevented Ctrl+C in terminal output from polluting output stream.
+- **[[UI] Vietnamese language string cleanup and terminal element structure (Fixes #36, #42, #43, #47, #48)](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/42)**:
+  - Completed localization pass by replacing lingering Vietnamese strings with clean English UI labels.
+  - Re-architected terminal container into unified element structure to avoid CSS conflicts.
 - **Main-process output flooding**: stdout/stderr chunks are now coalesced and flushed on a short timer (or at a 64KB threshold) instead of emitting one IPC message per `data` event, with a guaranteed flush before process exit.
 - **Unbounded memory growth on infinite output**: removed the write-only `output`/`errorOutput` accumulators that grew without limit under `while(1)`-style loops.
 - **Docked terminal height**: the xterm terminal now fills the full panel height when docked and re-fits after dock/undock/resize/show transitions.
@@ -352,3 +440,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   - Accent color
 - Keyboard shortcuts for all major actions
 - Custom frameless window with native controls
+
+[Unreleased]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.0.4...v1.1.0
+[1.0.4]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.0.0...v1.0.4
+[1.0.0]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/tag/v1.0.0
+

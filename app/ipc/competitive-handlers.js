@@ -44,14 +44,6 @@ function registerHandlers() {
         return await competitive.startServer();
     });
 
-    ipcMain.handle('cc-stop-server', async () => {
-        return competitive.stopServer();
-    });
-
-    ipcMain.handle('cc-get-status', async () => {
-        return competitive.getServerStatus();
-    });
-
     ipcMain.handle('cc-open-extension-page', async () => {
         return competitive.openExtensionPage();
     });

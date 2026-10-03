@@ -9,18 +9,17 @@
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const { spawn, exec } = require('child_process');
+const crypto = require('crypto');
+const { spawn, exec, execFile } = require('child_process');
+const { StringDecoder } = require('string_decoder');
 const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getWritableBasePath, getUnbufferObjectPath } = require('./detector');
 const { ensurePCH } = require('./pch-manager');
+const { getLauncherIfReady, newStatsFile, readStats } = require('./run-launcher');
 const { validateCompilerFlags } = require('../../shared/validators');
 const { EXE_SUFFIX, IS_WIN, IS_MAC, IS_LINUX, ensurePrivateDir, readProcMemoryKB, which, appTempDir } = require('../../shared/platform');
 
 let runningProcess = null;
 let activeCompilerProcess = null;
-
-let lastRunningPID = null;
-
-let runningExeName = null;
 
 let runningMemoryPollInterval = null;
 
@@ -85,6 +84,26 @@ function sanitizeUserFlags(flags, content) {
         flags: tokens.join(' '),
         removedMwindows: false
     };
+}
+
+/**
+ * Terminate every process whose executable is exactly `exePath` (Windows).
+ * The path travels through an environment variable, so nothing from a file
+ * name is ever interpolated into a command line.
+ * @param {string} exePath
+ * @returns {Promise<void>}
+ */
+function killProcessesByExePath(exePath) {
+    return new Promise((resolve) => {
+        const script = '$p = $env:SAMEKO_KILL_EXE; '
+            + 'Get-Process -Name ([IO.Path]::GetFileNameWithoutExtension($p)) -ErrorAction SilentlyContinue | '
+            + 'Where-Object { $_.Path -eq $p } | Stop-Process -Force -ErrorAction SilentlyContinue';
+        execFile('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', script], {
+            env: { ...process.env, SAMEKO_KILL_EXE: exePath },
+            windowsHide: true,
+            timeout: 5000
+        }, () => resolve());
+    });
 }
 
 /**
@@ -181,19 +200,23 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
     }
     cleanupOldBuildArtifacts(buildsDir);
 
-    const outputPath = path.join(buildsDir, baseName + EXE_SUFFIX);
+    // Tag the artifact with a hash of the full source path: every contest has
+    // an A.cpp, and two of them used to share (and overwrite) one A.exe.
+    const outputTag = usingTempFile
+        ? ''
+        : '-' + crypto.createHash('sha1').update(path.resolve(actualFilePath).toLowerCase()).digest('hex').slice(0, 8);
+    const outputPath = path.join(buildsDir, baseName + outputTag + EXE_SUFFIX);
 
     // Release file lock on target output executable if it exists
     if (fs.existsSync(outputPath)) {
         try {
             fs.unlinkSync(outputPath);
         } catch (e) {
-            if (process.platform === 'win32') {
-                const exeName = path.basename(outputPath);
-                try {
-                    exec(`taskkill /im "${exeName}" /f`, () => { });
-                } catch (_) { }
-                await new Promise(r => setTimeout(r, 150));
+            if (IS_WIN) {
+                // Something still holds the file — typically a previous run in an
+                // external terminal, which we have no handle for. Terminate only
+                // processes whose image IS this exact file, never by name alone.
+                await killProcessesByExePath(outputPath);
                 try {
                     fs.unlinkSync(outputPath);
                 } catch (_) { }
@@ -662,22 +685,27 @@ async function run({ exePath, cwd }) {
         return { success: false, error: 'Executable not found. Please compile first.' };
     }
 
+    // "Run only" pressed while a program is still running: never orphan it.
+    stopProcess();
+
     const workingDir = cwd || path.dirname(exePath);
     const runStartTime = Date.now();
     let peakMemoryKB = 0;
 
     const env = getCompilerEnv();
 
-    runningProcess = spawn(exePath, [], {
-        cwd: workingDir,
-        env: env,
-        stdio: ['pipe', 'pipe', 'pipe']
-    });
+    // Windows: run through the native launcher when it is available. It
+    // reports the exact wall time and peak memory of the program itself, so no
+    // sampling is needed (see run-launcher.js).
+    const launcher = getLauncherIfReady();
+    const statsFile = launcher ? newStatsFile() : null;
 
-    runningExeName = path.basename(exePath);
-    lastRunningPID = runningProcess.pid;
+    runningProcess = launcher
+        ? spawn(launcher, [statsFile, exePath], { cwd: workingDir, env: env, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+        : spawn(exePath, [], { cwd: workingDir, env: env, stdio: ['pipe', 'pipe', 'pipe'] });
 
-    const pid = runningProcess.pid;
+    const child = runningProcess;
+    const pid = child.pid;
 
     // Memory polling. Windows: `tasklist` (instantaneous working set, so we
     // keep the running max). Linux: /proc/<pid>/status VmHWM, which IS the
@@ -702,83 +730,126 @@ async function run({ exePath, cwd }) {
         }
     };
 
-    // Start memory polling
-    if (pid && (IS_WIN || IS_LINUX)) {
-        pollMemory();
+    // Start memory polling. On Windows each sample spawns `tasklist` (~150 ms),
+    // so the first one is delayed: a typical short run finishes before it and
+    // is no longer slowed down by a sampler that could not have reported
+    // anything for it anyway. Linux reads /proc, which is cheap.
+    if (pid && IS_LINUX) pollMemory();
+    if (pid && !launcher && (IS_WIN || IS_LINUX)) {
         runningMemoryPollInterval = setInterval(pollMemory, IS_WIN ? 500 : 100);
     }
 
-    // Coalesce program output: a tight `while(1) cout<<...` loop fires the
-    // 'data' event thousands of times per second. Emitting one IPC message per
-    // chunk floods the renderer and lags the machine, so batch chunks and flush
-    // on a short timer (~24ms) or once the pending buffer crosses a size cap.
-    // We do NOT retain the full output (it was previously accumulated into
-    // unused `output`/`errorOutput` strings -> unbounded memory under infinite
-    // loops); we only hold what hasn't been flushed yet.
-    const FLUSH_INTERVAL_MS = 24;
-    const FLUSH_THRESHOLD_BYTES = 64 * 1024;
+    // Program output is batched and RATE-LIMITED with real flow control.
+    // A tight `while(1) cout<<...` loop produces tens of MB per second; pushing
+    // that to the renderer froze the whole window for ~25 s and made Stop
+    // unreachable. So: at most FLUSH_MAX_CHARS go out per tick, and once the
+    // backlog passes HIGH_WATER the pipes are paused, which blocks the child on
+    // write() until the terminal has caught up. Nothing is dropped, memory stays
+    // bounded, and normal programs (well under the budget) are unaffected.
+    const FLUSH_INTERVAL_MS = 30;
+    const FLUSH_MAX_CHARS = 32 * 1024;       // per tick  => ~1 MB/s to the terminal
+    const HIGH_WATER_CHARS = 128 * 1024;     // pause the pipes above this backlog
+    const LOW_WATER_CHARS = 32 * 1024;       // resume below this
+
+    // StringDecoder keeps a multi-byte UTF-8 character that straddles two
+    // chunks intact (plain toString() turned it into two replacement chars).
+    const outDecoder = new StringDecoder('utf8');
+    const errDecoder = new StringDecoder('utf8');
 
     let pendingOut = '';
     let pendingErr = '';
     let flushTimer = null;
+    let paused = false;
 
-    const flush = () => {
+    const backlog = () => pendingOut.length + pendingErr.length;
+
+    const setPaused = (value) => {
+        if (paused === value) return;
+        paused = value;
+        for (const stream of [child.stdout, child.stderr]) {
+            if (!stream || stream.destroyed) continue;
+            if (value) stream.pause(); else stream.resume();
+        }
+    };
+
+    // Send up to `budget` chars (everything when budget is Infinity).
+    const flush = (budget = FLUSH_MAX_CHARS) => {
         if (flushTimer) {
             clearTimeout(flushTimer);
             flushTimer = null;
         }
         if (pendingOut) {
-            sendToRenderer('process-output', pendingOut);
-            pendingOut = '';
+            const part = pendingOut.length > budget ? pendingOut.slice(0, budget) : pendingOut;
+            pendingOut = pendingOut.slice(part.length);
+            budget -= part.length;
+            sendToRenderer('process-output', part);
         }
-        if (pendingErr) {
-            sendToRenderer('process-error', pendingErr);
-            pendingErr = '';
+        if (pendingErr && budget > 0) {
+            const part = pendingErr.length > budget ? pendingErr.slice(0, budget) : pendingErr;
+            pendingErr = pendingErr.slice(part.length);
+            sendToRenderer('process-error', part);
         }
+        if (backlog() <= LOW_WATER_CHARS) setPaused(false);
+        if (backlog() > 0) scheduleFlush();
     };
 
     const scheduleFlush = () => {
-        if (pendingOut.length + pendingErr.length >= FLUSH_THRESHOLD_BYTES) {
-            flush();
-            return;
-        }
+        if (backlog() >= HIGH_WATER_CHARS) setPaused(true);
         if (!flushTimer) {
             flushTimer = setTimeout(flush, FLUSH_INTERVAL_MS);
         }
     };
 
-    runningProcess.stdout.on('data', (data) => {
-        pendingOut += data.toString();
+    child.stdout.on('data', (data) => {
+        pendingOut += outDecoder.write(data);
         scheduleFlush();
     });
 
-    runningProcess.stderr.on('data', (data) => {
-        pendingErr += data.toString();
+    child.stderr.on('data', (data) => {
+        pendingErr += errDecoder.write(data);
         scheduleFlush();
     });
 
-    runningProcess.on('close', (code) => {
-        flush(); // emit any buffered output before signalling exit
-        if (runningMemoryPollInterval) {
-            clearInterval(runningMemoryPollInterval);
-            runningMemoryPollInterval = null;
+    let finished = false;
+    const finish = () => {
+        if (finished) return;
+        finished = true;
+        pendingOut += outDecoder.end();
+        pendingErr += errDecoder.end();
+        // Emit whatever is left before signalling exit — unless the user
+        // pressed Stop, in which case the backlog is discarded on purpose.
+        if (runningProcess === child) flush(Infinity);
+        if (flushTimer) { clearTimeout(flushTimer); flushTimer = null; }
+        pendingOut = '';
+        pendingErr = '';
+        // Only forget the process if it is still the current one — a newer
+        // run() may already have replaced it (and owns the poll timer now).
+        if (runningProcess === child) {
+            if (runningMemoryPollInterval) {
+                clearInterval(runningMemoryPollInterval);
+                runningMemoryPollInterval = null;
+            }
+            runningProcess = null;
+            return true;
         }
-        const executionTime = Date.now() - runStartTime;
-        runningProcess = null;
+        return false;
+    };
+
+    child.on('close', (code) => {
+        const wasCurrent = finish();
+        const stats = readStats(statsFile); // also removes the file
+        // A process stopped by the user already reported 'process-stopped'.
+        if (!wasCurrent) return;
         sendToRenderer('process-exit', {
             code,
-            executionTime,
-            peakMemoryKB
+            executionTime: stats ? Math.round(stats.wallMs) : Date.now() - runStartTime,
+            cpuTime: stats ? Math.round(stats.cpuMs) : null,
+            peakMemoryKB: stats ? stats.peakKB : peakMemoryKB
         });
     });
 
-    runningProcess.on('error', (err) => {
-        flush();
-        if (runningMemoryPollInterval) {
-            clearInterval(runningMemoryPollInterval);
-            runningMemoryPollInterval = null;
-        }
-        runningProcess = null;
+    child.on('error', () => {
+        finish();
     });
 
     // Send initial signal
@@ -792,67 +863,50 @@ async function run({ exePath, cwd }) {
  * @returns {{success: boolean, error?: string}}
  */
 function sendInput(input) {
-    if (runningProcess && runningProcess.stdin) {
-        // If input contains newlines, send as-is (bulk input mode)
-        // Otherwise add newline for single-line input
-        if (input.includes('\n')) {
-            runningProcess.stdin.write(input + '\n');
-        } else {
-            runningProcess.stdin.write(input + '\n');
-        }
+    if (runningProcess && runningProcess.stdin && !runningProcess.stdin.destroyed) {
+        runningProcess.stdin.write(input + '\n');
         return { success: true };
     }
     return { success: false, error: 'No running process' };
 }
 
 /**
- * Stop running process
+ * Stop the program started by run(), if any.
+ *
+ * Kills ONLY the process this module spawned, by its PID while we still hold
+ * the handle (so the PID cannot have been recycled). It used to also run
+ * `taskkill /im <name>.exe`, which terminated every process on the machine
+ * with that image name — a source file called explorer.cpp took the Windows
+ * shell down with it.
+ * @returns {boolean} whether a process was actually stopped
  */
 function stopProcess() {
-    // Clear memory polling
+    const child = runningProcess;
+    if (!child) return false;
+    runningProcess = null;
+
     if (runningMemoryPollInterval) {
         clearInterval(runningMemoryPollInterval);
         runningMemoryPollInterval = null;
     }
 
-    // KILL STRATEGY 1: Taskkill by PID (Windows)
-    if (lastRunningPID && process.platform === 'win32') {
-        exec(`taskkill /pid ${lastRunningPID} /f /t`, () => { });
+    const pid = child.pid;
+    // Windows: /t takes the whole tree, in case the program spawned children.
+    if (IS_WIN && pid && child.exitCode === null) {
+        execFile('taskkill', ['/pid', String(pid), '/f', '/t'], { windowsHide: true }, () => { });
     }
 
-    // KILL STRATEGY 2: Taskkill by Image Name (Windows)
-    const targetExes = new Set();
-    if (runningExeName) targetExes.add(runningExeName);
-    targetExes.add('temp_code.exe');
+    // Tear the pipes down first so no buffered output arrives after "Stopped".
+    // NOTE (POSIX): this kills only the process itself, not a forked child tree.
+    // Killing a group would require spawning run() with `detached: true`, which
+    // risks breaking the stdin/stdout pipes the output panel depends on.
+    try { if (child.stdin) child.stdin.destroy(); } catch (_) { }
+    try { if (child.stdout) child.stdout.destroy(); } catch (_) { }
+    try { if (child.stderr) child.stderr.destroy(); } catch (_) { }
+    try { child.kill('SIGKILL'); } catch (_) { }
 
-    if (process.platform === 'win32') {
-        for (const exe of targetExes) {
-            exec(`taskkill /im ${exe} /f`, () => { });
-        }
-    }
-
-    // KILL STRATEGY 3: Node Process Kill (PID) — also the primary path on POSIX.
-    // NOTE: this kills only the process itself, not a forked child tree. Killing a
-    // group would require spawning run() with `detached: true`, which risks breaking
-    // the stdin/stdout pipes the output panel depends on. Single-process programs
-    // (the CP use case) are fully covered. Revisit only if a real need appears.
-    if (lastRunningPID) {
-        try {
-            process.kill(lastRunningPID, 'SIGKILL');
-        } catch (e) { }
-    }
-
-    // KILL STRATEGY 4: Object Kill & Pipe Destruction
-    if (runningProcess) {
-        if (runningProcess.stdin) runningProcess.stdin.destroy();
-        if (runningProcess.stdout) runningProcess.stdout.destroy();
-        if (runningProcess.stderr) runningProcess.stderr.destroy();
-        runningProcess.kill();
-        runningProcess = null;
-    }
-
-    // Notify UI
     sendToRenderer('process-stopped');
+    return true;
 }
 
 function isProcessRunning() {

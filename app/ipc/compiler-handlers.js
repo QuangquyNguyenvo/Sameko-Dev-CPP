@@ -46,20 +46,9 @@ function registerHandlers() {
         return { success: true };
     });
 
-    // Send input to running process
+    // Send input to the running process (terminal input box / INPUT panel)
     ipcMain.handle(IPC.COMPILER.SEND_INPUT, async (event, input) => {
         return compiler.sendInput(input);
-    });
-
-    // Also register with the channel name used by preload.js
-    ipcMain.handle('send-input', async (event, input) => {
-        return compiler.sendInput(input);
-    });
-
-    // Get compiler info
-    ipcMain.handle(IPC.COMPILER.GET_INFO, async () => {
-        await compiler.getCompilerVersion();
-        return compiler.getCompilerInfo();
     });
 
     // Get compiler status (for startup check)

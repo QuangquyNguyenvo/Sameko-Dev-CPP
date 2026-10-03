@@ -6,7 +6,7 @@ const __T0 = process.hrtime.bigint();
 const __ms = () => Number(process.hrtime.bigint() - __T0) / 1e6;
 
 const { app } = require('electron');
-const { initializeApp, setupAppEvents } = require('./core/app-lifecycle');
+const { initializeApp, setupAppEvents, startDeferredCompilerWork } = require('./core/app-lifecycle');
 
 if (process.platform === 'win32') {
     app.setAppUserModelId('com.quangquy.cppide');
@@ -38,13 +38,22 @@ app.whenReady().then(async () => {
     
     const registerLegacyHandlers = require('./ipc');
     registerLegacyHandlers(mainWindow);
-    
-    const autoUpdateService = require('./services/auto-update-service');
-    autoUpdateService.initialize(mainWindow);
-    
-    const discordRPC = require('./services/discord-rpc-service');
-    discordRPC.connect();
-    
+
+    // None of this is needed to show the editor: the compiler warm-up and PCH
+    // build (g++ processes), and the updater and Discord RPC (~170 ms of module
+    // loading). They start once the page has loaded, so a slow machine spends
+    // its first seconds on the UI.
+    let deferredStarted = false;
+    const startDeferredWork = () => {
+        if (deferredStarted) return;
+        deferredStarted = true;
+        startDeferredCompilerWork();
+        setTimeout(() => {
+            require('./services/auto-update-service').initialize(mainWindow);
+            require('./services/discord-rpc-service').connect();
+        }, 1500);
+    };
+
     let revealed = false;
     const revealMainWindow = (reason) => {
         if (revealed) return;
@@ -61,13 +70,17 @@ app.whenReady().then(async () => {
     mainWindow.webContents.once('did-finish-load', () => {
         console.log(`[PERF] renderer did-finish-load @ ${__ms().toFixed(0)}ms`);
         revealMainWindow('did-finish-load');
+        startDeferredWork();
     });
     mainWindow.webContents.once('dom-ready', () => {
         console.log(`[PERF] renderer dom-ready @ ${__ms().toFixed(0)}ms`);
     });
-    
+
     // Safety net: never let the splash hang longer than 10s.
-    setTimeout(() => revealMainWindow('fallback-timeout'), 10000);
+    setTimeout(() => {
+        revealMainWindow('fallback-timeout');
+        startDeferredWork();
+    }, 10000);
 
     console.log('[App] Sameko Dev C++ is ready!');
 });

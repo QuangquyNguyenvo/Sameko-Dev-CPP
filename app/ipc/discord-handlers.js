@@ -10,15 +10,6 @@ function registerHandlers() {
         return { success: true };
     });
 
-    ipcMain.handle('discord-clear-presence', async () => {
-        await discordRPC.clearPresence();
-        return { success: true };
-    });
-
-    ipcMain.handle('discord-get-status', async () => {
-        return { connected: discordRPC.isRpcConnected(), enabled: discordRPC.isRpcEnabled() };
-    });
-
     ipcMain.handle('discord-enable', async () => {
         await discordRPC.enable();
         return { success: true };

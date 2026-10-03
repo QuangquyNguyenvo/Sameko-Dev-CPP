@@ -5,19 +5,9 @@ const path = require('path');
 const fs = require('fs');
 const { appTempDir, ensurePrivateDir } = require('../shared/platform');
 
-let tsParser = null;
 let compilerStatus = { found: false, path: null, error: null };
 
 let compilerWarmupStarted = false;
-
-function initTreeSitter() {
-    // No-op: Defer/disable C++ native parser loading at startup to improve launch speed
-    return false;
-}
-
-function getTreeSitterParser() {
-    return tsParser;
-}
 
 function ensureDirectories() {
     const dirs = [
@@ -76,10 +66,14 @@ function getCompilerStatus() {
 
 function startBackgroundCompilerPreparation() {
     try {
-        const { performCompilerWarmup, ensurePCH } = require('../services/compiler');
+        const { performCompilerWarmup, ensurePCH, ensureRunLauncher } = require('../services/compiler');
 
         // Warm up compiler/linker binaries without blocking app startup
         performCompilerWarmup(1200);
+
+        // Build (once per toolchain) the native helper that measures run time
+        // and peak memory; until it exists, runs fall back to sampling.
+        setTimeout(() => { ensureRunLauncher().catch(() => { }); }, 2500);
 
         // Prebuild default PCH in background so first Build/Run is faster
         setTimeout(() => {
@@ -99,11 +93,19 @@ function startBackgroundCompilerPreparation() {
 }
 
 async function initializeApp() {
-    // initTreeSitter(); // Disabled to optimize startup speed
     ensureDirectories();
-    const status = validateCompiler();
+    validateCompiler();
+}
 
-    if (status.found || status.fallback) {
+/**
+ * Start the compiler warm-up, run-launcher build and PCH build. main.js calls
+ * this once the window has loaded, so on a slow machine these g++ processes do
+ * not compete with the editor for CPU and disk while it starts.
+ */
+function startDeferredCompilerWork() {
+    if (compilerWarmupStarted) return;
+    compilerWarmupStarted = true;
+    if (compilerStatus.found || compilerStatus.fallback) {
         startBackgroundCompilerPreparation();
     }
 }
@@ -142,8 +144,8 @@ function setupAppEvents() {
 
 module.exports = {
     initializeApp,
+    startDeferredCompilerWork,
     cleanupBeforeQuit,
     setupAppEvents,
-    getTreeSitterParser,
     getCompilerStatus,
 };

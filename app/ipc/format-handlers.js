@@ -20,24 +20,20 @@ function registerHandlers() {
         return await formatter.formatCode(code, style);
     });
 
-    // Check AStyle availability
-    ipcMain.handle('check-astyle', async () => {
-        return formatter.checkAStyle();
-    });
-
     // Syntax check
-    ipcMain.handle(IPC.FORMAT.SYNTAX_CHECK, async (event, { content, filePath }) => {
-        return await syntax.checkSyntax(content, filePath);
-    });
-
-    // Smart Suggestions via Tree-sitter
-    ipcMain.handle(IPC.FORMAT.SMART_SUGGESTIONS, async (event, { content, row, column }) => {
-        return syntax.getSmartSuggestions(content, row, column);
+    ipcMain.handle(IPC.FORMAT.SYNTAX_CHECK, async (event, { content, filePath, docId }) => {
+        return await syntax.checkSyntax(content, filePath, docId);
     });
 
     // Clangd completions
     ipcMain.handle(IPC.FORMAT.CLANGD_COMPLETIONS, async (event, { filePath, content, line, character }) => {
         return syntax.getClangdCompletions(filePath, content, line, character);
+    });
+
+    // Clangd: a tab was closed
+    ipcMain.handle('clangd-close-document', async (event, filePath) => {
+        syntax.closeClangdDocument(filePath);
+        return { success: true };
     });
 
     // Clangd hover

@@ -83,9 +83,22 @@ class Cursor {
     parseCString() {
         this.i++; // opening quote
         let out = '';
+        // gdb prints non-ASCII bytes as octal escapes (\303\241 = "á"). Collect
+        // consecutive ones and decode them together as UTF-8.
+        let bytes = null;
+        const flushBytes = () => {
+            if (bytes) { out += Buffer.from(bytes).toString('utf8'); bytes = null; }
+        };
         while (!this.eof()) {
             const ch = this.s[this.i++];
             if (ch === '\\') {
+                const oct = /^[0-7]{3}/.exec(this.s.substr(this.i, 3));
+                if (oct) {
+                    (bytes || (bytes = [])).push(parseInt(oct[0], 8) & 0xff);
+                    this.i += 3;
+                    continue;
+                }
+                flushBytes();
                 const e = this.s[this.i++];
                 switch (e) {
                     case 'n': out += '\n'; break;
@@ -103,9 +116,11 @@ class Cursor {
             } else if (ch === '"') {
                 break;
             } else {
+                flushBytes();
                 out += ch;
             }
         }
+        flushBytes();
         return out;
     }
 

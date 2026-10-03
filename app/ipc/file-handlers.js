@@ -9,21 +9,39 @@
 const { ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const fsp = fs.promises;
 const { IPC } = require('../shared/constants');
 
 let mainWindow = null;
 
-let currentFile = null;
+// Monaco becomes unusable well before this; refuse instead of freezing the window.
+const MAX_OPEN_BYTES = 16 * 1024 * 1024;
+
+/**
+ * Read a text file for the editor, refusing files above MAX_OPEN_BYTES.
+ * @param {string} filePath
+ * @returns {Promise<string>}
+ */
+async function readTextFile(filePath) {
+    const { size } = await fsp.stat(filePath);
+    if (size > MAX_OPEN_BYTES) {
+        const mb = (n) => (n / (1024 * 1024)).toFixed(1);
+        throw new Error(`File is too large to open (${mb(size)} MB, limit ${mb(MAX_OPEN_BYTES)} MB)`);
+    }
+    return fsp.readFile(filePath, 'utf-8');
+}
+
+async function writeTextFile(filePath, content) {
+    await fsp.mkdir(path.dirname(filePath), { recursive: true });
+    await fsp.writeFile(filePath, content, 'utf-8');
+    updateFileWatcherMtime(filePath);
+}
 
 /** @type {Map<string, {watcher: fs.FSWatcher, mtime: number}>} */
 const fileWatchers = new Map();
 
 function setMainWindow(window) {
     mainWindow = window;
-}
-
-function getCurrentFile() {
-    return currentFile;
 }
 
 function watchFile(filePath) {
@@ -109,23 +127,19 @@ function registerHandlers() {
 
         if (!result.canceled && result.filePaths.length > 0) {
             for (const filePath of result.filePaths) {
-                const content = fs.readFileSync(filePath, 'utf-8');
-                currentFile = filePath;
-                mainWindow.webContents.send(IPC.EVENTS.FILE_OPENED, { path: filePath, content });
+                try {
+                    const content = await readTextFile(filePath);
+                    mainWindow.webContents.send(IPC.EVENTS.FILE_OPENED, { path: filePath, content });
+                } catch (error) {
+                    dialog.showErrorBox('Cannot open file', `${path.basename(filePath)}: ${error.message}`);
+                }
             }
         }
     });
 
     ipcMain.handle(IPC.FILE.SAVE, async (event, { path: filePath, content }) => {
         try {
-            // Ensure parent directory exists
-            const dir = path.dirname(filePath);
-            if (!fs.existsSync(dir)) {
-                fs.mkdirSync(dir, { recursive: true });
-            }
-            fs.writeFileSync(filePath, content, 'utf-8');
-            currentFile = filePath;
-            updateFileWatcherMtime(filePath);
+            await writeTextFile(filePath, content);
             return { success: true, path: filePath };
         } catch (error) {
             return { success: false, error: error.message };
@@ -147,13 +161,7 @@ function registerHandlers() {
 
         if (!result.canceled) {
             try {
-                const dir = path.dirname(result.filePath);
-                if (!fs.existsSync(dir)) {
-                    fs.mkdirSync(dir, { recursive: true });
-                }
-                fs.writeFileSync(result.filePath, content, 'utf-8');
-                currentFile = result.filePath;
-                updateFileWatcherMtime(result.filePath);
+                await writeTextFile(result.filePath, content);
                 return { success: true, path: result.filePath };
             } catch (error) {
                 return { success: false, error: error.message };
@@ -164,8 +172,7 @@ function registerHandlers() {
 
     ipcMain.handle(IPC.FILE.READ, async (event, filePath) => {
         try {
-            const content = fs.readFileSync(filePath, 'utf-8');
-            return content;
+            return await readTextFile(filePath);
         } catch (error) {
             throw new Error(`Cannot read file: ${error.message}`);
         }
@@ -173,10 +180,7 @@ function registerHandlers() {
 
     ipcMain.handle(IPC.FILE.READ_DIR, async (event, dirPath) => {
         try {
-            if (!fs.existsSync(dirPath)) {
-                return [];
-            }
-            const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+            const entries = await fsp.readdir(dirPath, { withFileTypes: true });
             return entries.map(entry => ({
                 name: entry.name,
                 isDirectory: entry.isDirectory(),
@@ -193,7 +197,7 @@ function registerHandlers() {
 
     ipcMain.handle(IPC.FILE.DELETE, async (event, filePath) => {
         try {
-            fs.unlinkSync(filePath);
+            await fsp.unlink(filePath);
             return { success: true };
         } catch (error) {
             throw new Error(`Cannot delete file: ${error.message}`);
@@ -202,7 +206,7 @@ function registerHandlers() {
 
     ipcMain.handle(IPC.FILE.RENAME, async (event, { oldPath, newPath }) => {
         try {
-            fs.renameSync(oldPath, newPath);
+            await fsp.rename(oldPath, newPath);
             return { success: true };
         } catch (error) {
             throw new Error(`Cannot rename file: ${error.message}`);
@@ -211,7 +215,7 @@ function registerHandlers() {
 
     ipcMain.handle('copy-file', async (event, { src, dest }) => {
         try {
-            fs.copyFileSync(src, dest);
+            await fsp.copyFile(src, dest);
             return { success: true };
         } catch (error) {
             throw new Error(`Cannot copy file: ${error.message}`);
@@ -220,7 +224,7 @@ function registerHandlers() {
 
     ipcMain.handle('move-file', async (event, { src, dest }) => {
         try {
-            fs.renameSync(src, dest);
+            await fsp.rename(src, dest);
             return { success: true };
         } catch (error) {
             throw new Error(`Cannot move file: ${error.message}`);
@@ -229,7 +233,7 @@ function registerHandlers() {
 
     ipcMain.handle('delete-folder', async (event, folderPath) => {
         try {
-            fs.rmSync(folderPath, { recursive: true, force: true });
+            await fsp.rm(folderPath, { recursive: true, force: true });
             return { success: true };
         } catch (error) {
             throw new Error(`Cannot delete folder: ${error.message}`);
@@ -238,7 +242,7 @@ function registerHandlers() {
 
     ipcMain.handle('create-directory', async (event, dirPath) => {
         try {
-            fs.mkdirSync(dirPath, { recursive: true });
+            await fsp.mkdir(dirPath, { recursive: true });
             return { success: true, path: dirPath };
         } catch (error) {
             throw new Error(`Cannot create directory: ${error.message}`);
@@ -257,7 +261,7 @@ function registerHandlers() {
 
     ipcMain.handle(IPC.FILE.RELOAD, async (event, filePath) => {
         try {
-            const content = fs.readFileSync(filePath, 'utf-8');
+            const content = await readTextFile(filePath);
             updateFileWatcherMtime(filePath);
             return { success: true, content };
         } catch (e) {
@@ -273,14 +277,11 @@ function registerHandlers() {
             throw new Error(`Cannot show item in folder: ${error.message}`);
         }
     });
-
-
 }
 
 module.exports = {
     registerHandlers,
     setMainWindow,
-    getCurrentFile,
     watchFile,
     unwatchFile,
     updateFileWatcherMtime,

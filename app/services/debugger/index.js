@@ -80,7 +80,6 @@ async function start({ exePath, cwd }) {
     });
 
     await session.start();
-    send('debug:ready', {});
     return { ok: true };
 }
 
@@ -132,6 +131,19 @@ const varDelete = (name) => requireSession().varDelete(name);
 const varListChildren = (name, from, to) => requireSession().varListChildren(name, from, to);
 const varUpdate = () => requireSession().varUpdate();
 
+// Batched forms. gdb reads MI commands from a pipe and answers each by token,
+// so a whole scope's variable objects can be written in one go instead of one
+// renderer<->main round trip per variable.
+async function varCreateMany(items) {
+    const s = requireSession();
+    const settled = await Promise.allSettled((items || []).map((it) => s.varCreate(it.name, it.expr)));
+    return settled.map((r) => (r.status === 'fulfilled' ? { ok: true, var: r.value } : { ok: false }));
+}
+async function varDeleteMany(names) {
+    const s = requireSession();
+    await Promise.allSettled((names || []).map((n) => s.varDelete(n)));
+}
+
 module.exports = {
     setSendToRendererCallback,
     isActive,
@@ -159,4 +171,6 @@ module.exports = {
     varDelete,
     varListChildren,
     varUpdate,
+    varCreateMany,
+    varDeleteMany,
 };

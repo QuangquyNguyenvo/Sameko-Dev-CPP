@@ -6,10 +6,25 @@
 
 'use strict';
 
-const { autoUpdater } = require('electron-updater');
 const { app, dialog, BrowserWindow } = require('electron');
 const path = require('path');
-const log = require('electron-log');
+
+// electron-updater and electron-log take ~140 ms to load, and nothing needs
+// them until the first update check (10 s after launch in a packaged build).
+// Both are loaded on first use so they stay off the startup path.
+let electronLog = null;
+function getLog() {
+    if (!electronLog) {
+        electronLog = require('electron-log');
+        electronLog.transports.file.level = 'info';
+    }
+    return electronLog;
+}
+const log = {
+    info: (...args) => getLog().info(...args),
+    warn: (...args) => getLog().warn(...args),
+    error: (...args) => getLog().error(...args),
+};
 const { IS_WIN, IS_LINUX } = require('../shared/platform');
 
 /**
@@ -35,19 +50,30 @@ function firstLine(value) {
 // formats them as `Error: ${e.stack}` — so handing it `log` unchanged still
 // dumped the full HttpError (headers, body, stack) on every check, no matter
 // what our own handlers do. Collapse multi-line arguments to their first line.
-// Inherit from `log` so electron-updater still finds `logger.transports`.
-const updateLog = Object.create(log);
-for (const level of ['error', 'warn', 'info', 'debug']) {
-    updateLog[level] = (...args) => log[level](...args.map(firstLine));
+// Inherit from electron-log so electron-updater still finds `logger.transports`.
+function createUpdateLogger() {
+    const base = getLog();
+    const updateLog = Object.create(base);
+    for (const level of ['error', 'warn', 'info', 'debug']) {
+        updateLog[level] = (...args) => base[level](...args.map(firstLine));
+    }
+    return updateLog;
 }
-autoUpdater.logger = updateLog;
-log.transports.file.level = 'info';
 
 class AutoUpdateService {
     constructor() {
         this.mainWindow = null;
         this.updateDownloaded = false;
         this.updateInfo = null;
+        this._updater = null;
+    }
+
+    /** electron-updater's `autoUpdater`, loaded and configured on first use. */
+    get updater() {
+        if (this._updater) return this._updater;
+        const { autoUpdater } = require('electron-updater');
+        this._updater = autoUpdater;
+        autoUpdater.logger = createUpdateLogger();
 
         // Allow pre-release updates (beta versions)
         autoUpdater.allowPrerelease = true;
@@ -81,6 +107,7 @@ class AutoUpdateService {
         }
 
         this.setupEventHandlers();
+        return autoUpdater;
     }
 
     /**
@@ -124,7 +151,7 @@ class AutoUpdateService {
         if ((app.isPackaged && updatesSupported) || testUpdatesInDev) {
             if (testUpdatesInDev) {
                 log.info('[AutoUpdate] Testing updates in development mode');
-                autoUpdater.forceDevUpdateConfig = true;
+                this.updater.forceDevUpdateConfig = true;
             }
             
             // Check for updates on startup (after 10 seconds delay, non-blocking)
@@ -148,14 +175,14 @@ class AutoUpdateService {
      */
     setupEventHandlers() {
         // Checking for updates
-        autoUpdater.on('checking-for-update', () => {
+        this.updater.on('checking-for-update', () => {
             log.info('[AutoUpdate] Checking for updates...');
             this.updateDownloaded = false; // Reset state
             this.sendStatusToRenderer('checking-for-update');
         });
 
         // Update available
-        autoUpdater.on('update-available', (info) => {
+        this.updater.on('update-available', (info) => {
             log.info('[AutoUpdate] Update available:', info.version);
             this.updateDownloaded = false; // Reset state
             this.updateInfo = info;
@@ -169,7 +196,7 @@ class AutoUpdateService {
         });
 
         // No update available
-        autoUpdater.on('update-not-available', (info) => {
+        this.updater.on('update-not-available', (info) => {
             log.info('[AutoUpdate] No updates available');
             this.sendStatusToRenderer('update-not-available', {
                 version: info.version
@@ -177,7 +204,7 @@ class AutoUpdateService {
         });
 
         // Error occurred
-        autoUpdater.on('error', (err) => {
+        this.updater.on('error', (err) => {
             log.error('[AutoUpdate] Error:', shortUpdateError(err));
 
             // Check if error is related to signature verification
@@ -206,7 +233,7 @@ class AutoUpdateService {
         });
 
         // Download progress
-        autoUpdater.on('download-progress', (progressObj) => {
+        this.updater.on('download-progress', (progressObj) => {
             const logMessage = `Download speed: ${progressObj.bytesPerSecond} - Downloaded ${progressObj.percent}% (${progressObj.transferred}/${progressObj.total})`;
             log.info('[AutoUpdate]', logMessage);
 
@@ -219,7 +246,7 @@ class AutoUpdateService {
         });
 
         // Update downloaded - ready to install
-        autoUpdater.on('update-downloaded', (info) => {
+        this.updater.on('update-downloaded', (info) => {
             log.info('[AutoUpdate] Update downloaded:', info.version);
             this.updateDownloaded = true;
             this.updateInfo = info;
@@ -275,7 +302,7 @@ class AutoUpdateService {
             });
 
             const result = await Promise.race([
-                autoUpdater.checkForUpdates(),
+                this.updater.checkForUpdates(),
                 timeoutPromise
             ]);
 
@@ -310,7 +337,7 @@ class AutoUpdateService {
             log.info('[AutoUpdate] Starting update download...');
             this.updateDownloaded = false; // Reset state
             this.sendStatusToRenderer('download-started');
-            await autoUpdater.downloadUpdate();
+            await this.updater.downloadUpdate();
         } catch (error) {
             log.error('[AutoUpdate] Download failed:', error);
             this.sendStatusToRenderer('update-error', {
@@ -339,7 +366,7 @@ class AutoUpdateService {
                 });
 
                 // Quit and install
-                autoUpdater.quitAndInstall(false, true);
+                this.updater.quitAndInstall(false, true);
             });
         } else {
             log.warn('[AutoUpdate] No update downloaded yet');

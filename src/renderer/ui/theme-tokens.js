@@ -432,4 +432,3 @@ Object.freeze(ThemeTokens);
 // Make globally available
 window.ThemeTokens = ThemeTokens;
 
-console.log(`[ThemeTokens] Initialized with ${Object.keys(ThemeTokens.definitions).length} token definitions`);

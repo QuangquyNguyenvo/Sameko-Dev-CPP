@@ -5,7 +5,7 @@
     "main": "app/main.js",
     "author": "QuangquyNguyenvo",
     "license": "MIT",
-    "homepage": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP",
+    "homepage": "https://sameko.dev",
     "repository": {
         "type": "git",
         "url": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP.git"
@@ -77,10 +77,7 @@
         "discord-rpc": "^4.0.1",
         "electron-log": "^5.4.3",
         "electron-updater": "^6.7.3",
-        "golden-layout": "^2.6.0",
         "monaco-editor": "^0.45.0",
-        "tree-sitter": "^0.21.1",
-        "tree-sitter-cpp": "^0.23.4",
         "v8-compile-cache": "^2.4.0",
         "xterm": "^5.3.0",
         "xterm-addon-fit": "^0.8.0"
@@ -111,38 +108,36 @@
             "!node_modules/monaco-editor/*.d.ts",
             "!node_modules/monaco-editor/CHANGELOG.md",
             "!node_modules/monaco-editor/ThirdPartyNotices.txt",
-            "!node_modules/tree-sitter-cpp/src/**",
-            "!node_modules/tree-sitter-cpp/*.wasm",
-            "!node_modules/tree-sitter-c/src/**",
-            "!node_modules/tree-sitter-c/*.wasm",
-            "!node_modules/tree-sitter/prebuilds/**",
-            "node_modules/tree-sitter/prebuilds/${platform}-${arch}/**",
-            "!node_modules/tree-sitter-cpp/prebuilds/**",
-            "node_modules/tree-sitter-cpp/prebuilds/${platform}-${arch}/**",
-            "!node_modules/tree-sitter-c/prebuilds/**",
-            "node_modules/tree-sitter-c/prebuilds/${platform}-${arch}/**",
+            "!node_modules/monaco-editor/min/vs/language/{typescript,css,html}/**",
+            "!node_modules/monaco-editor/min/vs/**/*.nls.{de,es,fr,it,ja,ko,ru,zh-cn,zh-tw}.js",
+            "!node_modules/{xterm,xterm-addon-fit}/{src,typings}/**",
+            "!node_modules/js-yaml/dist/**",
+            "!src/assets/screenshots/**",
+            "!src/assets/icons/icon.png",
+            "!src/assets/icons/fish.png",
+            "!src/assets/icons/linux/{512x512,1024x1024}.png",
             "!plans/**",
             "!docs/**",
             "!scripts/**",
-            "!.agent/**",
             "!.github/**",
-            "!.claudeprompt",
             "!CLAUDE.md",
+            "!AGENTS.md",
             "!CODEBASE.md",
             "!PLANNING.md",
             "!CONTRIBUTING.md",
             "!CHANGELOG.md",
             "!setup-bundled-mingw.md",
-            "!build-local.ps1",
             "!compile_error.log",
             "!compile_flags.txt",
-            "!NUL.exe",
             "!**/*.js.map",
             "!**/*.ts.map",
             "!**/*.css.map"
         ],
         "asar": true,
         "npmRebuild": false,
+        "electronLanguages": [
+            "en-US"
+        ],
         "publish": [
             {
                 "provider": "github",
@@ -177,7 +172,19 @@
                     "from": "Sameko-GCC",
                     "to": "Sameko-GCC",
                     "filter": [
-                        "**/*"
+                        "**/*",
+                        "!bin/ld.lld.exe",
+                        "!bin/{gfortran,x86_64-w64-mingw32-*,ccache,ctags,readtags,optscript,nasm,ndisasm,yasm,vsyasm,ytasm,jwasm,ninja,premake5,cmcldeps,sarif-replay,pkgconf,dos2unix,unix2dos,mac2unix,unix2mac,ntldd,listpedeps,copypedeps,bomtool,wl-*}.exe",
+                        "!bin/{blake3,crossrun,libarchive-13,libavl,libb2-1,libbrotlicommon,libbrotlidec,libbrotlienc,libbz2,libcrypto-3-x64,libcurl-4,libdirtrav,libfmt,libgcrypt-20,libgdiagnostics-0,libgfortran-5,libgnutls-30,libgomp-plugin-nvptx-1,libgpg-error-0,libgss-3,libgumbo-3,libhiredis,libhogweed-6,libidn2-0,libisl-23,libjansson,liblz4,liblzo2-2,libmpc-3,libnettle-8,libpcre-1,libpcre2-8-0,libpcre2_finder,libpkgconf-7,libpsl-5,librhash,libscalednum,libspdlog,libsqlite3-0,libssh2-1,libtasn1-6,libtss2-esys-0,libtss2-mu-0,libtss2-sys-1,libunistring-5,libuv-1,libxdiff,libxml2-16,libyaml,libzip,lua54,miniargv,pedeps,portcolcon,versioncmp}.dll",
+                        "!libexec/gcc/*/*/{f951,cc1obj,cc1objplus}.exe",
+                        "!lib/{libgfortran*,libpython3*.a,libyasm.a,libgdiagnostics.dll.a,libgomp-plugin-nvptx.dll.a}",
+                        "!lib/gcc/*/*/{finclude,plugin}/**",
+                        "!lib/gcc/*/*/libcaf_*.a",
+                        "!lib/python3*/{test,idlelib,tkinter,turtledemo,ensurepip,lib2to3,pydoc_data}/**",
+                        "!x86_64-w64-mingw32/[0-9]*/**",
+                        "!include/{libyasm,python3*}/**",
+                        "!**/*.idl",
+                        "!share/man/**"
                     ]
                 }
             ]

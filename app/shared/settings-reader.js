@@ -7,9 +7,7 @@
 
 'use strict';
 
-const path = require('path');
-const fs = require('fs');
-const { app } = require('electron');
+const { readSettings } = require('./settings-store');
 
 /**
  * Read raw settings.json (main-process side, same file written by
@@ -18,10 +16,7 @@ const { app } = require('electron');
  */
 function readUserSettings() {
     try {
-        const settingsPath = path.join(app.getPath('userData'), 'settings.json');
-        if (fs.existsSync(settingsPath)) {
-            return JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-        }
+        return readSettings();
     } catch (e) { }
     return null;
 }
@@ -30,7 +25,7 @@ function readUserSettings() {
  * Get the compiler-related settings that affect flags.
  * cppStandard is returned as-is (may be '' meaning "IDE default" — the
  * caller decides what that default dialect is), matching the shape of
- * src/renderer/app.js DEFAULT_SETTINGS.compiler.
+ * src/renderer/app/core.js DEFAULT_SETTINGS.compiler.
  * @returns {{cppStandard: string, extraFlags: string}}
  */
 function getCompilerSettings() {

@@ -1,6 +1,7 @@
 /**
  * Sameko Dev C++ IDE - History IPC Handlers
- * Handles local history/undo-redo operations for files
+ * Local history: a snapshot of a file is stored before every save, under
+ * userData/local-history/<sha256 of the path>/<timestamp>.snapshot.
  * @module app/ipc/history-handlers
  */
 
@@ -8,186 +9,119 @@
 
 const { ipcMain, app } = require('electron');
 const path = require('path');
-const fs = require('fs');
-const { IPC } = require('../shared/constants');
-
-let mainWindow = null;
+const crypto = require('crypto');
+const fsp = require('fs').promises;
 
 const historyDir = path.join(app.getPath('userData'), 'local-history');
 
 /**
- * Initialize history directory if it doesn't exist
- */
-function initHistoryDir() {
-    if (!fs.existsSync(historyDir)) {
-        fs.mkdirSync(historyDir, { recursive: true });
-    }
-}
-
-/**
- * Set main window reference for event communication
- * @param {BrowserWindow} window - Main application window
- */
-function setMainWindow(window) {
-    mainWindow = window;
-}
-
-/**
- * Get history directory path for a specific file
  * @param {string} filePath - Absolute file path
- * @returns {string} History directory for the file
+ * @returns {string} History folder for the file
  */
 function getHistoryDirForFile(filePath) {
-    const hash = require('crypto').createHash('sha256').update(filePath).digest('hex');
+    const hash = crypto.createHash('sha256').update(filePath).digest('hex');
     return path.join(historyDir, hash);
 }
 
 /**
- * Save a history snapshot of file content
- * @param {string} filePath - Absolute file path
- * @param {string} content - File content to save
- * @param {string} timestamp - Timestamp of the change
+ * Snapshots of a file, newest first.
+ * @param {string} filePath
+ * @returns {Promise<Array<{timestamp: string, filename: string, path: string, size: number}>>}
  */
-function saveHistorySnapshot(filePath, content, timestamp) {
+async function getFileHistory(filePath) {
+    const dir = getHistoryDirForFile(filePath);
+    let names;
     try {
-        const fileHistoryDir = getHistoryDirForFile(filePath);
-        
-        if (!fs.existsSync(fileHistoryDir)) {
-            fs.mkdirSync(fileHistoryDir, { recursive: true });
-        }
-
-        const snapshotFile = path.join(fileHistoryDir, `${timestamp}.snapshot`);
-        fs.writeFileSync(snapshotFile, content, 'utf-8');
+        names = await fsp.readdir(dir);
     } catch (error) {
-        console.error(`[History] Failed to save snapshot:`, error.message);
-    }
-}
-
-/**
- * Get all history snapshots for a file
- * @param {string} filePath - Absolute file path
- * @returns {Array} Array of history entries with timestamp and size
- */
-function getFileHistory(filePath) {
-    try {
-        const fileHistoryDir = getHistoryDirForFile(filePath);
-        
-        if (!fs.existsSync(fileHistoryDir)) {
-            return [];
-        }
-
-        const files = fs.readdirSync(fileHistoryDir);
-        return files
-            .filter(f => f.endsWith('.snapshot'))
-            .map(f => ({
-                timestamp: f.replace('.snapshot', ''),
-                filename: f,
-                path: path.join(fileHistoryDir, f),
-                stats: fs.statSync(path.join(fileHistoryDir, f))
-            }))
-            .sort((a, b) => parseInt(b.timestamp) - parseInt(a.timestamp));
-    } catch (error) {
-        console.error(`[History] Failed to get history:`, error.message);
+        if (error.code !== 'ENOENT') console.error('[History] Failed to list history:', error.message);
         return [];
     }
+    const entries = await Promise.all(names
+        .filter((f) => f.endsWith('.snapshot'))
+        .map(async (f) => {
+            const full = path.join(dir, f);
+            try {
+                const { size } = await fsp.stat(full);
+                return { timestamp: f.replace('.snapshot', ''), filename: f, path: full, size };
+            } catch (_) {
+                return null;
+            }
+        }));
+    return entries.filter(Boolean).sort((a, b) => parseInt(b.timestamp, 10) - parseInt(a.timestamp, 10));
 }
 
 /**
- * Restore a file from a specific history snapshot
- * @param {string} filePath - Absolute file path
- * @param {string} timestamp - Timestamp of snapshot to restore
- * @returns {string|null} File content or null if failed
+ * Keep only the newest `maxSnapshots` snapshots of a file.
  */
-function restoreSnapshot(filePath, timestamp) {
-    try {
-        const fileHistoryDir = getHistoryDirForFile(filePath);
-        const snapshotFile = path.join(fileHistoryDir, `${timestamp}.snapshot`);
-        
-        if (!fs.existsSync(snapshotFile)) {
-            return null;
-        }
+async function cleanupOldSnapshots(filePath, maxSnapshots) {
+    const history = await getFileHistory(filePath);
+    await Promise.all(history.slice(maxSnapshots).map((entry) => fsp.unlink(entry.path).catch(() => { })));
+}
 
-        return fs.readFileSync(snapshotFile, 'utf-8');
+// "Delete After (days)" from Settings, sent with every backup.
+let retentionDays = 7;
+let lastPruneAt = 0;
+const PRUNE_INTERVAL_MS = 6 * 60 * 60 * 1000;
+
+/**
+ * Delete snapshots older than the retention period, across all files, and
+ * remove folders left empty. Runs at most once every few hours.
+ */
+async function pruneExpiredHistory() {
+    const now = Date.now();
+    if (now - lastPruneAt < PRUNE_INTERVAL_MS) return;
+    lastPruneAt = now;
+    const cutoff = now - retentionDays * 24 * 60 * 60 * 1000;
+    try {
+        for (const dir of await fsp.readdir(historyDir, { withFileTypes: true })) {
+            if (!dir.isDirectory()) continue;
+            const full = path.join(historyDir, dir.name);
+            let remaining = 0;
+            for (const name of await fsp.readdir(full)) {
+                const ts = parseInt(name, 10);
+                if (name.endsWith('.snapshot') && Number.isFinite(ts) && ts < cutoff) {
+                    try { await fsp.unlink(path.join(full, name)); continue; } catch (_) { }
+                }
+                remaining++;
+            }
+            if (remaining === 0) await fsp.rmdir(full).catch(() => { });
+        }
     } catch (error) {
-        console.error(`[History] Failed to restore snapshot:`, error.message);
-        return null;
+        console.error('[History] Failed to prune old snapshots:', error.message);
     }
 }
 
-/**
- * Delete a specific history snapshot
- * @param {string} filePath - Absolute file path
- * @param {string} timestamp - Timestamp of snapshot to delete
- */
-function deleteSnapshot(filePath, timestamp) {
-    try {
-        const fileHistoryDir = getHistoryDirForFile(filePath);
-        const snapshotFile = path.join(fileHistoryDir, `${timestamp}.snapshot`);
-        
-        if (fs.existsSync(snapshotFile)) {
-            fs.unlinkSync(snapshotFile);
-        }
-    } catch (error) {
-        console.error(`[History] Failed to delete snapshot:`, error.message);
-    }
+function formatSize(bytes) {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/**
- * Clear all history for a specific file
- * @param {string} filePath - Absolute file path
- */
-function clearFileHistory(filePath) {
-    try {
-        const fileHistoryDir = getHistoryDirForFile(filePath);
-        
-        if (fs.existsSync(fileHistoryDir)) {
-            fs.rmSync(fileHistoryDir, { recursive: true, force: true });
-        }
-    } catch (error) {
-        console.error(`[History] Failed to clear history:`, error.message);
-    }
-}
-
-/**
- * Cleanup old history snapshots (keep only recent ones)
- * @param {string} filePath - Absolute file path
- * @param {number} maxSnapshots - Maximum number of snapshots to keep (default: 50)
- */
-function cleanupOldSnapshots(filePath, maxSnapshots = 50) {
-    try {
-        const history = getFileHistory(filePath);
-        
-        if (history.length > maxSnapshots) {
-            const toDelete = history.slice(maxSnapshots);
-            toDelete.forEach(entry => {
-                deleteSnapshot(filePath, entry.timestamp);
-            });
-        }
-    } catch (error) {
-        console.error(`[History] Failed to cleanup snapshots:`, error.message);
-    }
+/** True when `p` is a snapshot file inside the history folder. */
+function isSnapshotPath(p) {
+    if (typeof p !== 'string' || !p.endsWith('.snapshot')) return false;
+    const rel = path.relative(historyDir, path.resolve(p));
+    return !!rel && !rel.startsWith('..') && !path.isAbsolute(rel);
 }
 
 /**
  * Register all history-related IPC handlers
  */
 function registerHistoryHandlers() {
-    initHistoryDir();
+    fsp.mkdir(historyDir, { recursive: true }).catch(() => { });
 
-    /**
-     * Create history backup before saving (matches preload.js)
-     * Request: { filePath, content, maxVersions?, maxAgeDays? }
-     * Response: { success: boolean, backupPath?: string, error?: string }
-     */
+    // Request: { filePath, content, maxVersions?, maxAgeDays? }
     ipcMain.handle('create-history-backup', async (event, { filePath, content, maxVersions, maxAgeDays }) => {
         try {
+            if (Number.isFinite(maxAgeDays) && maxAgeDays > 0) retentionDays = maxAgeDays;
             const ts = Date.now().toString();
-            saveHistorySnapshot(filePath, content, ts);
-            cleanupOldSnapshots(filePath, maxVersions || 20);
-            
-            const fileHistoryDir = getHistoryDirForFile(filePath);
-            const backupPath = path.join(fileHistoryDir, `${ts}.snapshot`);
-            
+            const dir = getHistoryDirForFile(filePath);
+            const backupPath = path.join(dir, `${ts}.snapshot`);
+            await fsp.mkdir(dir, { recursive: true });
+            await fsp.writeFile(backupPath, content, 'utf-8');
+            await cleanupOldSnapshots(filePath, maxVersions || 20);
+            pruneExpiredHistory();
             return { success: true, timestamp: ts, backupPath };
         } catch (error) {
             console.error('[History] Backup failed:', error.message);
@@ -195,162 +129,47 @@ function registerHistoryHandlers() {
         }
     });
 
-    /**
-     * Save a history snapshot (legacy)
-     * Request: { filePath, content, timestamp? }
-     * Response: { success: boolean, error?: string }
-     */
-    ipcMain.handle(IPC.HISTORY?.SAVE || 'history-save', async (event, { filePath, content, timestamp }) => {
-        try {
-            const ts = timestamp || Date.now().toString();
-            saveHistorySnapshot(filePath, content, ts);
-            cleanupOldSnapshots(filePath);
-            return { success: true, timestamp: ts };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    });
-
-    /**
-     * Get all history snapshots for a file (matches preload.js)
-     * Request: filePath (string)
-     * Response: { success: boolean, entries: Array }
-     */
     ipcMain.handle('get-file-history', async (event, filePath) => {
-        try {
-            const history = getFileHistory(filePath);
-            return {
-                success: true,
-                entries: history.map(h => ({
-                    timestamp: h.timestamp,
-                    filename: h.filename,
-                    path: h.path,
-                    size: `${Math.round(h.stats.size / 1024)} KB`,
-                    formattedTime: new Date(parseInt(h.timestamp)).toLocaleString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit'
-                    })
-                }))
-            };
-        } catch (error) {
-            console.error('[History] Get history failed:', error.message);
-            return { success: false, error: error.message, entries: [] };
-        }
+        const history = await getFileHistory(filePath);
+        return {
+            success: true,
+            entries: history.map((h) => ({
+                timestamp: h.timestamp,
+                filename: h.filename,
+                path: h.path,
+                size: formatSize(h.size),
+                formattedTime: new Date(parseInt(h.timestamp, 10)).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                })
+            }))
+        };
     });
 
-    /**
-     * Get all history snapshots for a file (legacy)
-     * Request: { filePath }
-     * Response: Array of { timestamp, filename, size }
-     */
-    ipcMain.handle(IPC.HISTORY?.GET_HISTORY || 'history-get', async (event, { filePath }) => {
-        try {
-            const history = getFileHistory(filePath);
-            return {
-                success: true,
-                history: history.map(h => ({
-                    timestamp: h.timestamp,
-                    filename: h.filename,
-                    size: h.stats.size,
-                    mtime: h.stats.mtime
-                }))
-            };
-        } catch (error) {
-            return { success: false, error: error.message, history: [] };
-        }
-    });
-
-    /**
-     * Get history content (matches preload.js)
-     * Request: backupPath (string)
-     * Response: { success: boolean, content?: string }
-     */
+    // Only snapshot files can be read through this channel, not arbitrary paths.
     ipcMain.handle('get-history-content', async (event, backupPath) => {
+        if (!isSnapshotPath(backupPath)) return { success: false, error: 'Not a history snapshot' };
         try {
-            if (!fs.existsSync(backupPath)) {
-                return { success: false, error: 'Backup file not found' };
-            }
-            const content = fs.readFileSync(backupPath, 'utf-8');
-            return { success: true, content };
+            return { success: true, content: await fsp.readFile(backupPath, 'utf-8') };
         } catch (error) {
-            return { success: false, error: error.message };
+            return { success: false, error: error.code === 'ENOENT' ? 'Backup file not found' : error.message };
         }
     });
 
-    /**
-     * Clear file history (matches preload.js)
-     * Request: filePath (string)
-     * Response: { success: boolean }
-     */
     ipcMain.handle('clear-file-history', async (event, filePath) => {
         try {
-            clearFileHistory(filePath);
+            await fsp.rm(getHistoryDirForFile(filePath), { recursive: true, force: true });
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
         }
     });
-
-    /**
-     * Restore a file from a history snapshot
-     * Request: { filePath, timestamp }
-     * Response: { success: boolean, content?: string, error?: string }
-     */
-    ipcMain.handle(IPC.HISTORY?.RESTORE || 'history-restore', async (event, { filePath, timestamp }) => {
-        try {
-            const content = restoreSnapshot(filePath, timestamp);
-            if (content === null) {
-                return { success: false, error: 'Snapshot not found' };
-            }
-            return { success: true, content };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    });
-
-    /**
-     * Delete a specific history snapshot
-     * Request: { filePath, timestamp }
-     * Response: { success: boolean, error?: string }
-     */
-    ipcMain.handle(IPC.HISTORY?.DELETE || 'history-delete', async (event, { filePath, timestamp }) => {
-        try {
-            deleteSnapshot(filePath, timestamp);
-            return { success: true };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    });
-
-    /**
-     * Clear all history for a file (legacy)
-     * Request: { filePath }
-     * Response: { success: boolean, error?: string }
-     */
-    ipcMain.handle(IPC.HISTORY?.CLEAR || 'history-clear', async (event, { filePath }) => {
-        try {
-            clearFileHistory(filePath);
-            return { success: true };
-        } catch (error) {
-            return { success: false, error: error.message };
-        }
-    });
-
-    console.log('[IPC] History handlers registered');
 }
 
 module.exports = {
-    setMainWindow,
     registerHistoryHandlers,
-    saveHistorySnapshot,
-    getFileHistory,
-    restoreSnapshot,
-    deleteSnapshot,
-    clearFileHistory,
-    cleanupOldSnapshots,
-    getHistoryDirForFile,
 };

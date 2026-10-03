@@ -40,17 +40,16 @@ Sameko-Dev-CPP/
 │   │   └── ...
 │   ├── include/
 │   └── lib/
-├── main.js
+├── app/                  ← main process (entry: app/main.js)
 └── src/
 ```
 
-Supported folder names:
+The folder must be named `Sameko-GCC` — it is the only bundled location the IDE looks in.
+Without it the IDE falls back to a system compiler (`C:\TDM-GCC-64`, `C:\MinGW`, `C:\msys64\mingw64`,
+or `g++` on `PATH`).
 
-| Folder name  | Notes          |
-| :----------- | :------------- |
-| `Sameko-GCC` | Recommended    |
-| `mingw64`    | Standard MinGW |
-| `compiler`   | Generic name   |
+Optional tools picked up from `Sameko-GCC/bin` when present: `gdb.exe` (debugger), `clangd.exe`
+(IntelliSense and live checking), `astyle.exe` (formatting), `ld.lld.exe` (faster linker).
 
 ---
 

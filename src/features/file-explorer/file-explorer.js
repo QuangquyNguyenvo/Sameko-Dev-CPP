@@ -204,22 +204,12 @@ const FileExplorer = {
     /**
      * Initialize the file explorer
      */
-    init() {
-        console.log('[FileExplorer] Initializing...');
-
+    async init() {
         this.elements.sidebar = document.getElementById('explorer-sidebar');
         this.elements.tree = document.getElementById('explorer-tree');
         this.elements.resizer = document.getElementById('explorer-resizer');
         this.elements.toggleBtn = document.getElementById('btn-toggle-explorer');
         this.elements.openFolderBtn = document.getElementById('btn-open-folder');
-
-        console.log('[FileExplorer] Found elements:', {
-            sidebar: !!this.elements.sidebar,
-            tree: !!this.elements.tree,
-            resizer: !!this.elements.resizer,
-            toggleBtn: !!this.elements.toggleBtn,
-            openFolderBtn: !!this.elements.openFolderBtn
-        });
 
         if (!this.elements.sidebar) {
             console.error('[FileExplorer] Sidebar element not found!');
@@ -227,6 +217,7 @@ const FileExplorer = {
         }
 
         // Load saved state
+        await this.loadStateDoc();
         this.loadState();
 
         // Setup event listeners
@@ -245,17 +236,95 @@ const FileExplorer = {
         // It may auto-open later when a file is opened, based on previous persisted state.
         this.close();
 
-        console.log('[FileExplorer] Initialization complete');
     },
 
-    /**
-     * Load saved state from localStorage
-     */
+    // ---- Persistence -------------------------------------------------------
+    // Everything below is one document, userData/state/explorer.json:
+    //   { state: {...}, categories: { "<folder>" | "__global__": {...} } }
+    // It used to be localStorage, rewritten in full on every click; approach
+    // snapshots (whole files) could fill the quota and break every later save.
+    // Writes are now batched and flushed when the window closes.
+
+    _stateDoc: null,
+    _stateSaveTimer: null,
+
+    async loadStateDoc() {
+        let doc = null;
+        try { doc = await window.electronAPI?.stateRead?.('explorer'); } catch (_) { }
+        if (!doc) doc = this.migrateLocalStorageState();
+        else this.removeLegacyStateKeys();
+        this._stateDoc = { state: doc?.state || null, categories: doc?.categories || {} };
+        window.addEventListener('beforeunload', () => this.flushStateDoc(true));
+    },
+
+    /** One-time import of the old localStorage keys; they are removed once written. */
+    migrateLocalStorageState() {
+        try {
+            const doc = { state: null, categories: {} };
+            const legacyKeys = [];
+            const saved = localStorage.getItem('explorerState');
+            if (saved) { doc.state = JSON.parse(saved); legacyKeys.push('explorerState'); }
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (!key || !key.startsWith('explorerCategories:')) continue;
+                doc.categories[key.slice('explorerCategories:'.length)] = JSON.parse(localStorage.getItem(key));
+                legacyKeys.push(key);
+            }
+            // Oldest format: one global list, attached to the folder that was open.
+            const oldGlobal = localStorage.getItem('explorerCategories');
+            if (oldGlobal) {
+                const folder = doc.state?.currentFolder ? this.categoriesKey(doc.state.currentFolder) : null;
+                if (folder && !doc.categories[folder]) doc.categories[folder] = JSON.parse(oldGlobal);
+                legacyKeys.push('explorerCategories');
+            }
+            if (legacyKeys.length === 0) return null;
+            window.electronAPI?.stateWrite?.('explorer', doc).then((r) => {
+                if (r?.success) legacyKeys.forEach((k) => localStorage.removeItem(k));
+            }).catch(() => { });
+            return doc;
+        } catch (e) {
+            console.error('[FileExplorer] Failed to migrate saved state:', e);
+            return null;
+        }
+    },
+
+    /** The file is authoritative once it exists; old keys are never read again. */
+    removeLegacyStateKeys() {
+        try {
+            const keys = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key === 'explorerState' || key?.startsWith('explorerCategories')) keys.push(key);
+            }
+            keys.forEach((k) => localStorage.removeItem(k));
+        } catch (_) { }
+    },
+
+    scheduleStateDocSave() {
+        clearTimeout(this._stateSaveTimer);
+        this._stateSaveTimer = setTimeout(() => this.flushStateDoc(false), 400);
+    },
+
+    flushStateDoc(sync) {
+        if (!this._stateDoc) return;
+        const pending = this._stateSaveTimer !== null;
+        clearTimeout(this._stateSaveTimer);
+        this._stateSaveTimer = null;
+        if (sync) {
+            if (pending) window.electronAPI?.stateWriteSync?.('explorer', this._stateDoc);
+        } else {
+            window.electronAPI?.stateWrite?.('explorer', this._stateDoc).catch(() => { });
+        }
+    },
+
+    categoriesKey(folderPath) {
+        return folderPath ? folderPath.replace(/\\/g, '/') : '__global__';
+    },
+
     loadState() {
         try {
-            const saved = localStorage.getItem('explorerState');
-            if (saved) {
-                const state = JSON.parse(saved);
+            const state = this._stateDoc?.state;
+            if (state) {
                 this.width = Math.max(150, Math.min(400, state.width || 200));
                 this.currentFolder = state.currentFolder || null;
                 this.expandedFolders = new Set(state.expandedFolders || []);
@@ -263,8 +332,6 @@ const FileExplorer = {
                 this.fileNotes = state.fileNotes || {};
                 this.wasOpenBeforeStartup = !!state.isOpen;
                 this.isOpen = false;
-
-                // NEW: Load approach versions, expanded files, pins, and recent
                 this.fileApproaches = state.fileApproaches || {};
                 this.expandedFiles = new Set(state.expandedFiles || []);
                 this.pinnedItems = state.pinnedItems || [];
@@ -273,105 +340,57 @@ const FileExplorer = {
                 this.collectionsSectionCollapsed = !!state.collectionsSectionCollapsed;
                 this.activeContestId = state.activeContestId || null;
             }
-
-            // Load categories for the current folder (per-folder storage)
             this.loadCategoriesForFolder(this.currentFolder);
-
-            // Migrate old global categories to current folder (one-time)
-            if (this.categories.length === 0 && this.currentFolder) {
-                try {
-                    const oldGlobal = localStorage.getItem('explorerCategories');
-                    if (oldGlobal) {
-                        const oldData = JSON.parse(oldGlobal);
-                        if (oldData.categories && oldData.categories.length > 0) {
-                            this.categories = oldData.categories;
-                            this.collapsedCategories = new Set(oldData.collapsedCategories || []);
-                            this.saveCategoriesForFolder(this.currentFolder);
-                            localStorage.removeItem('explorerCategories');
-                        }
-                    }
-                } catch (_) { }
-            }
         } catch (e) {
             console.error('Failed to load explorer state:', e);
         }
     },
 
-    /**
-     * Save state to localStorage
-     */
     saveState() {
-        try {
-            const state = {
-                width: this.width,
-                currentFolder: this.currentFolder,
-                expandedFolders: Array.from(this.expandedFolders),
-                fileStatuses: this.fileStatuses,
-                fileNotes: this.fileNotes,
-                isOpen: this.isOpen,
-
-                // NEW: Save approach versions, expanded files, pins, and recent
-                fileApproaches: this.fileApproaches,
-                expandedFiles: Array.from(this.expandedFiles),
-                pinnedItems: this.pinnedItems,
-                recentFiles: this.recentFiles,
-                contestSectionCollapsed: this.contestSectionCollapsed,
-                collectionsSectionCollapsed: this.collectionsSectionCollapsed,
-                activeContestId: this.activeContestId,
-            };
-            localStorage.setItem('explorerState', JSON.stringify(state));
-
-            // Save categories for the current folder (per-folder storage)
-            this.saveCategoriesForFolder(this.currentFolder);
-        } catch (e) {
-            console.error('Failed to save explorer state:', e);
-        }
+        // Nothing to save into until the document has loaded; saving defaults
+        // here would overwrite the user's state.
+        if (!this._stateDoc) return;
+        this._stateDoc.state = {
+            width: this.width,
+            currentFolder: this.currentFolder,
+            expandedFolders: Array.from(this.expandedFolders),
+            fileStatuses: this.fileStatuses,
+            fileNotes: this.fileNotes,
+            isOpen: this.isOpen,
+            fileApproaches: this.fileApproaches,
+            expandedFiles: Array.from(this.expandedFiles),
+            pinnedItems: this.pinnedItems,
+            recentFiles: this.recentFiles,
+            contestSectionCollapsed: this.contestSectionCollapsed,
+            collectionsSectionCollapsed: this.collectionsSectionCollapsed,
+            activeContestId: this.activeContestId,
+        };
+        this.saveCategoriesForFolder(this.currentFolder);
     },
 
-    /**
-     * Load categories for a specific folder from localStorage
-     */
     loadCategoriesForFolder(folderPath) {
         this.categories = [];
         this.collapsedCategories = new Set();
-        // Use a global fallback key when no folder is open
-        const key = folderPath
-            ? 'explorerCategories:' + folderPath.replace(/\\/g, '/')
-            : 'explorerCategories:__global__';
-        try {
-            const catSaved = localStorage.getItem(key);
-            if (catSaved) {
-                const catData = JSON.parse(catSaved);
-                this.categories = catData.categories || [];
-                // Ensure all loaded categories have a color
-                this.categories.forEach((cat, index) => {
-                    if (!cat.color) {
-                        cat.color = this.CATEGORY_COLORS[index % this.CATEGORY_COLORS.length];
-                    }
-                });
-                this.collapsedCategories = new Set(catData.collapsedCategories || []);
+        const catData = this._stateDoc?.categories[this.categoriesKey(folderPath)];
+        if (!catData) return;
+        this.categories = catData.categories || [];
+        // Ensure all loaded categories have a color and an item list
+        this.categories.forEach((cat, index) => {
+            if (!Array.isArray(cat.items)) cat.items = [];
+            if (!cat.color) {
+                cat.color = this.CATEGORY_COLORS[index % this.CATEGORY_COLORS.length];
             }
-        } catch (e) {
-            console.error('[FileExplorer] Failed to load categories:', e);
-        }
+        });
+        this.collapsedCategories = new Set(catData.collapsedCategories || []);
     },
 
-    /**
-     * Save categories for the current folder to localStorage
-     */
     saveCategoriesForFolder(folderPath) {
-        // Use a global fallback key when no folder is open
-        const key = folderPath
-            ? 'explorerCategories:' + folderPath.replace(/\\/g, '/')
-            : 'explorerCategories:__global__';
-        try {
-            localStorage.setItem(key, JSON.stringify({
-                categories: this.categories,
-                collapsedCategories: Array.from(this.collapsedCategories),
-            }));
-        } catch (e) {
-            console.error('[FileExplorer] Failed to save categories:', e);
-        }
+        if (!this._stateDoc) return;
+        this._stateDoc.categories[this.categoriesKey(folderPath)] = {
+            categories: this.categories,
+            collapsedCategories: Array.from(this.collapsedCategories),
+        };
+        this.scheduleStateDocSave();
     },
 
     /**
@@ -379,11 +398,9 @@ const FileExplorer = {
      */
     setupEventListeners() {
         if (this.elements.toggleBtn) {
-            console.log('[FileExplorer] Attaching click handler to toggle button');
             this.elements.toggleBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('[FileExplorer] Toggle button clicked');
                 this.toggle();
             });
         } else {
@@ -395,7 +412,6 @@ const FileExplorer = {
             this.elements.openFolderBtn.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('[FileExplorer] Open folder button clicked');
                 this.openFolderDialog();
             });
         }
@@ -415,7 +431,6 @@ const FileExplorer = {
      * Toggle explorer open/close
      */
     toggle() {
-        console.log('[FileExplorer] Toggle called, isOpen:', this.isOpen);
         if (this.isOpen) {
             this.close();
         } else {
@@ -552,7 +567,7 @@ const FileExplorer = {
                         }
                         this.saveCategoriesForFolder(this.currentFolder);
                         // Clear global storage
-                        try { localStorage.removeItem('explorerCategories:__global__'); } catch (_) { }
+                        if (this._stateDoc) delete this._stateDoc.categories.__global__;
                     }
 
                     await this.refreshTree();
@@ -1084,9 +1099,9 @@ const FileExplorer = {
                             ${validRecent.map(path => {
                     const name = path.split(/[/\\]/).pop();
                     return `
-                                    <div class="explorer-item file recent-item" data-path="${path}" style="padding-left: 12px">
+                                    <div class="explorer-item file recent-item" data-path="${escHtml(path)}" style="padding-left: 12px">
                                         ${this.getFileIcon(name)}
-                                        <span class="explorer-item-name">${name}</span>
+                                        <span class="explorer-item-name">${escHtml(name)}</span>
                                     </div>
                                 `;
                 }).join('')}
@@ -1131,7 +1146,7 @@ const FileExplorer = {
     renderContestHeader() {
         const meta = this.contestMeta;
         const platformBadge = meta.platform && meta.platform !== 'Other'
-            ? `<span class="cp-platform-badge">${meta.platform}</span>` : '';
+            ? `<span class="cp-platform-badge">${escHtml(meta.platform)}</span>` : '';
         const collapseIcon = this.contestCollapsed
             ? '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>'
             : '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>';
@@ -1141,7 +1156,7 @@ const FileExplorer = {
                 <div class="cp-contest-info">
                     <span class="cp-contest-collapse" data-action="toggle-contest-collapse" title="${this.contestCollapsed ? 'Expand' : 'Collapse'}">${collapseIcon}</span>
                     <svg class="icon-contest" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#ffa726" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                    <span class="cp-contest-name" title="Double-click to rename">${meta.name || 'Contest'}</span>
+                    <span class="cp-contest-name" title="Double-click to rename">${escHtml(meta.name || 'Contest')}</span>
                     ${platformBadge}
                 </div>
                 <div class="cp-contest-actions">
@@ -1174,9 +1189,9 @@ const FileExplorer = {
 
             return `
                 <div class="cp-problem-chip ${isActive ? 'active' : ''} ${isSelected ? 'cp-chip-selected' : ''} cp-status-${prob.status || 'todo'}"
-                     data-problem="${prob.id}" data-chip-idx="${idx}" title="${tooltip}">
-                    <span class="cp-chip-label">${prob.id}</span>
-                    ${shortLabel ? `<span class="cp-chip-sublabel">${shortLabel}</span>` : ''}
+                     data-problem="${escHtml(prob.id)}" data-chip-idx="${idx}" title="${escHtml(tooltip)}">
+                    <span class="cp-chip-label">${escHtml(prob.id)}</span>
+                    ${shortLabel ? `<span class="cp-chip-sublabel">${escHtml(shortLabel)}</span>` : ''}
                     <span class="cp-chip-icon">${icon}</span>
                 </div>
             `;
@@ -1243,12 +1258,12 @@ const FileExplorer = {
 
             html += `
                 <div class="cp-problem-row-item ${isActive ? 'active' : ''} ${isSelected ? 'cp-chip-selected' : ''} cp-status-${prob.status || 'todo'}"
-                     data-problem="${prob.id}" data-chip-idx="${idx}" data-path="${filePath}" title="${tooltip}">
+                     data-problem="${escHtml(prob.id)}" data-chip-idx="${idx}" data-path="${escHtml(filePath)}" title="${escHtml(tooltip)}">
                     <span class="cp-row-status">${icon}</span>
-                    <span class="cp-row-id">${prob.id}</span>
-                    <span class="cp-row-label">${prob.label || ''}</span>
-                    <span class="cp-row-badge cp-badge-${prob.status || 'todo'}">${statusInfo.label}</span>
-                    ${timeStr ? `<span class="cp-row-time">${timeStr}</span>` : ''}
+                    <span class="cp-row-id">${escHtml(prob.id)}</span>
+                    <span class="cp-row-label">${escHtml(prob.label || '')}</span>
+                    <span class="cp-row-badge cp-badge-${prob.status || 'todo'}">${escHtml(statusInfo.label)}</span>
+                    ${timeStr ? `<span class="cp-row-time">${escHtml(timeStr)}</span>` : ''}
                 </div>
             `;
         });
@@ -1296,7 +1311,7 @@ const FileExplorer = {
             if (item.isDirectory) {
                 return `
                     <div class="explorer-item folder ${isExpanded ? 'expanded' : ''}" 
-                         data-path="${item.path}" 
+                         data-path="${escHtml(item.path)}" 
                          style="padding-left: ${indent + 8}px">
                         <span class="explorer-item-arrow">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2">
@@ -1304,7 +1319,7 @@ const FileExplorer = {
                             </svg>
                         </span>
                         ${this.getFolderIcon(isExpanded)}
-                        <span class="explorer-item-name">${item.name}</span>
+                        <span class="explorer-item-name">${escHtml(item.name)}</span>
                     </div>
                     ${isExpanded && item.children ?
                         `<div class="explorer-children">${this.renderItems(item.children, depth + 1)}</div>`
@@ -1335,7 +1350,7 @@ const FileExplorer = {
 
                     let html = `
                         <div class="explorer-item file cp-file has-status cp-status-${cpStatus} ${hasChildren ? 'has-children' : ''} ${isFileExpanded ? 'expanded' : ''}" 
-                             data-path="${item.path}" data-problem-id="${baseName}"
+                             data-path="${escHtml(item.path)}" data-problem-id="${escHtml(baseName)}"
                              ${hasNote ? `title="${note.replace(/"/g, '&quot;')}"` : ''}
                              style="padding-left: ${indent + 8}px">
                             ${hasChildren ? `
@@ -1345,11 +1360,11 @@ const FileExplorer = {
                                     </svg>
                                 </span>
                             ` : '<span class="explorer-file-spacer"></span>'}
-                            <span class="cp-status-icon" title="${cpStatusInfo.label}">${cpIcon}</span>
+                            <span class="cp-status-icon" title="${escHtml(cpStatusInfo.label)}">${cpIcon}</span>
                             ${this.getFileIcon(item.name)}
-                            <span class="explorer-item-name">${item.name}</span>
+                            <span class="explorer-item-name">${escHtml(item.name)}</span>
                             ${hasNote ? '<span class="explorer-note-icon" title="Click to edit">' + this.ICONS.note + '</span>' : ''}
-                            ${timeStr ? `<span class="cp-time-display">${timeStr}</span>` : ''}
+                            ${timeStr ? `<span class="cp-time-display">${escHtml(timeStr)}</span>` : ''}
                             ${hasChildren ? `<span class="child-count">[${childCount}]</span>` : ''}
                         </div>
                     `;
@@ -1367,11 +1382,11 @@ const FileExplorer = {
                                 const apprIcon = this.STATUS_ICONS[appr.status] || this.STATUS_ICONS.todo;
                                 html += `
                                     <div class="explorer-item approach cp-approach ${isActive ? 'current' : ''}" 
-                                         data-path="${item.path}" data-problem-id="${baseName}"
-                                         data-approach-id="${appr.id}"
+                                         data-path="${escHtml(item.path)}" data-problem-id="${escHtml(baseName)}"
+                                         data-approach-id="${escHtml(appr.id)}"
                                          style="padding-left: ${indent + 32}px">
                                         <span class="cp-approach-icon">${apprIcon}</span>
-                                        <span class="explorer-item-name">${appr.name}</span>
+                                        <span class="explorer-item-name">${escHtml(appr.name)}</span>
                                         ${isActive ? '<span class="current-marker" title="Active">' + this.ICONS.check + '</span>' : ''}
                                     </div>
                                 `;
@@ -1385,10 +1400,10 @@ const FileExplorer = {
                             for (const comp of item.companions) {
                                 html += `
                                     <div class="explorer-item file companion" 
-                                         data-path="${comp.path}" 
+                                         data-path="${escHtml(comp.path)}" 
                                          style="padding-left: ${indent + 32}px">
                                         ${this.getFileIcon(comp.name)}
-                                        <span class="explorer-item-name">${comp.name}</span>
+                                        <span class="explorer-item-name">${escHtml(comp.name)}</span>
                                     </div>
                                 `;
                             }
@@ -1414,7 +1429,7 @@ const FileExplorer = {
 
                 let html = `
                     <div class="explorer-item file ${status ? 'has-status status-' + status : ''} ${hasChildren ? 'has-children' : ''} ${isFileExpanded ? 'expanded' : ''}" 
-                         data-path="${item.path}" 
+                         data-path="${escHtml(item.path)}" 
                          ${hasNote ? `title="${note.replace(/"/g, '&quot;')}"` : ''}
                          style="padding-left: ${indent + 8}px">
                         ${hasChildren ? `
@@ -1424,9 +1439,9 @@ const FileExplorer = {
                                 </svg>
                             </span>
                         ` : '<span class="explorer-file-spacer"></span>'}
-                        ${statusInfo ? `<span class="explorer-status-dot" style="background: ${statusInfo.color}" title="${statusInfo.label}"></span>` : ''}
+                        ${statusInfo ? `<span class="explorer-status-dot" style="background: ${statusInfo.color}" title="${escHtml(statusInfo.label)}"></span>` : ''}
                         ${this.getFileIcon(item.name)}
-                        <span class="explorer-item-name">${item.name}</span>
+                        <span class="explorer-item-name">${escHtml(item.name)}</span>
                         ${hasNote ? '<span class="explorer-note-icon" title="Click to edit" data-note="' + note.replace(/"/g, '&quot;').replace(/\n/g, ' ') + '">' + this.ICONS.note + '</span>' : ''}
                         ${hasChildren ? `<span class="child-count" title="${childCount} child item(s)">[${childCount}]</span>` : ''}
                         ${isCpp ? '<span class="explorer-mark-btn" title="Mark status"></span>' : ''}
@@ -1444,14 +1459,14 @@ const FileExplorer = {
                             const approachStatus = approach.status ? this.APPROACH_STATUS_TYPES[approach.status] : null;
                             html += `
                                 <div class="explorer-item approach ${isCurrent ? 'current' : ''}" 
-                                     data-path="${item.path}"
-                                     data-approach-id="${approach.id}"
+                                     data-path="${escHtml(item.path)}"
+                                     data-approach-id="${escHtml(approach.id)}"
                                      style="padding-left: ${indent + 32}px">
                                     <svg class="explorer-icon approach-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#9c27b0" stroke-width="2">
                                         <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                     </svg>
-                                    <span class="explorer-item-name">${approach.name}</span>
-                                    ${approachStatus ? `<span class="approach-status" style="color: ${approachStatus.color}" title="${approachStatus.label}">${this.ICONS[approachStatus.iconKey]}</span>` : ''}
+                                    <span class="explorer-item-name">${escHtml(approach.name)}</span>
+                                    ${approachStatus ? `<span class="approach-status" style="color: ${approachStatus.color}" title="${escHtml(approachStatus.label)}">${this.ICONS[approachStatus.iconKey]}</span>` : ''}
                                     ${isCurrent ? '<span class="current-marker" title="Current approach">' + this.ICONS.check + '</span>' : ''}
                                 </div>
                             `;
@@ -1463,10 +1478,10 @@ const FileExplorer = {
                         for (const comp of item.companions) {
                             html += `
                                 <div class="explorer-item file companion" 
-                                     data-path="${comp.path}" 
+                                     data-path="${escHtml(comp.path)}" 
                                      style="padding-left: ${indent + 32}px">
                                     ${this.getFileIcon(comp.name)}
-                                    <span class="explorer-item-name">${comp.name}</span>
+                                    <span class="explorer-item-name">${escHtml(comp.name)}</span>
                                 </div>
                             `;
                         }
@@ -1738,7 +1753,7 @@ const FileExplorer = {
         for (const [key, info] of Object.entries(this.STATUS_TYPES)) {
             const isActive = currentStatus === key;
             statusSubmenu += `
-                <div class="context-item ${isActive ? 'active' : ''}" data-action="status" data-status="${key}">
+                <div class="context-item ${isActive ? 'active' : ''}" data-action="status" data-status="${escHtml(key)}">
                     <span class="status-dot-mini" style="background: ${info.color}"></span>
                     ${info.label}
                     ${isActive ? ' ' + this.ICONS.check : ''}
@@ -1795,9 +1810,9 @@ const FileExplorer = {
                 <span class="submenu-arrow">${this.ICONS.submenuArrow}</span>
                 <div class="context-submenu cat-target-submenu">
                     ${this.categories.map(c => `
-                        <div class="context-item" data-action="add-to-cat" data-cat-id="${c.id}">
+                        <div class="context-item" data-action="add-to-cat" data-cat-id="${escHtml(c.id)}">
                             <span class="cat-color-dot-mini" style="background: ${c.color}"></span>
-                            ${c.name}
+                            ${escHtml(c.name)}
                         </div>
                     `).join('')}
                 </div>
@@ -2131,7 +2146,7 @@ const FileExplorer = {
                         class="note-dialog-input" 
                         placeholder="Enter your note here..."
                         rows="6"
-                    >${currentNote}</textarea>
+                    >${escHtml(currentNote)}</textarea>
                 </div>
                 <div class="note-dialog-footer">
                     <button class="note-dialog-btn note-dialog-cancel">Cancel</button>
@@ -2187,14 +2202,14 @@ const FileExplorer = {
         overlay.innerHTML = `
             <div class="note-dialog input-dialog">
                 <div class="note-dialog-header">
-                    <h3>${title}</h3>
+                    <h3>${escHtml(title)}</h3>
                     <button class="note-dialog-close" title="Close">${this.ICONS.close}</button>
                 </div>
                 <div class="note-dialog-body">
                     <input 
                         type="text" 
                         class="input-dialog-field" 
-                        value="${defaultValue || ''}"
+                        value="${escHtml(defaultValue || '')}"
                         placeholder="Enter value..."
                     />
                 </div>
@@ -2336,7 +2351,6 @@ const FileExplorer = {
             if (window.electronAPI && window.electronAPI.saveFile) {
                 await window.electronAPI.saveFile({ path: newPath, content: '' });
                 this.refreshTree();
-                console.log(`[FileExplorer] Created: ${newPath}`);
             } else {
                 console.error('[FileExplorer] Cannot create file - API not available');
             }
@@ -2381,7 +2395,6 @@ const FileExplorer = {
      * Open a file in the editor
      */
     openFile(filePath, permanent = true) {
-        console.log('[FileExplorer] openFile called:', filePath);
 
         this.handleFileOpened(filePath);
 
@@ -2427,23 +2440,7 @@ const FileExplorer = {
         }
 
         // Open file via app's existing function
-        if (window.openFromPath) {
-            console.log('[FileExplorer] Using window.openFromPath');
-            window.openFromPath(filePath);
-        } else if (window.electronAPI && window.electronAPI.readFile) {
-            console.log('[FileExplorer] Fallback: using electronAPI.readFile');
-            // Fallback: read file and create new tab
-            window.electronAPI.readFile(filePath).then(content => {
-                if (window.newTab) {
-                    const fileName = filePath.split(/[/\\]/).pop();
-                    window.newTab(content, filePath, fileName);
-                }
-            }).catch(err => {
-                console.error('Failed to open file:', err);
-            });
-        } else {
-            console.error('[FileExplorer] No method available to open file!');
-        }
+        window.openFromPath?.(filePath);
     },
 
     /**
@@ -2616,8 +2613,6 @@ const FileExplorer = {
             this.saveState();
             this.renderTree();
 
-            console.log(`[FileExplorer] Saved approach "${name}" for ${filePath}`);
-            console.log(`[FileExplorer] Content length: ${content.length} chars`);
         });
     },
 
@@ -2656,7 +2651,6 @@ const FileExplorer = {
             editor.execCommand('selectAll');
             editor.replaceSelection(approach.content);
             editor.setCursor(0, 0);
-            console.log(`[FileExplorer] Switched to approach "${approach.name}"`);
         }
 
         this.saveState();
@@ -2742,7 +2736,7 @@ const FileExplorer = {
         for (const [key, info] of Object.entries(this.APPROACH_STATUS_TYPES)) {
             const isActive = approach.status === key;
             statusSubmenu += `
-                <div class="context-item ${isActive ? 'active' : ''}" data-action="approach-status" data-status="${key}">
+                <div class="context-item ${isActive ? 'active' : ''}" data-action="approach-status" data-status="${escHtml(key)}">
                     <span style="color: ${info.color}">${this.ICONS[info.iconKey]}</span> ${info.label}
                     ${isActive ? ' ' + this.ICONS.check : ''}
                 </div>
@@ -3047,7 +3041,7 @@ const FileExplorer = {
             const isActive = currentStatus === key;
             const icon = this.STATUS_ICONS[key];
             statusSubmenu += `
-                <div class="context-item ${isActive ? 'active' : ''}" data-action="cp-status" data-status="${key}">
+                <div class="context-item ${isActive ? 'active' : ''}" data-action="cp-status" data-status="${escHtml(key)}">
                     <span class="cp-menu-icon">${icon}</span> ${info.label}
                     ${isActive ? ' ' + this.ICONS.check : ''}
                 </div>
@@ -3083,9 +3077,9 @@ const FileExplorer = {
                 <span class="submenu-arrow">${this.ICONS.submenuArrow}</span>
                 <div class="context-submenu cat-target-submenu">
                     ${this.categories.map(c => `
-                        <div class="context-item" data-action="add-to-cat" data-cat-id="${c.id}">
+                        <div class="context-item" data-action="add-to-cat" data-cat-id="${escHtml(c.id)}">
                             <span class="cat-color-dot-mini" style="background: ${c.color}"></span>
-                            ${c.name}
+                            ${escHtml(c.name)}
                         </div>
                     `).join('')}
                 </div>
@@ -3225,7 +3219,7 @@ const FileExplorer = {
         for (const [key, info] of Object.entries(this.CP_STATUSES)) {
             const isCurrentStatus = approach.status === key;
             statusSubmenu += `
-                <div class="context-item ${isCurrentStatus ? 'active' : ''}" data-action="appr-status" data-status="${key}">
+                <div class="context-item ${isCurrentStatus ? 'active' : ''}" data-action="appr-status" data-status="${escHtml(key)}">
                     <span class="cp-menu-icon">${this.STATUS_ICONS[key]}</span> ${info.label}
                     ${isCurrentStatus ? ' ' + this.ICONS.check : ''}
                 </div>
@@ -3631,9 +3625,9 @@ const FileExplorer = {
         for (const [key, info] of Object.entries(this.CP_STATUSES)) {
             const isActive = currentStatus === key;
             itemsHtml += `
-                <div class="context-item ${isActive ? 'active' : ''}" data-status="${key}" style="gap:6px">
+                <div class="context-item ${isActive ? 'active' : ''}" data-status="${escHtml(key)}" style="gap:6px">
                     <span>${this.STATUS_ICONS[key]}</span>
-                    <span>${info.label}</span>
+                    <span>${escHtml(info.label)}</span>
                     ${isActive ? this.ICONS.check : ''}
                 </div>`;
         }
@@ -4279,25 +4273,25 @@ const FileExplorer = {
             }
 
             html += `
-                <div class="cat-group ${isSpecialContest ? 'active-contest-card' : ''} ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${cat.id}"
+                <div class="cat-group ${isSpecialContest ? 'active-contest-card' : ''} ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${escHtml(cat.id)}"
                      style="--cat-color: ${cat.color || '#64b5f6'}">
-                    <div class="cat-header" data-cat-id="${cat.id}">
+                    <div class="cat-header" data-cat-id="${escHtml(cat.id)}">
                         <span class="cat-arrow">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <polyline points="9 18 15 12 9 6"/>
                             </svg>
                         </span>
                         ${iconHtml}
-                        <span class="cat-name">${cat.name}</span>
+                        <span class="cat-name">${escHtml(cat.name)}</span>
                         ${isSpecialContest ? `<span class="active-badge" style="--cat-color: ${cat.color || '#64b5f6'}">ACTIVE</span>` : ''}
-                        ${dateLabel && !isSpecialContest ? `<span class="cat-date">${dateLabel}</span>` : ''}
+                        ${dateLabel && !isSpecialContest ? `<span class="cat-date">${escHtml(dateLabel)}</span>` : ''}
                         <span class="cat-count">${solvedCount}/${itemCount}</span>
                         ${!isActive ? `
-                        <button class="cat-activate-btn" data-cat-id="${cat.id}" data-action="activate-contest-quick" title="Set as Active Contest">
+                        <button class="cat-activate-btn" data-cat-id="${escHtml(cat.id)}" data-action="activate-contest-quick" title="Set as Active Contest">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                         </button>
                         ` : ''}
-                        <button class="cat-new-problem-btn" data-cat-id="${cat.id}" data-action="new-problem-quick" title="New Problem">
+                        <button class="cat-new-problem-btn" data-cat-id="${escHtml(cat.id)}" data-action="new-problem-quick" title="New Problem">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         </button>
                     </div>
@@ -4327,9 +4321,9 @@ const FileExplorer = {
                             const isActiveProblem = this.isActiveFile(item.filePath);
                             html += `
                                 <div class="cat-list-item cp-problem-square ${isActiveProblem ? 'active' : ''} cp-status-${item.status || 'todo'}"
-                                     data-cat-id="${cat.id}" data-file-path="${item.filePath}"
+                                     data-cat-id="${escHtml(cat.id)}" data-file-path="${escHtml(item.filePath)}"
                                      draggable="true" title="${item.fileName} (${statusInfo.label})">
-                                    ${item.name}
+                                    ${escHtml(item.name)}
                                 </div>
                             `;
                         }
@@ -4343,11 +4337,11 @@ const FileExplorer = {
                             const isActiveProblem = this.isActiveFile(item.filePath);
                             html += `
                                 <div class="cat-list-item ${isActiveProblem ? 'active' : ''} cp-status-${item.status || 'todo'}"
-                                     data-cat-id="${cat.id}" data-file-path="${item.filePath}"
-                                     draggable="true" title="${item.fileName}">
+                                     data-cat-id="${escHtml(cat.id)}" data-file-path="${escHtml(item.filePath)}"
+                                     draggable="true" title="${escHtml(item.fileName)}">
                                     <span class="cat-list-item-status">${statusIcon}</span>
-                                    <span class="cat-list-item-name">${item.name}</span>
-                                    <span class="cat-list-item-badge cp-badge-${item.status || 'todo'}">${statusInfo.label}</span>
+                                    <span class="cat-list-item-name">${escHtml(item.name)}</span>
+                                    <span class="cat-list-item-badge cp-badge-${item.status || 'todo'}">${escHtml(statusInfo.label)}</span>
                                 </div>
                             `;
                         }
@@ -4355,15 +4349,15 @@ const FileExplorer = {
                     }
                 } else {
                     html += `
-                        <div class="cat-empty-drop" data-cat-id="${cat.id}">
+                        <div class="cat-empty-drop" data-cat-id="${escHtml(cat.id)}">
                             <span>No problems yet</span>
-                            <button class="cat-add-file-btn" data-cat-id="${cat.id}" data-action="new-problem-quick">+ New Problem</button>
+                            <button class="cat-add-file-btn" data-cat-id="${escHtml(cat.id)}" data-action="new-problem-quick">+ New Problem</button>
                         </div>
                     `;
                 }
 
                 // Drop zone
-                html += `<div class="cat-drop-zone" data-cat-id="${cat.id}">Drop here to add</div>`;
+                html += `<div class="cat-drop-zone" data-cat-id="${escHtml(cat.id)}">Drop here to add</div>`;
             }
 
             html += '</div>';
@@ -4418,18 +4412,18 @@ const FileExplorer = {
             const pct = itemCount > 0 ? Math.round((solvedCount / itemCount) * 100) : 0;
 
             html += `
-                <div class="cat-group ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${cat.id}"
+                <div class="cat-group ${isCollapsed ? 'collapsed' : ''}" data-cat-id="${escHtml(cat.id)}"
                      style="--cat-color: ${cat.color}">
-                    <div class="cat-header" data-cat-id="${cat.id}">
+                    <div class="cat-header" data-cat-id="${escHtml(cat.id)}">
                         <span class="cat-arrow">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <polyline points="9 18 15 12 9 6"/>
                             </svg>
                         </span>
                         <span class="cat-kind-icon" title="Collection">${this.ICONS.collection}</span>
-                        <span class="cat-name">${cat.name}</span>
+                        <span class="cat-name">${escHtml(cat.name)}</span>
                         <span class="cat-count">${solvedCount}/${itemCount}</span>
-                        <button class="cat-new-problem-btn" data-cat-id="${cat.id}" data-action="new-problem-quick" title="New Problem">
+                        <button class="cat-new-problem-btn" data-cat-id="${escHtml(cat.id)}" data-action="new-problem-quick" title="New Problem">
                             <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                         </button>
                     </div>
@@ -4458,26 +4452,26 @@ const FileExplorer = {
                         const isActive = this.isActiveFile(item.filePath);
                         html += `
                             <div class="cat-list-item ${isActive ? 'active' : ''} cp-status-${item.status || 'todo'}"
-                                 data-cat-id="${cat.id}" data-file-path="${item.filePath}" 
-                                 draggable="true" title="${item.fileName}">
+                                 data-cat-id="${escHtml(cat.id)}" data-file-path="${escHtml(item.filePath)}" 
+                                 draggable="true" title="${escHtml(item.fileName)}">
                                 <span class="cat-list-item-status">${statusIcon}</span>
-                                <span class="cat-list-item-name">${item.name}</span>
-                                <span class="cat-list-item-badge cp-badge-${item.status || 'todo'}">${statusInfo.label}</span>
+                                <span class="cat-list-item-name">${escHtml(item.name)}</span>
+                                <span class="cat-list-item-badge cp-badge-${item.status || 'todo'}">${escHtml(statusInfo.label)}</span>
                             </div>
                         `;
                     }
                     html += '</div>';
                 } else {
                     html += `
-                        <div class="cat-empty-drop" data-cat-id="${cat.id}">
+                        <div class="cat-empty-drop" data-cat-id="${escHtml(cat.id)}">
                             <span>Drop files here or</span>
-                            <button class="cat-add-file-btn" data-cat-id="${cat.id}" data-action="new-problem-quick">+ New Problem</button>
+                            <button class="cat-add-file-btn" data-cat-id="${escHtml(cat.id)}" data-action="new-problem-quick">+ New Problem</button>
                         </div>
                     `;
                 }
 
                 // Drop zone (visible during drag)
-                html += `<div class="cat-drop-zone" data-cat-id="${cat.id}">Drop here to add</div>`;
+                html += `<div class="cat-drop-zone" data-cat-id="${escHtml(cat.id)}">Drop here to add</div>`;
             }
 
             html += '</div>';
@@ -4726,7 +4720,6 @@ const FileExplorer = {
                         this.renderTree ? this.renderTree() : this.renderEmptyState();
                     } else {
                         // Untitled file — prompt for name and save
-                        console.log('[FileExplorer] Drop untitled tab into category:', catId, 'content length:', (tab.content || '').length);
                         this.promptSaveUntitledToCategory(catId, tab);
                     }
                     return;
@@ -4860,7 +4853,7 @@ const FileExplorer = {
         // Build color submenu
         const colorsHtml = this.CATEGORY_COLORS.map(color =>
             `<span class="cat-color-option ${cat.color === color ? 'active' : ''}" 
-                   data-color="${color}" style="background: ${color}"></span>`
+                   data-color="${escHtml(color)}" style="background: ${color}"></span>`
         ).join('');
 
         const catIdx = this.categories.indexOf(cat);
@@ -5074,7 +5067,7 @@ const FileExplorer = {
         for (const [key, info] of Object.entries(this.CP_STATUSES)) {
             const isActive = item.status === key;
             statusHtml += `
-                <div class="context-item ${isActive ? 'active' : ''}" data-action="set-status" data-status="${key}">
+                <div class="context-item ${isActive ? 'active' : ''}" data-action="set-status" data-status="${escHtml(key)}">
                     <span class="cp-menu-icon">${this.STATUS_ICONS[key]}</span> ${info.label}
                     ${isActive ? ' ' + this.ICONS.check : ''}
                 </div>
@@ -5086,9 +5079,9 @@ const FileExplorer = {
         const otherCats = this.categories.filter(c => c.id !== catId);
         if (otherCats.length > 0) {
             moveHtml = otherCats.map(c =>
-                `<div class="context-item" data-action="move-to" data-target-cat="${c.id}">
+                `<div class="context-item" data-action="move-to" data-target-cat="${escHtml(c.id)}">
                     <span class="cat-color-dot-mini" style="background: ${c.color}"></span>
-                    ${c.name}
+                    ${escHtml(c.name)}
                 </div>`
             ).join('');
         }
@@ -5235,8 +5228,8 @@ const FileExplorer = {
                         <div class="cat-add-option" data-action="add-current" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:2px solid var(--border);border-radius:8px;cursor:pointer;margin-bottom:8px;transition:border-color 0.15s;">
                             ${this.getFileIcon(fileName)}
                             <div>
-                                <div style="font-weight:600;font-size:13px">${fileName}</div>
-                                <div style="font-size:10px;opacity:0.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:250px">${currentPath}</div>
+                                <div style="font-weight:600;font-size:13px">${escHtml(fileName)}</div>
+                                <div style="font-size:10px;opacity:0.6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:250px">${escHtml(currentPath)}</div>
                             </div>
                         </div>
                         <div class="cat-add-option" data-action="browse" style="display:flex;align-items:center;gap:8px;padding:8px 12px;border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color 0.15s;">
@@ -5245,7 +5238,7 @@ const FileExplorer = {
                         </div>
                         <div style="margin-top:12px">
                             <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px">Display Name</label>
-                            <input type="text" class="input-dialog-field" id="cat-add-name" value="${name}" placeholder="Problem name..." />
+                            <input type="text" class="input-dialog-field" id="cat-add-name" value="${escHtml(name)}" placeholder="Problem name..." />
                         </div>
                     </div>
                     <div class="note-dialog-footer">
@@ -5359,7 +5352,6 @@ const FileExplorer = {
 
         // No folder available — use Save As dialog as fallback
         if (!folderPath) {
-            console.log('[FileExplorer] No folder path available, using Save As dialog');
             this._saveUntitledViaSaveAs(catId, tab);
             return;
         }

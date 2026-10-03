@@ -54,22 +54,30 @@ async function checkSyntax(content, filePath = null) {
         '-fmax-errors=50',
         '-Wall',
         '-Wextra',
-        '-pipe',
-        '-fno-exceptions',
-        '-fno-rtti'
+        '-pipe'
     ];
+    // NOTE: no -fno-exceptions / -fno-rtti here. They reported a false
+    // "exception handling disabled" error on any file using try/catch, and
+    // made GCC reject the PCH, so every check re-parsed bits/stdc++.h
+    // (~1.5 s instead of ~0.4 s).
 
-    if (extraFlags && validateCompilerFlags(extraFlags).valid) {
-        args.push(...extraFlags.split(/\s+/).filter(Boolean));
+    const usableExtra = (extraFlags && validateCompilerFlags(extraFlags).valid) ? extraFlags : '';
+    if (usableExtra) {
+        args.push(...usableExtra.split(/\s+/).filter(Boolean));
     }
 
-    try {
-        const pch = await ensurePCH(`${stdFlag} -O0`);
-        if (pch && pch.ready) {
-            args.push('-I', pch.pchSubDir);
-            args.push('-include', 'stdc++.h');
-        }
-    } catch (e) { }
+    // Use the PCH only for sources that include the header themselves —
+    // force-including it everywhere hid genuine "missing #include" errors.
+    // The PCH flags mirror this command line so GCC accepts it.
+    if (content.includes('bits/stdc++.h')) {
+        try {
+            const pch = await ensurePCH(`${stdFlag} -O0 ${usableExtra}`);
+            if (pch && pch.ready) {
+                args.push('-I', pch.pchSubDir);
+                args.push('-include', 'stdc++.h');
+            }
+        } catch (e) { }
+    }
 
     args.push(tempFile);
 

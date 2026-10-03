@@ -2,29 +2,17 @@
 
 const { BrowserWindow, Menu, app, screen } = require('electron');
 const path = require('path');
-const http = require('http');
-const fs = require('fs');
 const { WINDOW } = require('../shared/constants');
 const { IS_WIN } = require('../shared/platform');
+const { readSettings, updateSettings } = require('../shared/settings-store');
 
 let mainWindow = null;
-let devServer = null;
-let devServerPort = null;
 let saveTimeout = null;
 let displayListenersAttached = false;
 
-const settingsPath = path.join(app.getPath('userData'), 'settings.json');
-
 function loadWindowBounds() {
-    try {
-        if (fs.existsSync(settingsPath)) {
-            const data = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-            return data.windowBounds || null;
-        }
-    } catch (error) {
-        console.error('[Window] Failed to load window bounds:', error);
-    }
-    return null;
+    const settings = readSettings();
+    return (settings && settings.windowBounds) || null;
 }
 
 function clamp(value, min, max) {
@@ -136,24 +124,16 @@ function ensureWindowIsVisible(window) {
     }
 }
 
-function saveWindowBounds() {
+/** Persist the current bounds now (only the windowBounds key is touched). */
+function writeWindowBounds() {
     if (!mainWindow || mainWindow.isDestroyed()) return;
-    
-    // Debounce: only save after 500ms of no changes
-    if (saveTimeout) clearTimeout(saveTimeout);
-    
-    saveTimeout = setTimeout(() => {
-        try {
-            const isMaximized = mainWindow.isMaximized();
-            
-            let settings = {};
-            if (fs.existsSync(settingsPath)) {
-                settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-            }
-            
-            // Only save bounds when NOT maximized to get correct restore size
-            if (!isMaximized) {
-                const bounds = mainWindow.getBounds();
+    try {
+        const isMaximized = mainWindow.isMaximized();
+        // Only save bounds when NOT maximized to get the correct restore size;
+        // while maximized just flip the flag and keep the previous bounds.
+        const bounds = isMaximized ? null : mainWindow.getBounds();
+        updateSettings((settings) => {
+            if (bounds) {
                 settings.windowBounds = {
                     x: bounds.x,
                     y: bounds.y,
@@ -162,61 +142,21 @@ function saveWindowBounds() {
                     isMaximized: false
                 };
             } else {
-                // Just update maximized state, keep previous bounds for restore
-                if (!settings.windowBounds) {
-                    settings.windowBounds = {};
-                }
+                if (!settings.windowBounds) settings.windowBounds = {};
                 settings.windowBounds.isMaximized = true;
             }
-            
-            fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
-        } catch (error) {
-            console.error('[Window] Failed to save window bounds:', error);
-        }
-    }, 500);
+        });
+    } catch (error) {
+        console.error('[Window] Failed to save window bounds:', error);
+    }
 }
 
-function startDevStaticServer(appRoot) {
-    if (app.isPackaged) return null;
-    if (devServer) return { port: devServerPort };
+function saveWindowBounds() {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
 
-    const publicDir = path.join(appRoot, 'src');
-    const mime = {
-        '.html': 'text/html', '.js': 'application/javascript', '.css': 'text/css',
-        '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png',
-        '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.ico': 'image/x-icon',
-        '.woff2': 'font/woff2', '.ttf': 'font/ttf'
-    };
-
-    devServer = http.createServer((req, res) => {
-        const urlPath = req.url.split('?')[0];
-        const safePath = urlPath === '/' ? '/index.html' : urlPath;
-        const filePath = path.join(publicDir, safePath);
-
-        if (!filePath.startsWith(publicDir)) {
-            res.writeHead(403); res.end('Forbidden'); return;
-        }
-
-        fs.readFile(filePath, (err, data) => {
-            if (err) {
-                res.writeHead(404); res.end('Not found'); return;
-            }
-            const ext = path.extname(filePath).toLowerCase();
-            res.setHeader('Content-Type', mime[ext] || 'application/octet-stream');
-            res.end(data);
-        });
-    });
-
-    devServer.listen(0, '127.0.0.1', () => {
-        devServerPort = devServer.address().port;
-        console.log(`[DevServer] http://localhost:${devServerPort}/`);
-    });
-
-    devServer.on('error', (err) => {
-        console.warn('[DevServer] Failed to start:', err.message);
-    });
-
-    return { port: devServerPort };
+    // Debounce: only save after 500ms of no changes
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(writeWindowBounds, 500);
 }
 
 function getBasePath() {
@@ -264,6 +204,9 @@ function createMainWindow() {
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
+            // Chromium's spellchecker is on by default and would underline
+            // identifiers typed in the app's text fields; it also costs memory.
+            spellcheck: false,
             preload: path.join(appRoot, 'preload.js')
         },
         // Electron on Linux/macOS cannot read .ico for a window icon — it needs a PNG.
@@ -287,15 +230,22 @@ function createMainWindow() {
         mainWindow.maximize();
     }
 
-    const devServerInfo = startDevStaticServer(appRoot);
-    if (devServerInfo?.port) {
-        const devUrl = `http://localhost:${devServerInfo.port}/`;
-        mainWindow.loadURL(devUrl);
-    } else {
-        mainWindow.loadFile(path.join(appRoot, 'src', 'index.html'));
-    }
+    // (A dev-only static HTTP server used to be started here. It returned its
+    // port before listen() had assigned one, so the window always fell through
+    // to loadFile() and the server just sat on an open port, unused.)
+    mainWindow.loadFile(path.join(appRoot, 'src', 'index.html'));
 
     Menu.setApplicationMenu(null);
+
+    // The window only ever shows the app's own page. Refuse to navigate it
+    // anywhere else (a dropped file or a stray link would otherwise replace the
+    // whole IDE, with the preload API still attached) and never open child
+    // windows; external links go through the `open-release-page` handler.
+    const appUrl = mainWindow.webContents.getURL();
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+        if (url !== mainWindow.webContents.getURL() && url !== appUrl) event.preventDefault();
+    });
+    mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
 
     // Save window bounds on resize, move, maximize, unmaximize
     mainWindow.on('resize', saveWindowBounds);
@@ -307,38 +257,9 @@ function createMainWindow() {
     mainWindow.on('close', () => {
         if (saveTimeout) {
             clearTimeout(saveTimeout);
+            saveTimeout = null;
         }
-        // Force immediate save on close
-        try {
-            const isMaximized = mainWindow.isMaximized();
-            
-            let settings = {};
-            if (fs.existsSync(settingsPath)) {
-                settings = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
-            }
-            
-            // Only save bounds when NOT maximized
-            if (!isMaximized) {
-                const bounds = mainWindow.getBounds();
-                settings.windowBounds = {
-                    x: bounds.x,
-                    y: bounds.y,
-                    width: bounds.width,
-                    height: bounds.height,
-                    isMaximized: false
-                };
-            } else {
-                // Just update maximized state, keep previous bounds
-                if (!settings.windowBounds) {
-                    settings.windowBounds = {};
-                }
-                settings.windowBounds.isMaximized = true;
-            }
-            
-            fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2), 'utf-8');
-        } catch (error) {
-            console.error('[Window] Failed to save bounds on close:', error);
-        }
+        writeWindowBounds();
     });
 
     mainWindow.on('closed', () => {

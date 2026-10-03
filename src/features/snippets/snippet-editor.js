@@ -82,17 +82,17 @@ window.renderSnippetsList = function () {
 
     listContainer.innerHTML = App.settings.snippets.map((s, idx) => `
         <div class="snippet-item ${s.isBuiltin ? 'builtin' : ''}">
-            <div class="snippet-trigger">${s.trigger}</div>
-            <div class="snippet-preview" title="${s.content.replace(/"/g, '&quot;')}">
-                ${s.content.split('\n')[0].substring(0, 50)}${s.content.length > 50 || s.content.includes('\n') ? '...' : ''}
+            <div class="snippet-trigger">${escapeHtml(s.trigger)}</div>
+            <div class="snippet-preview" title="${escapeHtml(s.content)}">
+                ${escapeHtml(s.content.split('\n')[0].substring(0, 50))}${s.content.length > 50 || s.content.includes('\n') ? '...' : ''}
             </div>
             <div class="snippet-actions">
-                <button class="btn-edit" onclick="editSnippet(${idx})" title="Edit">
+                <button class="btn-edit" data-snippet-edit="${idx}" title="Edit">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z" />
                     </svg>
                 </button>
-                <button class="btn-delete" onclick="deleteSnippet(${idx})" title="Delete">
+                <button class="btn-delete" data-snippet-delete="${idx}" title="Delete">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <polyline points="3 6 5 6 21 6" />
                         <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
@@ -101,6 +101,14 @@ window.renderSnippetsList = function () {
             </div>
         </div>
     `).join('');
+
+    // Listeners instead of inline onclick="" attributes (blocked by the CSP).
+    listContainer.querySelectorAll('[data-snippet-edit]').forEach(btn => {
+        btn.addEventListener('click', () => window.editSnippet(parseInt(btn.dataset.snippetEdit, 10)));
+    });
+    listContainer.querySelectorAll('[data-snippet-delete]').forEach(btn => {
+        btn.addEventListener('click', () => window.deleteSnippet(parseInt(btn.dataset.snippetDelete, 10)));
+    });
 };
 
 window.deleteSnippet = function (index) {

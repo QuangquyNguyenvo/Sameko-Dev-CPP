@@ -4,6 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Scripts only from the app's own files (no inline scripts, no inline
+         event handlers), so markup injected through innerHTML cannot execute.
+         'unsafe-eval' + blob: are required by Monaco's web workers; inline
+         styles are used throughout the UI and by Monaco itself. -->
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-eval' blob:; worker-src 'self' blob: data:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: file: https:; media-src 'self' data: blob: file: https:; font-src 'self' data:; connect-src 'self' https://api.github.com https://gist.githubusercontent.com; object-src 'none'; base-uri 'self'; form-action 'none'">
     <title>Sameko Dev C++</title>
     <!-- Local bundled fonts (offline, no CDN round-trip on startup) -->
     <link rel="stylesheet" href="assets/fonts.css">
@@ -855,7 +861,7 @@
                             <div class="setting-section-divider"></div>
                             <h3 style="margin-top:18px;font-size:13px;opacity:0.7;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Preview</h3>
                             <div id="discord-rpc-preview" style="background:var(--bg-secondary);border-radius:8px;padding:16px;margin-top:8px;display:flex;align-items:center;gap:14px;">
-                                <img src="assets/icons/icon.png" style="width:60px;height:60px;border-radius:8px;flex-shrink:0;" alt="">
+                                <img src="assets/icons/icon-256.png" style="width:60px;height:60px;border-radius:8px;flex-shrink:0;" alt="">
                                 <div style="min-width:0;">
                                     <div style="font-weight:700;font-size:14px;">Sameko Dev C++</div>
                                     <div id="discord-preview-details" style="font-size:13px;margin-top:3px;opacity:0.85;">Working on untitled.cpp</div>
@@ -868,7 +874,7 @@
                         <!-- About Tab -->
                         <div class="settings-panel" id="panel-about">
                             <div style="text-align: center; padding: 20px 0;">
-                                <img src="assets/icons/icon.png" alt="Logo"
+                                <img src="assets/icons/icon-256.png" alt="Logo"
                                     style="width: 80px; height: 80px; margin-bottom: 10px;">
                                 <h3 style="margin: 0; font-size: 24px;">Sameko Dev C++</h3>
                                 <p style="opacity: 0.7; margin: 5px 0 20px;">Fast, Modern & Beautiful</p>
@@ -1349,24 +1355,12 @@
 
     </div>
 
-    <script>
-        // Debug: Catch all errors
-        window.onerror = function (msg, url, line, col, error) {
-            console.error('[GLOBAL ERROR]', msg, url, line, col, error);
-            return false;
-        };
-        window.onunhandledrejection = function (event) {
-            console.error('[UNHANDLED REJECTION]', event.reason);
-        };
-        console.log('[DEBUG] Scripts starting to load...');
-    </script>
-    <!-- xterm UMD libs must load BEFORE Monaco's AMD loader, otherwise they
-         register as anonymous AMD modules instead of attaching to window. -->
-    <script src="../node_modules/xterm/lib/xterm.js"></script>
-    <script src="../node_modules/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
-    <script>var require = { paths: { vs: '../node_modules/monaco-editor/min/vs' } };</script>
-    <script src="../node_modules/monaco-editor/min/vs/loader.js"
-        onerror="console.error('[ERROR] Failed to load Monaco loader')"></script>
+    <!-- boot.js must load before Monaco's AMD loader: it defines the `require`
+         config global. xterm is not loaded here: TerminalManager loads it through
+         the AMD loader when the page is idle or on the first output.
+         No inline <script> anywhere - the CSP forbids it. -->
+    <script src="renderer/boot.js"></script>
+    <script src="../node_modules/monaco-editor/min/vs/loader.js"></script>
     <script src="features/suggestions/cpp-suggestions.js"></script>
     <script src="features/snippets/snippet-editor.js"></script>
     <script src="renderer/ui/theme-tokens.js"></script>
@@ -1379,7 +1373,24 @@
     <script src="features/file-explorer/file-explorer.js"></script>
     <script src="features/terminal/terminal-manager.js"></script>
     <script src="features/debugger/debugger-ui.js"></script>
-    <script src="renderer/app.js"></script>
+    <!-- The app itself, in load order (formerly one renderer/app.js). -->
+    <script src="renderer/app/core.js"></script>
+    <script src="renderer/app/split.js"></script>
+    <script src="renderer/app/settings.js"></script>
+    <script src="renderer/app/session.js"></script>
+    <script src="renderer/app/live-check.js"></script>
+    <script src="renderer/app/appearance.js"></script>
+    <script src="renderer/app/shortcuts.js"></script>
+    <script src="renderer/app/layout.js"></script>
+    <script src="renderer/app/tabs.js"></script>
+    <script src="renderer/app/build.js"></script>
+    <script src="renderer/app/ipc-events.js"></script>
+    <script src="renderer/app/companion.js"></script>
+    <script src="renderer/app/file-watch.js"></script>
+    <script src="renderer/app/batch-tests.js"></script>
+    <script src="renderer/app/terminal-input.js"></script>
+    <script src="renderer/app/updates.js"></script>
+    <script src="renderer/app/tab-menu.js"></script>
 </body>
 
 </html>

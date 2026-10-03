@@ -56,7 +56,6 @@ const ThemeCustomizer = {
                 if (saved) {
                     const bgSettings = JSON.parse(saved);
                     Object.assign(this.workingTheme.colors, bgSettings);
-                    console.log(`[Customizer] Loaded saved background for: ${themeId}`);
                 }
             } catch (e) {
                 console.warn(`[Customizer] Failed to load saved background:`, e);
@@ -2867,7 +2866,6 @@ const ThemeCustomizer = {
                 statusEl.className = 'tc6-json-status tc6-json-valid';
             }
 
-            console.log('[Customizer] JSON changes applied');
         } catch (err) {
             console.error('[Customizer] Failed to apply JSON:', err);
             if (statusEl) {
@@ -4339,9 +4337,7 @@ const ThemeCustomizer = {
                     // Await for settings to save safely
                     try {
                         const savePromise = saveSettings();
-                        Promise.resolve(savePromise).then(() => {
-                            console.log('[Customizer] Settings saved successfully');
-                        }).catch((err) => {
+                        Promise.resolve(savePromise).catch((err) => {
                             console.error('[Customizer] Failed to save settings:', err);
                         });
                     } catch (e) {
@@ -4354,7 +4350,6 @@ const ThemeCustomizer = {
                 ThemeMarketplace.renderCarousel();
             }
 
-            console.log(`[Customizer] Created: ${name} (${id})`);
 
             // Dispatch custom event for IDE integration
             this._dispatchThemeSaveEvent(themeData);
@@ -4416,9 +4411,7 @@ const ThemeCustomizer = {
                     // Await for settings to save before closing safely
                     try {
                         const savePromise = saveSettings();
-                        Promise.resolve(savePromise).then(() => {
-                            console.log('[Customizer] Settings saved successfully');
-                        }).catch((err) => {
+                        Promise.resolve(savePromise).catch((err) => {
                             console.error('[Customizer] Failed to save settings:', err);
                         });
                     } catch (e) {
@@ -4431,7 +4424,6 @@ const ThemeCustomizer = {
                 ThemeMarketplace.renderCarousel();
             }
 
-            console.log(`[Customizer] Updated: ${name}`);
 
             // Dispatch custom event for IDE integration
             this._dispatchThemeSaveEvent(themeData);
@@ -4461,7 +4453,7 @@ const ThemeCustomizer = {
      * Save only background settings for built-in themes
      * This stores background customization separately without modifying the built-in theme
      */
-    _saveBackgroundOnly() {
+    async _saveBackgroundOnly() {
         if (!this.sourceThemeId) return;
 
         // Exit drag mode if active
@@ -4488,11 +4480,14 @@ const ThemeCustomizer = {
             if (bgSettings[key] === undefined) delete bgSettings[key];
         });
 
+        // A picked image/video is a data: URL here; store it as a file and keep
+        // only its URL, so localStorage holds a few hundred bytes instead of MBs.
+        await ThemeManager.externalizeAssets(bgSettings);
+
         // Store in localStorage with theme ID as key
         const storageKey = `theme-bg-${this.sourceThemeId}`;
         try {
             localStorage.setItem(storageKey, JSON.stringify(bgSettings));
-            console.log(`[Customizer] Background saved for theme: ${this.sourceThemeId}`);
 
             // Get theme name for notification
             const activeTheme = ThemeManager.themes.get(this.sourceThemeId);
@@ -4529,7 +4524,6 @@ const ThemeCustomizer = {
             }
         });
         window.dispatchEvent(event);
-        console.log('[Customizer] Dispatched themeCustomizerSave event', themeData.meta);
     },
 
     /**
@@ -4548,7 +4542,6 @@ const ThemeCustomizer = {
             // For built-in themes: Clear saved background from localStorage
             const storageKey = `theme-bg-${this.sourceThemeId}`;
             localStorage.removeItem(storageKey);
-            console.log(`[Customizer] Cleared saved background for: ${this.sourceThemeId}`);
 
             // Restore hardcoded theme (without saved background)
             ThemeManager._restoreBuiltinTheme(this.sourceThemeId);
@@ -4578,7 +4571,6 @@ const ThemeCustomizer = {
                 this._updateBgStyles();
                 this._updateBgHints();
 
-                console.log(`[Customizer] Reset custom theme: ${this.sourceThemeId}`);
             }
         }
     },
@@ -4662,7 +4654,6 @@ const ThemeCustomizer = {
 
         const result = ThemeManager.deleteTheme(this.sourceThemeId);
         if (result.success) {
-            console.log(`[Customizer] Deleted: ${themeName}`);
 
             if (typeof ThemeMarketplace !== 'undefined') {
                 ThemeMarketplace.renderCarousel();
@@ -5003,7 +4994,6 @@ const ThemeCustomizer = {
             this._renderControls();
             this._renderPreview();
             this._updateHistoryButtons();
-            console.log(`[Customizer] Undo to step ${this.historyIndex}`);
         }
     },
 
@@ -5017,7 +5007,6 @@ const ThemeCustomizer = {
             this._renderControls();
             this._renderPreview();
             this._updateHistoryButtons();
-            console.log(`[Customizer] Redo to step ${this.historyIndex}`);
         }
     },
 
@@ -5157,7 +5146,6 @@ const ThemeCustomizer = {
             // Show auto-save indicator
             this._showAutoSaveIndicator();
 
-            console.log(`[Customizer] Auto-saved: ${name}`);
         }
     },
 

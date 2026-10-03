@@ -11,7 +11,10 @@ const warmup = require('./warmup');
 const pchManager = require('./pch-manager');
 const executor = require('./executor');
 
+const runLauncher = require('./run-launcher');
+
 module.exports = {
+    ensureRunLauncher: runLauncher.ensureLauncher,
     // Detector
     detectCompiler: detector.detectCompiler,
     getCompilerVersion: detector.getCompilerVersion,

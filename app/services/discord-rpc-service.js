@@ -1,7 +1,11 @@
 'use strict';
 
-const DiscordRPC = require('discord-rpc');
 const path = require('path');
+
+// discord-rpc (and node-fetch/ws under it) is loaded by the first connect(),
+// which main.js runs after the window is shown, and never when the user has
+// Rich Presence turned off.
+let DiscordRPC = null;
 
 const CLIENT_ID = '1476184013742805105';
 
@@ -56,6 +60,7 @@ async function connect() {
     if (isConnected && rpcClient) return;
 
     try {
+        DiscordRPC = DiscordRPC || require('discord-rpc');
         rpcClient = new DiscordRPC.Client({ transport: 'ipc' });
 
         rpcClient.on('ready', () => {
@@ -139,7 +144,6 @@ async function updatePresence(fileName, workspaceName, line, col) {
         }
 
         await rpcClient.setActivity(activity);
-        console.log('[Discord RPC] Presence updated:', activity.details);
     } catch (error) {
         console.error('[Discord RPC] Failed to update presence:', error.message);
     }

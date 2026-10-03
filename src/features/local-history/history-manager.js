@@ -31,7 +31,6 @@ const LocalHistory = {
      */
     init() {
         this.loadSettings();
-        console.log('[LocalHistory] Initialized', this.settings.enabled ? '✓ Enabled' : '✗ Disabled');
     },
 
     /**
@@ -194,7 +193,14 @@ const LocalHistory = {
         }
     },
 
-    getUntitledStorageKey(tabOrKey) {
+    /** Name of the state document holding an untitled tab's checkpoints. */
+    getUntitledStateName(tabOrKey) {
+        const key = typeof tabOrKey === 'string' ? tabOrKey : tabOrKey?.untitledHistoryKey;
+        return key ? `untitled-${String(key).replace(/[^A-Za-z0-9_.-]/g, '_')}` : null;
+    },
+
+    /** Key an older version used in localStorage (read once, then removed). */
+    getLegacyUntitledStorageKey(tabOrKey) {
         const key = typeof tabOrKey === 'string' ? tabOrKey : tabOrKey?.untitledHistoryKey;
         return key ? `untitled-history:${key}` : null;
     },
@@ -207,13 +213,18 @@ const LocalHistory = {
         return tab.untitledHistoryKey;
     },
 
-    getUntitledHistory(tabOrKey) {
-        const storageKey = this.getUntitledStorageKey(tabOrKey);
-        if (!storageKey) return [];
+    async getUntitledHistory(tabOrKey) {
+        const name = this.getUntitledStateName(tabOrKey);
+        if (!name) return [];
 
         try {
-            const raw = localStorage.getItem(storageKey);
-            const entries = raw ? JSON.parse(raw) : [];
+            let entries = window.electronAPI?.stateRead ? await window.electronAPI.stateRead(name) : null;
+            if (!Array.isArray(entries)) {
+                const legacyKey = this.getLegacyUntitledStorageKey(tabOrKey);
+                const raw = legacyKey ? localStorage.getItem(legacyKey) : null;
+                entries = raw ? JSON.parse(raw) : [];
+                if (legacyKey) localStorage.removeItem(legacyKey);
+            }
             return Array.isArray(entries) ? entries : [];
         } catch (error) {
             console.error('[LocalHistory] Failed to read untitled history:', error);
@@ -221,12 +232,12 @@ const LocalHistory = {
         }
     },
 
-    saveUntitledHistory(tabOrKey, entries) {
-        const storageKey = this.getUntitledStorageKey(tabOrKey);
-        if (!storageKey) return;
+    async saveUntitledHistory(tabOrKey, entries) {
+        const name = this.getUntitledStateName(tabOrKey);
+        if (!name || !window.electronAPI?.stateWrite) return;
 
         try {
-            localStorage.setItem(storageKey, JSON.stringify(entries));
+            await window.electronAPI.stateWrite(name, entries);
         } catch (error) {
             console.error('[LocalHistory] Failed to save untitled history:', error);
         }
@@ -250,7 +261,7 @@ const LocalHistory = {
         }
         this.hashCache.set(hashKey, currentHash);
 
-        const entries = this.getUntitledHistory(untitledKey);
+        const entries = await this.getUntitledHistory(untitledKey);
         entries.unshift({
             id: 'backup_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
             content,
@@ -259,7 +270,7 @@ const LocalHistory = {
             size: `${Math.max(1, Math.round(sizeKB))} KB`
         });
 
-        this.saveUntitledHistory(untitledKey, entries.slice(0, this.settings.maxVersions));
+        await this.saveUntitledHistory(untitledKey, entries.slice(0, this.settings.maxVersions));
         return { success: true };
     },
 
@@ -281,8 +292,8 @@ const LocalHistory = {
     },
 
     clearUntitledHistory(tabOrKey) {
-        const storageKey = this.getUntitledStorageKey(tabOrKey);
-        if (!storageKey) return { success: false, error: 'Missing key' };
+        const name = this.getUntitledStateName(tabOrKey);
+        if (!name) return { success: false, error: 'Missing key' };
 
         try {
             const untitledKey = typeof tabOrKey === 'string' ? tabOrKey : tabOrKey?.untitledHistoryKey;
@@ -294,7 +305,9 @@ const LocalHistory = {
                 }
                 this.hashCache.delete(`untitled:${untitledKey}`);
             }
-            localStorage.removeItem(storageKey);
+            const legacyKey = this.getLegacyUntitledStorageKey(tabOrKey);
+            if (legacyKey) localStorage.removeItem(legacyKey);
+            window.electronAPI?.stateDelete?.(name)?.catch?.(() => { });
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
@@ -395,7 +408,7 @@ const LocalHistory = {
         }
 
         const untitledKey = this.ensureUntitledKey(tab);
-        const entries = this.getUntitledHistory(untitledKey);
+        const entries = await this.getUntitledHistory(untitledKey);
         this.renderHistoryModal({
             titleText: `Untitled Checkpoints: ${tab.name || 'untitled.cpp'}`,
             entries,
@@ -430,7 +443,7 @@ const LocalHistory = {
         if (mode === 'untitled') {
             const untitledKey = modal?.dataset.untitledKey;
             const backupId = entry.dataset.backupId;
-            const history = this.getUntitledHistory(untitledKey);
+            const history = await this.getUntitledHistory(untitledKey);
             content = history.find(item => item.id === backupId)?.content ?? null;
         } else {
             const backupPath = entry.dataset.backupPath;
@@ -456,7 +469,7 @@ const LocalHistory = {
         if (mode === 'untitled') {
             const untitledKey = modal.dataset.untitledKey;
             const backupId = entry.dataset.backupId;
-            const history = this.getUntitledHistory(untitledKey);
+            const history = await this.getUntitledHistory(untitledKey);
             const restored = history.find(item => item.id === backupId);
             if (!restored) {
                 this.showNotification('Could not find checkpoint content', 'error');
@@ -470,18 +483,19 @@ const LocalHistory = {
         }
 
         if (result.success) {
-            // Update the editor with restored content
-            if (typeof App !== 'undefined' && App.editor) {
+            // Apply as one edit on the tab's model: undoable with Ctrl+Z, and the
+            // tab becomes modified so the user decides whether to save it.
+            if (typeof App !== 'undefined') {
                 const activeTabId = modal?.dataset.tabId || (App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId);
                 const targetTab = App.tabs.find(t => t.id === activeTabId) || App.tabs.find(t => t.id === App.activeTabId);
                 if (targetTab) {
+                    const model = getTabModel(targetTab);
+                    model.pushStackElement();
+                    model.pushEditOperations([], [{ range: model.getFullModelRange(), text: result.content }], () => null);
+                    model.pushStackElement();
                     targetTab.content = result.content;
                     targetTab.modified = true;
-                }
-                const targetEditor = App.activeEditor === 2 && App.editor2 && App.splitTabId === activeTabId ? App.editor2 : App.editor;
-                targetEditor.setValue(result.content);
-                if (typeof App.renderTabs === 'function') {
-                    App.renderTabs();
+                    renderTabs();
                 }
                 this.showNotification('File restored successfully!', 'success');
                 this.hideHistoryModal();
@@ -529,23 +543,19 @@ const LocalHistory = {
 
         // Check if Monaco is available
         if (typeof monaco !== 'undefined') {
-            // Clear previous editor if any
-            editorContainer.innerHTML = '';
-
-            // Get theme from main editor or ThemeManager
-            let editorTheme = 'vs-dark';
-            if (typeof ThemeManager !== 'undefined' && ThemeManager.getCurrentTheme) {
-                const current = ThemeManager.getCurrentTheme();
-                editorTheme = current?.monaco || 'vs-dark';
-            } else if (App.editor) {
-                editorTheme = App.editor.getModel()?._languageId ? monaco.editor.getModel()?.getOptions()?.theme : 'vs-dark';
+            // One preview editor, reused. Its own model is replaced and the old one freed.
+            // No `theme` option: Monaco themes are global and the app's is already set.
+            if (previewModal._editor) {
+                const old = previewModal._editor.getModel();
+                previewModal._editor.setModel(monaco.editor.createModel(content, 'cpp'));
+                old?.dispose();
+                previewModal._editor.setScrollTop(0);
+                previewModal.classList.add('active');
+                return;
             }
-
-            // Create readonly Monaco editor
+            editorContainer.innerHTML = '';
             const previewEditor = monaco.editor.create(editorContainer, {
-                value: content,
-                language: 'cpp',
-                theme: editorTheme,
+                model: monaco.editor.createModel(content, 'cpp'),
                 readOnly: true,
                 fontSize: App.settings?.editor?.fontSize || 14,
                 fontFamily: App.settings?.editor?.fontFamily || 'JetBrains Mono, Consolas, monospace',
@@ -560,7 +570,6 @@ const LocalHistory = {
                 domReadOnly: true
             });
 
-            // Store reference for cleanup
             previewModal._editor = previewEditor;
         } else {
             // Fallback to pre tag if Monaco not available - use theme colors

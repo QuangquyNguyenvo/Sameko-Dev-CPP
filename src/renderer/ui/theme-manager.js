@@ -30,11 +30,9 @@ const ThemeManager = {
      * Initialize Theme Manager
      */
     async init() {
-        console.log('[ThemeManager] Initializing v2.0...');
 
         this._loadAllHardcodedThemes();
         this.loadUserThemes();
-        console.log(`[ThemeManager] Loaded ${this.themes.size} themes (hardcoded)`);
     },
 
     /**
@@ -518,7 +516,69 @@ const ThemeManager = {
                 userThemes.push(theme);
             }
         });
-        localStorage.setItem('sameko-user-themes', JSON.stringify(userThemes));
+        // Background images picked in the customizer arrive as data: URLs —
+        // megabytes of base64 that used to go straight into localStorage and
+        // exhaust its quota. Move them to files first, then store the themes.
+        const write = () => {
+            try {
+                localStorage.setItem('sameko-user-themes', JSON.stringify(userThemes));
+            } catch (e) {
+                console.error('[ThemeManager] Failed to save user themes:', e);
+            }
+        };
+        Promise.all(userThemes.map(theme => this.externalizeAssets(theme.colors))).then(write, write);
+    },
+
+    /** Keys of `theme.colors` that may hold an image or video. */
+    ASSET_KEYS: ['appBackground', 'editorBackground'],
+
+    /**
+     * Replace inline `data:` assets in a colors object with file URLs
+     * (userData/theme-assets). Mutates and returns `colors`; values that are
+     * not data URLs, and any that fail to save, are left untouched.
+     * @param {Object} colors
+     * @returns {Promise<Object>}
+     */
+    async externalizeAssets(colors) {
+        if (!colors || !window.electronAPI?.saveThemeAsset) return colors;
+        for (const key of this.ASSET_KEYS) {
+            const value = colors[key];
+            if (typeof value !== 'string' || !value.startsWith('data:')) continue;
+            try {
+                const result = await window.electronAPI.saveThemeAsset(value);
+                if (result && result.success && result.url) colors[key] = result.url;
+            } catch (e) {
+                console.warn('[ThemeManager] Could not store theme asset as a file:', e);
+            }
+        }
+        return colors;
+    },
+
+    /**
+     * One-time clean-up of data already stored by older versions: rewrite
+     * `sameko-user-themes` and every `theme-bg-<id>` with file URLs.
+     */
+    async migrateStoredAssets() {
+        const hasInline = (colors) => !!colors && this.ASSET_KEYS.some(k => typeof colors[k] === 'string' && colors[k].startsWith('data:'));
+        let userThemesNeedSave = false;
+        this.themes.forEach((theme, id) => {
+            if (!this.builtinThemeIds.includes(id) && hasInline(theme.colors)) userThemesNeedSave = true;
+        });
+        if (userThemesNeedSave) this._saveUserThemes();
+
+        for (const id of this.builtinThemeIds) {
+            const key = `theme-bg-${id}`;
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) continue;
+                const bg = JSON.parse(raw);
+                if (!hasInline(bg)) continue;
+                await this.externalizeAssets(bg);
+                localStorage.setItem(key, JSON.stringify(bg));
+            } catch (e) {
+                console.warn(`[ThemeManager] Asset migration skipped for ${id}:`, e);
+            }
+        }
     },
 
     /**
@@ -677,7 +737,6 @@ const ThemeManager = {
             return;
         }
 
-        console.log(`[ThemeManager] Applying theme: ${theme.name} (${themeId})`);
         this.activeThemeId = themeId;
 
         if (this.builtinThemeIds.includes(themeId)) {
@@ -749,7 +808,6 @@ const ThemeManager = {
                 const bgSettings = JSON.parse(saved);
                 if (!theme.colors) theme.colors = {};
                 Object.assign(theme.colors, bgSettings);
-                console.log(`[ThemeManager] Loaded saved background for: ${themeId}`);
             }
         } catch (e) {
             console.warn(`[ThemeManager] Failed to load saved background for ${themeId}:`, e);

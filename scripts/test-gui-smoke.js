@@ -103,11 +103,16 @@ async function main() {
     const pageErrors = [];
     const consoleErrors = [];
 
+    // Run on a throw-away profile. Without this the test opened the developer's
+    // real session (tabs, unsaved text, settings), restored it and saved it back.
+    const profileDir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'sameko-gui-smoke-'));
+    process.on('exit', () => { try { fs.rmSync(profileDir, { recursive: true, force: true }); } catch (_) { } });
+
     let app;
     try {
         app = await electron.launch({
             executablePath: bin,
-            args: [ROOT],
+            args: [ROOT, '--user-data-dir=' + profileDir],
             cwd: ROOT,
             timeout: WINDOW_TIMEOUT_MS
         });
@@ -151,10 +156,13 @@ async function main() {
     if (mainInfo) {
         console.log('        name=' + mainInfo.name + ' version=' + mainInfo.version + ' packaged=' + mainInfo.packaged);
         console.log('        userData=' + mainInfo.userData);
-        check('userData folder matches package.json name', () => {
+        check('app name matches package.json (it names the userData folder)', () => {
+            assert.ok(mainInfo.name === 'sameko-dev-cpp', 'expected app name "sameko-dev-cpp", got ' + mainInfo.name);
+        });
+        check('runs on the isolated test profile, not the real one', () => {
             assert.ok(
-                path.basename(mainInfo.userData) === 'sameko-dev-cpp',
-                'expected userData to end in "sameko-dev-cpp", got ' + mainInfo.userData
+                path.resolve(mainInfo.userData) === path.resolve(profileDir),
+                'userData is ' + mainInfo.userData + ', expected ' + profileDir
             );
         });
     }

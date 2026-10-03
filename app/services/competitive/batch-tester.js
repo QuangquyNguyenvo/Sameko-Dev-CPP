@@ -13,6 +13,7 @@ const { spawn, exec } = require('child_process');
 const { getCompilerEnv } = require('../compiler/detector');
 const { normalizeOutput, compareOutputs } = require('../../shared/judge');
 const { IS_WIN, IS_LINUX, readProcMemoryKB } = require('../../shared/platform');
+const { getLauncherIfReady, newStatsFile, readStats } = require('../compiler/run-launcher');
 
 /**
  * Run a single test case
@@ -55,12 +56,13 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
         let peakMemoryKB = 0;
         let memoryPollInterval = null;
 
-        // Create test process
-        const testProcess = spawn(exePath, [], {
-            cwd: workingDir,
-            env: getCompilerEnv(),
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
+        // Create test process. On Windows it goes through the native launcher,
+        // which measures the program's own wall time and peak memory exactly.
+        const launcher = getLauncherIfReady();
+        const statsFile = launcher ? newStatsFile() : null;
+        const testProcess = launcher
+            ? spawn(launcher, [statsFile, exePath], { cwd: workingDir, env: getCompilerEnv(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+            : spawn(exePath, [], { cwd: workingDir, env: getCompilerEnv(), stdio: ['pipe', 'pipe', 'pipe'] });
 
         const pid = testProcess.pid;
         debugInfo.pid = pid || null;
@@ -85,8 +87,12 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
             }
         };
 
-        if (pid && (IS_WIN || IS_LINUX)) {
-            pollMemory();
+        // Windows samples by spawning `tasklist` (~150 ms). Sampling at t=0 made
+        // every test pay for a process that finished long after a typical
+        // test did, so the first sample waits for the interval. Linux reads
+        // /proc (cheap, and VmHWM is the true peak), so it samples at once.
+        if (pid && IS_LINUX) pollMemory();
+        if (pid && !launcher && (IS_WIN || IS_LINUX)) {
             memoryPollInterval = setInterval(pollMemory, IS_WIN ? 500 : 100);
         }
 
@@ -106,25 +112,36 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
 
         // Send input and start timing
         let startTime;
+        // A program that exits without reading its input closes the pipe; the
+        // resulting EPIPE must not surface as an uncaught exception.
+        testProcess.stdin.on('error', () => { });
         if (input) {
             testProcess.stdin.write(input);
         }
         testProcess.stdin.end();
         startTime = Date.now();
 
+        // Cap what is kept: a runaway print loop inside the time limit would
+        // otherwise build a string of hundreds of MB and ship it to the renderer.
+        const MAX_CAPTURE_CHARS = 16 * 1024 * 1024;
+        let outputTruncated = false;
+
         testProcess.stdout.on('data', (data) => {
-            output += data.toString();
+            if (output.length < MAX_CAPTURE_CHARS) output += data.toString();
+            else outputTruncated = true;
         });
 
         testProcess.stderr.on('data', (data) => {
-            errorOutput += data.toString();
+            if (errorOutput.length < MAX_CAPTURE_CHARS) errorOutput += data.toString();
         });
 
         testProcess.on('close', (code, signal) => {
             clearTimeout(timeout);
             if (memoryPollInterval) clearInterval(memoryPollInterval);
 
-            const executionTime = Date.now() - startTime;
+            const stats = readStats(statsFile); // also removes the file
+            const executionTime = stats ? Math.round(stats.wallMs) : Date.now() - startTime;
+            if (stats) peakMemoryKB = stats.peakKB;
 
             debugInfo.exitCode = code;
             debugInfo.signal = signal || null;
@@ -137,6 +154,9 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
             if (killed) {
                 status = 'TLE';
                 details = 'Time limit exceeded';
+            } else if (outputTruncated) {
+                status = 'RE';
+                details = 'Output limit exceeded (more than 16 MB printed)';
             } else if (code !== 0) {
                 status = 'RE';
                 const reason = signal
@@ -189,6 +209,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
         testProcess.on('error', (err) => {
             clearTimeout(timeout);
             if (memoryPollInterval) clearInterval(memoryPollInterval);
+            readStats(statsFile);
 
             const response = { status: 'RE', error: err.message, executionTime: 0 };
             if (debugInfo.enabled) {
