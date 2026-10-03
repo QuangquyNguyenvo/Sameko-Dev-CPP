@@ -62,6 +62,7 @@ PLANNING.md
 
 # ===== CodeGraph =====
 .codegraph/
+codegraph.json
 
 # ===== Generated at runtime =====
 # clangd's flag file: the app rewrites it on every launch with absolute
