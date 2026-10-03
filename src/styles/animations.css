@@ -131,7 +131,7 @@
     }
 }
 
-/* App-level reduced animation mode (Settings > Reduce Animations) */
+/* App-level reduced animation mode (Settings > Appearance > Performance Mode) */
 body.performance-mode {
     --duration-instant: 0ms;
     --duration-fast: 0ms;

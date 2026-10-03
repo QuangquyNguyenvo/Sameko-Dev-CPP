@@ -937,12 +937,29 @@ const ThemeManager = {
             bgVideo.src = bgPath;
             bgVideo.style.display = 'block';
             document.documentElement.style.setProperty('--app-bg-image', 'none');
+            this.syncBackgroundVideo();
         } else {
             bgVideo.style.display = 'none';
             bgVideo.src = '';
             bgVideo.removeAttribute('src');
             bgVideo.load();
         }
+    },
+
+    /**
+     * Play the background video only while it can be seen and Performance Mode is
+     * off. Decoding it costs ~4% of a core in the GPU process and ~15 MB in the
+     * renderer for as long as the window is open; paused, it keeps showing its
+     * current frame.
+     */
+    syncBackgroundVideo() {
+        const bgVideo = document.getElementById('app-bg-video');
+        if (!bgVideo || !bgVideo.getAttribute('src')) return;
+        const play = bgVideo.style.display !== 'none' && !document.hidden &&
+            !document.body.classList.contains('performance-mode');
+        bgVideo.autoplay = play;
+        if (play) bgVideo.play().catch(() => { });
+        else bgVideo.pause();
     },
 
     /**

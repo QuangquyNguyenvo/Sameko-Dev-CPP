@@ -106,4 +106,10 @@ function applyBackgroundSettings() {
             appContainer.style.background = 'transparent';
         }
     }
+
+    // A video hidden behind a user image would otherwise keep decoding.
+    ThemeManager.syncBackgroundVideo();
 }
+
+// Minimised or fully covered: stop decoding the background video until it is seen again.
+document.addEventListener('visibilitychange', () => ThemeManager.syncBackgroundVideo());
