@@ -52,14 +52,14 @@ yarn-error.log*
 *.bak
 
 # ===== AI Agent =====
-.agent/
-.github/prompts/
-.shared/
+# Rules are committed (AGENTS.md, CLAUDE.md, PLANNING.md); only per-machine state is ignored.
 plans/
+.claude/settings.local.json
+.claude/worktrees/
+.claude/scheduled_tasks.lock
 
 # ===== CodeGraph =====
 .codegraph/
-.claudeprompt
 
 # ===== Generated at runtime =====
 # clangd's flag file: the app rewrites it on every launch with absolute
