@@ -1496,24 +1496,25 @@ const FileExplorer = {
     },
 
     /**
-     * Render empty state — now shows categories + actions even without a folder
+     * Render empty state: the collections section once there is one, then a single
+     * welcome block (Open Folder first, New Collection as the secondary link).
      */
     renderEmptyState() {
         if (!this.elements.tree) return;
 
-        const categoriesHtml = this.renderCategories();
+        const hasCollections = this.categories.some(c => c.type !== 'contest');
+        const categoriesHtml = hasCollections ? this.renderCategories() : '';
 
         this.elements.tree.innerHTML = `
             ${categoriesHtml}
             <div class="explorer-empty">
-                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1" opacity="0.4">
-                    <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
-                </svg>
-                <p style="font-size:12px;margin:8px 0">No folder opened</p>
+                <svg class="ico explorer-empty-icon" width="44" height="44"><use href="#i-folder-open-duo"/></svg>
+                <p class="explorer-empty-title">No folder opened</p>
+                <p class="explorer-empty-hint">Open a folder to browse its files, or group problems into a collection.</p>
                 <div class="explorer-empty-actions">
                     <button class="explorer-open-btn" id="btn-explorer-open-empty">Open Folder</button>
-                    <button class="explorer-open-btn cat-new-btn-empty" id="btn-new-category-empty">
-                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    <button class="cat-new-btn-empty" id="btn-new-category-empty">
+                        <svg class="ico" width="13" height="13"><use href="#i-plus"/></svg>
                         New Collection
                     </button>
                 </div>

@@ -28,8 +28,18 @@ Result of a full code audit. Numbers were measured on the bundled GCC 16.1 toolc
 - **The explorer saves its state in batches** instead of rewriting everything (including saved approaches, i.e. whole files) to browser storage on every click.
 - Smaller wins: settings are written once when Ctrl+wheel zoom stops (not on every tick), clicking in the editor no longer rebuilds the tab strip, and clangd is not asked to re-parse a document whose text did not change.
 
+### Changed
+
+- **New icons and toolbar**: the interface uses Phosphor icons with rounded, bold strokes and a light tint, and an active button switches to the filled icon. Toolbar buttons are grouped (panels, run controls, settings) and behave like the Windows 11 taskbar: a soft tile on hover and a bar under each open panel's button, which widens on hover. The Run icon hops while a build is in progress, then bounces when it succeeds or the button shakes when it fails. Menus cascade in and Settings springs open. The window buttons are smaller and the close button turns red on hover. All of these effects are off in Performance Mode and when Windows is set to reduce animations.
+- The bottom panel (Problems / Terminal / Tests) uses flat tabs with an underline instead of pill buttons; the editor no longer sits in a second frame inside its card (12 px more room each way); Settings rows use thin solid borders instead of dashed ones; the explorer shows one welcome block (Open Folder, with New Collection as a link) when no folder is open and there are no collections; the status bar text is easier to read.
+
+### Added
+
+- **Interface Scale** (Settings › Appearance, or Ctrl+= / Ctrl+- / Ctrl+0): enlarges or shrinks the whole interface, 80–200%. The default, **Auto**, enlarges it on 4K screens left at 100% or 125% scaling in Windows, where the app used to be too small to read (a 4K screen at 100% gets 150%); other screens stay at 100%. The editor and terminal stay sharp because this is the browser zoom, not a resize of the rendered image.
+
 ### Fixed
 
+- **Small and short windows**: the window can no longer be shrunk below the size the layout works at (760×520, times the interface scale). The docked Terminal/Problems panel took a fixed 320 px, leaving 8–10 editor lines on a 720 px-high screen; it now follows the window height (still 320 px from ~890 px up) and can be dragged up to 55% of the window instead of a fixed 400 px. Narrow windows give the Input/Expected column less width, the ☰ Run menu now has Compile and Get Tests from OJ (their toolbar buttons are hidden there), and the "install update" button no longer disappears.
 - **A program printing in an infinite loop froze the whole IDE** (window unresponsive for ~25 s, Stop unreachable). Output is now rate-limited with back-pressure: the window stays responsive and Stop answers immediately. Nothing is dropped.
 - **Undo history was lost when switching tabs.** Every tab now has its own editor document, so Ctrl+Z, markers and scroll position stay with the file; the same file shown in both split panes is one live document.
 - **F10 / F11 / Shift+F5 did the wrong thing while debugging** when the cursor was in the editor (F10 tried to Run instead of Step Over), and keybindings changed in Settings had no effect inside the editor. All shortcuts now go through one table, and a changed keybinding applies immediately.
@@ -42,6 +52,7 @@ Result of a full code audit. Numbers were measured on the bundled GCC 16.1 toolc
 - **The "compiler not found" warning at startup was never shown** (it crashed on an undefined function).
 - **"Delete After (days)" for Checkpoints was ignored**, so old checkpoints were never removed; small checkpoints were listed as "0 KB".
 - **Settings could be lost or reverted**: `settings.json` is now written atomically with a backup copy, and saving settings no longer overwrites the saved window position.
+- **Saving or building a file asked to reload it** ("File has been changed externally"): the app's own write was reported by the file watcher before it was recorded as ours, so every Ctrl+S and every Build & Run of a saved file showed the prompt. Only changes made by other programs prompt now; a compile that writes the editor's text to disk is also recognised as the app's own write.
 - **External changes were only detected for files opened through the Open dialog**, not for files opened from the explorer or restored from the previous session.
 - **Test cases were shared by every tab**: switching tabs kept the other file's tests, and typing in INPUT overwrote them. Each tab now has its own test cases, selected test and results, and they are restored with the session.
 - **The app changed clangd for the whole machine**: it wrote `%LOCALAPPDATA%\clangd\config.yaml`, forcing a MinGW target and its include paths onto clangd in VS Code, CLion and other projects. Flags are now passed to the app's own clangd only, and the file written by earlier versions is removed (only if it still carries the app's marker).

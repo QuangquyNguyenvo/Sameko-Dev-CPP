@@ -716,6 +716,7 @@ function openSettings() {
     selectThemeFromCarousel(App.settings.appearance.theme, true);
     document.getElementById('set-editorColorScheme').value = App.settings.editor.colorScheme || 'auto';
     document.getElementById('set-performanceMode').checked = App.settings.appearance.performanceMode || false;
+    document.getElementById('set-uiScale').value = String(App.settings.appearance.uiScale ?? 'auto');
 
     // Background settings (optional - may not exist if Background section removed)
     const bgOpacitySlider = document.getElementById('set-bgOpacity');
@@ -762,7 +763,9 @@ function openSettings() {
         renderSnippetsList();
     }
 
-    document.getElementById('settings-overlay').classList.add('show');
+    const overlay = document.getElementById('settings-overlay');
+    overlay.classList.add('show');
+    if (window.Motion) Motion.popIn(overlay, overlay.querySelector('.settings-popup'));
 }
 
 function closeSettings() {
@@ -819,6 +822,8 @@ function saveSettingsAndClose() {
 
     App.settings.appearance.theme = document.getElementById('set-theme').value;
     App.settings.appearance.performanceMode = document.getElementById('set-performanceMode').checked;
+    const uiScale = document.getElementById('set-uiScale').value;
+    App.settings.appearance.uiScale = uiScale === 'auto' ? 'auto' : Number(uiScale);
 
     // Background settings (optional - may not exist if Background section removed)
     const bgOpacityEl = document.getElementById('set-bgOpacity');
@@ -932,7 +937,10 @@ const KEYBINDING_LABELS = {
     toggleProblems: 'Toggle Problems',
     settings: 'Open Settings',
     toggleSplit: 'Toggle Split',
-    formatCode: 'Format Code'
+    formatCode: 'Format Code',
+    uiZoomIn: 'Interface Scale: Larger',
+    uiZoomOut: 'Interface Scale: Smaller',
+    uiZoomReset: 'Interface Scale: Auto'
 };
 
 let editingKeybinding = null;

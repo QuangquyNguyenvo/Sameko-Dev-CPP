@@ -314,6 +314,7 @@ function toggleMenu(id, el) {
     const rect = el.getBoundingClientRect();
     menu.style.left = rect.left + 'px';
     menu.style.top = rect.bottom + 4 + 'px';
+    if (window.Motion) Motion.menuIn(menu);
     activeMenu = id;
 }
 
@@ -326,6 +327,9 @@ function closeMenus() {
 function doAction(action) {
     const map = {
         new: newFile, open: openFile, save, saveas: () => saveAs(), run, buildrun: buildRun, stop,
+        compile: compileOnly,
+        // Same as the toolbar button, which narrow windows hide.
+        gettests: () => document.getElementById('btn-cc')?.click(),
         debugstart: () => window.Debugger?.start(),
         debugstepover: () => window.Debugger?.stepOver(),
         debugstepinto: () => window.Debugger?.stepInto(),

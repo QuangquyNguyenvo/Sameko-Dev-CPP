@@ -364,7 +364,7 @@
         .sdbg-guide-h{color:var(--accent,#88c9ea);font-weight:900;text-transform:uppercase;letter-spacing:.06em;
           font-size:12px;margin-bottom:12px}
         .sdbg-guide-step{display:flex;gap:10px;align-items:flex-start;margin-bottom:9px;font-size:12.5px;line-height:1.5}
-        .sdbg-guide-step b:first-child{flex:0 0 20px;height:20px;border-radius:50%;background:var(--accent,#88c9ea);
+        .sdbg-guide-step>b:first-child{flex:0 0 20px;height:20px;border-radius:50%;background:var(--accent,#88c9ea);
           color:#11212e;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:11px}
         .sdbg-guide-dot{color:#ff5964;font-size:11px}
         .sdbg-guide-step kbd{background:var(--bg-button,#2a4050);border:1px solid var(--border,#3a6075);
@@ -805,6 +805,7 @@
 
     function showPanel(show) {
         els.panel && els.panel.classList.toggle('open', show);
+        document.getElementById('btn-debug')?.classList.toggle('active', show);
         if (!show) showPop(false);
     }
     /** Show/hide the shortcuts popover. */

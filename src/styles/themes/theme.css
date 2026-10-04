@@ -755,8 +755,10 @@ body.customizer-open::before {
     min-width: 0;
     min-height: 0;
     background: var(--editor-bg, #1a2530);
-    border-radius: var(--radius-sm);
-    margin: 6px;
+    /* Flush with the card: an inset frame here cost 12px each way and drew a second border. */
+    border: none;
+    border-radius: 0;
+    margin: 0;
     overflow: hidden;
 }
 
@@ -1037,7 +1039,7 @@ body.customizer-open::before {
 .settings-header {
     padding: 18px 28px;
     background: var(--bg-panel);
-    border-bottom: 3px dashed var(--border);
+    border-bottom: 2px solid color-mix(in srgb, var(--border) 70%, transparent);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1205,7 +1207,7 @@ body.customizer-open::before {
     color: var(--settings-section-color);
     margin-bottom: 16px;
     padding-bottom: 10px;
-    border-bottom: 3px dashed var(--border);
+    border-bottom: 2px solid color-mix(in srgb, var(--border) 60%, transparent);
     text-transform: uppercase;
     letter-spacing: 1px;
 }
@@ -1217,8 +1219,8 @@ body.customizer-open::before {
     padding: 14px 18px;
     margin-bottom: 10px;
     background: var(--bg-panel);
-    border-radius: 18px 22px 20px 24px;
-    border: 2px dashed var(--border);
+    border-radius: 16px;
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
 
 .setting-row:hover {
@@ -1276,7 +1278,7 @@ html[data-theme="kawaii-light"] .setting-row>label:not(.switch) {
     padding: 12px;
     background: var(--bg-panel);
     border-radius: 16px;
-    border: 2px dashed var(--border);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
 
 .bg-control-row {
@@ -1656,7 +1658,7 @@ html[data-theme="kawaii-light"] .setting-row>label:not(.switch) {
 .settings-footer {
     padding: 16px 24px;
     background: var(--bg-panel);
-    border-top: 3px dashed var(--border);
+    border-top: 2px solid color-mix(in srgb, var(--border) 70%, transparent);
     display: flex;
     justify-content: flex-end;
     gap: 12px;
@@ -1989,12 +1991,14 @@ input[type="color"] {
     display: flex;
     align-items: center;
     gap: 6px;
+    font-weight: 700;
 }
 
 .status-item.live-check-state {
     min-width: 72px;
     justify-content: flex-end;
-    color: var(--text-muted);
+    color: var(--text-secondary);
+    opacity: 0.8;
 }
 
 .status-item.live-check-state.checking {
@@ -2861,17 +2865,6 @@ body.split-active .editor-pane {
     position: relative;
 }
 
-/* Active state when popup is open - uses theme colors like other toggle buttons */
-#btn-cc.active {
-    background: var(--bg-ocean-medium, #bce2f5);
-    border-color: var(--bg-ocean-deep, #88c9ea);
-    color: var(--bg-ocean-dark, #3a7ca5);
-}
-
-#btn-cc.active:hover {
-    background: var(--bg-ocean-deep, #88c9ea);
-}
-
 /* Flash animation when problem is received */
 #btn-cc.cc-flash {
     animation: ccFlash 0.5s ease-out;
@@ -3253,9 +3246,6 @@ body.split-active .editor-pane {
 
 /* Docked tab in panel-head (Terminal docked with Problems) */
 .docked-tab {
-    margin-left: 8px;
-    padding-left: 8px;
-    border-left: 1px solid var(--border);
     cursor: grab;
     display: inline-flex;
     align-items: center;
@@ -3271,45 +3261,65 @@ body.split-active .editor-pane {
     opacity: 0.5;
 }
 
-/* When terminal/IO is docked, increase problems panel height */
+/* When terminal/IO is docked, increase problems panel height. A fixed 320px
+   minimum left the editor 8-10 lines on a 720px-high screen, so scale it with
+   the window (it is still 320px from ~890px up) and let the user drag it lower. */
 .problems-panel:has(.docked-tab) {
-    min-height: 320px;
+    height: clamp(180px, 36vh, 320px);
+    min-height: 150px;
     max-height: none;
 }
 
-/* Panel head with docked tabs - better spacing */
+/* Panel head with docked tabs: flat tabs with an accent underline on the active one. */
 .problems-panel:has(.docked-tab) .panel-head {
-    gap: 6px;
-    padding: 6px 12px 6px 16px;
+    gap: 2px;
+    padding: 4px 10px 0 10px;
 }
 
-/* Base style for all tabs in docked mode */
 .problems-panel:has(.docked-tab) .panel-title {
+    position: relative;
     font-family: 'Nunito', sans-serif;
-    font-weight: 700;
+    font-weight: 800;
     font-size: 12px;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.4px;
     text-transform: uppercase;
-    padding: 8px 14px;
-    border-radius: 20px;
+    padding: 7px 12px 9px;
+    margin: 0;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    background: transparent;
+    color: var(--text-muted);
     cursor: pointer;
-    transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    border: 2px solid transparent;
-    background: var(--bg-glass, rgba(255, 255, 255, 0.5));
+}
+
+.problems-panel:has(.docked-tab) .panel-title::after {
+    content: '';
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 0;
+    height: 3px;
+    border-radius: 3px 3px 0 0;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform 0.35s var(--ease-spring);
 }
 
 .problems-panel:has(.docked-tab) .panel-title:hover {
-    background: var(--bg-ocean-light, rgba(136, 201, 234, 0.3));
-    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    color: var(--text-primary);
 }
 
 .problems-panel:has(.docked-tab) .panel-title.active {
-    background: var(--bg-ocean-medium, rgba(136, 201, 234, 0.5));
-    color: var(--bg-ocean-dark, #1e4a5f);
-    border-color: var(--bg-ocean-deep, #5ba3d0);
+    color: var(--text-primary);
+}
+
+.problems-panel:has(.docked-tab) .panel-title.active::after {
+    transform: scaleX(1);
 }
 
 /* Problem count badge */
@@ -3763,7 +3773,9 @@ body.split-active .editor-pane {
         padding: 6px 8px;
     }
 
-    .action-btn:not(.primary):not(.danger) {
+    /* Run only and Debug stay reachable from the ☰ Run menu; the pending-update
+       button has no other entry point, so it stays. */
+    .action-btn:not(.primary):not(.danger):not(.update-ready) {
         display: none;
     }
 
@@ -4827,14 +4839,24 @@ body.split-active .editor-pane {
     color: var(--text-muted, #8abac5);
 }
 
-.explorer-empty svg {
-    margin-bottom: 12px;
-    opacity: 0.4;
+.explorer-empty-icon {
+    margin-bottom: 10px;
+    color: var(--accent);
+    opacity: 0.85;
 }
 
-.explorer-empty p {
+.explorer-empty .explorer-empty-title {
     font-size: 13px;
-    margin-bottom: 16px;
+    font-weight: 800;
+    color: var(--text-secondary);
+    margin: 0 0 4px;
+}
+
+.explorer-empty .explorer-empty-hint {
+    font-size: 11.5px;
+    line-height: 1.45;
+    max-width: 180px;
+    margin: 0 0 16px;
 }
 
 .explorer-open-btn {
@@ -7158,15 +7180,22 @@ body.split-active .editor-pane {
 .cat-new-btn-empty {
     display: flex;
     align-items: center;
-    gap: 6px;
-    background: transparent !important;
-    border: 1.5px dashed var(--border, #c0d8e8) !important;
-    color: var(--text-secondary, #7eb8c5) !important;
+    gap: 5px;
+    padding: 4px 8px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: var(--text-secondary, #7eb8c5);
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
 }
 
 .cat-new-btn-empty:hover {
-    background: var(--bg-ocean-light, #eff8fe) !important;
-    border-color: var(--accent, #88c9ea) !important;
+    background: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    color: var(--accent, #88c9ea);
 }
 
 /* Explorer folder header actions */
@@ -7595,7 +7624,7 @@ body.split-active .editor-pane {
     }
 
     .io-section {
-        width: clamp(130px, 26vw, 200px);
+        width: clamp(130px, 21vw, 180px);
         min-width: 110px;
     }
 

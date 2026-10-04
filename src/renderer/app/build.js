@@ -134,6 +134,7 @@ async function buildActiveTab({ runAfter }) {
                 parseProblems(r.warnings, 'warning');
             }
             setStatus(`${verb}: ${ms}ms`, 'success');
+            if (window.Motion) Motion.buildResult(document.getElementById('btn-buildrun'), true);
             if (window.FileExplorer) window.FileExplorer.notifyBuildEvent(tab.path, 'compile-ok');
             built = true;
         } else {
@@ -157,6 +158,7 @@ async function buildActiveTab({ runAfter }) {
             hasBuildProblems = true; // Lock problems list from live-check overwrite
             highlightErrorLines();
             setStatus(`${verb} failed`, 'error');
+            if (window.Motion) Motion.buildResult(document.getElementById('btn-buildrun'), false);
             App.exePath = null;
             tab.exePath = null;
             if (window.FileExplorer) window.FileExplorer.notifyBuildEvent(tab.path, 'compile-fail');

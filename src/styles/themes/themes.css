@@ -966,27 +966,6 @@
     color: var(--text-primary);
 }
 
-/* Docked tabs in dark themes - base style */
-[data-theme-variant="dark"] .problems-panel:has(.docked-tab) .panel-title {
-    background: var(--bg-button);
-    color: var(--text-secondary);
-    border-color: transparent;
-}
-
-/* Docked tabs hover in dark themes */
-[data-theme-variant="dark"] .problems-panel:has(.docked-tab) .panel-title:hover {
-    background: var(--bg-button-hover);
-    color: var(--text-primary);
-}
-
-/* Docked tabs active in dark themes */
-[data-theme-variant="dark"] .problems-panel:has(.docked-tab) .panel-title.active {
-    background: var(--bg-ocean-medium);
-    color: var(--text-primary);
-    border-color: var(--bg-ocean-deep);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-}
-
 /* Problem count badge in dark themes */
 [data-theme-variant="dark"] .problems-panel:has(.docked-tab) .problem-count {
     background: var(--bg-ocean-deep);

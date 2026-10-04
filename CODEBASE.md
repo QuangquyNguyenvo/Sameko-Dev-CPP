@@ -99,14 +99,14 @@ syntax/clangd, local history, Discord RPC.
 | `splash.html` | Splash screen. |
 | `renderer/app/*.js` | The application itself, 17 files loaded in a fixed order (formerly one 7,900-line `app.js`). File index in §9. |
 | `renderer/boot.js` | Loaded first: error hooks, Monaco loader config, shared `escHtml`. |
-| `renderer/ui/` | `theme-manager.js`, `theme-tokens.js`, `theme-customizer.js`, `theme-marketplace.js`, `color-registry.js`, `confirm-dialog.js`. |
-| `styles/` | `base.css` (imports `animations.css` and fonts), `components/*.css`, `themes/{theme,themes}.css`. |
+| `renderer/ui/` | `theme-manager.js`, `theme-tokens.js`, `theme-customizer.js`, `theme-marketplace.js`, `color-registry.js`, `confirm-dialog.js`, `motion.js`. |
+| `styles/` | `base.css` (imports `animations.css` and fonts), `components/*.css`, `themes/{theme,themes}.css`. `components/toolbar.css` loads after `themes.css` and styles the header for every theme. |
 | `assets/` | Fonts, icons, backgrounds (five looping `.webm` + one `.jpg`), screenshots (README only). |
 
 ### Loaded scripts, in order (`index.html`)
 `renderer/boot.js` (error hooks, Monaco loader config, shared `escHtml`) → Monaco loader → `features/suggestions/cpp-suggestions.js` →
 `features/snippets/snippet-editor.js` → `renderer/ui/theme-tokens.js` → `color-registry.js` →
-`theme-manager.js` → `theme-marketplace.js` → `theme-customizer.js` → `confirm-dialog.js` →
+`theme-manager.js` → `theme-marketplace.js` → `theme-customizer.js` → `confirm-dialog.js` → `motion.js` →
 `features/local-history/history-manager.js` → `features/file-explorer/file-explorer.js` →
 `features/terminal/terminal-manager.js` → `features/debugger/debugger-ui.js` → `renderer/app/*.js` in
 the order of §9.
@@ -119,6 +119,15 @@ the order of §9.
 | Explorer, categories, contest mode | `features/file-explorer/file-explorer.js` | `FileExplorer` |
 | Terminal output (xterm, display only; xterm.js is loaded through the AMD loader when the page is idle or on the first write, earlier writes are queued) | `features/terminal/terminal-manager.js` | `TerminalManager` |
 | Debugger panel, breakpoints, variables | `features/debugger/debugger-ui.js` | `Debugger` |
+| GSAP effects (menu cascade, Settings pop-in, Run result); GSAP is loaded through the AMD loader once the editor is ready, and every call is a no-op in Performance Mode or with reduced motion | `renderer/ui/motion.js` | `Motion` |
+
+**Icons** are Phosphor (MIT) symbols in a sprite inside `index.html`, between the `icons:start` /
+`icons:end` comments. Write `<svg class="ico" data-icon="gear-six" data-weight="duo" data-alt="fill"></svg>`
+and run `npm run icons` (`scripts/build-icons.js`): it fills in the `<use>` references and bundles
+only the symbols in use. `duo` is the bold outline over duotone's tint; `data-alt` is the weight
+shown while the button is `.active`. Icons in markup built by JS reference `#i-<name>[-<weight>]`
+directly and must be listed in `JS_ICONS` in that script. `@phosphor-icons/core` is a dev
+dependency only.
 
 Every `.js` under `src/` is in that list; a new renderer file does nothing until it gets a
 `<script>` tag there. (Eight never-loaded modules and the golden-layout dependency were deleted
@@ -139,7 +148,7 @@ in October 2026.)
 | Path | What it is |
 |---|---|
 | `Sameko-GCC/` | Bundled toolchain (gitignored). Copied into the Windows build as an extra resource. |
-| `scripts/` | `clean.js`, `build-appimage.js`, `test-debugger.js`, `test-gui-smoke.js`. |
+| `scripts/` | `clean.js`, `build-appimage.js`, `build-icons.js`, `check-toolchain-deps.js`, `test-debugger.js`, `test-gui-smoke.js`. |
 | `docs/` | The sameko.dev website (landing page and wiki). Not part of the app. |
 | `plans/` | Gitignored working plans. |
 | `samekodevcpp/` | electron-builder output (gitignored). |
@@ -162,6 +171,12 @@ in October 2026.)
   their dependency `libdl`) are kept on purpose.
 - Linux: AppImage, deb, tar.gz; `npm run build:appimage` builds the AppImage via
   `scripts/build-appimage.js`. Linux uses the system `g++`/`gdb`/`clangd`/`astyle`.
+
+**Interface Scale** (`appearance.uiScale`, `'auto'` or a percentage) is applied by the main process
+as the page zoom: `applyUiScale()` in `app/windows/main-window.js` runs on `dom-ready`, on every
+settings save, when the window moves and when displays change, and sets the minimum window size to
+760×520 CSS px times the factor. Layout code and media queries therefore see CSS pixels and need
+no knowledge of the scale.
 
 ## 7. Runtime data
 - **User data** (`%APPDATA%/sameko-dev-cpp/` on Windows, `~/.config/sameko-dev-cpp/` on Linux):

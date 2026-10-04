@@ -1,0 +1,287 @@
+/* Header toolbar: Phosphor icons (see scripts/build-icons.js) on borderless buttons in the style of
+ * the Windows 11 taskbar. Hover shows a soft tile, an active toggle gets a tinted tile, an indicator
+ * bar under the icon and the filled icon weight. Loaded after themes.css so it applies to every
+ * theme; colours come from theme tokens only. */
+
+.ico {
+    fill: currentColor;
+    flex-shrink: 0;
+    overflow: visible;
+}
+
+.ico,
+.ico * {
+    stroke: none !important;
+}
+
+.ico .ico-alt {
+    display: none;
+}
+
+:is(.toggle-btn, .action-btn, .settings-tab).active > .ico > use:not(.ico-alt) {
+    display: none;
+}
+
+:is(.toggle-btn, .action-btn, .settings-tab).active > .ico > .ico-alt {
+    display: inline;
+}
+
+/* ---- Groups ---- */
+.tool-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--bg-button, var(--btn-bg, #fff)) 80%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 7%, transparent);
+}
+
+.header-bar .header-actions {
+    gap: 8px;
+}
+
+/* ---- Icon buttons ---- */
+.header-bar .toggle-btn,
+.header-bar .tool-group .action-btn {
+    position: relative;
+    width: 36px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
+    gap: 0;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    box-shadow: none;
+    color: var(--text-secondary);
+    transform: none;
+    filter: none;
+    transition: background-color var(--duration-fast) var(--ease-standard),
+        color var(--duration-fast) var(--ease-standard);
+}
+
+.header-bar .toggle-btn:not(.tool-group *) {
+    background: color-mix(in srgb, var(--bg-button, var(--btn-bg, #fff)) 80%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--text-primary) 7%, transparent);
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+}
+
+.header-bar .toggle-btn:hover,
+.header-bar .tool-group .action-btn:not(:disabled):hover {
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-primary);
+    transform: none;
+    box-shadow: none;
+}
+
+.header-bar .toggle-btn.active,
+.header-bar .tool-group .action-btn.active {
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: var(--accent);
+    box-shadow: none;
+}
+
+.header-bar .toggle-btn.active:hover,
+.header-bar .tool-group .action-btn.active:hover {
+    background: color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+.header-bar .toggle-btn.has-errors {
+    color: var(--error);
+}
+
+.header-bar .toggle-btn.has-warnings:not(.has-errors) {
+    color: var(--warning);
+}
+
+.header-bar .tool-group .action-btn.danger {
+    color: var(--error);
+}
+
+.header-bar .tool-group .action-btn.danger:not(:disabled):hover {
+    background: color-mix(in srgb, var(--error) 16%, transparent);
+    color: var(--error);
+}
+
+.header-bar .tool-group .action-btn:disabled {
+    opacity: 0.35;
+}
+
+.header-bar .tool-group .action-btn.running {
+    color: var(--success);
+}
+
+/* Icon: a springy lift on hover, a squash on press. */
+.header-bar :is(.toggle-btn, .action-btn, .tab-add, .win-btn, .hamburger-btn) > .ico {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.38s var(--ease-spring);
+}
+
+.header-bar .action-btn > .ico {
+    width: 18px;
+    height: 18px;
+}
+
+.header-bar :is(.toggle-btn, .action-btn:not(:disabled), .tab-add):hover > .ico {
+    transform: translateY(-1px) scale(1.12);
+}
+
+.header-bar :is(.toggle-btn, .action-btn:not(:disabled), .tab-add):active > .ico {
+    transform: scale(0.86);
+    transition-duration: 0.08s;
+}
+
+/* Indicator bar under an active toggle: short while on, full width on hover (taskbar style). */
+.header-bar .toggle-btn::after,
+.header-bar .tool-group .action-btn::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    bottom: 2px;
+    width: 16px;
+    height: 3px;
+    margin-left: -8px;
+    border-radius: 3px;
+    background: currentColor;
+    opacity: 0;
+    transform: scaleX(0.2);
+    transition: opacity var(--duration-fast) var(--ease-standard), transform 0.4s var(--ease-spring);
+}
+
+.header-bar .toggle-btn.active::after,
+.header-bar .tool-group .action-btn.active::after {
+    opacity: 1;
+    transform: scaleX(0.5);
+}
+
+.header-bar .toggle-btn.active:hover::after,
+.header-bar .tool-group .action-btn.active:hover::after {
+    transform: scaleX(1);
+}
+
+.header-bar .toggle-btn.checking > .ico {
+    animation: pulse 0.8s infinite alternate;
+}
+
+/* ---- Run ---- */
+.header-bar .action-btn.primary {
+    height: 40px;
+    padding: 0 18px 0 14px;
+    gap: 6px;
+    border-radius: 14px;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.header-bar .action-btn.primary:hover {
+    transform: translateY(-1px);
+}
+
+.header-bar .action-btn.primary:hover > .ico {
+    transform: scale(1.15);
+}
+
+/* Build in progress: the icon hops like a launching app on the macOS dock. */
+.header-bar .action-btn.primary.building {
+    animation: none;
+}
+
+.header-bar .action-btn.primary.building > .ico {
+    animation: dock-hop 0.7s var(--ease-standard) infinite;
+}
+
+@keyframes dock-hop {
+    0%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-5px) scale(1.05, 0.95); }
+    55% { transform: translateY(-5px); }
+    85% { transform: translateY(0) scale(1.08, 0.9); }
+}
+
+/* ---- New tab ---- */
+.header-bar .tab-add {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-secondary);
+    transform: none;
+}
+
+.header-bar .tab-add > .ico {
+    width: 16px;
+    height: 16px;
+}
+
+.header-bar .tab-add:hover {
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--accent);
+    transform: none;
+}
+
+.header-bar .tab-add:hover > .ico {
+    transform: rotate(90deg) scale(1.12);
+}
+
+/* ---- Window buttons ---- */
+.header-bar .win-btn {
+    width: 44px;
+    color: var(--text-secondary);
+}
+
+.header-bar .win-btn > .ico {
+    width: 16px;
+    height: 16px;
+}
+
+.header-bar .win-btn:hover {
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-primary);
+}
+
+.header-bar .win-btn.close:hover {
+    background: #e81123;
+    color: #fff;
+}
+
+.header-bar .hamburger-btn > .ico {
+    width: 20px;
+    height: 20px;
+}
+
+@media (max-width: 1100px) {
+    .header-bar .toggle-btn,
+    .header-bar .tool-group .action-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .header-bar .toggle-btn:not(.tool-group *) {
+        width: 36px;
+        height: 36px;
+    }
+
+    .header-bar :is(.toggle-btn, .action-btn) > .ico {
+        width: 18px;
+        height: 18px;
+    }
+
+    .header-bar .action-btn.primary {
+        height: 36px;
+        padding: 0 14px 0 10px;
+    }
+}
+
+@media (max-width: 850px) {
+    .header-bar .win-btn {
+        width: 34px;
+    }
+
+    .header-bar .action-btn.primary {
+        padding: 0 10px;
+    }
+}
