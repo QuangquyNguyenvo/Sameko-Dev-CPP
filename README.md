@@ -71,11 +71,12 @@
 ## ✨ Features
 
 - 🚀 GCC 16 bundled on Windows, no setup required (on Linux it uses your distro's `g++`)
-- ⚡ Press F11 to compile and run instantly
+- ⚡ Press F11 to compile and run instantly; an unchanged file runs again without recompiling
+- ✅ Input / Output / Expected cards with an AC / WA verdict, and big test inputs straight from a `.txt` file
 - 🐞 Real GDB debugger: breakpoints, watches, STL-aware variable trees, and an **Auto dry run** that walks your program line by line on its own
-- 🏆 Fetch test cases from Codeforces, AtCoder, LeetCode via Competitive Companion
+- 🏆 Fetch test cases from Codeforces, AtCoder, LeetCode via Competitive Companion, and run them all in parallel
 - 🔗 Auto-links .cpp files when you `#include` custom headers
-- 🎨 6 themes: Kawaii, Dracula, Monokai, Nord, One Dark, Sakura
+- 🎨 6 themes: Kawaii Dark, Kawaii Light, Sakura, Dracula, Monokai, Nord, plus your own in the Theme Customizer
 - 📑 Multi-tab editor with split view
 - ✂️ Custom snippets and templates (BFS, DFS, Segment Tree, etc.)
 - 🧹 Format code with AStyle (`Ctrl+Shift+A`)
@@ -98,15 +99,16 @@
 
 <br />
 
-## 🆕 What's New in v1.2.0
+## 🆕 What's New in v1.3.0
 
-- **A real debugger.** Breakpoints in the gutter, watches, STL-aware variable trees, call stack, hover-to-evaluate, Run to Cursor — all on the bundled GDB.
-- **Auto dry run.** One button walks your program a line at a time while the values update, so you can watch a loop run instead of pressing F10 a hundred times. No breakpoint needed; it starts at `main()`.
-- **Step back through a recording.** Every pause is recorded, so **Back** lets you look at the previous steps and the values they held.
-- **Linux support.** AppImage, `.deb` and `.tar.gz` builds.
-- **Realtime output** — `cout`/`printf` appear line by line while the program runs, not all at once when it exits.
-- **Clangd-powered IntelliSense**, replacing the old hardcoded STL tables.
-- **Faster startup**: Monaco loads on demand and ~115 MB of never-used files were dropped from the package.
+- **A fresh look.** The header, explorer, editor, panels and status bar are floating rounded cards; dialogs, menus and notifications match them, in your theme's colours, and the loading screen follows your theme too.
+- **Input / Output / Expected.** The I/O column shows what your last run printed, with an **AC** or **WA** badge when Expected is filled.
+- **Test input from a file.** Attach (or drop) a `.txt` file to the Input card and it is fed to your program straight from disk; only its first lines are shown, so even a 100 MB test stays smooth.
+- **A new Explorer.** Your folder's files with Recent at the top, a filter box, a Done count per folder, status pills, and compiler output tucked away.
+- **Faster everywhere.** Live checking ~10× faster, unchanged files run without recompiling, Run All Tests in parallel, accurate run time and memory, and Electron 44 opens the editor ~15% sooner.
+- **Editor touches.** `struct Name {` closes as `{};`, standard-library names complete from the first second, and Ctrl+T / Ctrl+Tab work for tabs.
+- **A new setup.** One window: choose the folder and install. Updates now install silently and reopen the app.
+- **Lots of fixes.** Undo history kept per tab, no more freezes on endless output, Stop only stops your program, and more.
 
 See [CHANGELOG.md](CHANGELOG.md) for the full list.
 
@@ -126,7 +128,7 @@ Then turn it **OFF** and build again.
   <img src="https://img.shields.io/badge/Official%20Site-sameko.dev-88c9ea?style=for-the-badge&logo=cloudflare&logoColor=white&labelColor=1a2530" alt="Official Website" />
 </a>
 <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/GitHub-v1.2.0%20Release-88c9ea?style=for-the-badge&logo=github&logoColor=white&labelColor=1a2530" alt="Latest Release" />
+  <img src="https://img.shields.io/badge/GitHub-v1.3.0%20Release-88c9ea?style=for-the-badge&logo=github&logoColor=white&labelColor=1a2530" alt="Latest Release" />
 </a>
 
 </div>
@@ -139,7 +141,8 @@ Then turn it **OFF** and build again.
 
 | Package | Format | Description | Recommendation |
 | :--- | :---: | :--- | :--- |
-| **Installer** | `.exe` | Full setup with Start Menu shortcuts & auto-update support | **⭐ Recommended for most users** |
+| **Setup** | `Sameko-Setup-<version>.exe` | One-window setup: pick a folder and install, with Start Menu shortcuts & auto-update | **⭐ Recommended for most users** |
+| **Installer** | `sameko-dev-cpp-setup-<version>.exe` | The classic step-by-step installer (same install, used by auto-update) | If you prefer the wizard |
 | **Portable** | `.zip` | Standalone archive. Extract anywhere (including USB drives) and run | Ideal for school / restricted PCs |
 
 <br />
@@ -249,7 +252,8 @@ Everything lands in `samekodevcpp/`. A full `npm run build` produces:
 
 | Artifact | Notes |
 | :--- | :--- |
-| `sameko-dev-cpp-setup-<version>.exe` | Windows installer (NSIS) |
+| `Sameko-Setup-<version>.exe` | Windows setup window, with the NSIS installer inside |
+| `sameko-dev-cpp-setup-<version>.exe` | Windows installer (NSIS); the in-app updater uses this one |
 | `sameko-dev-cpp-<version>-portable.zip` | Windows portable folder, zipped |
 | `sameko-dev-cpp-<version>-linux-x86_64.AppImage` | Linux, runs on any distribution |
 | `latest.yml` + `.blockmap` | Update metadata the in-app updater reads |
@@ -319,6 +323,7 @@ as long as the session is live, and go back to Run / Compile & Run once it ends.
 - **Yunchan** (Special thanks for designing the logo!)
 - **KingShiba3766** (Donated the `sameko.dev` domain)
 - **aiko-chan-ai** (Fixed G++ spawn issue on some machines)
+- **[MerlyStella](https://github.com/MerlyStella)** (Tested the app and shared feedback that helped improve it)
 
 **📝 Want to contribute?**
 
