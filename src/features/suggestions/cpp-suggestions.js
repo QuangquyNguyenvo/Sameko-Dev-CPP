@@ -96,6 +96,32 @@ window.registerCppIntellisense = function (monaco) {
         cpp: ['bits/stdc++.h', 'iostream', 'vector', 'algorithm', 'map', 'set', 'string', 'queue', 'stack', 'iomanip']
     };
 
+    // Standard library names offered while clangd is not answering (its first seconds, or no
+    // clangd at all), so `setpre` still finds setprecision (#52). clangd replaces this list once
+    // it has the file.
+    const STD_NAMES = {
+        Function: [
+            'setprecision', 'setw', 'setfill', 'getline', 'swap', 'min', 'max', 'minmax', 'abs',
+            'sort', 'stable_sort', 'reverse', 'unique', 'lower_bound', 'upper_bound', 'binary_search',
+            'equal_range', 'next_permutation', 'prev_permutation', 'accumulate', 'partial_sum',
+            'iota', 'fill', 'count', 'count_if', 'find', 'find_if', 'min_element', 'max_element',
+            'nth_element', 'rotate', 'shuffle', 'all_of', 'any_of', 'none_of', 'transform', 'copy',
+            'memset', 'memcpy', 'strlen', 'strcmp', 'to_string', 'stoi', 'stoll', 'stod',
+            'gcd', 'lcm', '__gcd', '__builtin_popcount', '__builtin_popcountll', '__builtin_clz',
+            '__builtin_ctz', 'sqrt', 'pow', 'ceil', 'floor', 'round', 'log', 'log2', 'exp',
+            'make_pair', 'make_tuple', 'tie', 'move', 'freopen', 'printf', 'scanf', 'puts'
+        ],
+        Class: [
+            'vector', 'string', 'pair', 'tuple', 'map', 'multimap', 'unordered_map', 'set',
+            'multiset', 'unordered_set', 'queue', 'priority_queue', 'deque', 'stack', 'list',
+            'array', 'bitset', 'greater', 'less', 'mt19937', 'chrono'
+        ],
+        Value: [
+            'fixed', 'endl', 'cout', 'cin', 'cerr', 'INT_MAX', 'INT_MIN', 'LLONG_MAX', 'LLONG_MIN',
+            'nullptr', 'true', 'false'
+        ]
+    };
+
     // ========================================================================
     // 2. LOGIC PROVIDER (fallback when clangd is unavailable, e.g. unsaved files)
     // ========================================================================
@@ -167,6 +193,11 @@ window.registerCppIntellisense = function (monaco) {
         });
 
         if (languageId === 'cpp') {
+            for (const kind of Object.keys(STD_NAMES)) {
+                STD_NAMES[kind].forEach(k => suggestions.push({
+                    label: k, kind: monaco.languages.CompletionItemKind[kind], insertText: k, range: range
+                }));
+            }
             ['ll', 'pb', 'mp', 'fi', 'se', 'vi', 'pii'].forEach(k => {
                 suggestions.push({ label: k, kind: monaco.languages.CompletionItemKind.Constant, insertText: k, range: range });
             });
@@ -397,4 +428,37 @@ window.registerCppIntellisense = function (monaco) {
 
     registerFeatures('cpp');
     registerFeatures('c');
+
+    // ========================================================================
+    // 4. STRUCT SEMICOLON (#52): typing `{` after `struct Name` (also class, union, enum)
+    // auto-closes it as `{};`, like Code::Blocks, so Enter gives the body with `};` below.
+    // ========================================================================
+    const TYPE_HEAD = /^\s*(?:template\s*<.*>\s*)?(?:typedef\s+)?(?:struct|class|union|enum(?:\s+(?:class|struct))?)\b[^;(){}=]*\{$/;
+    const addStructSemicolon = (editor) => {
+        editor.onDidChangeModelContent((e) => {
+            if (e.isUndoing || e.isRedoing || e.changes.length !== 1) return;
+            const change = e.changes[0];
+            // Monaco's auto-close inserts the pair as one change.
+            if (change.text !== '{}' || change.rangeLength !== 0) return;
+            const model = editor.getModel();
+            if (!model || !['cpp', 'c'].includes(model.getLanguageId())) return;
+            const line = change.range.startLineNumber;
+            const col = change.range.startColumn;
+            const lineText = model.getLineContent(line);
+            if (!TYPE_HEAD.test(lineText.slice(0, col))) return;
+            if (lineText[col + 1] === ';') return;
+            // After the content change has been applied, as its own undo step.
+            queueMicrotask(() => {
+                if (editor.getModel() !== model || model.getLineContent(line).slice(col - 1, col + 1) !== '{}') return;
+                const at = new monaco.Range(line, col + 2, line, col + 2);
+                // Its own undo step: Ctrl+Z takes back the `;` and leaves the braces.
+                editor.pushUndoStop();
+                editor.executeEdits('struct-semicolon', [{ range: at, text: ';' }]);
+                editor.pushUndoStop();
+                editor.setPosition({ lineNumber: line, column: col + 1 });
+            });
+        });
+    };
+    monaco.editor.getEditors().forEach(addStructSemicolon);
+    monaco.editor.onDidCreateEditor(addStructSemicolon);
 };
