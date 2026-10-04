@@ -250,8 +250,9 @@ function initSettings() {
         bgFileInput.onchange = e => {
             const file = e.target.files[0];
             if (file) {
-                if (file.path) {
-                    const cleanPath = file.path.replace(/\\/g, '/');
+                const filePath = window.electronAPI?.getPathForFile?.(file) || '';
+                if (filePath) {
+                    const cleanPath = filePath.replace(/\\/g, '/');
                     const bgUrlInput = document.getElementById('set-bgUrl');
                     if (bgUrlInput) bgUrlInput.value = cleanPath;
                 } else {

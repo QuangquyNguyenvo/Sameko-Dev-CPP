@@ -20,8 +20,8 @@ let isProcessRunning = false;
 // loaded once the editor is up and the page is idle, or on the first write
 // after start-up. Writes made before then are queued and replayed in order.
 const XTERM_PATHS = {
-    xterm: '../node_modules/xterm/lib/xterm',
-    'xterm-addon-fit': '../node_modules/xterm-addon-fit/lib/xterm-addon-fit',
+    xterm: '../node_modules/@xterm/xterm/lib/xterm',
+    'xterm-addon-fit': '../node_modules/@xterm/addon-fit/lib/addon-fit',
 };
 let mountTarget = null;  // { el, opts } recorded by initTerminal
 let queued = [];         // (term) => void calls waiting for the terminal
@@ -139,14 +139,15 @@ function createTerminal(containerEl, opts) {
         disableStdin: true,            // display-only; input handled by textarea
         fontSize: opts.fontSize || 13,
         fontFamily: "'JetBrains Mono', Consolas, monospace",
+        lineHeight: 1.25,
+        fontWeightBold: '700',
         theme: Object.assign({
             background: '#1e2933',
             foreground: '#e0f0ff',
             cursor: '#1e2933'          // hide cursor (no stdin)
         }, opts.theme || {}),
         scrollback: 5000,
-        convertEol: true,              // lone \n -> \r\n
-        fastScrollModifier: 'shift'
+        convertEol: true               // lone \n -> \r\n
     });
 
     // Fit addon for auto-resize

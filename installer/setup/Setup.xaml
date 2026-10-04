@@ -1,0 +1,200 @@
+<!-- Sameko Dev C++ setup window. Loaded at run time by Setup.cs (XamlReader), so it needs no XAML
+     compiler; elements are found by x:Name. Colours are Kawaii Dark, as in the app's splash. -->
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Sameko Dev C++ Setup" Width="500" Height="584"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" WindowStartupLocation="CenterScreen"
+        FontFamily="Segoe UI Variable Display, Segoe UI" TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True" SnapsToDevicePixels="True">
+    <Window.Resources>
+        <SolidColorBrush x:Key="Bg" Color="#152535"/>
+        <SolidColorBrush x:Key="Panel" Color="#1D3247"/>
+        <SolidColorBrush x:Key="Accent" Color="#88C9EA"/>
+        <SolidColorBrush x:Key="AccentText" Color="#10223D"/>
+        <SolidColorBrush x:Key="Text" Color="#E0F0FF"/>
+        <SolidColorBrush x:Key="Muted" Color="#8FB3CC"/>
+        <SolidColorBrush x:Key="Line" Color="#2C4660"/>
+
+        <!-- Pill button in the accent colour. -->
+        <Style x:Key="Primary" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource AccentText}"/>
+            <Setter Property="FontSize" Value="16.5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="B" CornerRadius="25" Background="{StaticResource Accent}" Height="50">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Opacity" Value="0.9"/></Trigger>
+                            <Trigger Property="IsPressed" Value="True"><Setter TargetName="B" Property="Opacity" Value="0.8"/></Trigger>
+                            <Trigger Property="IsEnabled" Value="False"><Setter TargetName="B" Property="Opacity" Value="0.5"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Small soft pill (Browse). -->
+        <Style x:Key="Soft" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource Text}"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="B" CornerRadius="10" Background="#26405A" Padding="16,0">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Background" Value="#30506E"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Round title-bar button (minimise, close). -->
+        <Style x:Key="Chrome" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+            <Setter Property="Width" Value="30"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="B" CornerRadius="15" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="B" Property="Background" Value="#26405A"/></Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Rounded check box with a tick. -->
+        <Style TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource Text}"/>
+            <Setter Property="FontSize" Value="14.5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <StackPanel Orientation="Horizontal" Background="Transparent">
+                            <!-- The tick sits beside the box, not in it, so the border width cannot push it off centre. -->
+                            <Grid Width="22" Height="22">
+                                <Border x:Name="Box" CornerRadius="7" BorderThickness="1.5"
+                                        BorderBrush="{StaticResource Line}" Background="Transparent"/>
+                                <Path x:Name="Tick" Data="M 0 4.5 L 4 8.5 L 11 0" Stroke="{StaticResource AccentText}"
+                                      StrokeThickness="2.2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      StrokeLineJoin="Round" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                      Margin="0,1,0,0" Visibility="Collapsed"/>
+                            </Grid>
+                            <ContentPresenter Margin="9,0,0,0" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Box" Property="Background" Value="{StaticResource Accent}"/>
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                <Setter TargetName="Tick" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="12">
+        <Border CornerRadius="26" BorderThickness="1.5">
+            <Border.BorderBrush>
+                <SolidColorBrush Color="#88C9EA" Opacity="0.28"/>
+            </Border.BorderBrush>
+            <Border.Background>
+                <LinearGradientBrush StartPoint="0,0" EndPoint="0.4,1">
+                    <GradientStop Color="#1A2E43" Offset="0"/>
+                    <GradientStop Color="#122131" Offset="1"/>
+                </LinearGradientBrush>
+            </Border.Background>
+            <Border.Effect>
+                <DropShadowEffect BlurRadius="14" ShadowDepth="3" Opacity="0.35" Color="#000000"/>
+            </Border.Effect>
+        </Border>
+
+        <Grid x:Name="Card">
+            <!-- Soft accent blobs and bubbles, as on the splash screen. -->
+            <Ellipse Width="260" Height="250" Fill="#88C9EA" Opacity="0.10" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="-120,-130,0,0"/>
+            <Ellipse Width="230" Height="220" Fill="#88C9EA" Opacity="0.07" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,-90,-120"/>
+            <Canvas x:Name="Bubbles" IsHitTestVisible="False"/>
+
+            <!-- Drag area and title-bar buttons. -->
+            <Border x:Name="DragArea" Height="56" VerticalAlignment="Top" Background="Transparent"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,14,14,0">
+                <Button x:Name="MinButton" Style="{StaticResource Chrome}" ToolTip="Minimise">
+                    <Path Data="M 0 0 L 10 0" Stroke="{StaticResource Muted}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                </Button>
+                <Button x:Name="CloseButton" Style="{StaticResource Chrome}" Margin="4,0,0,0" ToolTip="Close">
+                    <Path Data="M 0 0 L 10 10 M 10 0 L 0 10" Stroke="{StaticResource Muted}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                </Button>
+            </StackPanel>
+
+            <!-- Logo, shared by every step. -->
+            <StackPanel VerticalAlignment="Top" Margin="0,44,0,0">
+                <Grid Width="128" Height="128">
+                    <Ellipse Fill="#88C9EA" Opacity="0.10"/>
+                    <Image x:Name="Logo" Width="104" Height="104" RenderOptions.BitmapScalingMode="HighQuality">
+                        <Image.RenderTransform><TranslateTransform x:Name="LogoMove"/></Image.RenderTransform>
+                    </Image>
+                </Grid>
+                <TextBlock Text="Sameko Dev C++" Foreground="{StaticResource Text}" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,14,0,0"/>
+                <TextBlock x:Name="Subtitle" Text="C++ IDE  ·  GCC 16  ·  GDB  ·  clangd" Foreground="{StaticResource Muted}" FontSize="14.5" HorizontalAlignment="Center" Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <!-- Step 1: where to install. -->
+            <StackPanel x:Name="SetupPage" VerticalAlignment="Bottom" Margin="36,0,36,36">
+                <TextBlock Text="Install to" Foreground="{StaticResource Muted}" FontSize="13.5" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                <Border CornerRadius="13" Background="{StaticResource Panel}" BorderBrush="{StaticResource Line}" BorderThickness="1.5" Padding="14,6,6,6">
+                    <DockPanel>
+                        <Button x:Name="BrowseButton" DockPanel.Dock="Right" Style="{StaticResource Soft}" Content="Browse" Height="34"/>
+                        <TextBox x:Name="PathBox" Background="Transparent" BorderThickness="0" Foreground="{StaticResource Text}"
+                                 CaretBrush="{StaticResource Accent}" FontSize="14.5" VerticalContentAlignment="Center" Margin="0,0,8,0"/>
+                    </DockPanel>
+                </Border>
+                <TextBlock x:Name="SpaceText" Foreground="{StaticResource Muted}" FontSize="13" Margin="0,8,0,0"/>
+                <StackPanel Orientation="Horizontal" Margin="0,18,0,24">
+                    <CheckBox x:Name="DesktopBox" Content="Desktop shortcut" IsChecked="True"/>
+                    <CheckBox x:Name="LaunchBox" Content="Open when done" IsChecked="True" Margin="28,0,0,0"/>
+                </StackPanel>
+                <Button x:Name="InstallButton" Style="{StaticResource Primary}" Content="Install"/>
+            </StackPanel>
+
+            <!-- Step 2: progress. -->
+            <StackPanel x:Name="ProgressPage" VerticalAlignment="Bottom" Margin="36,0,36,60" Visibility="Collapsed">
+                <DockPanel Margin="0,0,0,12">
+                    <TextBlock x:Name="PercentText" DockPanel.Dock="Right" Foreground="{StaticResource Accent}" FontSize="15.5" FontWeight="Bold"/>
+                    <TextBlock x:Name="StatusText" Text="Getting ready…" Foreground="{StaticResource Text}" FontSize="15.5" FontWeight="SemiBold"/>
+                </DockPanel>
+                <Grid x:Name="Track" Height="10">
+                    <Border CornerRadius="5" Background="#88C9EA" Opacity="0.16"/>
+                    <Border x:Name="Fill" CornerRadius="5" Background="{StaticResource Accent}" HorizontalAlignment="Left" Width="0"/>
+                </Grid>
+                <TextBlock x:Name="DetailText" Foreground="{StaticResource Muted}" FontSize="13" Margin="0,12,0,0" TextTrimming="CharacterEllipsis"/>
+            </StackPanel>
+
+            <!-- Step 3: done or failed. -->
+            <StackPanel x:Name="DonePage" VerticalAlignment="Bottom" Margin="36,0,36,36" Visibility="Collapsed">
+                <TextBlock x:Name="DoneTitle" Text="All set!" Foreground="{StaticResource Text}" FontSize="22" FontWeight="Bold" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="DoneText" Foreground="{StaticResource Muted}" FontSize="14.5" TextWrapping="Wrap" TextAlignment="Center" Margin="0,8,0,26"/>
+                <Button x:Name="DoneButton" Style="{StaticResource Primary}" Content="Open Sameko"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

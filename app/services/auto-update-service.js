@@ -365,8 +365,9 @@ class AutoUpdateService {
                     window.close();
                 });
 
-                // Quit and install
-                this.updater.quitAndInstall(false, true);
+                // Silent install (no wizard; NSIS reuses the folder the app is installed in),
+                // then start the updated app. A Program Files install still asks for UAC.
+                this.updater.quitAndInstall(true, true);
             });
         } else {
             log.warn('[AutoUpdate] No update downloaded yet');

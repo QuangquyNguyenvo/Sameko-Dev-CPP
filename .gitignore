@@ -70,3 +70,6 @@ codegraph.json
 # wrong for everyone else and a permanent dirty file in `git status`.
 compile_flags.txt
 
+
+# Installer art previews (scripts/build-installer-art.js)
+installer/*.preview.png

@@ -3,7 +3,7 @@
 A map of where things live; it answers "which file do I open?". Contribution guidelines are in
 `CONTRIBUTING.md`.
 
-**Sameko Dev C++** is a C++ IDE built on Electron 28 + Monaco Editor. It ships a bundled MinGW GCC
+**Sameko Dev C++** is a C++ IDE built on Electron 44 + Monaco Editor. It ships a bundled MinGW GCC
 toolchain (`Sameko-GCC/`) and adds a GDB debugger, clangd IntelliSense, competitive-programming
 judging, AStyle formatting, local history, Discord Rich Presence and auto-update. Windows is the
 primary target; Linux is supported.

@@ -27,7 +27,9 @@ const os = require('os');
 const path = require('path');
 
 const ROOT = path.join(__dirname, '..');
-const ARGS = ['electron-builder', '--linux', 'AppImage'];
+// electron-builder 26 refuses '+' in the Linux file name; the menu entry still reads "Sameko Dev C++"
+// (package.json › build.linux.desktop).
+const ARGS = ['electron-builder', '--linux', 'AppImage', '-c.productName=Sameko-Dev-CPP'];
 
 /** Can this process create a symlink? Cheaper than finding out 90 seconds in. */
 function canSymlink() {
