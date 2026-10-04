@@ -24,45 +24,234 @@ try {
 // ===== DROPDOWN LOGIC =====
 var dlTrigger = document.getElementById('download-trigger');
 var dlWrapper = document.querySelector('.dropdown-wrapper');
+var dlMenu = document.getElementById('download-menu')
+    || (dlWrapper && dlWrapper.querySelector('.drop-menu'));
+var dlPopoverEnabled = Boolean(dlMenu
+    && dlMenu.hasAttribute('popover')
+    && typeof dlMenu.showPopover === 'function'
+    && typeof dlMenu.hidePopover === 'function');
+var dlPositionFrame = 0;
+var dlPopoverStyles = [
+    'position', 'inset', 'top', 'right', 'bottom', 'left', 'margin',
+    'max-width', 'max-height', 'overflow-y'
+];
+var dlFallbackStyles = ['display', 'opacity', 'visibility', 'transform'];
 
-function syncDownloadMenuAria() {
-    if (dlTrigger && dlWrapper) {
-        dlTrigger.setAttribute('aria-expanded', dlWrapper.classList.contains('active') ? 'true' : 'false');
+function isDownloadMenuOpen() {
+    if (dlMenu && dlPopoverEnabled) {
+        try {
+            return dlMenu.matches(':popover-open');
+        } catch (e) {
+            // Older Chromium builds do not parse :popover-open even if the
+            // methods exist. The wrapper class remains a safe fallback.
+        }
+    }
+    return Boolean(dlWrapper && dlWrapper.classList.contains('active'));
+}
+
+function syncDownloadMenuAria(open) {
+    var isOpen = typeof open === 'boolean' ? open : isDownloadMenuOpen();
+    if (dlTrigger) {
+        dlTrigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        if (dlMenu && dlMenu.id) dlTrigger.setAttribute('aria-controls', dlMenu.id);
+    }
+    if (dlMenu) {
+        dlMenu.classList.toggle('drop-menu--open', isOpen);
+        dlMenu.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+    }
+}
+
+function clearDownloadMenuPosition() {
+    if (!dlMenu) return;
+    dlPopoverStyles.forEach(function (property) {
+        dlMenu.style.removeProperty(property);
+    });
+}
+
+function clearDownloadMenuFallbackStyles() {
+    if (!dlMenu) return;
+    dlFallbackStyles.forEach(function (property) {
+        dlMenu.style.removeProperty(property);
+    });
+}
+
+function prepareDownloadMenuFallback() {
+    if (!dlMenu) return;
+
+    // A failed showPopover() can leave the UA's popover rule (display:none)
+    // behind. Removing the attribute switches the element back to normal CSS.
+    if (dlMenu.hasAttribute('popover')) dlMenu.removeAttribute('popover');
+    if (document.body && dlMenu.parentNode !== document.body) {
+        // A fixed menu inside a transformed/clipped section is still confined
+        // by that section in older engines; body makes the viewport contract
+        // reliable. The explicit open class keeps the menu's CSS state intact.
+        document.body.appendChild(dlMenu);
+    }
+    dlMenu.style.setProperty('display', 'block');
+    dlMenu.style.setProperty('opacity', '1');
+    dlMenu.style.setProperty('visibility', 'visible');
+    dlMenu.style.setProperty('transform', 'none');
+}
+
+function getDownloadViewport() {
+    var viewport = window.visualViewport;
+    return {
+        left: viewport && Number.isFinite(viewport.offsetLeft) ? viewport.offsetLeft : 0,
+        top: viewport && Number.isFinite(viewport.offsetTop) ? viewport.offsetTop : 0,
+        width: viewport && viewport.width ? viewport.width : window.innerWidth,
+        height: viewport && viewport.height ? viewport.height : window.innerHeight
+    };
+}
+
+function positionDownloadMenu() {
+    if (!dlMenu || !dlTrigger || !isDownloadMenuOpen()) return;
+
+    if (!dlPopoverEnabled) prepareDownloadMenuFallback();
+
+    var viewport = getDownloadViewport();
+    var margin = 12;
+    var gap = 10;
+    var triggerRect = dlTrigger.getBoundingClientRect();
+    var availableWidth = Math.max(0, viewport.width - (margin * 2));
+    var availableHeight = Math.max(0, viewport.height - (margin * 2));
+
+    // The menu is in the top layer while open. Fixed coordinates keep it
+    // aligned to the trigger while avoiding every ancestor's overflow/transform.
+    dlMenu.style.setProperty('position', 'fixed');
+    dlMenu.style.setProperty('inset', 'auto');
+    dlMenu.style.setProperty('margin', '0');
+    dlMenu.style.setProperty('max-width', availableWidth + 'px');
+    dlMenu.style.setProperty('max-height', availableHeight + 'px');
+    dlMenu.style.setProperty('overflow-y', 'auto');
+
+    var menuWidth = Math.min(dlMenu.offsetWidth || 360, availableWidth);
+    var menuHeight = Math.min(dlMenu.offsetHeight || 0, availableHeight);
+    var left = triggerRect.left;
+    var top = triggerRect.bottom + gap;
+    var belowBottom = top + menuHeight;
+    var aboveTop = triggerRect.top - gap - menuHeight;
+
+    if (belowBottom > viewport.top + viewport.height - margin
+        && aboveTop >= viewport.top + margin) {
+        top = aboveTop;
+    }
+
+    left = Math.max(viewport.left + margin,
+        Math.min(left, viewport.left + viewport.width - margin - menuWidth));
+    top = Math.max(viewport.top + margin,
+        Math.min(top, viewport.top + viewport.height - margin - menuHeight));
+
+    dlMenu.style.setProperty('left', Math.round(left - viewport.left) + 'px');
+    dlMenu.style.setProperty('top', Math.round(top - viewport.top) + 'px');
+}
+
+function scheduleDownloadMenuPosition() {
+    if (!dlMenu || !isDownloadMenuOpen()) return;
+    if (dlPositionFrame) cancelAnimationFrame(dlPositionFrame);
+    dlPositionFrame = requestAnimationFrame(function () {
+        dlPositionFrame = 0;
+        positionDownloadMenu();
+    });
+}
+
+function closeDownloadMenu(restoreFocus) {
+    if (!dlWrapper) return;
+
+    dlWrapper.classList.remove('active');
+    if (dlMenu && dlPopoverEnabled && isDownloadMenuOpen()) {
+        try {
+            dlMenu.hidePopover();
+        } catch (e) {
+            // If the browser rejects the top-layer operation, fallback CSS
+            // still closes the menu through the wrapper's active class.
+            dlPopoverEnabled = false;
+            clearDownloadMenuPosition();
+            prepareDownloadMenuFallback();
+        }
+    }
+    if (dlMenu && !dlPopoverEnabled) {
+        clearDownloadMenuPosition();
+        clearDownloadMenuFallbackStyles();
+    }
+    syncDownloadMenuAria(false);
+
+    if (restoreFocus && dlTrigger && typeof dlTrigger.focus === 'function') {
+        dlTrigger.focus({ preventScroll: true });
     }
 }
 
 function openDownloadMenu() {
-    if (dlWrapper && !dlWrapper.classList.contains('active')) {
-        dlWrapper.classList.add('active');
-        syncDownloadMenuAria();
+    if (!dlWrapper) return;
+
+    dlWrapper.classList.add('active');
+    if (dlMenu && dlPopoverEnabled && !isDownloadMenuOpen()) {
+        try {
+            // Show first so the browser promotes the element to the top layer;
+            // positioning happens on the next frame after its dimensions exist.
+            dlMenu.showPopover();
+        } catch (e) {
+            dlPopoverEnabled = false;
+            clearDownloadMenuPosition();
+            prepareDownloadMenuFallback();
+        }
     }
+    if (dlMenu && !dlPopoverEnabled) prepareDownloadMenuFallback();
+    syncDownloadMenuAria(true);
+    scheduleDownloadMenuPosition();
+}
+
+function downloadEventInsideMenu(event) {
+    if (!event) return false;
+    var path = typeof event.composedPath === 'function' ? event.composedPath() : [];
+    if (path.length > 0 && dlMenu && path.indexOf(dlMenu) !== -1) return true;
+    return Boolean(dlMenu && dlMenu.contains(event.target));
 }
 
 try {
+    if (dlTrigger && dlWrapper) {
+        dlTrigger.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (isDownloadMenuOpen()) closeDownloadMenu(false);
+            else openDownloadMenu();
+        });
 
-if (dlTrigger && dlWrapper) {
-    dlTrigger.addEventListener('click', (e) => {
-        e.stopPropagation();
-        dlWrapper.classList.toggle('active');
-        syncDownloadMenuAria();
-    });
+        // Pointer events catch clicks even when the popover is promoted to the
+        // top layer. Links close after their default navigation is preserved.
+        document.addEventListener('pointerdown', function (event) {
+            if (!isDownloadMenuOpen()) return;
+            var insideWrapper = dlWrapper.contains(event.target);
+            var insideMenu = downloadEventInsideMenu(event);
+            if (!insideWrapper && !insideMenu) closeDownloadMenu(false);
+        });
 
-    document.addEventListener('click', (e) => {
-        if (!dlWrapper.contains(e.target)) {
-            dlWrapper.classList.remove('active');
-            syncDownloadMenuAria();
+        dlMenu && dlMenu.addEventListener('click', function (event) {
+            var link = event.target && event.target.closest
+                ? event.target.closest('a') : null;
+            if (link) closeDownloadMenu(false);
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && isDownloadMenuOpen()) {
+                event.preventDefault();
+                closeDownloadMenu(true);
+            }
+        });
+
+        window.addEventListener('resize', scheduleDownloadMenuPosition, { passive: true });
+        window.addEventListener('scroll', scheduleDownloadMenuPosition, { passive: true });
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', scheduleDownloadMenuPosition, { passive: true });
+            window.visualViewport.addEventListener('scroll', scheduleDownloadMenuPosition, { passive: true });
         }
-    });
 
-    // Esc đóng menu và trả focus về nút mở
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && dlWrapper.classList.contains('active')) {
-            dlWrapper.classList.remove('active');
-            syncDownloadMenuAria();
-            dlTrigger.focus();
+        // Release metadata can hide rows and change the menu's height while it
+        // is open. Recalculate without coupling to the fetch implementation.
+        if (dlMenu && typeof ResizeObserver === 'function') {
+            new ResizeObserver(scheduleDownloadMenuPosition).observe(dlMenu);
         }
-    });
-}
+        syncDownloadMenuAria(false);
+    }
 
 // Fetch Releases — gán URL cho từng artifact theo nền tảng
 fetch('https://api.github.com/repos/QuangquyNguyenvo/Sameko-Dev-CPP/releases')
@@ -165,9 +354,9 @@ if (benchmarkCard) barObserver.observe(benchmarkCard);
 // Handle #download-trigger hash on page load (from external links like wiki)
 if (window.location.hash === '#download-trigger') {
     // Prevent browser default jump to anchor
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     document.addEventListener('DOMContentLoaded', () => {
-        window.scrollTo(0, 0);
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
         setTimeout(() => {
             openDownloadMenu();
             if (dlTrigger) dlTrigger.focus();
@@ -231,18 +420,28 @@ window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e)
 // ===== SCROLL TO TOP =====
 try {
 const scrollTopBtn = document.getElementById('scroll-top');
+let smoothScrollFrame = 0;
 
 // Generic Smooth Scroll Function
 function smoothScrollTo(targetY, duration = 1000, onComplete) {
+    if (smoothScrollFrame) {
+        cancelAnimationFrame(smoothScrollFrame);
+        smoothScrollFrame = 0;
+    }
+
     const startY = window.scrollY;
-    // Handle document height limit
-    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-    const effectiveTargetY = Math.min(targetY, maxScroll);
+    const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    const requestedTarget = Number.isFinite(Number(targetY)) ? Number(targetY) : 0;
+    const effectiveTargetY = Math.max(0, Math.min(requestedTarget, maxScroll));
+    const scrollDuration = Number.isFinite(Number(duration)) ? Math.max(0, Number(duration)) : 0;
 
     const diff = effectiveTargetY - startY;
+    const reducedMotion = typeof window.matchMedia === 'function'
+        && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    // If distance is 0, don't animate
-    if (diff === 0) {
+    // Reduced motion and zero-duration requests jump immediately.
+    if (diff === 0 || reducedMotion || scrollDuration <= 0) {
+        window.scrollTo({ top: effectiveTargetY, left: 0, behavior: 'instant' });
         if (typeof onComplete === 'function') onComplete();
         return;
     }
@@ -251,24 +450,28 @@ function smoothScrollTo(targetY, duration = 1000, onComplete) {
 
     function scrollStep(currentTime) {
         const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
+        const progress = Math.min(elapsed / scrollDuration, 1);
         const ease = 1 - Math.pow(1 - progress, 3); // Ease out cubic
 
-        // Force behavior: 'auto' to bypass any CSS smooth scrolling that might persist
+        // Instant writes prevent html { scroll-behavior: smooth } from stacking
+        // a second animation on every requestAnimationFrame tick.
         window.scrollTo({
             top: startY + diff * ease,
             left: 0,
-            behavior: "auto"
+            behavior: 'instant'
         });
 
         if (progress < 1) {
-            requestAnimationFrame(scrollStep);
+            smoothScrollFrame = requestAnimationFrame(scrollStep);
         } else if (typeof onComplete === 'function') {
+            smoothScrollFrame = 0;
             onComplete();
+        } else {
+            smoothScrollFrame = 0;
         }
     }
 
-    requestAnimationFrame(scrollStep);
+    smoothScrollFrame = requestAnimationFrame(scrollStep);
 }
 
 function checkScrollTop() {
@@ -317,8 +520,11 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
                 return;
             }
 
-            // Account for sticky header height (approx 80px)
-            const headerOffset = 80;
+            // Account for the actual sticky header height; wiki pages may not
+            // render the shared nav, so retain the historical 80px fallback.
+            const nav = document.querySelector('.nav');
+            const headerOffset = nav && nav.getBoundingClientRect().height
+                ? nav.getBoundingClientRect().height : 80;
             const elementPosition = targetElement.getBoundingClientRect().top;
             const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
 
@@ -373,115 +579,6 @@ document.querySelectorAll('.wiki-content table').forEach(table => {
 });
 
 } catch (e) { console.warn('Table wrapper error:', e); }
-
-/* ===== DYNAMIC BACKGROUND (Anti-Gravity Dots) ===== */
-try {
-document.addEventListener('DOMContentLoaded', () => {
-    // Người dùng tắt animation thì không dựng canvas — rAF không tự dừng theo
-    // media query, phải chặn từ đây.
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-    // .hero-wrapper đã bị bỏ khi viết lại hero; giờ container là .hero-band.
-    const heroWrapper = document.querySelector('.hero-band');
-    if (!heroWrapper) return;
-
-    const canvas = document.createElement('canvas');
-    if (!canvas || !canvas.getContext) return;
-    canvas.id = 'bg-canvas';
-    heroWrapper.insertBefore(canvas, heroWrapper.firstChild);
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    let width, height;
-    let particles = [];
-
-    // Config
-    const gap = 45;
-    const radius = 1.5;
-    const mouseRadius = 180;
-    const returnSpeed = 0.08;
-    const pushWeb = 0.8;
-
-    function resize() {
-        width = heroWrapper.offsetWidth;
-        height = heroWrapper.offsetHeight;
-        canvas.width = width;
-        canvas.height = height;
-        initParticles();
-    }
-
-    function initParticles() {
-        particles = [];
-        for (let x = 0; x < width; x += gap) {
-            for (let y = 0; y < height; y += gap) {
-                particles.push({
-                    x: x,
-                    y: y,
-                    originX: x,
-                    originY: y,
-                    vx: 0,
-                    vy: 0
-                });
-            }
-        }
-    }
-
-    let mouse = { x: -1000, y: -1000 };
-
-    // Update mouse position relative to canvas
-    window.addEventListener('mousemove', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        mouse.x = e.clientX - rect.left;
-        mouse.y = e.clientY - rect.top;
-    });
-
-    function animate() {
-        ctx.clearRect(0, 0, width, height);
-
-        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-        ctx.fillStyle = isDark ? 'rgba(100, 181, 246, 0.25)' : 'rgba(2, 136, 209, 0.18)';
-
-        particles.forEach(p => {
-            const dx = mouse.x - p.x;
-            const dy = mouse.y - p.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-
-            if (distance < mouseRadius) {
-                const forceDirectionX = dx / distance;
-                const forceDirectionY = dy / distance;
-                const force = (mouseRadius - distance) / mouseRadius;
-                const directionX = forceDirectionX * force * pushWeb;
-                const directionY = forceDirectionY * force * pushWeb;
-
-                p.vx -= directionX;
-                p.vy -= directionY;
-            }
-
-            const odx = p.originX - p.x;
-            const ody = p.originY - p.y;
-
-            p.vx += odx * returnSpeed * 0.5;
-            p.vy += ody * returnSpeed * 0.5;
-
-            p.vx *= 0.85;
-            p.vy *= 0.85;
-
-            p.x += p.vx;
-            p.y += p.vy;
-
-            ctx.beginPath();
-            ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-            ctx.fill();
-        });
-
-        requestAnimationFrame(animate);
-    }
-
-    window.addEventListener('resize', resize);
-    resize(); // Init
-    animate();
-});
-} catch (e) { console.warn('Dynamic background error:', e); }
 
 /* ===== NAV: đổi trạng thái khi rời khỏi đỉnh trang =====
    Dùng IntersectionObserver thay vì thêm scroll listener thứ hai

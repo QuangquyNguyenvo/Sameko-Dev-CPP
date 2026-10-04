@@ -553,15 +553,6 @@ a.card {
     opacity: 0.9;
 }
 
-/* Canvas particle do script.js chèn vào đầu .hero-band */
-#bg-canvas {
-    position: absolute;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.55;
-}
-
 .hero__glow {
     position: absolute;
     z-index: 0;

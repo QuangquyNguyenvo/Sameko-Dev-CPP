@@ -4,58 +4,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="assets/js/theme-init.js"></script>
 
     <link rel="stylesheet" href="assets/css/fonts.css">
 
-    <title>Wiki | Sameko Dev C++</title>
+    <title>Sameko Dev C++ Wiki | Installation &amp; C++ IDE Guide</title>
     <meta name="description"
-        content="Sameko Dev C++ user guide - from installation and compiler configuration to advanced features for competitive programming.">
-    <meta name="keywords" content="Sameko Wiki, C++ IDE documentation, Dev-C++ guide, competitive programming tutorial">
+        content="Sameko Dev C++ docs: GCC 16 and C++26 on Windows, Monaco and clangd, plus snippets, themes, and Competitive Companion. Linux uses system tools.">
     <meta name="author" content="QuangquyNguyenvo">
     <meta name="theme-color" content="#88c9ea">
     <meta name="robots" content="index, follow">
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sameko.dev/wiki.html">
-    <meta property="og:title" content="Wiki | Sameko Dev C++">
+    <meta property="og:title" content="Sameko Dev C++ Wiki | Installation &amp; C++ IDE Guide">
     <meta property="og:description"
-        content="Sameko Dev C++ user guide - from installation and compiler configuration to advanced features for competitive programming.">
+        content="GCC 16 and C++26 on Windows, Monaco and clangd, plus snippets, themes, and Competitive Companion. Linux uses system tools.">
     <meta property="og:image"
         content="https://sameko.dev/assets/og-image.png">
+    <meta property="og:image:alt" content="Sameko Dev C++ mascot illustration">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="vi_VN">
     <meta property="og:site_name" content="Sameko Dev C++">
 
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Wiki | Sameko Dev C++">
+    <meta name="twitter:title" content="Sameko Dev C++ Wiki | Installation &amp; C++ IDE Guide">
     <meta name="twitter:description"
-        content="Sameko Dev C++ user guide - from installation and compiler configuration to advanced features.">
+        content="GCC 16 and C++26 on Windows, Monaco and clangd, plus snippets, themes, and Competitive Companion. Linux uses system tools.">
     <meta name="twitter:image"
         content="https://sameko.dev/assets/og-image.png">
+    <meta name="twitter:image:alt" content="Sameko Dev C++ mascot illustration">
 
     <link rel="icon" href="assets/favicon-32.png" sizes="32x32">
     <link rel="icon" href="assets/logo-48.png" sizes="48x48">
     <link rel="apple-touch-icon" href="assets/icon-192.png">
     <link rel="canonical" href="https://sameko.dev/wiki.html">
+    <link rel="alternate" hreflang="en" href="https://sameko.dev/wiki.html">
+    <link rel="alternate" hreflang="vi" href="https://sameko.dev/wiki-vi.html">
+    <link rel="alternate" hreflang="x-default" href="https://sameko.dev/wiki.html">
 
     <link rel="stylesheet" href="assets/css/tokens.css">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="assets/css/wiki.css">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "TechArticle",
+                "@id": "https://sameko.dev/wiki.html#article",
+                "headline": "Build with less friction.",
+                "description": "Documentation for configuring GCC 16 and C++26 on Windows, then using Monaco, clangd, checkpoints, snippets, themes, and Competitive Companion. Linux packages use system compiler tools.",
+                "url": "https://sameko.dev/wiki.html",
+                "inLanguage": "en",
+                "isPartOf": { "@id": "https://sameko.dev/#website" },
+                "about": { "@id": "https://sameko.dev/#software" },
+                "author": { "@type": "Person", "name": "QuangquyNguyenvo", "url": "https://github.com/QuangquyNguyenvo" },
+                "mainEntityOfPage": "https://sameko.dev/wiki.html"
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": "https://sameko.dev/wiki.html#breadcrumb",
+                "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sameko.dev/" },
+                    { "@type": "ListItem", "position": 2, "name": "Wiki", "item": "https://sameko.dev/wiki.html" }
+                ]
+            }
+        ]
+    }
+    </script>
 
     <script>
         (function () {
             const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
             if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
 
-            // Language - Default to EN
-            const lang = localStorage.getItem('wiki-lang') || 'en';
-            document.documentElement.lang = lang;
-        })();
-    </script>
-    <script>
-        // Clean URL: remove .html extension from address bar
-        (function () {
-            if (window.history.replaceState && location.pathname.endsWith('.html')) {
-                var clean = location.pathname.replace(/\.html$/, '') + location.search + location.hash;
-                history.replaceState(null, '', clean);
-            }
+            // Keep the document language aligned with this URL.
+            document.documentElement.lang = 'en';
         })();
     </script>
     <link rel="stylesheet" href="assets/css/atom-one-dark.min.css">
@@ -67,7 +93,8 @@
     </script>
 </head>
 
-<body>
+<body class="wiki-page">
+    <a class="skip-link" href="#wiki-main">Skip to documentation</a>
     <!-- Theme Toggle Button -->
     <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark/light mode">
         <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -122,6 +149,22 @@
 
     <!-- WIKI CONTENT -->
     <div class="wiki-wrapper">
+        <section class="wiki-hero container" aria-labelledby="wiki-hero-title">
+            <div class="wiki-hero-copy" data-reveal>
+                <a class="wiki-release-pill" href="#whats-new"><b>v1.3.0</b> What's new &rarr;</a>
+                <h1 id="wiki-hero-title">Build with less friction.</h1>
+                <p>Everything Sameko does, from <code>hello.cpp</code> to contest day.</p>
+                <form class="wiki-search" id="wiki-search-form" role="search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <path d="m20 20-4-4"></path>
+                    </svg>
+                    <input id="wiki-search-input" data-wiki-search type="search" autocomplete="off" placeholder="Search the guide…" aria-label="Search the guide">
+                    <button type="submit">Find</button>
+                </form>
+                <div class="wiki-search-results" id="wiki-search-results" aria-live="polite"></div>
+            </div>
+        </section>
         <div class="container wiki-layout">
             <!-- SIDEBAR - English -->
             <aside class="wiki-sidebar">
@@ -148,11 +191,17 @@
                 <div class="wiki-nav-group">
                     <div class="wiki-nav-title">Features</div>
                     <a href="#editor-features" class="wiki-nav-link">Editor</a>
+                    <a href="#debugger" class="wiki-nav-link">Debugger</a>
                     <a href="#file-explorer" class="wiki-nav-link">File Explorer</a>
                     <a href="#checkpoints" class="wiki-nav-link">Checkpoints</a>
                     <a href="#competitive" class="wiki-nav-link">Competitive Companion</a>
                     <a href="#snippets" class="wiki-nav-link">Snippets</a>
                     <a href="#auto-update" class="wiki-nav-link">Auto-Update</a>
+                </div>
+                <div class="wiki-nav-group">
+                    <div class="wiki-nav-title">Explore</div>
+                    <a href="#whats-new" class="wiki-nav-link">What’s new</a>
+                    <a href="#compare" class="wiki-nav-link">Compare</a>
                 </div>
                 <div class="wiki-nav-group">
                     <div class="wiki-nav-title">Help</div>
@@ -161,17 +210,56 @@
                 </div>
             </aside>
 
-            <main class="wiki-content">
+            <main class="wiki-content" id="wiki-main">
                 <!-- ========== ENGLISH CONTENT ========== -->
                 <div>
 
+                    <!-- WHAT'S NEW -->
+                    <section id="whats-new" data-reveal>
+                        <span class="wiki-eyebrow">Release notes · 1.3.0 · 04 Oct 2026</span>
+                        <h2>What’s new in Sameko</h2>
+                        <p class="wiki-subtitle">Faster, calmer, more helpful.</p>
+
+                        <div class="wiki-update-grid">
+                            <article class="wiki-update-card">
+                                <strong>Faster live checking</strong>
+                                <p>clangd now drives live diagnostics (about 100&ndash;130 ms); <code>g++ -fsyntax-only</code> is the fallback.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>More honest run metrics</strong>
+                                <p>A native launcher measures real wall time and peak memory.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Parallel test runs</strong>
+                                <p>Run All Tests uses up to four workers; tests near the limit rerun alone.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>New daily workflow</strong>
+                                <p>File input, Output / Expected cards, interface scale and a lighter startup.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Debugger and compiler polish</strong>
+                                <p>Flag-aware PCH for debug builds, batched variables, C++26 in the selector.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Electron 44</strong>
+                                <p>xterm.js 6 and a deferred Monaco load, so the editor appears sooner.</p>
+                            </article>
+                        </div>
+
+                        <div class="callout note">
+                            <div class="callout-title">Version scope</div>
+                            <p>Windows bundles GCC 16.1.0; Linux uses the compiler tools installed on your system.</p>
+                        </div>
+                    </section>
+
                     <!-- INTRODUCTION -->
                     <section id="introduction-en">
-                        <h1>Sameko Dev C++ Wiki</h1>
+                        <h2>Sameko Dev C++ Wiki</h2>
                         <p class="wiki-subtitle">Documentation from basics to advanced features.</p>
 
                         <p>Sameko Dev C++ is a C++ IDE designed for competitive programming and education.
-                            It comes with a pre-configured GCC 16 compiler, allowing you to start coding immediately
+                            It comes with a pre-configured GCC 16.1.0 compiler on Windows, allowing you to start coding immediately
                             without installing additional compilers or MinGW.</p>
 
                         <h2>Who is Sameko for?</h2>
@@ -181,50 +269,11 @@
                             <li><b>Competitive Programmers</b> who need fast compilation and test case integration</li>
                             <li><b>Students</b> who need a portable IDE to use on school computers via USB</li>
                         </ul>
-
-                        <h2>Comparison with other IDEs</h2>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Feature</th>
-                                    <th>Sameko</th>
-                                    <th>VS Code</th>
-                                    <th>Dev-C++ 5.11</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Setup Time</td>
-                                    <td>2 mins</td>
-                                    <td>15+ mins</td>
-                                    <td>5 mins</td>
-                                </tr>
-                                <tr>
-                                    <td>Portable</td>
-                                    <td>Yes</td>
-                                    <td>No</td>
-                                    <td>Yes</td>
-                                </tr>
-                                <tr>
-                                    <td>GCC Version</td>
-                                    <td>16.0</td>
-                                    <td>Manual</td>
-                                    <td>4.x</td>
-                                </tr>
-                                <tr>
-                                    <td>Compile Speed</td>
-                                    <td>~500ms</td>
-                                    <td>2500ms+</td>
-                                    <td>1500ms</td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </section>
 
                     <!-- INSTALLATION -->
                     <section id="installation">
                         <h2>Installing Sameko IDE</h2>
-                        <p>Installation takes about 3-5 minutes.</p>
 
                         <div class="callout note">
                             <div class="callout-title">Which one should I choose?</div>
@@ -234,7 +283,7 @@
                                     <b>Installer (.exe)</b> — Automatic setup with Start Menu shortcuts, right-click integration, auto-updates, and a clean uninstaller. Recommended for most users.
                                 </li>
                                 <li>
-                                    <b>Portable (.rar)</b> — Unzip and run anywhere. No admin rights needed. Great for USB drives or school computers. Note: auto-updates are not available in portable mode.
+                                    <b>Portable (.zip)</b> — Extract and run anywhere. No admin rights needed. Great for USB drives or school computers. Note: auto-updates are not available in portable mode.
                                 </li>
                             </ul>
                         </div>
@@ -252,8 +301,8 @@
                             </div>
 
                             <div class="tutorial-step">
-                                <h3>Run Sameko.exe</h3>
-                                <p>Double-click <code>Sameko.exe</code> to launch the IDE.</p>
+                                <h3>Run Sameko Dev C++.exe</h3>
+                                <p>Double-click <code>Sameko Dev C++.exe</code> to launch the IDE.</p>
                             </div>
                         </div>
 
@@ -261,6 +310,11 @@
                             <div class="callout-title">Note</div>
                             <p>Windows Defender may warn "not commonly downloaded". This is normal,
                                 click "Keep" to continue.</p>
+                        </div>
+
+                        <div class="callout note">
+                            <div class="callout-title">Linux packages</div>
+                            <p>Linux releases are available as AppImage, <code>.deb</code> and <code>.tar.gz</code>. They do not bundle a compiler; install <code>g++</code>, <code>gdb</code>, <code>clangd</code> and <code>astyle</code> from your distribution so Sameko can detect them.</p>
                         </div>
                     </section>
 
@@ -275,7 +329,7 @@
                             <pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
 using namespace std;
 int main() {
-    cout &lt;&lt; "Toi yeu gai alime!" &lt;&lt; '\n';
+    cout &lt;&lt; "Hello, Sameko!" &lt;&lt; '\n';
     return 0;
 }</code></pre>
                         </div>
@@ -369,7 +423,7 @@ int main() {
                                 </tr>
                                 <tr>
                                     <td>C++26</td>
-                                    <td>(Beta/Experimental) Latest features in development</td>
+                                    <td>Available with GCC 16.1.0; use when your target compiler supports the feature</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -401,16 +455,28 @@ int main() {
                             </thead>
                             <tbody>
                                 <tr>
+                                    <td><kbd>F5</kbd></td>
+                                    <td>Start or continue debugging</td>
+                                </tr>
+                                <tr>
                                     <td><kbd>F9</kbd></td>
-                                    <td>Compile</td>
+                                    <td>Compile only</td>
                                 </tr>
                                 <tr>
                                     <td><kbd>F10</kbd></td>
-                                    <td>Run</td>
+                                    <td>Run, or Step Over while debugging</td>
                                 </tr>
                                 <tr>
                                     <td><kbd>F11</kbd></td>
-                                    <td>Compile & Run</td>
+                                    <td>Build & Run, or Step Into while debugging</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Shift</kbd> + <kbd>F5</kbd></td>
+                                    <td>Stop the current run or debug session</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Shift</kbd> + <kbd>F11</kbd></td>
+                                    <td>Step Out while debugging</td>
                                 </tr>
                                 <tr>
                                     <td><kbd>Ctrl</kbd> + <kbd>N</kbd></td>
@@ -433,6 +499,18 @@ int main() {
                                     <td>Toggle terminal</td>
                                 </tr>
                                 <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>T</kbd></td>
+                                    <td>New tab</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Tab</kbd></td>
+                                    <td>Next tab</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Tab</kbd></td>
+                                    <td>Previous tab</td>
+                                </tr>
+                                <tr>
                                     <td><kbd>Ctrl</kbd> + <kbd>\</kbd></td>
                                     <td>Split editor</td>
                                 </tr>
@@ -443,7 +521,7 @@ int main() {
                     <!-- THEMES -->
                     <section id="themes">
                         <h2>Themes & Customization</h2>
-                        <p>Sameko includes 7 built-in themes. Change themes in Settings or click the palette icon.</p>
+                        <p>Sameko includes 6 built-in themes. Change themes in Settings or click the palette icon.</p>
 
                         <table>
                             <thead>
@@ -477,10 +555,6 @@ int main() {
                                     <td>Nord</td>
                                     <td>Arctic blue dark theme</td>
                                 </tr>
-                                <tr>
-                                    <td>One Dark</td>
-                                    <td>Atom-inspired dark theme</td>
-                                </tr>
                             </tbody>
                         </table>
 
@@ -495,7 +569,7 @@ int main() {
 
                         <h3>Key Editor Features</h3>
                         <ul>
-                            <li><b>IntelliSense</b> — autocomplete for STL methods, functions, and your own code</li>
+                            <li><b>IntelliSense</b> — clangd-backed completion, hover and signature help for STL methods, functions, and your own code</li>
                             <li><b>Bracket Colorization</b> — matching brackets are colored for readability</li>
                             <li><b>Minimap</b> — a bird's-eye view of your code on the right side</li>
                             <li><b>Multi-cursor</b> — hold <kbd>Alt</kbd> and click to place multiple cursors</li>
@@ -506,6 +580,37 @@ int main() {
 
                         <h3>Tabs</h3>
                         <p>Open multiple files in tabs. Drag to reorder, middle-click to close, or right-click for options like "Close Others" and "Pin Tab". Your open tabs are restored when you reopen the IDE.</p>
+                    </section>
+
+                    <!-- DEBUGGER -->
+                    <section id="debugger" data-reveal>
+                        <span class="wiki-eyebrow">Inspect, pause, understand</span>
+                        <h2>Integrated GDB debugger</h2>
+                        <p>Build with debug information, set a breakpoint in the gutter, then use the Debug panel without leaving the editor. Sameko drives the bundled MinGW GDB on Windows; Linux uses the system <code>gdb</code>.</p>
+
+                        <div class="wiki-update-grid">
+                            <article class="wiki-update-card">
+                                <strong>Control the session</strong>
+                                <p>Continue, Pause, Step Over / Into / Out, Run to Cursor, Restart and Stop in one row.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Read the current state</strong>
+                                <p>Locals, watches, STL values, the call stack and hover-to-evaluate.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Auto dry run</strong>
+                                <p>Walks from <code>main()</code> with a speed slider. <kbd>Esc</kbd> stops it.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Replay a pause</strong>
+                                <p>Back replays recorded pauses read-only; Back to live continues.</p>
+                            </article>
+                        </div>
+
+                        <div class="callout tip">
+                            <div class="callout-title">Shortcut note</div>
+                            <p><kbd>F5</kbd> starts or continues debugging, <kbd>F10</kbd> steps over, <kbd>F11</kbd> steps into, <kbd>Shift</kbd> + <kbd>F11</kbd> steps out and <kbd>Shift</kbd> + <kbd>F5</kbd> stops. When you are not debugging, <kbd>F10</kbd> runs and <kbd>F11</kbd> builds and runs.</p>
+                        </div>
                     </section>
 
                     <!-- FILE EXPLORER -->
@@ -624,7 +729,7 @@ int main() {
                         </table>
 
                         <h3>STL IntelliSense</h3>
-                        <p>Sameko provides autocomplete with documentation for 30+ STL methods and functions including <code>push_back</code>, <code>sort</code>, <code>lower_bound</code>, <code>substr</code>, and more. Hover over any STL call to see its signature and description.</p>
+                        <p>Clangd provides context-aware completion, documentation hover and signature help for STL members such as <code>push_back</code>, <code>sort</code>, <code>lower_bound</code> and <code>substr</code>. Built-in snippets and language keywords remain available while clangd warms up or when a file is unsaved.</p>
 
                         <h3>Custom Snippets</h3>
                         <p>Go to <b>Settings → Snippets</b> to create your own. Each snippet has a prefix (trigger word) and a body (the code that gets inserted). Use this to add your own algorithm templates like BFS, DFS, Segment Tree, or DSU.</p>
@@ -649,12 +754,39 @@ int main() {
                         </div>
                     </section>
 
+                    <!-- COMPARISON -->
+                    <section id="compare" data-reveal>
+                        <span class="wiki-eyebrow">Choose your workflow</span>
+                        <h2>How Sameko stacks up</h2>
+                        <p class="wiki-subtitle">Default setups only; extensions and local toolchains change the picture.</p>
+
+                        <div class="wiki-comparison-notes">
+                            <article class="wiki-note-card">
+                                <strong>Sameko Dev C++</strong>
+                                <p>GCC 16.1.0, clangd, GDB, Competitive Companion and checkpoints in one package.</p>
+                            </article>
+                            <article class="wiki-note-card">
+                                <strong>VS Code + C++</strong>
+                                <p>Flexible editor; you add the C++ extension, compiler and debugger.</p>
+                            </article>
+                            <article class="wiki-note-card">
+                                <strong>Code::Blocks</strong>
+                                <p>Classic IDE with completion and GDB; the compiler depends on the package.</p>
+                            </article>
+                            <article class="wiki-note-card">
+                                <strong>CLion</strong>
+                                <p>Full IDE for larger CMake projects with a configured toolchain.</p>
+                            </article>
+                        </div>
+                        <p><a href="index.html#comparison">See the full feature matrix on the homepage →</a></p>
+                    </section>
+
                     <!-- TROUBLESHOOTING -->
                     <section id="troubleshooting">
                         <h2>Troubleshooting</h2>
 
                         <h3>IDE won't open</h3>
-                        <p>Right-click Sameko.exe, select Properties, check "Unblock" at the bottom, then Apply.</p>
+                        <p>Right-click <code>Sameko Dev C++.exe</code>, select Properties, check "Unblock" at the bottom, then Apply.</p>
 
                         <h3>"Missing DLL" error</h3>
                         <p>Install Visual C++ Redistributable from <a
@@ -928,6 +1060,9 @@ int main() {
             updateScrollHint();
         });
     </script>
+    <script src="assets/js/gsap.min.js"></script>
+    <script src="assets/js/ScrollTrigger.min.js"></script>
+    <script src="assets/js/wiki.js"></script>
 </body>
 
 </html>
