@@ -290,14 +290,41 @@
     overflow: hidden;
 }
 
+/* The gap between the editor and the bottom panel is its resizer. A grip in the middle shows it
+ * can be dragged; without it the gap read as a stray strip of background. */
 .editor-section > #resizer-problems {
+    position: relative;
     height: var(--island-gap);
     flex-shrink: 0;
     background: transparent;
 }
 
+.editor-section > #resizer-problems::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 40px;
+    height: 4px;
+    margin: -2px 0 0 -20px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) 22%, transparent);
+    transition: width 0.25s var(--ease-spring), margin 0.25s var(--ease-spring), background-color var(--duration-fast) var(--ease-standard);
+}
+
+.editor-section > #resizer-problems:hover::before,
+.editor-section > #resizer-problems.dragging::before {
+    width: 72px;
+    margin-left: -36px;
+    background: var(--accent);
+}
+
 .editor-section > #resizer-problems.collapsed {
     pointer-events: none;
+}
+
+.editor-section > #resizer-problems.collapsed::before {
+    display: none;
 }
 
 .editor-section > .problems-panel {
