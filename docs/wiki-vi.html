@@ -4,56 +4,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="assets/js/theme-init.js"></script>
 
     <link rel="stylesheet" href="assets/css/fonts.css">
 
-    <title>Wiki | Sameko Dev C++</title>
+    <title>Sameko Dev C++ Wiki | Hướng dẫn Cài đặt &amp; Lập trình C++</title>
     <meta name="description"
-        content="Tài liệu hướng dẫn sử dụng Sameko Dev C++ - Từ cài đặt, cấu hình compiler đến các tính năng nâng cao cho competitive programming.">
-    <meta name="keywords" content="Sameko Wiki, C++ IDE documentation, Dev-C++ guide, competitive programming tutorial">
+        content="Tài liệu Sameko Dev C++: GCC 16 và C++26 trên Windows, Monaco và clangd, cùng snippets, themes, Competitive Companion. Linux dùng compiler hệ thống.">
     <meta name="author" content="QuangquyNguyenvo">
     <meta name="theme-color" content="#88c9ea">
     <meta name="robots" content="index, follow">
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sameko.dev/wiki-vi.html">
-    <meta property="og:title" content="Wiki | Sameko Dev C++">
+    <meta property="og:title" content="Sameko Dev C++ Wiki | Hướng dẫn Cài đặt &amp; Lập trình C++">
     <meta property="og:description"
-        content="Tài liệu hướng dẫn sử dụng Sameko Dev C++ - Từ cài đặt, cấu hình compiler đến các tính năng nâng cao cho competitive programming.">
+        content="GCC 16 và C++26 trên Windows, Monaco và clangd, cùng snippets, themes, Competitive Companion. Linux dùng compiler hệ thống.">
     <meta property="og:image" content="https://sameko.dev/assets/og-image.png">
+    <meta property="og:image:alt" content="Minh họa linh vật Sameko Dev C++">
+    <meta property="og:locale" content="vi_VN">
+    <meta property="og:locale:alternate" content="en_US">
     <meta property="og:site_name" content="Sameko Dev C++">
 
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Wiki | Sameko Dev C++">
+    <meta name="twitter:title" content="Sameko Dev C++ Wiki | Hướng dẫn Cài đặt &amp; Lập trình C++">
     <meta name="twitter:description"
-        content="Tài liệu hướng dẫn sử dụng Sameko Dev C++ - Từ cài đặt, cấu hình compiler đến các tính năng nâng cao.">
+        content="GCC 16 và C++26 trên Windows, Monaco và clangd, cùng snippets, themes, Competitive Companion. Linux dùng compiler hệ thống.">
     <meta name="twitter:image" content="https://sameko.dev/assets/og-image.png">
+    <meta name="twitter:image:alt" content="Minh họa linh vật Sameko Dev C++">
 
     <link rel="icon" href="assets/favicon-32.png" sizes="32x32">
     <link rel="icon" href="assets/logo-48.png" sizes="48x48">
     <link rel="apple-touch-icon" href="assets/icon-192.png">
     <link rel="canonical" href="https://sameko.dev/wiki-vi.html">
+    <link rel="alternate" hreflang="en" href="https://sameko.dev/wiki.html">
+    <link rel="alternate" hreflang="vi" href="https://sameko.dev/wiki-vi.html">
+    <link rel="alternate" hreflang="x-default" href="https://sameko.dev/wiki.html">
 
     <link rel="stylesheet" href="assets/css/tokens.css">
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="assets/css/wiki.css">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "TechArticle",
+                "@id": "https://sameko.dev/wiki-vi.html#article",
+                "headline": "Code nhanh hơn, hiểu rõ hơn.",
+                "description": "Tài liệu cấu hình GCC 16 và C++26 trên Windows, sau đó dùng Monaco, clangd, checkpoints, snippets, themes và Competitive Companion. Linux dùng compiler hệ thống.",
+                "url": "https://sameko.dev/wiki-vi.html",
+                "inLanguage": "vi",
+                "isPartOf": { "@id": "https://sameko.dev/#website" },
+                "about": { "@id": "https://sameko.dev/#software" },
+                "author": { "@type": "Person", "name": "QuangquyNguyenvo", "url": "https://github.com/QuangquyNguyenvo" },
+                "mainEntityOfPage": "https://sameko.dev/wiki-vi.html"
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": "https://sameko.dev/wiki-vi.html#breadcrumb",
+                "itemListElement": [
+                    { "@type": "ListItem", "position": 1, "name": "Trang chủ", "item": "https://sameko.dev/" },
+                    { "@type": "ListItem", "position": 2, "name": "Wiki", "item": "https://sameko.dev/wiki-vi.html" }
+                ]
+            }
+        ]
+    }
+    </script>
 
     <script>
         (function () {
             const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
             if (theme === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
 
-            // Language - Default to EN
-            const lang = localStorage.getItem('wiki-lang') || 'en';
-            document.documentElement.lang = lang;
-        })();
-    </script>
-    <script>
-        // Clean URL: remove .html extension from address bar
-        (function () {
-            if (window.history.replaceState && location.pathname.endsWith('.html')) {
-                var clean = location.pathname.replace(/\.html$/, '') + location.search + location.hash;
-                history.replaceState(null, '', clean);
-            }
+            // Keep the document language aligned with this URL.
+            document.documentElement.lang = 'vi';
         })();
     </script>
     <link rel="stylesheet" href="assets/css/atom-one-dark.min.css">
@@ -65,7 +91,8 @@
     </script>
 </head>
 
-<body>
+<body class="wiki-page">
+    <a class="skip-link" href="#wiki-main">Tới thẳng nội dung</a>
     <!-- Theme Toggle Button -->
     <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode" title="Toggle dark/light mode">
         <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -112,13 +139,29 @@
         <div class="nav-links">
             <a href="index.html#features">Features</a>
             <a href="index.html#benchmark">Benchmarks</a>
-            <a href="wiki.html" style="color: var(--primary);">Wiki</a>
+            <a href="wiki-vi.html" style="color: var(--primary);">Wiki</a>
             <a href="index.html#download-trigger">Download</a>
         </div>
     </nav>
 
     <!-- WIKI CONTENT -->
     <div class="wiki-wrapper">
+        <section class="wiki-hero container" aria-labelledby="wiki-hero-title">
+            <div class="wiki-hero-copy" data-reveal>
+                <a class="wiki-release-pill" href="#whats-new"><b>v1.3.0</b> Có gì mới &rarr;</a>
+                <h1 id="wiki-hero-title">Code nhanh hơn, hiểu rõ hơn.</h1>
+                <p>Mọi thứ về Sameko, từ <code>hello.cpp</code> đến ngày thi.</p>
+                <form class="wiki-search" id="wiki-search-form" role="search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <path d="m20 20-4-4"></path>
+                    </svg>
+                    <input id="wiki-search-input" data-wiki-search type="search" autocomplete="off" placeholder="Tìm trong Wiki…" aria-label="Tìm trong Wiki">
+                    <button type="submit">Tìm</button>
+                </form>
+                <div class="wiki-search-results" id="wiki-search-results" aria-live="polite"></div>
+            </div>
+        </section>
         <div class="container wiki-layout">
             <!-- SIDEBAR - Ukrainian (Actually Vietnamese, my bad) -->
             <aside class="wiki-sidebar">
@@ -146,11 +189,17 @@
                     <div class="wiki-nav-group">
                         <div class="wiki-nav-title">Tính Năng</div>
                         <a href="#editor-features" class="wiki-nav-link">Editor</a>
+                        <a href="#debugger" class="wiki-nav-link">Debugger</a>
                         <a href="#file-explorer" class="wiki-nav-link">Quản lý File</a>
                         <a href="#checkpoints" class="wiki-nav-link">Checkpoints</a>
                         <a href="#competitive" class="wiki-nav-link">Competitive Companion</a>
                         <a href="#snippets" class="wiki-nav-link">Snippets</a>
                         <a href="#auto-update" class="wiki-nav-link">Tự động cập nhật</a>
+                    </div>
+                    <div class="wiki-nav-group">
+                        <div class="wiki-nav-title">Khám Phá</div>
+                        <a href="#whats-new" class="wiki-nav-link">Có gì mới</a>
+                        <a href="#compare" class="wiki-nav-link">So sánh</a>
                     </div>
                     <div class="wiki-nav-group">
                         <div class="wiki-nav-title">Trợ Giúp</div>
@@ -161,16 +210,55 @@
 
 
 
-            <main class="wiki-content">
+            <main class="wiki-content" id="wiki-main">
                 <!-- ========== VIETNAMESE CONTENT ========== -->
                 <div>
+                    <!-- CÓ GÌ MỚI -->
+                    <section id="whats-new" data-reveal>
+                        <span class="wiki-eyebrow">Release notes · 1.3.0 · 04/10/2026</span>
+                        <h2>Có gì mới trong Sameko?</h2>
+                        <p class="wiki-subtitle">Nhanh hơn, gọn hơn, hữu ích hơn.</p>
+
+                        <div class="wiki-update-grid">
+                            <article class="wiki-update-card">
+                                <strong>Live checking nhanh hơn</strong>
+                                <p>clangd lo live diagnostics (khoảng 100&ndash;130 ms); <code>g++ -fsyntax-only</code> là fallback.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Thời gian chạy chính xác hơn</strong>
+                                <p>Native launcher đo đúng wall time và peak memory.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Chạy test song song</strong>
+                                <p>Run All Tests dùng tối đa bốn worker; test sát giới hạn được chạy lại riêng.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Workflow hằng ngày mới</strong>
+                                <p>File input, card Output / Expected, interface scale và khởi động nhẹ hơn.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Debugger và compiler được tinh chỉnh</strong>
+                                <p>PCH theo flags cho debug build, variable objects theo batch, C++26 trong selector.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Electron 44</strong>
+                                <p>xterm.js 6 và Monaco load trễ nên editor hiện sớm hơn.</p>
+                            </article>
+                        </div>
+
+                        <div class="callout note">
+                            <div class="callout-title">Phạm vi phiên bản</div>
+                            <p>Bản Windows kèm GCC 16.1.0; bản Linux dùng compiler tools đã cài trên máy.</p>
+                        </div>
+                    </section>
+
                     <!-- INTRODUCTION -->
                     <section id="introduction">
-                        <h1>Sameko Dev C++ Wiki</h1>
+                        <h2>Sameko Dev C++ Wiki</h2>
                         <p class="wiki-subtitle">Tài liệu hướng dẫn sử dụng IDE từ cơ bản đến nâng cao.</p>
 
                         <p>Sameko Dev C++ là một IDE C++ được thiết kế cho competitive programming và học tập.
-                            IDE đi kèm GCC 16 đã cấu hình sẵn, bạn chỉ cần tải về và bắt đầu code ngay mà không cần
+                            IDE đi kèm GCC 16.1.0 đã cấu hình sẵn trên Windows, bạn chỉ cần tải về và bắt đầu code ngay mà không cần
                             cài đặt thêm compiler hay MinGW.</p>
 
                         <h2>Sameko phù hợp với ai?</h2>
@@ -181,54 +269,11 @@
                             <li><b>Competitive programmer</b> cần compile nhanh và tích hợp test case</li>
                             <li><b>Học sinh, sinh viên</b> muốn một IDE portable mang theo USB dùng ở trường</li>
                         </ul>
-
-                        <h2>So sánh với IDE khác</h2>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Tính năng</th>
-                                    <th>Sameko</th>
-                                    <th>VS Code</th>
-                                    <th>Dev-C++ 5.11</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Thời gian setup</td>
-                                    <td>2 phút</td>
-                                    <td>15+ phút</td>
-                                    <td>5 phút</td>
-                                </tr>
-                                <tr>
-                                    <td>Portable</td>
-                                    <td>Có</td>
-                                    <td>Không</td>
-                                    <td>Có</td>
-                                </tr>
-                                <tr>
-                                    <td>Phiên bản GCC</td>
-                                    <td>16.0</td>
-                                    <td>Tùy cấu hình</td>
-                                    <td>4.x</td>
-                                </tr>
-                                <tr>
-                                    <td>Tốc độ compile</td>
-                                    <td>500ms</td>
-                                    <td>2500ms+</td>
-                                    <td>1500ms</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        <p><small>Thời gian compile đo với file sử dụng <code>#include&lt;bits/stdc++.h&gt;</code>
-                                cùng
-                                C++17 và cấu hình máy tương đương nhau.</small>
-                        </p>
                     </section>
 
                     <!-- INSTALLATION -->
                     <section id="installation">
                         <h2>Cài đặt Sameko IDE</h2>
-                        <p>Quá trình cài đặt mất khoảng 3-5 phút.</p>
 
                         <!-- Installer vs Portable Guide -->
                         <section id="installer-vs-portable"
@@ -247,7 +292,7 @@
                                     </ul>
                                 </li>
                                 <li>
-                                    <b>Portable (.rar)</b>
+                                    <b>Portable (.zip)</b>
                                     <ul>
                                         <li>Giải nén là chạy được ngay, không cần quyền Admin.</li>
                                         <li>Phù hợp để chép vào USB mang đi học, ra quán net.</li>
@@ -274,8 +319,8 @@
                             </div>
 
                             <div class="tutorial-step">
-                                <h3>Chạy Sameko.exe</h3>
-                                <p>Double-click vào file <code>Sameko.exe</code> để khởi động IDE.</p>
+                                <h3>Chạy Sameko Dev C++.exe</h3>
+                                <p>Double-click vào file <code>Sameko Dev C++.exe</code> để khởi động IDE.</p>
                             </div>
                         </div>
 
@@ -284,6 +329,11 @@
                             <p>Windows Defender có thể cảnh báo "not commonly downloaded". Đây là cảnh báo bình
                                 thường,
                                 click "Keep" để tiếp tục.</p>
+                        </div>
+
+                        <div class="callout note">
+                            <div class="callout-title">Gói Linux</div>
+                            <p>Bản Linux có AppImage, <code>.deb</code> và <code>.tar.gz</code>. Các gói này không kèm compiler; hãy cài <code>g++</code>, <code>gdb</code>, <code>clangd</code> và <code>astyle</code> từ distribution để Sameko tự nhận diện.</p>
                         </div>
                     </section>
 
@@ -297,7 +347,7 @@
                             <pre><code class="language-cpp">#include &lt;bits/stdc++.h&gt;
 using namespace std;
 int main() {
-    cout &lt;&lt; "Toi yeu gai alime!" &lt;&lt; '\n';
+    cout &lt;&lt; "Hello, Sameko!" &lt;&lt; '\n';
     return 0;
 }</code></pre>
                         </div>
@@ -392,7 +442,7 @@ int main() {
                                 </tr>
                                 <tr>
                                     <td>C++26</td>
-                                    <td>(Beta/Experimental) Các tính năng mới nhất đang phát triển</td>
+                                    <td>Sẵn sàng với GCC 16.1.0; dùng khi compiler đích hỗ trợ tính năng tương ứng</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -424,16 +474,28 @@ int main() {
                             </thead>
                             <tbody>
                                 <tr>
+                                    <td><kbd>F5</kbd></td>
+                                    <td>Bắt đầu hoặc tiếp tục debug</td>
+                                </tr>
+                                <tr>
                                     <td><kbd>F9</kbd></td>
-                                    <td>Compile</td>
+                                    <td>Chỉ compile</td>
                                 </tr>
                                 <tr>
                                     <td><kbd>F10</kbd></td>
-                                    <td>Run</td>
+                                    <td>Run, hoặc Step Over khi đang debug</td>
                                 </tr>
                                 <tr>
                                     <td><kbd>F11</kbd></td>
-                                    <td>Compile & Run</td>
+                                    <td>Build & Run, hoặc Step Into khi đang debug</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Shift</kbd> + <kbd>F5</kbd></td>
+                                    <td>Dừng run hoặc debug session</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Shift</kbd> + <kbd>F11</kbd></td>
+                                    <td>Step Out khi đang debug</td>
                                 </tr>
                                 <tr>
                                     <td><kbd>Ctrl</kbd> + <kbd>N</kbd></td>
@@ -456,6 +518,18 @@ int main() {
                                     <td>Ẩn/hiện terminal</td>
                                 </tr>
                                 <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>T</kbd></td>
+                                    <td>Mở tab mới</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Tab</kbd></td>
+                                    <td>Chuyển sang tab kế tiếp</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Tab</kbd></td>
+                                    <td>Chuyển về tab trước</td>
+                                </tr>
+                                <tr>
                                     <td><kbd>Ctrl</kbd> + <kbd>\</kbd></td>
                                     <td>Split editor</td>
                                 </tr>
@@ -471,9 +545,9 @@ int main() {
                         </p>
 
                         <ul>
-                            <li><b>Sameko Blue</b> - Theme mặc định với tông xanh dương</li>
-                            <li><b>Sakura Pink</b> - Tông hồng nhạt phong cách anime</li>
-                            <li><b>Dark Mode</b> - Theme tối cho làm việc ban đêm</li>
+                            <li><b>Kawaii Light</b> - Theme sáng mặc định với tông xanh pastel</li>
+                            <li><b>Kawaii Dark</b> - Theme tối với accent xanh dịu</li>
+                            <li><b>Sakura</b> - Tông hồng nhạt phong cách anime</li>
                             <li><b>Dracula</b> - Theme tím đậm phổ biến</li>
                             <li><b>Monokai</b> - Theme classic cho lập trình viên</li>
                             <li><b>Nord</b> - Theme xanh arctic</li>
@@ -490,7 +564,7 @@ int main() {
 
                         <h3>Tính năng nổi bật</h3>
                         <ul>
-                            <li><b>IntelliSense</b> — tự động gợi ý code cho STL, hàm và biến của bạn</li>
+                            <li><b>IntelliSense</b> — clangd cung cấp completion, hover và signature help cho STL, hàm và biến của bạn</li>
                             <li><b>Bracket Colorization</b> — tô màu cặp ngoặc tương ứng để dễ nhìn</li>
                             <li><b>Minimap</b> — bản đồ code thu nhỏ ở bên phải</li>
                             <li><b>Multi-cursor</b> — giữ <kbd>Alt</kbd> và click để đặt nhiều con trỏ</li>
@@ -503,6 +577,37 @@ int main() {
                         <p>Mở nhiều file cùng lúc trên các tab. Kéo thả để sắp xếp, click chuột giữa để đóng, hoặc chuột
                             phải để xem thêm tùy chọn như "Close Others". Các tab đang mở sẽ được khôi phục khi bạn mở
                             lại IDE.</p>
+                    </section>
+
+                    <!-- DEBUGGER -->
+                    <section id="debugger" data-reveal>
+                        <span class="wiki-eyebrow">Kiểm tra, dừng, hiểu code</span>
+                        <h2>Debugger GDB tích hợp</h2>
+                        <p>Build có debug information, đặt breakpoint ở gutter rồi dùng Debug panel ngay trong editor. Sameko dùng MinGW GDB đi kèm trên Windows; Linux dùng <code>gdb</code> của hệ thống.</p>
+
+                        <div class="wiki-update-grid">
+                            <article class="wiki-update-card">
+                                <strong>Điều khiển session</strong>
+                                <p>Continue, Pause, Step Over / Into / Out, Run to Cursor, Restart và Stop trong một hàng.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Đọc trạng thái hiện tại</strong>
+                                <p>Locals, watches, giá trị STL, call stack và hover để xem giá trị.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Auto dry run</strong>
+                                <p>Đi từ <code>main()</code> với speed slider. <kbd>Esc</kbd> để dừng.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Replay trạng thái</strong>
+                                <p>Back phát lại các lần pause (chỉ đọc); Back to live để tiếp tục.</p>
+                            </article>
+                        </div>
+
+                        <div class="callout tip">
+                            <div class="callout-title">Lưu ý phím tắt</div>
+                            <p><kbd>F5</kbd> bắt đầu hoặc tiếp tục debug, <kbd>F10</kbd> step over, <kbd>F11</kbd> step into, <kbd>Shift</kbd> + <kbd>F11</kbd> step out và <kbd>Shift</kbd> + <kbd>F5</kbd> stop. Khi không debug, <kbd>F10</kbd> chạy và <kbd>F11</kbd> build rồi chạy.</p>
+                        </div>
                     </section>
 
                     <!-- FILE EXPLORER -->
@@ -609,12 +714,39 @@ int main() {
                         </div>
                     </section>
 
+                    <!-- SO SÁNH -->
+                    <section id="compare" data-reveal>
+                        <span class="wiki-eyebrow">Chọn workflow phù hợp</span>
+                        <h2>Sameko khác gì?</h2>
+                        <p class="wiki-subtitle">Chỉ so cấu hình mặc định; extension và toolchain trên máy có thể thay đổi kết quả.</p>
+
+                        <div class="wiki-comparison-notes">
+                            <article class="wiki-note-card">
+                                <strong>Sameko Dev C++</strong>
+                                <p>GCC 16.1.0, clangd, GDB, Competitive Companion và checkpoints trong một gói.</p>
+                            </article>
+                            <article class="wiki-note-card">
+                                <strong>VS Code + C++</strong>
+                                <p>Editor linh hoạt; bạn tự thêm C++ extension, compiler và debugger.</p>
+                            </article>
+                            <article class="wiki-note-card">
+                                <strong>Code::Blocks</strong>
+                                <p>IDE truyền thống có completion và GDB; compiler tùy gói cài.</p>
+                            </article>
+                            <article class="wiki-note-card">
+                                <strong>CLion</strong>
+                                <p>IDE đầy đủ cho project CMake lớn với toolchain đã cấu hình.</p>
+                            </article>
+                        </div>
+                        <p><a href="index.html#comparison">Xem bảng so sánh đầy đủ ở trang chủ →</a></p>
+                    </section>
+
                     <!-- TROUBLESHOOTING -->
                     <section id="troubleshooting">
                         <h2>Khắc phục lỗi</h2>
 
                         <h3>IDE không mở được</h3>
-                        <p>Right-click vào Sameko.exe, chọn Properties, tick "Unblock" ở dưới cùng rồi Apply.</p>
+                        <p>Right-click vào <code>Sameko Dev C++.exe</code>, chọn Properties, tick "Unblock" ở dưới cùng rồi Apply.</p>
 
                         <h3>Lỗi "Missing DLL"</h3>
                         <p>Cài Visual C++ Redistributable từ <a href="https://aka.ms/vs/17/release/vc_redist.x64.exe"
@@ -872,6 +1004,9 @@ int main() {
             updateScrollHint();
         });
     </script>
+    <script src="assets/js/gsap.min.js"></script>
+    <script src="assets/js/ScrollTrigger.min.js"></script>
+    <script src="assets/js/wiki.js"></script>
 </body>
 
 </html>

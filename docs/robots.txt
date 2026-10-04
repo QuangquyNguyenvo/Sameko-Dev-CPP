@@ -1,10 +1,5 @@
 User-agent: *
 Allow: /
 
-# Sitemap location
+# Canonical URL inventory for crawlers.
 Sitemap: https://sameko.dev/sitemap.xml
-
-
-
-# Disallow specific paths if needed (currently allowing all)
-# Disallow: /private/
