@@ -39,10 +39,10 @@
     gap: 4px;
     height: 46px;
     padding: 0 6px;
-    border: var(--island-line);
+    border: none;
     border-radius: 20px;
     background: var(--island-bg);
-    box-shadow: var(--island-shadow);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
     flex-shrink: 0;
 }
 
@@ -54,7 +54,7 @@
     border: none;
     border-radius: 999px;
     margin-right: 2px;
-    box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 55%, #000);
+    box-shadow: none;
 }
 
 #island-nav .menu-btn {
@@ -64,6 +64,8 @@
 
 #island-nav .menu-group:not(.show) {
     background: transparent;
+    border: none;
+    box-shadow: none;
     padding: 0;
     gap: 0;
 }
@@ -123,7 +125,7 @@
 .header-bar .tabs-container .tab.active {
     background: var(--btn-primary-bg, var(--accent));
     color: var(--btn-primary-text, #fff);
-    box-shadow: 0 2px 0 color-mix(in srgb, var(--btn-primary-bg, var(--accent)) 55%, #000);
+    box-shadow: none;
 }
 
 .header-bar .tabs-container .tab.active .tab-x {
@@ -170,19 +172,16 @@
     border-radius: 999px;
     overflow: hidden;
     background: var(--btn-primary-bg, var(--accent));
-    box-shadow: 0 3px 0 color-mix(in srgb, var(--btn-primary-bg, var(--accent)) 55%, #000);
-    transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-standard);
+    box-shadow: none;
+    transition: transform 0.2s var(--ease-spring);
 }
 
 .header-bar .run-split:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 0 color-mix(in srgb, var(--btn-primary-bg, var(--accent)) 55%, #000);
 }
 
-/* Pressed: the pill sinks onto its shadow. */
 .header-bar .run-split:active {
-    transform: translateY(2px);
-    box-shadow: 0 1px 0 color-mix(in srgb, var(--btn-primary-bg, var(--accent)) 55%, #000);
+    transform: scale(0.96);
     transition-duration: 0.06s;
 }
 
@@ -229,8 +228,7 @@
 }
 
 .header-bar .run-split:has(.running) {
-    box-shadow: 0 3px 0 color-mix(in srgb, var(--btn-primary-bg, var(--accent)) 55%, #000),
-        0 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent);
 }
 
 .header-bar #btn-stop {
@@ -448,10 +446,10 @@ body.performance-mode .main .editor-section {
     height: 30px;
     margin: 0 12px 10px;
     padding: 0 14px;
-    border: var(--island-line);
+    border: none;
     border-radius: 999px;
     background: var(--island-bg);
-    box-shadow: var(--island-shadow);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
     font-weight: 800;
 }
 

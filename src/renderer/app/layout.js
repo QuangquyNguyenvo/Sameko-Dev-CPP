@@ -87,6 +87,13 @@ function initHeader() {
     }
 
     setupSplitResizer();
+
+    // The page itself never scrolls. Monaco keeps a 50000px-wide measuring element in
+    // <body>, so a focus() or scrollIntoView() inside a side panel could scroll the whole
+    // window sideways and leave only a sliver of the app on screen.
+    window.addEventListener('scroll', () => {
+        if (window.scrollX || window.scrollY) window.scrollTo(0, 0);
+    });
 }
 
 function toggleIO() {

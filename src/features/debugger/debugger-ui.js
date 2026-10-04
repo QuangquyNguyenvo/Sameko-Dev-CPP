@@ -150,7 +150,7 @@
         #sameko-debug-panel{position:relative;flex:0 0 344px;width:344px;min-height:0;margin:2px 12px 12px 0;
           background:var(--bg-glass-heavy,rgba(26,37,48,.97));color:var(--text-primary,#e0f0ff);
           border:1.5px solid var(--border-strong,var(--accent,#88c9ea));border-radius:var(--radius,20px);
-          z-index:1400;display:none;flex-direction:column;font-family:'Nunito','Segoe UI',sans-serif;
+          z-index:1;display:none;flex-direction:column;font-family:'Nunito','Segoe UI',sans-serif;
           font-size:12.5px;box-shadow:var(--shadow-soft,0 12px 44px rgba(0,0,0,.4));overflow:hidden}
         #sameko-debug-panel.open{display:flex}
         /* Row 1: what the session is doing + the two window-ish buttons. */
