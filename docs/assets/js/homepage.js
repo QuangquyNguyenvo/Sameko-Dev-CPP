@@ -269,24 +269,33 @@
         introPlayed = true;
 
         if (desktop) {
+            // Every tween states where it starts. Otherwise a fast scroll during
+            // the intro records the intro's hidden state as the resting state,
+            // and scrolling back to the top leaves the title invisible.
+            const REST = { opacity: 1, x: 0, y: 0, xPercent: 0, rotation: 0, scale: 1 };
             const apart = gsap.timeline({
-                defaults: { ease: 'none' },
+                defaults: { ease: 'none', immediateRender: false },
                 scrollTrigger: { trigger: '.hero-band', start: 'top top', end: '+=75%', scrub: 0.8, pin: true }
             });
-            apart.to('.hero__title > span:first-child', { xPercent: -18, opacity: 0.15 }, 0)
-                .to('.hero__title > span:last-child', { xPercent: 14, opacity: 0.15 }, 0)
-                .to('.hero__badge, .hero__lede, .hero__actions, .dl-hint', { y: -50, opacity: 0, stagger: 0.04 }, 0)
-                .to('.hero__visual img', { scale: 1.16, y: -30, rotation: -3 }, 0)
-                .to('.hero__sun', { x: 120, y: -140, scale: 0.6 }, 0)
-                .to('.hero__sticker--compiler', { x: -260, y: -120, rotation: -30, opacity: 0 }, 0)
-                .to('.hero__sticker--run', { x: 240, y: 60, rotation: 30, opacity: 0 }, 0)
-                .to('.hero__chip--lint', { x: -200, y: -160, rotation: -20, opacity: 0 }, 0)
-                .to('.hero__chip--ac', { x: 220, y: -140, rotation: 20, opacity: 0 }, 0)
-                .to('.hero__spark', { scale: 2.4, rotation: 180, opacity: 0 }, 0)
-                .to('.hero__word', { xPercent: -45 }, 0)
-                .to('.hero__scroll', { opacity: 0 }, 0);
+            const leave = (target, vars) => {
+                const from = {};
+                Object.keys(vars).forEach(key => { if (key in REST) from[key] = REST[key]; });
+                apart.fromTo(target, from, vars, 0);
+            };
+            leave('.hero__title > span:first-child', { xPercent: -18, opacity: 0.15 });
+            leave('.hero__title > span:last-child', { xPercent: 14, opacity: 0.15 });
+            leave('.hero__badge, .hero__lede, .hero__actions, .dl-hint', { y: -50, opacity: 0, stagger: 0.04 });
+            leave('.hero__visual img', { scale: 1.16, y: -30, rotation: -3 });
+            leave('.hero__sun', { x: 120, y: -140, scale: 0.6 });
+            leave('.hero__sticker--compiler', { x: -260, y: -120, rotation: -30, opacity: 0 });
+            leave('.hero__sticker--run', { x: 240, y: 60, rotation: 30, opacity: 0 });
+            leave('.hero__chip--lint', { x: -200, y: -160, rotation: -20, opacity: 0 });
+            leave('.hero__chip--ac', { x: 220, y: -140, rotation: 20, opacity: 0 });
+            leave('.hero__spark', { scale: 2.4, rotation: 180, opacity: 0 });
+            leave('.hero__word', { xPercent: -45 });
+            leave('.hero__scroll', { opacity: 0 });
             document.querySelectorAll('.shape').forEach((shape, i) => {
-                apart.to(shape, { y: -(220 + (i % 4) * 110), rotation: (i % 2 ? 1 : -1) * (120 + i * 25), scale: 1.3 }, 0);
+                leave(shape, { y: -(220 + (i % 4) * 110), rotation: (i % 2 ? 1 : -1) * (120 + i * 25), scale: 1.3 });
             });
         } else {
             gsap.to('.hero__word', {
