@@ -828,7 +828,7 @@ function initResizers() {
     applySavedPanelSizes();
     setupResizer('resizer-io', 'io-section', 150, 500);
     setupResizer('resizer-term', 'terminal-section', 150, 600);
-    setupResizerH('resizer-problems', 'problems-panel', 80, 400);
+    setupResizerH('resizer-problems', 'problems-panel', 80);
 
     window.addEventListener('resize', () => {
         applySavedPanelSizes();
@@ -876,7 +876,7 @@ function setupResizer(resizerId, targetId, min, max) {
     });
 }
 
-function setupResizerH(resizerId, targetId, min, max) {
+function setupResizerH(resizerId, targetId, min) {
     const resizer = document.getElementById(resizerId);
     const target = document.getElementById(targetId);
     let dragging = false;
@@ -894,7 +894,10 @@ function setupResizerH(resizerId, targetId, min, max) {
     document.addEventListener('mousemove', e => {
         if (!dragging) return;
         const dy = startY - e.clientY;
-        const newH = Math.min(max, Math.max(min, startH + dy));
+        // Same cap applySavedPanelSizes uses (55% of the window), instead of a
+        // fixed 400px that was too much on a short window and too little on a tall one.
+        const dynamicMax = Math.max(min, Math.floor((window.innerHeight || 800) * 0.55));
+        const newH = Math.min(dynamicMax, Math.max(min, startH + dy));
         target.style.height = newH + 'px';
     });
 

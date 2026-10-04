@@ -45,7 +45,33 @@ const ACTION_HANDLERS = {
     'moveLineDown': () => getActiveEditor()?.getAction('editor.action.moveLinesDownAction')?.run(),
     'copyLineUp': () => getActiveEditor()?.getAction('editor.action.copyLinesUpAction')?.run(),
     'copyLineDown': () => getActiveEditor()?.getAction('editor.action.copyLinesDownAction')?.run(),
+    'uiZoomIn': () => stepUiScale(1),
+    'uiZoomOut': () => stepUiScale(-1),
+    'uiZoomReset': () => setUiScale('auto'),
 };
+
+// Interface Scale (Settings › Appearance). Saving the setting is enough: the
+// main process applies it as the page zoom.
+const UI_SCALE_STEPS = [80, 90, 100, 110, 125, 150, 175, 200];
+
+function setUiScale(value) {
+    App.settings.appearance.uiScale = value;
+    saveSettings();
+    setStatus(value === 'auto' ? 'Interface scale: Auto' : `Interface scale: ${value}%`, 'ready');
+}
+
+function stepUiScale(direction) {
+    let current = Number(App.settings.appearance.uiScale);
+    if (!Number.isFinite(current)) {
+        // "auto" is resolved in the main process; in this frameless window the
+        // zoom in effect is the ratio of the window width to the page width.
+        current = Math.round((window.outerWidth / window.innerWidth) * 100);
+    }
+    const next = direction > 0
+        ? (UI_SCALE_STEPS.find((s) => s > current + 1) ?? UI_SCALE_STEPS[UI_SCALE_STEPS.length - 1])
+        : ([...UI_SCALE_STEPS].reverse().find((s) => s < current - 1) ?? UI_SCALE_STEPS[0]);
+    setUiScale(next);
+}
 
 function normalizeKeyCombo(e) {
     const parts = [];

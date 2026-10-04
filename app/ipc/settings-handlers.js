@@ -20,6 +20,8 @@ function registerHandlers() {
                 // just saved, without requiring an app restart.
                 require('../services/syntax').onClangdSettingsChanged();
             } catch (e) { }
+            // Interface Scale applies as soon as it is saved.
+            require('../windows/main-window').applyUiScale();
             return { success: true };
         } catch (error) {
             console.error('Failed to save settings:', error);

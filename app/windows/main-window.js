@@ -174,12 +174,49 @@ function getAppRoot() {
     return path.join(__dirname, '..', '..');
 }
 
+// Smallest content area, in CSS pixels, the layout is designed for; below it
+// the panels overlap and the toolbar loses its buttons.
+const MIN_CONTENT = { width: 760, height: 520 };
+
+/**
+ * Zoom factor for Settings › Appearance › Interface Scale. A percentage is used
+ * as is; "auto" enlarges the UI on screens where Windows' own scaling leaves it
+ * tiny: a 4K display at 100% or 125% is 2160 or 1728 logical pixels tall,
+ * against 1080–1440 on the screens the layout was drawn for.
+ */
+function resolveUiScale(win) {
+    let setting = 'auto';
+    try { setting = readSettings()?.appearance?.uiScale ?? 'auto'; } catch (_) { }
+    if (setting !== 'auto') {
+        const pct = Number(setting);
+        return Number.isFinite(pct) ? clamp(pct, 50, 300) / 100 : 1;
+    }
+    const { height } = screen.getDisplayMatching(win.getBounds()).size;
+    if (height < 1700) return 1;
+    return clamp(Math.round((height / 1440) * 20) / 20, 1, 2);
+}
+
+/** Apply the interface scale and the matching minimum window size. */
+function applyUiScale(win = mainWindow) {
+    if (!win || win.isDestroyed()) return;
+    const factor = resolveUiScale(win);
+    if (Math.abs(win.webContents.getZoomFactor() - factor) > 0.001) {
+        win.webContents.setZoomFactor(factor);
+    }
+    const area = screen.getDisplayMatching(win.getBounds()).workAreaSize;
+    win.setMinimumSize(
+        Math.min(Math.round(MIN_CONTENT.width * factor), area.width),
+        Math.min(Math.round(MIN_CONTENT.height * factor), area.height)
+    );
+}
+
 function attachDisplaySafetyListeners() {
     if (displayListenersAttached) return;
 
     const handleDisplayChange = () => {
         if (!mainWindow || mainWindow.isDestroyed()) return;
         ensureWindowIsVisible(mainWindow);
+        applyUiScale(mainWindow);
     };
 
     screen.on('display-added', handleDisplayChange);
@@ -234,6 +271,11 @@ function createMainWindow() {
     // port before listen() had assigned one, so the window always fell through
     // to loadFile() and the server just sat on an open port, unused.)
     mainWindow.loadFile(path.join(appRoot, 'src', 'index.html'));
+    applyUiScale(mainWindow);
+    // Chromium resets the zoom of a new document; re-apply before the app lays out.
+    mainWindow.webContents.on('dom-ready', () => applyUiScale(mainWindow));
+    // Dragged onto a screen with a different size or scaling.
+    mainWindow.on('moved', () => applyUiScale(mainWindow));
 
     Menu.setApplicationMenu(null);
 
@@ -350,4 +392,5 @@ module.exports = {
     closeWindow,
     isWindowAvailable,
     sendToRenderer,
+    applyUiScale,
 };

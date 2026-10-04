@@ -58,7 +58,8 @@ const DEFAULT_SETTINGS = {
         theme: 'monokai',
         bgOpacity: 50,
         bgUrl: '',
-        performanceMode: true
+        performanceMode: true,
+        uiScale: 'auto'   // 'auto' or a percentage; applied by the main process as the page zoom
     },
     startup: {
         behavior: 'restore-previous-session'
@@ -118,7 +119,10 @@ int main() {
         moveLineUp: 'Alt+Up',
         moveLineDown: 'Alt+Down',
         copyLineUp: 'Shift+Alt+Up',
-        copyLineDown: 'Shift+Alt+Down'
+        copyLineDown: 'Shift+Alt+Down',
+        uiZoomIn: 'Ctrl+=',
+        uiZoomOut: 'Ctrl+-',
+        uiZoomReset: 'Ctrl+0'
     },
     snippets: [
         { trigger: 'hello', name: 'Hello World', content: '#include <iostream>\nusing namespace std;\n\nint main() {\n\tcout << "Hello World!";\n\treturn 0;\n}', isBuiltin: true },
