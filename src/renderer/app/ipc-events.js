@@ -118,10 +118,8 @@ if (window.electronAPI) {
             compareOutput();
         }
 
-        const statusParts = [];
-        if (timeStr) statusParts.push(timeStr);
-        if (memStr) statusParts.push(memStr);
-        setStatus(code === 0 ? (statusParts.join(' | ') || 'Done') : `Exit: ${code}`, code === 0 ? 'success' : '');
+        // Time and memory have their own status bar item (showRunStats).
+        setStatus(code === 0 ? 'Done' : `Exit: ${code}`, code === 0 ? 'success' : '');
         if (code === 0) setTimeout(compareOutput, 100);
 
         // Notify explorer: run finished

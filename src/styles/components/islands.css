@@ -312,6 +312,12 @@
     border-radius: var(--island-radius);
 }
 
+/* The docked terminal's padding takes xterm's own background (--terminal-bg, set by
+ * syncTerminalTheme); dark themes painted it --bg-secondary, a black frame round the output. */
+.editor-section > .problems-panel .terminal-body {
+    background: var(--terminal-bg);
+}
+
 /* Collapsed bottom panel: only its tab strip. */
 .editor-section > .problems-panel.collapsed {
     height: auto !important;
