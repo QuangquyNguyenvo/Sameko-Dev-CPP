@@ -178,35 +178,6 @@ function addTestCase() {
     log(`Test Case ${ccTestIndex + 1} added`, 'info');
 }
 
-function showConfirmPopup(message, onConfirm) {
-    const overlay = document.createElement('div');
-    overlay.className = 'confirm-overlay';
-    overlay.innerHTML = `
-        <div class="confirm-popup">
-            <div class="confirm-message">${message}</div>
-            <div class="confirm-buttons">
-                <button class="confirm-btn cancel">Cancel</button>
-                <button class="confirm-btn confirm">Confirm</button>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-
-    requestAnimationFrame(() => overlay.classList.add('show'));
-
-    const close = () => {
-        overlay.classList.remove('show');
-        setTimeout(() => overlay.remove(), 200);
-    };
-
-    overlay.querySelector('.confirm-btn.cancel').onclick = close;
-    overlay.querySelector('.confirm-btn.confirm').onclick = () => {
-        close();
-        onConfirm();
-    };
-    overlay.onclick = (e) => { if (e.target === overlay) close(); };
-}
-
 async function deleteTestCase() {
     if (!ccProblem || !ccProblem.tests || ccProblem.tests.length === 0) return;
 

@@ -33,8 +33,10 @@ class ConfirmDialog {
                 e.preventDefault();
                 this.close(false);
             } else if (e.key === 'Enter') {
+                // Enter answers with the focused button: Tab to Cancel, then Enter, must not
+                // confirm a deletion.
                 e.preventDefault();
-                this.close(true);
+                this.close(document.activeElement !== this.cancelBtn);
             }
         });
     }
@@ -53,11 +55,8 @@ class ConfirmDialog {
         this.confirmBtn.textContent = confirmText;
         this.cancelBtn.textContent = cancelText;
         
-        if (danger) {
-            this.confirmBtn.classList.add('danger');
-        } else {
-            this.confirmBtn.classList.remove('danger');
-        }
+        this.confirmBtn.classList.toggle('danger', !!danger);
+        this.dialog.classList.toggle('danger', !!danger);
         
         this.overlay.classList.add('active');
         this.dialog.classList.add('active');

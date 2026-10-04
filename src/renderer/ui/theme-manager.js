@@ -943,7 +943,9 @@ const ThemeManager = {
             bgPath.endsWith('.mp4') ||
             bgPath.startsWith('data:video/')
         )) {
-            bgVideo.src = bgPath;
+            // Re-assigning the same src restarts the video and shows a blank frame; the theme
+            // is applied twice at startup (settings, then once Monaco has loaded).
+            if (bgVideo.getAttribute('src') !== bgPath) bgVideo.src = bgPath;
             bgVideo.style.display = 'block';
             document.documentElement.style.setProperty('--app-bg-image', 'none');
             this.syncBackgroundVideo();
@@ -956,16 +958,15 @@ const ThemeManager = {
     },
 
     /**
-     * Play the background video only while it can be seen and Performance Mode is
-     * off. Decoding it costs ~4% of a core in the GPU process and ~15 MB in the
-     * renderer for as long as the window is open; paused, it keeps showing its
-     * current frame.
+     * Play the background video only while it can be seen (not hidden behind a user image,
+     * not minimised). Decoding it costs ~4% of a core in the GPU process and ~15 MB in the
+     * renderer; paused, it keeps showing its current frame. Performance Mode no longer
+     * pauses it.
      */
     syncBackgroundVideo() {
         const bgVideo = document.getElementById('app-bg-video');
         if (!bgVideo || !bgVideo.getAttribute('src')) return;
-        const play = bgVideo.style.display !== 'none' && !document.hidden &&
-            !document.body.classList.contains('performance-mode');
+        const play = bgVideo.style.display !== 'none' && !document.hidden;
         bgVideo.autoplay = play;
         if (play) bgVideo.play().catch(() => { });
         else bgVideo.pause();

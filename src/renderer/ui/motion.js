@@ -43,7 +43,7 @@ const Motion = (() => {
     }
 
     function enabled() {
-        return !!gsap && !reducedMotion.matches && !document.body.classList.contains('performance-mode');
+        return !!gsap && !reducedMotion.matches;
     }
 
     /** Dropdown menu: items slide in one after another. */

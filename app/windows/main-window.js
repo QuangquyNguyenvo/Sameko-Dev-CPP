@@ -313,18 +313,17 @@ function createMainWindow() {
         mainWindow = null;
     });
 
-    // Enable DevTools shortcut (Ctrl+Shift+I) - FOR DEBUGGING
-    mainWindow.webContents.on('before-input-event', (event, input) => {
-        if (input.control && input.shift && input.key.toLowerCase() === 'i') {
-            mainWindow.webContents.toggleDevTools();
-            event.preventDefault();
-        }
-        // F12 support
-        if (input.key === 'F12') {
-            mainWindow.webContents.toggleDevTools();
-            event.preventDefault();
-        }
-    });
+    // DevTools (F12, Ctrl+Shift+I) only when running from source. The app has no menu, so in a
+    // packaged build nothing else opens them.
+    if (!app.isPackaged) {
+        mainWindow.webContents.on('before-input-event', (event, input) => {
+            if (input.type !== 'keyDown') return;
+            if (input.key === 'F12' || (input.control && input.shift && input.key.toLowerCase() === 'i')) {
+                mainWindow.webContents.toggleDevTools();
+                event.preventDefault();
+            }
+        });
+    }
     
     // Log renderer errors
     mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {

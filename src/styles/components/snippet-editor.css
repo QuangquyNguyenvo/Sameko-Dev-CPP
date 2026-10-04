@@ -268,24 +268,6 @@
     color: var(--accent);
 }
 
-/* Custom scrollbar for snippets list */
-.snippets-list-container::-webkit-scrollbar {
-    width: 6px;
-}
-
-.snippets-list-container::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.snippets-list-container::-webkit-scrollbar-thumb {
-    background: var(--border, #ccc);
-    border-radius: 3px;
-}
-
-.snippets-list-container::-webkit-scrollbar-thumb:hover {
-    background: var(--accent, #88c9ea);
-}
-
 /* Snippet item row */
 .snippet-item {
     display: grid;

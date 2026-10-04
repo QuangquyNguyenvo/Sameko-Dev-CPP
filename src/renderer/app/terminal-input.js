@@ -34,11 +34,36 @@ function syncTerminalTheme() {
     // --terminal-text, not --text-primary: a light theme with a dark terminal (sakura) has
     // dark UI text, which made program output unreadable.
     const fg = (cs.getPropertyValue('--terminal-text') || cs.getPropertyValue('--text-primary') || '#e0f0ff').trim();
+    const token = (name, fallback) => cssColorToRgba(cs.getPropertyValue(name).trim() || fallback);
     TerminalManager.applyTheme({
         background: bg || '#1e2933',
         foreground: fg || '#e0f0ff',
-        cursor: bg || '#1e2933'
+        cursor: bg || '#1e2933',
+        // Selection and the ANSI colours programs print follow the theme too.
+        selectionBackground: token('--accent', '#88c9ea').replace(/[\d.]+\)$/, '0.32)'),
+        red: token('--error', '#ff6b6b'),
+        brightRed: token('--error', '#ff6b6b'),
+        green: token('--success', '#68d391'),
+        brightGreen: token('--success', '#68d391'),
+        yellow: token('--warning', '#f6c177'),
+        brightYellow: token('--warning', '#f6c177'),
+        blue: token('--accent', '#88c9ea'),
+        brightBlue: token('--accent', '#88c9ea'),
+        cyan: token('--accent', '#88c9ea'),
+        brightCyan: token('--accent', '#88c9ea')
     });
+}
+
+// Any CSS colour as "rgba(r, g, b, a)", the form xterm parses. Theme tokens can be named colours
+// or color-mix(), which xterm does not understand; the canvas resolves them.
+let colorCanvasCtx = null;
+function cssColorToRgba(color) {
+    colorCanvasCtx = colorCanvasCtx || document.createElement('canvas').getContext('2d');
+    colorCanvasCtx.fillStyle = '#000';
+    colorCanvasCtx.fillStyle = color;
+    const v = colorCanvasCtx.fillStyle;
+    if (v[0] !== '#') return v.replace(/^rgb\(([^)]+)\)$/, 'rgba($1, 1)');
+    return `rgba(${parseInt(v.slice(1, 3), 16)}, ${parseInt(v.slice(3, 5), 16)}, ${parseInt(v.slice(5, 7), 16)}, 1)`;
 }
 
 // Initialize the xterm.js terminal once, sized to the current panel font size

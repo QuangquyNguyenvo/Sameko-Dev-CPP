@@ -1,0 +1,297 @@
+/* Popups: dialogs, menus and notifications share one look with the islands. Loaded last, so it
+ * overrides the older per-popup styles in theme.css, themes.css and the component sheets.
+ *
+ * - Solid card in the theme's panel colour with the 1.5px theme border, no shadow. The large soft
+ *   shadows ("glow") were costly to paint over the background video and are gone everywhere.
+ * - Dim layers behind dialogs are one plain dim, without backdrop blur.
+ * - Buttons are pills: the primary one in the theme's button colour, the other one a soft tint.
+ * - Opening is a short fade and lift (opacity/transform only). */
+
+:root {
+    --pop-bg: var(--island-bg, var(--bg-panel));
+    --pop-border: 1.5px solid var(--border);
+    --pop-dim: color-mix(in srgb, #000 42%, transparent);
+    --pop-soft: color-mix(in srgb, var(--text-primary) 8%, transparent);
+    --pop-soft-hover: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    --pop-item-hover: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+/* ---- Dim layers ---- */
+.confirm-dialog-overlay,
+.note-dialog-overlay,
+.update-overlay,
+.cc-overlay,
+.local-history-overlay,
+.snippet-editor-overlay,
+.fullscreen-popup-overlay {
+    background: var(--pop-dim) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* ---- Cards ---- */
+.confirm-dialog,
+.note-dialog,
+.update-popup,
+.cc-popup,
+.local-history-modal,
+.history-preview-container,
+.snippet-editor-container,
+.fullscreen-popup-container {
+    background: var(--pop-bg) !important;
+    border: var(--pop-border) !important;
+    border-radius: 22px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+}
+
+.confirm-dialog-title,
+.note-dialog-header h3,
+.update-header h2,
+.cc-header h2 {
+    color: var(--text-primary);
+    font-weight: 800;
+    letter-spacing: 0.1px;
+}
+
+.confirm-dialog-message {
+    color: var(--text-secondary);
+}
+
+.confirm-dialog-icon svg {
+    color: var(--accent);
+    opacity: 1;
+}
+
+.confirm-dialog.danger .confirm-dialog-icon svg {
+    color: var(--error, #f05a6e);
+}
+
+/* Close (×) buttons in dialog headers. */
+.note-dialog-close,
+.update-close,
+.cc-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none !important;
+    border-radius: 999px !important;
+    background: var(--pop-soft) !important;
+    color: var(--text-secondary) !important;
+    cursor: pointer;
+}
+
+.note-dialog-close:hover,
+.update-close:hover,
+.cc-close:hover {
+    background: var(--pop-soft-hover) !important;
+    color: var(--text-primary) !important;
+}
+
+/* ---- Buttons ---- */
+.confirm-dialog-btn,
+.note-dialog-btn,
+.update-btn,
+.cc-btn,
+.reload-btn,
+.session-restore-btn {
+    border: none !important;
+    border-radius: 999px !important;
+    font-family: inherit;
+    font-weight: 800 !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.15s ease, background-color 0.15s ease;
+}
+
+.confirm-dialog-btn:active,
+.note-dialog-btn:active,
+.update-btn:active,
+.cc-btn:active,
+.reload-btn:active,
+.session-restore-btn:active {
+    transform: scale(0.96);
+}
+
+/* Primary */
+.confirm-dialog-confirm,
+.note-dialog-save,
+.update-btn.primary,
+.cc-btn.primary,
+.reload-btn-yes,
+.session-restore-btn.primary {
+    background: var(--btn-primary-bg, var(--accent)) !important;
+    color: var(--btn-primary-text, #fff) !important;
+}
+
+.confirm-dialog-confirm:hover,
+.note-dialog-save:hover,
+.update-btn.primary:hover,
+.cc-btn.primary:hover,
+.reload-btn-yes:hover,
+.session-restore-btn.primary:hover {
+    filter: brightness(1.07);
+}
+
+.confirm-dialog-confirm.danger {
+    background: var(--error, #f05a6e) !important;
+    color: #fff !important;
+}
+
+/* Secondary */
+.confirm-dialog-cancel,
+.note-dialog-cancel,
+.update-btn.secondary,
+.cc-btn.secondary,
+.reload-btn-no,
+.session-restore-btn.secondary {
+    background: var(--pop-soft) !important;
+    color: var(--text-primary) !important;
+}
+
+.confirm-dialog-cancel:hover,
+.note-dialog-cancel:hover,
+.update-btn.secondary:hover,
+.cc-btn.secondary:hover,
+.reload-btn-no:hover,
+.session-restore-btn.secondary:hover {
+    background: var(--pop-soft-hover) !important;
+}
+
+.confirm-dialog-btn:focus-visible,
+.note-dialog-btn:focus-visible,
+.update-btn:focus-visible,
+.cc-btn:focus-visible,
+.reload-btn:focus-visible,
+.session-restore-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Text fields inside dialogs. */
+.note-dialog .input-dialog-field,
+.note-dialog .note-dialog-input {
+    border: 1.5px solid var(--border) !important;
+    border-radius: 12px !important;
+    background: var(--editor-bg) !important;
+    color: var(--text-primary) !important;
+    box-shadow: none !important;
+}
+
+.note-dialog .input-dialog-field:focus,
+.note-dialog .note-dialog-input:focus {
+    border-color: var(--accent) !important;
+    outline: none;
+}
+
+/* ---- Menus ---- */
+.tab-context-menu,
+.explorer-context-menu,
+.context-submenu,
+.icon-submenu,
+.app-container .dropdown {
+    background: var(--pop-bg) !important;
+    border: var(--pop-border) !important;
+    border-radius: 16px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.tab-context-menu {
+    position: fixed;
+    z-index: 10000;
+    min-width: 180px;
+    padding: 6px;
+    color: var(--text-primary);
+    font-size: 13px;
+    animation: pop-in 0.14s ease-out;
+}
+
+.tab-context-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tab-context-item:hover {
+    background: var(--pop-item-hover);
+}
+
+.tab-context-item.disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.tab-context-item.disabled:hover {
+    background: transparent;
+}
+
+.tab-context-icon {
+    display: flex;
+    align-items: center;
+    color: var(--accent);
+}
+
+.tab-context-sep {
+    height: 1.5px;
+    margin: 5px 8px;
+    background: var(--border);
+}
+
+.explorer-context-menu .context-item {
+    border-radius: 10px;
+}
+
+.explorer-context-menu .context-item:hover {
+    background: var(--pop-item-hover);
+}
+
+/* ---- Notifications (file changed, restore session) ---- */
+.reload-notification-content,
+.session-restore-content {
+    background: var(--pop-bg) !important;
+    border: var(--pop-border) !important;
+    border-radius: 18px !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+.reload-notification-icon,
+.session-restore-icon {
+    color: var(--accent) !important;
+}
+
+.reload-notification-title,
+.session-restore-title {
+    color: var(--text-primary) !important;
+    font-weight: 800 !important;
+}
+
+.reload-notification-file {
+    color: var(--accent) !important;
+}
+
+.reload-notification-desc,
+.session-restore-desc {
+    color: var(--text-secondary) !important;
+}
+
+/* ---- Welcome card: no glow either ---- */
+.welcome-box,
+[data-theme] .welcome-box {
+    box-shadow: none !important;
+}
+
+@keyframes pop-in {
+    from { opacity: 0; transform: translateY(-4px) scale(0.98); }
+    to { opacity: 1; transform: none; }
+}

@@ -137,13 +137,6 @@ body.performance-mode {
     --transition-duration: 0.1s;
 }
 
-/* Hard disable animations for critical UI components in performance mode */
-body.performance-mode .action-btn.primary.building,
-body.performance-mode .status-bar.building .dot,
-body.performance-mode .action-btn.run-all.running {
-    animation: none !important;
-}
-
 /* Solid backgrounds for performance mode (replaces glass effect) */
 body.performance-mode .app-container {
     background: linear-gradient(135deg, #e8f4fc 0%, #d4eaf7 100%);
@@ -247,23 +240,37 @@ body.customizer-open::before {
     min-width: 0;
 }
 
-/* Scrollbar Styling */
+/* Scrollbar Styling: a thin pill kept inside the box. The transparent border insets the thumb from
+ * the edge, and the track margin keeps it clear of rounded corners. */
 ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 12px;
+    height: 12px;
 }
 
 ::-webkit-scrollbar-track {
     background: transparent;
+    margin: 12px;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(100, 120, 140, 0.4);
-    border-radius: 5px;
+    background: color-mix(in srgb, var(--text-primary, #64788c) 22%, transparent);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(100, 120, 140, 0.6);
+    background: color-mix(in srgb, var(--text-primary, #64788c) 40%, transparent);
+    background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:active {
+    background: color-mix(in srgb, var(--accent, #88c9ea) 70%, transparent);
+    background-clip: padding-box;
+}
+
+::-webkit-scrollbar-button {
+    display: none;
 }
 
 ::-webkit-scrollbar-corner {
@@ -1017,7 +1024,8 @@ body.customizer-open::before {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(200, 230, 250, 0.6);
+    /* Tinted with the theme's own panel colour (was Kawaii Light's blue in every theme). */
+    background: color-mix(in srgb, var(--bg-panel, #c8e6fa) 55%, transparent);
     display: none;
     align-items: center;
     justify-content: center;
@@ -1107,43 +1115,13 @@ body.customizer-open::before {
     gap: 8px;
     border: 3px solid var(--border);
     overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
     /* Allow scrolling when tabs overflow */
     max-height: calc(100vh - 200px);
     /* Limit height */
 }
 
-/* Hide default scrollbar, add custom thin one */
-.settings-sidebar::-webkit-scrollbar,
-.settings-content::-webkit-scrollbar {
-    width: 6px;
-}
-
-.settings-sidebar::-webkit-scrollbar-track,
-.settings-content::-webkit-scrollbar-track {
-    background: transparent;
-    margin: 20px 0;
-}
-
-.settings-sidebar::-webkit-scrollbar-thumb,
-.settings-content::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 10px;
-    border: 1px solid transparent;
-    background-clip: padding-box;
-}
-
-.settings-sidebar::-webkit-scrollbar-thumb:hover,
-.settings-content::-webkit-scrollbar-thumb:hover {
-    background: var(--border-strong);
-    background-clip: padding-box;
-}
-
-.settings-sidebar::-webkit-scrollbar-corner,
-.settings-content::-webkit-scrollbar-corner {
-    background: transparent;
-}
+/* Scrollbars come from the global rule. scrollbar-width / scrollbar-color must not be set here:
+ * Chromium then ignores ::-webkit-scrollbar and draws the native bar with arrow buttons. */
 
 .settings-tab {
     display: flex;
@@ -7769,86 +7747,6 @@ body.split-active .editor-pane {
     .settings-popup {
         height: 96vh;
     }
-}
-
-/* ===== CONFIRM POPUP ===== */
-.confirm-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: var(--overlay-bg, rgba(0, 0, 0, 0.5));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    backdrop-filter: blur(2px);
-}
-
-.confirm-overlay.show {
-    opacity: 1;
-}
-
-.confirm-popup {
-    background: var(--bg-ocean-medium, var(--bg-secondary, #2a2a3e));
-    border: 1px solid var(--border, rgba(255, 255, 255, 0.15));
-    border-radius: 12px;
-    padding: 24px 28px;
-    min-width: 300px;
-    max-width: 400px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    transform: scale(0.9);
-    transition: transform 0.2s ease;
-}
-
-.confirm-overlay.show .confirm-popup {
-    transform: scale(1);
-}
-
-.confirm-message {
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-primary, #333);
-    margin-bottom: 20px;
-    text-align: center;
-}
-
-.confirm-buttons {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-}
-
-.confirm-btn {
-    padding: 8px 20px;
-    border-radius: 8px;
-    border: 1px solid transparent;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: transform 0.15s, filter 0.15s, background 0.15s;
-}
-
-.confirm-btn:hover {
-    filter: brightness(1.1);
-}
-
-.confirm-btn:active {
-    transform: scale(0.95);
-}
-
-.confirm-btn.cancel {
-    background: var(--bg-tertiary, var(--bg-glass, rgba(128, 128, 128, 0.2)));
-    color: var(--text-primary, #666);
-    border-color: var(--border, rgba(128, 128, 128, 0.3));
-}
-
-.confirm-btn.confirm {
-    background: var(--error, #e74c3c);
-    color: var(--text-on-error, #fff);
 }
 
 /* Layout Resizer (Gutter) */

@@ -10,12 +10,34 @@
 
 const { BrowserWindow, app } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
 let splashWindow = null;
 
 function getAppRoot() {
     // Mirror main-window.js: __dirname is app/windows, root is two levels up.
     return path.join(__dirname, '..', '..');
+}
+
+// Colours of the theme in use, saved by the renderer each time a theme is applied
+// (appearance.js › saveSplashPalette), so the splash opens in the user's theme.
+// Only plain colour values pass; anything else falls back to the splash defaults.
+const SPLASH_KEYS = ['bg', 'panel', 'accent', 'text', 'muted', 'accentText'];
+const COLOR_RE = /^(#[0-9a-f]{3,8}|rgba?\([0-9\s.,%]+\))$/i;
+
+function readSplashPalette() {
+    try {
+        const file = path.join(app.getPath('userData'), 'state', 'splash.json');
+        const saved = JSON.parse(fs.readFileSync(file, 'utf-8'));
+        const query = {};
+        for (const key of SPLASH_KEYS) {
+            if (typeof saved[key] === 'string' && COLOR_RE.test(saved[key].trim())) query[key] = saved[key].trim();
+        }
+        if (saved.type === 'light' || saved.type === 'dark') query.type = saved.type;
+        return query;
+    } catch (_) {
+        return {}; // first launch, or no theme saved yet
+    }
 }
 
 /**
@@ -47,7 +69,7 @@ function createSplashWindow() {
         }
     });
 
-    splashWindow.loadFile(path.join(appRoot, 'src', 'splash.html'));
+    splashWindow.loadFile(path.join(appRoot, 'src', 'splash.html'), { query: readSplashPalette() });
 
     // Show as soon as the content is painted to avoid a white flash.
     splashWindow.once('ready-to-show', () => {

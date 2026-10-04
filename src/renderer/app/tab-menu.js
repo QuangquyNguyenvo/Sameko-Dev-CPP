@@ -18,30 +18,9 @@ function showTabContextMenu(e, tab) {
         tabContextMenu.remove();
     }
 
-    // Create context menu - same style as dropdown menu
+    // Styled by islands.css (.tab-context-menu), from the theme's tokens.
     tabContextMenu = document.createElement('div');
     tabContextMenu.className = 'tab-context-menu';
-
-    // Get computed styles from document for theme-aware colors
-    const computedStyle = getComputedStyle(document.documentElement);
-    const bgPanel = computedStyle.getPropertyValue('--bg-panel').trim() || '#f5faff';
-    const border = computedStyle.getPropertyValue('--border').trim() || '#c8e6f8';
-    const textPrimary = computedStyle.getPropertyValue('--text-primary').trim() || '#3a5a78';
-
-    tabContextMenu.style.cssText = `
-        position: fixed;
-        top: ${e.clientY}px;
-        left: ${e.clientX}px;
-        z-index: 10000;
-        background: ${bgPanel};
-        border: 2px solid ${border};
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(136, 201, 234, 0.25);
-        min-width: 180px;
-        padding: 8px;
-        font-size: 13px;
-        color: ${textPrimary};
-    `;
 
     // Menu items with SVG icons
     const items = [
@@ -88,42 +67,19 @@ function showTabContextMenu(e, tab) {
         }
     ];
 
-    // Get hover color
-    const bgHover = computedStyle.getPropertyValue('--bg-ocean-light').trim() || '#e8f4fc';
-    const textSecondary = computedStyle.getPropertyValue('--text-secondary').trim() || '#5a9fc8';
-    const accent = computedStyle.getPropertyValue('--accent').trim() || '#ff6b9d';
-
     items.forEach(item => {
         if (item.divider) {
             const div = document.createElement('div');
-            div.style.cssText = `height: 1px; background: ${border}; margin: 6px 8px;`;
+            div.className = 'tab-context-sep';
             tabContextMenu.appendChild(div);
             return;
         }
 
         const menuItem = document.createElement('div');
-        menuItem.style.cssText = `
-            padding: 10px 16px;
-            cursor: ${item.disabled ? 'not-allowed' : 'pointer'};
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            opacity: ${item.disabled ? '0.5' : '1'};
-            transition: all 0.15s;
-            color: ${item.disabled ? textSecondary : textPrimary};
-            border-radius: 10px;
-            font-weight: 600;
-        `;
-        menuItem.innerHTML = `<span style="display:flex;align-items:center;color:${accent}">${item.icon}</span><span>${item.label}</span>`;
+        menuItem.className = 'tab-context-item' + (item.disabled ? ' disabled' : '');
+        menuItem.innerHTML = `<span class="tab-context-icon">${item.icon}</span><span>${item.label}</span>`;
 
         if (!item.disabled) {
-            menuItem.onmouseenter = () => {
-                menuItem.style.background = bgHover;
-                menuItem.style.color = textPrimary;
-            };
-            menuItem.onmouseleave = () => {
-                menuItem.style.background = '';
-            };
             menuItem.onclick = () => {
                 item.action();
                 tabContextMenu.remove();
@@ -134,7 +90,13 @@ function showTabContextMenu(e, tab) {
         tabContextMenu.appendChild(menuItem);
     });
 
+    // Kept inside the window when opened near its right or bottom edge.
+    tabContextMenu.style.left = '0px';
+    tabContextMenu.style.top = '0px';
     document.body.appendChild(tabContextMenu);
+    const rect = tabContextMenu.getBoundingClientRect();
+    tabContextMenu.style.left = `${Math.max(4, Math.min(e.clientX, window.innerWidth - rect.width - 8))}px`;
+    tabContextMenu.style.top = `${Math.max(4, Math.min(e.clientY, window.innerHeight - rect.height - 8))}px`;
 
     // Close on click outside
     const closeMenu = (e) => {

@@ -23,6 +23,32 @@ function applyTheme(themeName) {
 
     // Re-color the xterm terminal to match the new theme.
     if (typeof syncTerminalTheme === 'function') syncTerminalTheme();
+
+    saveSplashPalette();
+}
+
+// The splash window is shown before this page loads, so it cannot read the theme.
+// Save the few colours it uses; the main process passes them to it on the next launch
+// (app/windows/splash-window.js). Written only when they change.
+let lastSplashPalette = '';
+function saveSplashPalette() {
+    const cs = getComputedStyle(document.documentElement);
+    const v = (name) => cs.getPropertyValue(name).trim();
+    // The splash window is transparent, so a see-through panel colour is made opaque.
+    const opaque = (c) => c.replace(/^rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)$/, 'rgb($1,$2,$3)');
+    const palette = {
+        type: document.documentElement.getAttribute('data-theme-variant') || 'dark',
+        bg: v('--editor-bg'),
+        panel: opaque(v('--bg-panel')),
+        accent: v('--accent'),
+        text: v('--text-primary'),
+        muted: v('--text-muted'),
+        accentText: v('--btn-primary-text')
+    };
+    const json = JSON.stringify(palette);
+    if (json === lastSplashPalette) return;
+    lastSplashPalette = json;
+    window.electronAPI?.stateWrite?.('splash', palette)?.catch?.(() => { });
 }
 
 function applyBackgroundSettings() {
@@ -112,6 +138,57 @@ function applyBackgroundSettings() {
 
     // A video hidden behind a user image would otherwise keep decoding.
     ThemeManager.syncBackgroundVideo();
+
+    updateFakeBlur();
+}
+
+// The background, blurred once into a small image, for the glass surfaces in islands.css
+// (--app-bg-blurred). Done when the page is idle: it takes ~30 ms. Without a background image or
+// video the variable is removed and the glass shows the theme's gradient through its tint.
+let fakeBlurJob = 0;
+function updateFakeBlur() {
+    const job = ++fakeBlurJob;
+    const root = document.documentElement;
+    const draw = (src, width, height, opacity) => {
+        if (job !== fakeBlurJob || !width || !height) return;
+        const cs = getComputedStyle(root);
+        const canvas = document.createElement('canvas');
+        canvas.width = 320;
+        canvas.height = Math.round(320 * height / width);
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = cs.getPropertyValue('--editor-bg').trim() || '#1a2530';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.filter = `blur(6px) brightness(${parseFloat(cs.getPropertyValue('--app-bg-brightness')) || 1})`;
+        ctx.globalAlpha = opacity;
+        // Drawn past the edges, so the blur does not fade them to the fill colour.
+        ctx.drawImage(src, -12, -12, canvas.width + 24, canvas.height + 24);
+        try {
+            root.style.setProperty('--app-bg-blurred', `url("${canvas.toDataURL('image/jpeg', 0.85)}")`);
+        } catch (_) {
+            root.style.removeProperty('--app-bg-blurred');
+        }
+    };
+    const whenIdle = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 2000 }) : setTimeout(fn, 200));
+
+    const video = document.getElementById('app-bg-video');
+    if (video && video.style.display !== 'none' && video.getAttribute('src')) {
+        const fromVideo = () => whenIdle(() => draw(video, video.videoWidth, video.videoHeight,
+            parseFloat(getComputedStyle(video).opacity) || 1));
+        if (video.readyState >= 2) fromVideo();
+        else video.addEventListener('loadeddata', fromVideo, { once: true });
+        return;
+    }
+    const url = /^url\(\s*["']?(.*?)["']?\s*\)$/.exec(root.style.getPropertyValue('--app-bg-image').trim()
+        || getComputedStyle(root).getPropertyValue('--app-bg-image').trim());
+    if (!url) {
+        root.style.removeProperty('--app-bg-blurred');
+        return;
+    }
+    const img = new Image();
+    img.src = url[1];
+    img.decode().then(() => whenIdle(() => draw(img, img.naturalWidth, img.naturalHeight,
+        parseFloat(getComputedStyle(document.body, '::before').opacity) || 1)))
+        .catch(() => { if (job === fakeBlurJob) root.style.removeProperty('--app-bg-blurred'); });
 }
 
 // Minimised or fully covered: stop decoding the background video until it is seen again.

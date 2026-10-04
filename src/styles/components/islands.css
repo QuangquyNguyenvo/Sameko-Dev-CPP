@@ -4,16 +4,19 @@
  * theme tokens only, and nothing here uses backdrop blur (it costs a repaint of the background
  * video on every frame).
  *
- * Style: bold and round, with thin lines. Cards have a 1.5px theme --border and a soft shadow,
+ * Style: bold and round, with thin lines. Cards have a 1.5px theme --border and no shadow,
  * pills are fully round, labels are extra bold. */
 
 :root {
     --island-radius: 22px;
     --island-gap: 10px;
-    --island-bg: color-mix(in srgb, var(--bg-panel) 96%, transparent);
+    /* A background value, not a colour: the theme's panel colour laid over the editor colour, so
+     * the explorer, header and status bar are solid like the editor (--bg-panel is see-through). */
+    --island-bg: linear-gradient(var(--bg-panel), var(--bg-panel)), var(--editor-bg);
     --island-border: var(--border);
     --island-line: 1.5px solid var(--island-border);
-    --island-shadow: 0 6px 20px rgba(0, 0, 0, 0.10);
+    /* No soft shadows round the cards: the theme border separates them (see popups.css). */
+    --island-shadow: none;
 }
 
 /* ---- Header ---- */
@@ -42,7 +45,7 @@
     border: none;
     border-radius: 20px;
     background: var(--island-bg);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    box-shadow: none;
     flex-shrink: 0;
 }
 
@@ -286,6 +289,35 @@
     font-weight: 800;
 }
 
+/* ---- Frosted glass without backdrop-filter ----
+ * A backdrop blur is recomputed on every frame the background changes, and the background is
+ * usually a playing video. The background is instead blurred once into a small image,
+ * --app-bg-blurred (updateFakeBlur in appearance.js), and glass surfaces paint it fixed to the
+ * window, so it lines up with the real background behind them. */
+.welcome-box,
+[data-theme] .welcome-box {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background:
+        linear-gradient(var(--welcome-box-bg, transparent), var(--welcome-box-bg, transparent)),
+        var(--app-bg-blurred, none) var(--app-bg-position, center center) / cover no-repeat fixed !important;
+}
+
+/* Full-screen dim layers behind dialogs: a plain dim. Blurring the UI under them cannot be
+ * faked, and the real blur re-rendered the background video under the whole window. */
+.local-history-overlay,
+.confirm-dialog-overlay,
+.confirm-overlay,
+.snippet-editor-overlay,
+.note-dialog-overlay,
+.update-overlay,
+.cc-overlay,
+.tc-overlay,
+.fullscreen-popup-overlay {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
 /* ---- Content ---- */
 .content-wrapper > .explorer-sidebar {
     background: var(--island-bg);
@@ -305,8 +337,569 @@
     padding-left: 6px;
 }
 
+/* ---- The one terminal (#terminal-view: output + input). It moves as a unit between its own
+ * section and the bottom panel; in the panel it shows only while the Terminal tab is open. ---- */
+.terminal-view {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 0;
+}
+
+.terminal-view > .terminal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.problems-panel:not([data-view="terminal"]) > .terminal-view {
+    display: none;
+}
+
+/* xterm scrolls itself. The padding sits on .xterm, which the fit addon subtracts; on the box
+ * around it, it was counted as rows, so the output ran past the box and the box showed a second,
+ * native scrollbar along its edge. */
+#terminal.terminal-body {
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
+#terminal .xterm {
+    padding: 10px 2px 6px 14px;
+}
+
+/* xterm.css paints its viewport black; under the padding that showed as a black frame. */
+#terminal .xterm,
+#terminal .xterm .xterm-viewport,
+#terminal .xterm .xterm-scrollable-element {
+    background-color: var(--terminal-bg, #1e2933) !important;
+}
+
+/* xterm 6 draws its own scrollbar: 14px wide, square, against the edge. Make it the app's thin
+ * pill. xterm sets the slider's position inline; only its width and colour are changed here. */
+#terminal .xterm .xterm-scrollable-element > .scrollbar.vertical {
+    width: 12px !important;
+}
+
+#terminal .xterm .xterm-scrollable-element > .scrollbar.vertical > .slider {
+    left: 3px !important;
+    width: 6px !important;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--terminal-text, #e0f0ff) 22%, transparent) !important;
+}
+
+#terminal .xterm .xterm-scrollable-element > .scrollbar.vertical > .slider:hover {
+    background: color-mix(in srgb, var(--terminal-text, #e0f0ff) 40%, transparent) !important;
+}
+
+#terminal .xterm .xterm-scrollable-element > .scrollbar.vertical > .slider.active {
+    background: color-mix(in srgb, var(--accent) 70%, transparent) !important;
+}
+
+/* The dark inset line xterm draws along the top once scrolled. */
+#terminal .xterm .xterm-scrollable-element > .shadow {
+    display: none !important;
+}
+
+/* ---- I/O column: Input, Output and Expected cards, each with a coloured dot ---- */
+/* No padding of its own: .main already insets the column, so the cards line up with the
+ * editor's top and the bottom panel's bottom edge. */
+.content-wrapper .io-section {
+    gap: var(--island-gap);
+    padding: 0;
+}
+
+.io-section > .io-panel {
+    flex: 1 1 0;
+    border: var(--island-line) !important;
+    border-radius: var(--island-radius);
+    /* Solid, like the editor card. Themes paint the textareas solid, so a see-through
+     * card made Output (a <pre>) look different from Input and Expected. */
+    background: var(--editor-bg) !important;
+    box-shadow: var(--island-shadow);
+}
+
+.io-section .panel-textarea,
+.io-section .diff-display {
+    background: transparent !important;
+}
+
+.io-section > .io-panel-input { --io-dot: var(--accent); }
+.io-section > .io-panel-output { --io-dot: var(--warning, #f5a23a); }
+.io-section > .io-panel-expected { --io-dot: var(--success, #4cc38a); }
+
+.io-section > .io-panel > .panel-head {
+    gap: 7px;
+    min-height: 0;
+    padding: 11px 10px 4px 14px;
+    background: transparent !important;
+    border-bottom: none !important;
+}
+
+.io-section .io-panel .panel-title {
+    padding: 0;
+    background: none;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+}
+
+.io-dot {
+    width: 9px;
+    height: 9px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--io-dot);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--io-dot) 22%, transparent);
+}
+
+.io-section .test-nav {
+    margin-left: auto;
+}
+
+/* ---- Input from a file (#49): a file bar and the first lines, in place of the textarea ---- */
+.io-file-btn,
+.io-file-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.io-file-btn:hover,
+.io-file-clear:hover {
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-primary);
+}
+
+.io-panel-input.has-file .io-file-btn {
+    color: var(--accent);
+}
+
+.io-panel-input.has-file > #input-area {
+    display: none;
+}
+
+.io-file {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    padding: 2px 10px 10px;
+    gap: 6px;
+}
+
+.io-file.hidden {
+    display: none;
+}
+
+.io-file-bar {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    padding: 5px 4px 5px 10px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--accent);
+}
+
+.io-file-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+    font-size: 12.5px;
+    font-weight: 800;
+}
+
+.io-file-meta {
+    margin-left: auto;
+    flex-shrink: 0;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.io-file-head {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: 0 4px;
+    overflow: auto;
+    color: var(--text-secondary);
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: var(--panel-font-size, 13px);
+    line-height: 1.6;
+    white-space: pre;
+    user-select: text;
+}
+
+.io-file-head.error {
+    color: var(--error, #f05a6e);
+    white-space: pre-wrap;
+}
+
+.io-panel-input.drop-target {
+    outline: 2px dashed var(--accent);
+    outline-offset: -6px;
+}
+
+.io-section .panel-textarea,
+.io-section .diff-display,
+.io-output {
+    padding: 6px 14px 12px;
+}
+
+/* Output: read-only text of the last run. */
+.io-output {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    overflow: auto;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: var(--panel-font-size, 13px);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    user-select: text;
+}
+
+.io-output.empty::before {
+    content: attr(data-placeholder);
+    color: var(--text-muted);
+}
+
+.io-verdict {
+    margin-left: auto;
+    flex-shrink: 0;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.io-verdict.hidden { display: none; }
+.io-verdict.ac { background: color-mix(in srgb, var(--success, #4cc38a) 22%, transparent); color: var(--success, #4cc38a); }
+.io-verdict.wa { background: color-mix(in srgb, var(--error, #f05a6e) 20%, transparent); color: var(--error, #f05a6e); }
+.io-verdict.running { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--accent); }
+.io-verdict.stopped { background: color-mix(in srgb, var(--text-primary) 10%, transparent); color: var(--text-secondary); }
+
+/* ---- Explorer: folder name, filter pill, then Recent / Files / Contest / Collections ---- */
 .explorer-sidebar > .explorer-header {
-    border-bottom: var(--island-line);
+    padding: 10px 8px 6px 16px;
+    gap: 6px;
+    background: transparent;
+    border-bottom: none;
+}
+
+.explorer-sidebar .explorer-title {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text-primary);
+}
+
+.explorer-sidebar .explorer-actions {
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.explorer-sidebar .explorer-action-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+}
+
+.explorer-sidebar:not(.has-folder) .folder-only {
+    display: none;
+}
+
+.explorer-filter {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 32px;
+    margin: 0 10px 4px;
+    padding: 0 6px 0 12px;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    color: var(--text-muted);
+    cursor: text;
+    transition: background-color 0.15s ease;
+}
+
+.explorer-filter:focus-within {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+}
+
+.explorer-filter input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+}
+
+.explorer-filter input::placeholder {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.explorer-filter-clear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.explorer-filter-clear.hidden {
+    display: none;
+}
+
+.explorer-sidebar .explorer-tree {
+    padding: 0 0 10px;
+}
+
+/* Section headers: no rules between sections, the whole header toggles. */
+.explorer-sidebar .cat-section,
+.explorer-sidebar .cp-sub-contest-section,
+.explorer-sidebar .explorer-recent-section {
+    border-bottom: none;
+    padding: 0;
+    margin: 0;
+    opacity: 1;
+}
+
+.explorer-sidebar .cat-section-header {
+    margin: 6px 0 2px;
+    padding: 6px 12px 4px 10px;
+}
+
+.explorer-sidebar .cat-empty-hint {
+    display: none;
+}
+
+.explorer-sidebar .ex-section-header {
+    cursor: pointer;
+}
+
+.explorer-sidebar .cat-section-title {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    color: var(--text-secondary);
+}
+
+/* Rows: pills inset from the card edge. */
+.explorer-sidebar .explorer-item {
+    gap: 7px;
+    margin: 1px 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    padding-right: 6px;
+    border-radius: 999px;
+    font-weight: 700;
+}
+
+.explorer-sidebar .explorer-item-name {
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.explorer-sidebar .explorer-item.has-status:not(:hover):not(.active) {
+    background: transparent;
+}
+
+.explorer-sidebar .explorer-item.selected {
+    outline: none;
+    background: color-mix(in srgb, var(--accent) 12%, transparent) !important;
+}
+
+.explorer-sidebar .explorer-item.active,
+.explorer-sidebar .explorer-item.active.selected {
+    background: var(--btn-primary-bg, var(--accent)) !important;
+    color: var(--btn-primary-text, #fff);
+    box-shadow: none;
+}
+
+.explorer-sidebar .explorer-item.active .explorer-icon {
+    color: inherit !important;
+}
+
+.explorer-sidebar .explorer-item.build-file {
+    opacity: 0.5;
+    cursor: default;
+}
+
+/* Indent guide under an open folder, through the centre of its arrow (--guide from JS). */
+.explorer-sidebar .explorer-children {
+    position: relative;
+}
+
+.explorer-sidebar .explorer-children::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    left: calc(var(--guide, 14px) + 8px);
+    width: 1.5px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--text-primary) 14%, transparent);
+    pointer-events: none;
+}
+
+/* Status pill at the end of a row: hidden until hover, solid once set; click cycles it. */
+.explorer-sidebar .explorer-mark-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: auto;
+    min-width: 16px;
+    height: 18px;
+    margin-left: auto;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-secondary);
+    font-size: 10.5px;
+    font-weight: 800;
+    opacity: 0;
+}
+
+.explorer-sidebar .explorer-item:hover .explorer-mark-btn {
+    opacity: 0.8;
+}
+
+.explorer-sidebar .explorer-mark-btn.set,
+.explorer-sidebar .explorer-item:hover .explorer-mark-btn.set {
+    opacity: 1;
+}
+
+.explorer-sidebar .explorer-mark-btn.status-done { background: color-mix(in srgb, var(--success, #4caf50) 22%, transparent) !important; color: var(--success, #4caf50); }
+.explorer-sidebar .explorer-mark-btn.status-stuck { background: color-mix(in srgb, var(--error, #f44336) 20%, transparent) !important; color: var(--error, #f44336); }
+.explorer-sidebar .explorer-mark-btn.status-working { background: color-mix(in srgb, var(--warning, #ffc107) 24%, transparent) !important; color: color-mix(in srgb, var(--warning, #ffc107) 80%, var(--text-primary)); }
+.explorer-sidebar .explorer-mark-btn.status-review { background: color-mix(in srgb, var(--accent) 22%, transparent) !important; color: var(--accent); }
+
+.explorer-sidebar .explorer-item.active .explorer-mark-btn {
+    background: color-mix(in srgb, var(--btn-primary-text, #fff) 24%, transparent) !important;
+    color: var(--btn-primary-text, #fff);
+}
+
+.explorer-sidebar .child-count {
+    margin-left: 0;
+    padding: 0 6px;
+    font-size: 10px;
+    font-weight: 800;
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-secondary);
+}
+
+.explorer-folder-done {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--success, #4caf50);
+}
+
+.explorer-item.active .explorer-folder-done {
+    color: inherit;
+}
+
+/* Filter results: matched text highlighted, the folder it lives in after the name. */
+.explorer-sidebar .explorer-item-name mark {
+    padding: 0 1px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent) 38%, transparent);
+    color: inherit;
+}
+
+/* The name keeps its width; the folder takes what is left and truncates first. */
+.explorer-sidebar .explorer-item.filter-hit .explorer-item-name {
+    flex: 0 1 auto;
+    min-width: 48px;
+}
+
+.explorer-item-dir {
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.explorer-item.active .explorer-item-dir {
+    color: inherit;
+    opacity: 0.75;
+}
+
+.explorer-filter-empty {
+    padding: 18px 16px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+}
+
+.explorer-build-toggle {
+    display: block;
+    margin: 6px auto 2px;
+    padding: 4px 12px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.explorer-build-toggle:hover {
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--text-primary);
 }
 
 /* The editor section only stacks the editor and the bottom panel; each is its own card. */
@@ -449,7 +1042,7 @@ body.performance-mode .main .editor-section {
     border: none;
     border-radius: 999px;
     background: var(--island-bg);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    box-shadow: none;
     font-weight: 800;
 }
 

@@ -66,7 +66,9 @@ app.whenReady().then(async () => {
         console.log(`[PERF] main window shown @ ${__ms().toFixed(0)}ms (${reason})`);
     };
 
-    mainWindow.once('ready-to-show', () => revealMainWindow('ready-to-show'));
+    // Not on 'ready-to-show': that fires on the first paint, before the renderer has read the
+    // settings and applied the theme, so the window opened in the default colours and then
+    // switched. By 'did-finish-load' the DOMContentLoaded handlers (applySettings) have run.
     mainWindow.webContents.once('did-finish-load', () => {
         console.log(`[PERF] renderer did-finish-load @ ${__ms().toFixed(0)}ms`);
         revealMainWindow('did-finish-load');
