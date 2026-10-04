@@ -2,14 +2,19 @@
  * rounded cards with gaps that let the app background show through. Loaded after toolbar.css, so
  * it overrides the full-width bars of theme.css / themes.css for every theme. Colours come from
  * theme tokens only, and nothing here uses backdrop blur (it costs a repaint of the background
- * video on every frame). */
+ * video on every frame).
+ *
+ * Style: bold and round. Every card has the theme's 2px --border and a solid "sticker" shadow
+ * offset straight down, pills are fully round, labels are extra bold. */
 
 :root {
-    --island-radius: 18px;
+    --island-radius: 22px;
     --island-gap: 10px;
-    --island-bg: color-mix(in srgb, var(--bg-panel) 92%, transparent);
-    --island-border: color-mix(in srgb, var(--text-primary) 9%, transparent);
-    --island-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    --island-bg: color-mix(in srgb, var(--bg-panel) 96%, transparent);
+    --island-border: var(--border);
+    --island-line: 2px solid var(--island-border);
+    --island-drop: color-mix(in srgb, var(--border) 70%, rgba(0, 0, 0, 0.35));
+    --island-shadow: 0 4px 0 var(--island-drop), 0 10px 24px rgba(0, 0, 0, 0.12);
 }
 
 /* ---- Header ---- */
@@ -35,19 +40,27 @@
     gap: 4px;
     height: 46px;
     padding: 0 6px;
-    border-radius: 16px;
+    border: var(--island-line);
+    border-radius: 20px;
     background: var(--island-bg);
-    box-shadow: inset 0 0 0 1px var(--island-border), 0 4px 14px rgba(0, 0, 0, 0.14);
+    box-shadow: 0 3px 0 var(--island-drop);
     flex-shrink: 0;
 }
 
 /* Logo, explorer toggle and menus share one island. */
 #island-nav .logo {
-    padding: 5px 12px;
-    font-size: 16px;
+    padding: 4px 14px;
+    font-size: 18px;
+    font-weight: 700;
     border: none;
-    border-radius: 12px;
+    border-radius: 999px;
     margin-right: 2px;
+    box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 55%, #000);
+}
+
+#island-nav .menu-btn {
+    font-weight: 800;
+    border-radius: 999px;
 }
 
 #island-nav .menu-group:not(.show) {
@@ -59,7 +72,7 @@
 .header-bar .header-island .toggle-btn:not(.tool-group *) {
     width: 36px;
     height: 34px;
-    border-radius: 10px;
+    border-radius: 12px;
     background: transparent;
     box-shadow: none;
 }
@@ -84,32 +97,47 @@
     padding: 0;
 }
 
-/* Soft pill tabs: no border, the open file gets a tinted fill. */
+/* Pill tabs: fully round and extra bold; the open file is a solid accent pill. */
 .header-bar .tabs-container .tab {
     height: 32px;
-    padding: 0 8px 0 12px;
+    padding: 0 8px 0 14px;
     gap: 6px;
     background: transparent;
     border: none;
-    border-radius: 10px;
+    border-radius: 999px;
     box-shadow: none;
-    color: var(--text-muted);
+    color: var(--text-secondary);
+    font-size: 13px;
+    font-weight: 800;
     transform: none;
     transition: background-color var(--duration-fast) var(--ease-standard),
         color var(--duration-fast) var(--ease-standard);
 }
 
 .header-bar .tabs-container .tab:hover {
-    background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
     color: var(--text-primary);
     box-shadow: none;
     transform: none;
 }
 
 .header-bar .tabs-container .tab.active {
-    background: color-mix(in srgb, var(--accent) 16%, transparent);
-    color: var(--text-primary);
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+    background: var(--btn-primary-bg, var(--accent));
+    color: var(--btn-primary-text, #fff);
+    box-shadow: 0 2px 0 color-mix(in srgb, var(--btn-primary-bg, var(--accent)) 55%, #000);
+}
+
+.header-bar .tabs-container .tab.active .tab-x {
+    color: inherit;
+    opacity: 0.75;
+}
+
+.header-bar .tabs-container .tab.active .tab-dot {
+    background: currentColor;
+}
+
+.header-bar .tab-add {
+    border-radius: 999px;
 }
 
 /* Right island: panel toggles | Run | settings. */
@@ -140,15 +168,23 @@
     display: flex;
     align-items: stretch;
     height: 34px;
-    border-radius: 12px;
+    border-radius: 999px;
     overflow: hidden;
     background: var(--btn-primary-bg, var(--accent));
-    transition: transform 0.2s var(--ease-spring), box-shadow var(--duration-fast) var(--ease-standard);
+    box-shadow: 0 3px 0 color-mix(in srgb, var(--btn-primary-bg, var(--accent)) 55%, #000);
+    transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-standard);
 }
 
 .header-bar .run-split:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 35%, transparent);
+    box-shadow: 0 4px 0 color-mix(in srgb, var(--btn-primary-bg, var(--accent)) 55%, #000);
+}
+
+/* Pressed: the pill sinks onto its shadow. */
+.header-bar .run-split:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--btn-primary-bg, var(--accent)) 55%, #000);
+    transition-duration: 0.06s;
 }
 
 /* One pill: the halves share the background and only a thin rule separates them. */
@@ -167,12 +203,14 @@
 }
 
 .header-bar .run-split #btn-buildrun {
-    padding: 0 12px 0 12px;
+    padding: 0 12px 0 16px;
+    font-size: 15px;
+    font-weight: 800;
 }
 
 .header-bar .run-split .run-split-caret {
-    width: 28px;
-    padding: 0;
+    width: 32px;
+    padding: 0 2px 0 0;
     justify-content: center;
     box-shadow: inset 1px 0 0 color-mix(in srgb, var(--btn-primary-text, #000) 22%, transparent);
 }
@@ -192,7 +230,8 @@
 }
 
 .header-bar .run-split:has(.running) {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
+    box-shadow: 0 3px 0 color-mix(in srgb, var(--btn-primary-bg, var(--accent)) 55%, #000),
+        0 0 0 4px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
 .header-bar #btn-stop {
@@ -201,7 +240,7 @@
     padding: 0;
     justify-content: center;
     border: none;
-    border-radius: 12px;
+    border-radius: 999px;
     background: color-mix(in srgb, var(--error) 16%, transparent);
     color: var(--error);
     box-shadow: none;
@@ -252,14 +291,14 @@
 
 /* ---- Content ---- */
 .content-wrapper > .explorer-sidebar {
-    margin: 2px 0 10px 12px;
-    border: 1px solid var(--island-border) !important;
+    margin: 2px 0 12px 12px;
+    border: var(--island-line) !important;
     border-radius: var(--island-radius);
     box-shadow: var(--island-shadow);
 }
 
 .content-wrapper > .main {
-    padding: 2px 12px 10px;
+    padding: 2px 12px 12px;
     gap: var(--island-gap);
 }
 
@@ -269,12 +308,15 @@
 }
 
 .explorer-sidebar > .explorer-header {
-    border-bottom: 1px solid var(--island-border);
+    border-bottom: var(--island-line);
 }
 
 /* The editor section only stacks the editor and the bottom panel; each is its own card. */
-.main .editor-section {
-    background: transparent;
+/* Performance Mode paints panels solid (theme.css); this wrapper must stay clear, or it fills the
+ * gap and the corners around the rounded cards. */
+.main .editor-section,
+body.performance-mode .main .editor-section {
+    background: transparent !important;
     border: none !important;
     border-radius: 0;
     box-shadow: none !important;
@@ -283,7 +325,7 @@
 }
 
 .editor-section > .editors-container {
-    border: 1px solid var(--island-border);
+    border: var(--island-line);
     border-radius: var(--island-radius);
     background: var(--editor-bg);
     box-shadow: var(--island-shadow);
@@ -305,10 +347,10 @@
     left: 50%;
     top: 50%;
     width: 40px;
-    height: 4px;
-    margin: -2px 0 0 -20px;
-    border-radius: 2px;
-    background: color-mix(in srgb, var(--text-primary) 22%, transparent);
+    height: 5px;
+    margin: -1px 0 0 -20px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 28%, transparent);
     transition: width 0.25s var(--ease-spring), margin 0.25s var(--ease-spring), background-color var(--duration-fast) var(--ease-standard);
 }
 
@@ -328,7 +370,7 @@
 }
 
 .editor-section > .problems-panel {
-    border: 1px solid var(--island-border) !important;
+    border: var(--island-line) !important;
     border-radius: var(--island-radius);
     box-shadow: var(--island-shadow);
     overflow: hidden;
@@ -396,13 +438,14 @@
 
 /* ---- Status bar ---- */
 .app-container > .status-bar {
-    height: 26px;
-    margin: 0 12px 8px;
-    padding: 0 12px;
-    border: none;
-    border-radius: 10px;
+    height: 30px;
+    margin: 0 12px 10px;
+    padding: 0 14px;
+    border: var(--island-line);
+    border-radius: 999px;
     background: var(--island-bg);
-    box-shadow: inset 0 0 0 1px var(--island-border);
+    box-shadow: 0 3px 0 var(--island-drop);
+    font-weight: 800;
 }
 
 .status-bar .hidden,
@@ -460,10 +503,10 @@
 }
 
 .status-bar .status-std {
-    padding: 1px 8px;
-    border-radius: 6px;
-    background: color-mix(in srgb, var(--accent) 14%, transparent);
-    color: var(--accent);
+    padding: 1px 10px;
+    border-radius: 999px;
+    background: var(--btn-primary-bg, var(--accent));
+    color: var(--btn-primary-text, #fff);
 }
 
 @media (max-width: 1100px) {
