@@ -33,11 +33,21 @@ async function readTextFile(filePath) {
 
 async function writeTextFile(filePath, content) {
     await fsp.mkdir(path.dirname(filePath), { recursive: true });
-    await fsp.writeFile(filePath, content, 'utf-8');
-    updateFileWatcherMtime(filePath);
+    // fs.watch reports our own write while it is still in progress (on Windows
+    // before writeFile resolves), so the change would read as external and every
+    // Build & Run of a saved file asked to reload it. Ignore the watcher until the
+    // write is done and the new mtime is recorded.
+    const entry = fileWatchers.get(filePath);
+    if (entry) entry.writing = (entry.writing || 0) + 1;
+    try {
+        await fsp.writeFile(filePath, content, 'utf-8');
+    } finally {
+        if (entry) entry.writing--;
+        updateFileWatcherMtime(filePath);
+    }
 }
 
-/** @type {Map<string, {watcher: fs.FSWatcher, mtime: number}>} */
+/** @type {Map<string, {watcher: fs.FSWatcher, mtime: number, writing?: number}>} */
 const fileWatchers = new Map();
 
 function setMainWindow(window) {
@@ -52,7 +62,7 @@ function watchFile(filePath) {
 
         const notifyIfChanged = () => {
             const current = fileWatchers.get(filePath);
-            if (!current) return;
+            if (!current || current.writing > 0) return;
             try {
                 const newMtime = fs.statSync(filePath).mtimeMs;
                 if (newMtime !== current.mtime) {

@@ -20,6 +20,10 @@ function registerAllHandlers(mainWindow) {
     competitiveHandlers.setMainWindow(mainWindow);
     debugHandlers.setMainWindow(mainWindow);
 
+    // compile() writes the editor's text to the source file when it differs from
+    // disk; record that as our own write so the watcher does not offer a reload.
+    require('../services/compiler').setFileWatcherCallback(fileHandlers.updateFileWatcherMtime);
+
     fileHandlers.registerHandlers();
     compilerHandlers.registerHandlers();
     dialogHandlers.registerHandlers();
