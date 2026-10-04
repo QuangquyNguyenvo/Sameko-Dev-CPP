@@ -51,6 +51,16 @@ function registerHandlers() {
         return compiler.sendInput(input);
     });
 
+    // Stream a test input file into the running process (Input card › Load input from file)
+    ipcMain.handle(IPC.COMPILER.SEND_INPUT_FILE, async (event, filePath) => {
+        return compiler.sendInputFile(filePath);
+    });
+
+    // Size, line count and first lines of a test input file, for its preview
+    ipcMain.handle(IPC.COMPILER.INPUT_FILE_INFO, async (event, filePath) => {
+        return compiler.inputFileInfo(filePath);
+    });
+
     // Get compiler status (for startup check)
     ipcMain.handle('get-compiler-status', async () => {
         const { getCompilerStatus } = require('../core/app-lifecycle');

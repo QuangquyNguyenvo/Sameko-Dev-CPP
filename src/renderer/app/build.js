@@ -197,7 +197,9 @@ async function run(clearTerminal = true) {
 
     if (clearTerminal) clearTerm();
 
-    const inputText = document.getElementById('input-area').value.trim();
+    // An attached input file replaces the Input box (#49).
+    const inputFile = getTabInputFile(getPreferredTabId());
+    const inputText = inputFile ? '' : document.getElementById('input-area').value.trim();
     if (App.settings.execution.autoSendInput) {
         App.inputLines = inputText ? inputText.split('\n') : [];
     } else {
@@ -207,6 +209,7 @@ async function run(clearTerminal = true) {
 
     log('--- Running ---', 'system');
     setStatus('Running...', '');
+    setTabOutput(getPreferredTabId(), { text: '', state: 'running' });
     setRunning(true);
 
     // Notify explorer: run started
@@ -248,6 +251,15 @@ async function run(clearTerminal = true) {
 
     // Skip auto-send input if using external terminal
     if (App.settings.execution.useExternalTerminal) {
+        return;
+    }
+
+    if (inputFile && App.settings.execution.autoSendInput) {
+        // Streamed by the main process; the terminal shows one line instead of the whole file.
+        log(`< ${inputFile.split(/[\\/]/).pop()}`, 'input');
+        window.electronAPI.sendInputFile(inputFile).then((r) => {
+            if (r && !r.success && App.isRunning) log(`Could not read the input file: ${r.error}`, 'error');
+        });
         return;
     }
 
@@ -749,42 +761,148 @@ function buildCompactDiffHtml(expectedRaw, actualRaw, { normalize = true } = {})
     return { html, allMatch, mismatchCount, expectedLines, actualLines };
 }
 
-function compareOutput() {
-    const expectedRaw = document.getElementById('expected-area').value;
+// ============================================================================
+// INPUT FROM A FILE (#49): a tab can take its input from a file instead of the
+// Input box. The main process streams the file to the program; the renderer only
+// keeps the path (App.ioByTab[tabId].inputFile) and shows the first lines.
+// ============================================================================
+const INPUT_PREVIEW_LINES = 30;
+let inputFileRenderJob = 0;
 
+function getTabInputFile(tabId) {
+    return (tabId && App.ioByTab[tabId]?.inputFile) || null;
+}
+
+function formatBytes(n) {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+async function chooseInputFile() {
+    const result = await window.electronAPI.showOpenDialog({
+        title: 'Load input from a file',
+        properties: ['openFile'],
+        filters: [{ name: 'Test input', extensions: ['txt', 'in', 'inp'] }, { name: 'All files', extensions: ['*'] }]
+    });
+    if (result && !result.canceled && result.filePaths?.length) setInputFile(result.filePaths[0]);
+}
+
+/** Attach a file to the current tab's input, or detach it with null. */
+function setInputFile(filePath) {
+    const tabId = getPreferredTabId();
+    if (!tabId) return;
+    persistCurrentTabIO();
+    App.ioByTab[tabId] = Object.assign({ input: '', expected: '' }, App.ioByTab[tabId], { inputFile: filePath || null });
+    renderInputFile(filePath || null);
+}
+
+async function renderInputFile(filePath) {
+    const job = ++inputFileRenderJob;
+    const panel = document.querySelector('.io-panel-input');
+    const box = document.getElementById('input-file');
+    if (!panel || !box) return;
+    panel.classList.toggle('has-file', !!filePath);
+    box.classList.toggle('hidden', !filePath);
+    if (!filePath) return;
+
+    const name = filePath.split(/[\\/]/).pop();
+    document.getElementById('input-file-name').textContent = name;
+    document.getElementById('input-file-name').title = filePath;
+    const meta = document.getElementById('input-file-meta');
+    const head = document.getElementById('input-file-head');
+    meta.textContent = 'Reading…';
+    head.textContent = '';
+    head.classList.remove('error');
+
+    const info = await window.electronAPI.inputFileInfo(filePath);
+    if (job !== inputFileRenderJob) return;
+    if (!info || !info.success) {
+        meta.textContent = '';
+        head.textContent = `Cannot read this file: ${info?.error || 'unknown error'}`;
+        head.classList.add('error');
+        return;
+    }
+    meta.textContent = `${formatBytes(info.size)} · ${info.lines.toLocaleString('en-US')} line${info.lines === 1 ? '' : 's'}`;
+    // Only the first 4 KB are read, so the last line shown may be cut short.
+    const shown = info.head.replace(/\r/g, '').split('\n').slice(0, INPUT_PREVIEW_LINES);
+    if (shown.length > 1 && shown[shown.length - 1] === '') shown.pop();
+    const more = info.lines - shown.length;
+    const tail = more > 0 ? `… ${more.toLocaleString('en-US')} more line${more === 1 ? '' : 's'}`
+        : info.truncated ? '… (only the start is shown)' : '';
+    head.textContent = shown.join('\n') + (tail ? '\n' + tail : '');
+}
+
+// ============================================================================
+// OUTPUT CARD (I/O column): the last run's output for each tab, with a verdict
+// when Expected is filled. Kept in memory only; the terminal still has the full log.
+// ============================================================================
+App.outputByTab = App.outputByTab || {};
+
+/**
+ * @param {{text: string, state: 'running'|'done'|'stopped', verdict?: 'ac'|'wa', mismatches?: number}|null} out
+ */
+function renderOutputPanel(out) {
+    const body = document.getElementById('output-area');
+    const verdict = document.getElementById('output-verdict');
+    if (!body || !verdict) return;
+
+    const text = out ? out.text : '';
+    body.textContent = text;
+    body.classList.toggle('empty', !text);
+    body.dataset.placeholder = out && out.state === 'running' ? 'Running…'
+        : out ? 'No output' : 'No output yet';
+
+    let label = '';
+    let kind = '';
+    if (out && out.state === 'running') { label = 'Running'; kind = 'running'; }
+    else if (out && out.state === 'stopped') { label = 'Stopped'; kind = 'stopped'; }
+    else if (out && out.verdict === 'ac') { label = 'AC'; kind = 'ac'; }
+    else if (out && out.verdict === 'wa') {
+        label = out.mismatches ? `WA · ${out.mismatches} line${out.mismatches === 1 ? '' : 's'}` : 'WA';
+        kind = 'wa';
+    }
+    verdict.textContent = label;
+    verdict.className = 'io-verdict' + (kind ? ' ' + kind : ' hidden');
+}
+
+function setTabOutput(tabId, out) {
+    if (!tabId) return;
+    App.outputByTab[tabId] = out;
+    if (tabId === getPreferredTabId()) renderOutputPanel(out);
+}
+
+/** Output of the latest run block in the terminal (the current one if it is still running). */
+function latestRunOutput() {
     // Read from the terminal line buffer (xterm canvas isn't DOM-queryable).
     const lines = window.TerminalManager ? TerminalManager.getLines() : [];
-
-    // Extract output from the latest run block (not the first one),
-    // so reruns don't reuse stale output from older runs.
     let currentRunLines = [];
     let latestRunLines = [];
     let capturing = false;
 
     for (const line of lines) {
         const text = line.text;
-
         if (text.includes('--- Running ---')) {
             capturing = true;
             currentRunLines = [];
             continue;
         }
-
         if (!capturing) continue;
-
         if (text.includes('--- Exit') || text.includes('--- Stopped')) {
             latestRunLines = currentRunLines.slice();
             capturing = false;
             continue;
         }
-
         if (line.type !== 'input' && line.type !== 'system' && line.type !== 'info') {
             currentRunLines.push(text);
         }
     }
+    return (capturing ? currentRunLines : latestRunLines).join('\n');
+}
 
-    // If process hasn't emitted exit yet, use currently capturing block.
-    const actualText = (capturing ? currentRunLines : latestRunLines).join('\n');
+function compareOutput() {
+    const expectedRaw = document.getElementById('expected-area').value;
+    const actualText = latestRunOutput();
 
     const diffDisplay = document.getElementById('expected-diff');
     const textarea = document.getElementById('expected-area');
@@ -795,14 +913,21 @@ function compareOutput() {
     // Empty expected = run-only mode (do not mark WA/AC automatically)
     // Keep EXPECTED strictly as editable expected output (no auto output rendering).
     if (!hasExpected) {
+        setTabOutput(getPreferredTabId(), { text: actualText, state: 'done' });
         switchToExpectedEdit();
         return;
     }
 
     const diff = buildCompactDiffHtml(expectedRaw, actualText, { normalize: true });
+    setTabOutput(getPreferredTabId(), {
+        text: actualText,
+        state: 'done',
+        verdict: diff.allMatch ? 'ac' : 'wa',
+        mismatches: diff.mismatchCount
+    });
 
     if (diffDisplay && textarea) {
-        diffDisplay.innerHTML = `<div class="diff-hint">Click diff to edit expected output</div>${diff.html}`;
+        diffDisplay.innerHTML = diff.html;
         diffDisplay.style.display = 'block';
         diffDisplay.title = 'Click to edit expected output';
         textarea.style.display = 'none';

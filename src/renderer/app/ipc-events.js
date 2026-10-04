@@ -132,6 +132,7 @@ if (window.electronAPI) {
             App.runTimeout = null;
         }
         log('\n--- Stopped ---', 'warning');
+        setTabOutput(getPreferredTabId(), { text: latestRunOutput(), state: 'stopped' });
         setRunning(false);
         setStatus('Stopped', '');
     });

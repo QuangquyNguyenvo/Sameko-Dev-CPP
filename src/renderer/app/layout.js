@@ -218,6 +218,31 @@ function initPanels() {
 
     document.getElementById('btn-send').onclick = sendInput;
 
+    // Input from a file (#49): the button, its clear button, or a file dropped on the Input card.
+    document.getElementById('btn-input-file').onclick = () => chooseInputFile();
+    document.getElementById('btn-input-file-clear').onclick = () => setInputFile(null);
+    const inputCard = document.querySelector('.io-panel-input');
+    if (inputCard) {
+        inputCard.addEventListener('dragover', (e) => {
+            if (!e.dataTransfer?.types?.includes('Files')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            inputCard.classList.add('drop-target');
+        });
+        inputCard.addEventListener('dragleave', (e) => {
+            if (!inputCard.contains(e.relatedTarget)) inputCard.classList.remove('drop-target');
+        });
+        inputCard.addEventListener('drop', (e) => {
+            inputCard.classList.remove('drop-target');
+            const file = e.dataTransfer?.files?.[0];
+            if (!file) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const filePath = window.electronAPI?.getPathForFile?.(file) || '';
+            if (filePath) setInputFile(filePath);
+        });
+    }
+
 
 
 
@@ -391,14 +416,30 @@ function initDockablePanels() {
 
     // Load saved state
     if (App.settings?.panels?.terminalDocked) {
-        setTimeout(() => dockTerminalToProblems(), 100);
+        setTimeout(() => dockTerminalToProblems({ open: false }), 100);
     }
     if (App.settings?.panels?.ioDocked) {
         setTimeout(() => dockIOToProblems(), 150);
     }
 }
 
-function dockTerminalToProblems() {
+/**
+ * The terminal is one element, #terminal-view (output + input), that lives either in
+ * its own section or in the bottom panel. Docking only moves it; whether it is shown
+ * inside the bottom panel is decided by the panel's data-view (CSS), never by styles on
+ * the terminal itself, so nothing from one place is carried to the other.
+ * @param {'section'|'panel'} where
+ */
+function mountTerminalView(where) {
+    const view = document.getElementById('terminal-view');
+    const host = document.getElementById(where === 'panel' ? 'problems-panel' : 'terminal-section');
+    if (!view || !host) return;
+    if (view.parentElement !== host) host.appendChild(view);
+    fitTerminal();
+}
+
+/** @param {{open?: boolean}} [opts] open the bottom panel on the terminal (not when restoring at startup) */
+function dockTerminalToProblems({ open = true } = {}) {
     if (DockingState.terminalDocked) return;
 
     const terminalSection = document.getElementById('terminal-section');
@@ -407,11 +448,7 @@ function dockTerminalToProblems() {
 
     if (!terminalSection || !problemsPanel) return;
 
-    // Move terminal body and input into problems panel (single DOM element, no clone)
-    const termBody = document.getElementById('terminal');
-    const termInput = document.querySelector('.terminal-input');
-    if (termBody) problemsPanel.appendChild(termBody);
-    if (termInput) problemsPanel.appendChild(termInput);
+    mountTerminalView('panel');
 
     // Hide the now-empty terminal section shell + its resizer
     terminalSection.classList.add('docked-away');
@@ -481,8 +518,11 @@ function dockTerminalToProblems() {
     App.settings.panels.terminalDocked = true;
     saveSettings();
 
-    // Show problems if hidden
-    if (!App.showProblems) {
+    // Dropped in by the user: open the panel on it. Restored at startup: the panel keeps
+    // its collapsed start state.
+    if (open) {
+        showBottomPanel('terminal');
+    } else if (!App.showProblems) {
         App.showProblems = true;
         updateUI();
     }
@@ -502,10 +542,10 @@ function switchDockedPanel(panelId) {
 
     const problemsBody = problemsPanel.querySelector('.problems-body');
     const testsBody = document.getElementById('tests-results-list');
-    // Terminal elements are the real ones (moved into problemsPanel when docked)
-    const termBody = document.getElementById('terminal');
-    const termInput = document.querySelector('#terminal-in')?.closest('.terminal-input');
     let ioView = problemsPanel.querySelector('.docked-io-view');
+
+    // The docked terminal is shown by CSS from this attribute (see mountTerminalView).
+    problemsPanel.dataset.view = panelId;
 
     // Deactivate all headers
     problemsTitle?.classList.remove('active');
@@ -516,8 +556,6 @@ function switchDockedPanel(panelId) {
     // Hide all bodies
     if (problemsBody) problemsBody.style.display = 'none';
     if (testsBody) testsBody.style.display = 'none';
-    if (termBody) termBody.style.display = 'none';
-    if (termInput) termInput.style.display = 'none';
     if (ioView) ioView.style.display = 'none';
 
     if (panelId === 'problems') {
@@ -528,8 +566,6 @@ function switchDockedPanel(panelId) {
         if (testsBody) testsBody.style.display = 'block';
     } else if (panelId === 'terminal') {
         terminalTab?.classList.add('active');
-        if (termBody) { termBody.style.display = ''; termBody.style.flex = '1'; }
-        if (termInput) termInput.style.display = 'flex';
         fitTerminal();
     } else if (panelId === 'io') {
         ioTab?.classList.add('active');
@@ -550,15 +586,8 @@ function undockTerminal() {
     const problemsPanel = document.getElementById('problems-panel');
     const resizerTerm = document.getElementById('resizer-term');
 
-    // Move terminal body and input back to the terminal section
-    const termBody = document.getElementById('terminal');
-    const termInput = document.querySelector('#terminal-in')?.closest('.terminal-input');
-    if (termBody && termBody.parentElement !== terminalSection) {
-        terminalSection.appendChild(termBody);
-    }
-    if (termInput && termInput.parentElement !== terminalSection) {
-        terminalSection.appendChild(termInput);
-    }
+    mountTerminalView('section');
+    if (problemsPanel) problemsPanel.dataset.view = 'problems';
 
     terminalSection?.classList.remove('docked-away');
     resizerTerm?.classList.remove('docked-away');

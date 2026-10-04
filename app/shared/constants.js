@@ -37,6 +37,8 @@ const IPC = {
         RUN: 'run',
         STOP: 'stop-process',
         SEND_INPUT: 'send-input',
+        SEND_INPUT_FILE: 'send-input-file',
+        INPUT_FILE_INFO: 'input-file-info',
     },
 
     // Debugger (GDB/MI)

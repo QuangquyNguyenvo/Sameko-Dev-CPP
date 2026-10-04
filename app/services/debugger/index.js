@@ -121,7 +121,7 @@ const next = () => requireSession().next();
 const step = () => requireSession().step();
 const finish = () => requireSession().finish();
 const interrupt = () => requireSession().interrupt();
-const run = (stdin) => requireSession().run(stdin);
+const run = (stdin, stdinPath) => requireSession().run(stdin, stdinPath);
 const selectFrame = (n) => requireSession().selectFrame(n);
 const listLocals = () => requireSession().listLocals();
 const listFrames = () => requireSession().listFrames();

@@ -40,6 +40,8 @@ module.exports = {
     run: executor.run,
     runExternal: executor.runExternal,
     sendInput: executor.sendInput,
+    sendInputFile: executor.sendInputFile,
+    inputFileInfo: executor.inputFileInfo,
     stopProcess: executor.stopProcess,
     isProcessRunning: executor.isProcessRunning,
     getRunningProcess: executor.getRunningProcess,

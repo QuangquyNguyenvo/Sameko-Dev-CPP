@@ -657,16 +657,16 @@
           <div class="sdbg-pop">
             <div class="sdbg-pop-h">Marks in the gutter</div>
             <div class="sdbg-legend">
-              <div><span class="sdbg-lg bp"></span><span><b>Breakpoint</b> — the program pauses here</span></div>
-              <div><span class="sdbg-lg cur"></span><span><b>Paused here.</b> This line has <b>not run yet</b> — it runs on your next step</span></div>
-              <div><span class="sdbg-lg hit"></span><span>Paused <b>on</b> a breakpoint (both of the above)</span></div>
-              <div><span class="sdbg-lg cond"></span><span><b>Conditional</b> — pauses only when your condition is true</span></div>
-              <div><span class="sdbg-lg off"></span><span><b>Disabled</b> — kept, but ignored this run</span></div>
-              <div><span class="sdbg-lg hist"></span><span><b>Replay</b> — a recorded step you are looking back at; the program is not here</span></div>
+              <div><span class="sdbg-lg bp"></span><span><b>Breakpoint</b>: the program stops here</span></div>
+              <div><span class="sdbg-lg cur"></span><span><b>Current line</b>: next to run, not run yet</span></div>
+              <div><span class="sdbg-lg hit"></span><span><b>Stopped at a breakpoint</b></span></div>
+              <div><span class="sdbg-lg cond"></span><span><b>Conditional</b>: stops only when its condition is true</span></div>
+              <div><span class="sdbg-lg off"></span><span><b>Disabled</b>: kept but skipped</span></div>
+              <div><span class="sdbg-lg hist"></span><span><b>History</b>: a past step you are viewing</span></div>
             </div>
             <div class="sdbg-pop-h">Keys</div>
             <div class="sdbg-keys">
-              <div><kbd>F5</kbd><span>Run / Continue</span></div>
+              <div><kbd>F5</kbd><span>Start / Continue</span></div>
               <div><kbd>F10</kbd><span>Step over</span></div>
               <div><kbd>F11</kbd><span>Step into</span></div>
               <div><kbd>Shift</kbd><kbd>F11</kbd><span>Step out</span></div>
@@ -674,19 +674,20 @@
             </div>
             <div class="sdbg-pop-h">Mouse</div>
             <ul class="sdbg-tips">
-              <li>Click the gutter to add a breakpoint — <b>Alt</b>+click for conditional, <b>Ctrl</b>+click to turn one off</li>
-              <li>Right-click a line → <b>Run to Cursor</b></li>
-              <li>Double-click a value → hexadecimal / decimal</li>
+              <li><b>Click</b> the gutter: add or remove a breakpoint</li>
+              <li><b>Alt</b>+click: conditional breakpoint · <b>Ctrl</b>+click: turn off / on</li>
+              <li><b>Right-click</b> a line: Run to Cursor</li>
+              <li><b>Double-click</b> a value: switch hex / decimal</li>
             </ul>
             <div class="sdbg-pop-h">Auto dry run</div>
             <ul class="sdbg-tips">
-              <li>Walks your program <b>one line at a time by itself</b> while the values update — no breakpoint needed, it begins at <b>main()</b></li>
-              <li>Drag the speed slider at any moment; <b>Pause</b>, <kbd>Esc</kbd>, or any step of your own stops it</li>
+              <li>Steps through the program line by line on its own, starting at <b>main()</b>. No breakpoints needed.</li>
+              <li>Change the speed with the slider. <b>Pause</b>, <kbd>Esc</kbd> or any manual step stops it.</li>
             </ul>
             <div class="sdbg-pop-h">Back &amp; Restart</div>
             <ul class="sdbg-tips">
-              <li><b>Back</b> looks at a <b>recording</b> of the steps you have already taken — the program itself cannot run backwards, so this is a read-only replay. <kbd>Esc</kbd> or <b>Back to live</b> returns you to the present</li>
-              <li><b>Restart</b> stops the session and runs the whole program again from the top</li>
+              <li><b>Back</b> replays steps you already took. The program does not run backwards. Press <kbd>Esc</kbd> or <b>Back to live</b> to return.</li>
+              <li><b>Restart</b> runs the program again from the start.</li>
             </ul>
           </div>
           <div class="sdbg-auto">
@@ -1209,10 +1210,12 @@
             return;
         }
 
-        const stdin = (document.getElementById('input-area') || {}).value || '';
+        // An input file attached to the tab is read by gdb in place.
+        const stdinPath = (typeof getTabInputFile === 'function' && getTabInputFile(tab.id)) || null;
+        const stdin = stdinPath ? '' : ((document.getElementById('input-area') || {}).value || '');
         const bps = collectBreakpoints();
         const dir = tab.path.replace(/[\\/][^\\/]*$/, '');
-        const res = await api().debugStart({ exePath: r.outputPath, cwd: dir, breakpoints: bps, stdin, breakAtMain });
+        const res = await api().debugStart({ exePath: r.outputPath, cwd: dir, breakpoints: bps, stdin, stdinPath, breakAtMain });
         if (!res || !res.ok) {
             sys('Debugger failed to start: ' + ((res && res.error) || 'unknown'), 'error');
             setStatus('idle');

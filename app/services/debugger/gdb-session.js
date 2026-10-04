@@ -306,10 +306,13 @@ class GdbSession extends EventEmitter {
      * are redirected to temp files (`< in > out 2> err`) so program I/O never
      * touches the MI pipe. Output is streamed back by polling those files.
      */
-    async run(stdinContent) {
+    async run(stdinContent, stdinPath) {
         const stamp = `${process.pid}-${Date.now()}`;
         const redirs = [];
-        if (typeof stdinContent === 'string' && stdinContent.length) {
+        if (stdinPath) {
+            // The user's own test input file: read in place, and not deleted at cleanup.
+            redirs.push(`< ${quote(stdinPath)}`);
+        } else if (typeof stdinContent === 'string' && stdinContent.length) {
             this._stdinFile = path.join(os.tmpdir(), `sameko-stdin-${stamp}.txt`);
             fs.writeFileSync(this._stdinFile, stdinContent, 'utf8');
             redirs.push(`< ${quote(this._stdinFile)}`);

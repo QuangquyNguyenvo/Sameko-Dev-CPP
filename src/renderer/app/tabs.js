@@ -31,7 +31,8 @@ function persistCurrentTabIO() {
 
     App.ioByTab[tabId] = {
         input: inputArea.value || '',
-        expected: expectedArea.value || ''
+        expected: expectedArea.value || '',
+        inputFile: App.ioByTab[tabId]?.inputFile || null
     };
 }
 
@@ -43,6 +44,8 @@ function restoreTabIO(tabId) {
     const ioState = App.ioByTab[tabId] || { input: '', expected: '' };
     inputArea.value = ioState.input || '';
     expectedArea.value = ioState.expected || '';
+    if (typeof renderOutputPanel === 'function') renderOutputPanel(App.outputByTab?.[tabId] || null);
+    if (typeof renderInputFile === 'function') renderInputFile(ioState.inputFile || null);
 }
 
 function setActive(id) {

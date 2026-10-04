@@ -944,6 +944,64 @@ function sendInput(input) {
 }
 
 /**
+ * Stream a file into the running process's stdin, a chunk at a time, so a large test input
+ * never passes through the renderer. stdin stays open afterwards, as with typed input.
+ * @param {string} filePath
+ * @returns {Promise<{success: boolean, bytes?: number, error?: string}>}
+ */
+function sendInputFile(filePath) {
+    const child = runningProcess;
+    if (!child || !child.stdin || child.stdin.destroyed) {
+        return Promise.resolve({ success: false, error: 'No running process' });
+    }
+    return new Promise((resolve) => {
+        let bytes = 0;
+        let last = 0x0a;
+        const stream = fs.createReadStream(filePath);
+        stream.on('data', (chunk) => { bytes += chunk.length; last = chunk[chunk.length - 1]; });
+        stream.on('error', (err) => resolve({ success: false, error: err.message }));
+        stream.on('end', () => {
+            // Like typed input, the last line ends with a newline.
+            if (last !== 0x0a && !child.stdin.destroyed) child.stdin.write('\n');
+            resolve({ success: true, bytes });
+        });
+        // The program may exit before reading everything; that is not an error.
+        child.stdin.once('error', () => { });
+        stream.pipe(child.stdin, { end: false });
+    });
+}
+
+/**
+ * Size, line count and the first lines of a test input file, for its preview. Only the first
+ * maxBytes are decoded; lines are counted on the raw bytes.
+ * @param {string} filePath
+ * @param {number} [maxBytes]
+ * @returns {Promise<{success: boolean, size?: number, lines?: number, head?: string, error?: string}>}
+ */
+async function inputFileInfo(filePath, maxBytes = 4096) {
+    try {
+        const { size } = await fs.promises.stat(filePath);
+        let lines = 0;
+        let last = 0x0a;
+        let head = Buffer.alloc(0);
+        await new Promise((resolve, reject) => {
+            const stream = fs.createReadStream(filePath, { highWaterMark: 1 << 20 });
+            stream.on('data', (chunk) => {
+                if (head.length < maxBytes) head = Buffer.concat([head, chunk.subarray(0, maxBytes - head.length)]);
+                for (let i = chunk.indexOf(0x0a); i !== -1; i = chunk.indexOf(0x0a, i + 1)) lines++;
+                last = chunk[chunk.length - 1];
+            });
+            stream.on('error', reject);
+            stream.on('end', resolve);
+        });
+        if (size && last !== 0x0a) lines++;
+        return { success: true, size, lines, truncated: size > head.length, head: head.toString('utf8').replace(/�$/, '') };
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+}
+
+/**
  * Stop the program started by run(), if any.
  *
  * Kills ONLY the process this module spawned, by its PID while we still hold
@@ -995,6 +1053,8 @@ module.exports = {
     run,
     runExternal,
     sendInput,
+    sendInputFile,
+    inputFileInfo,
     stopProcess,
     isProcessRunning,
     getRunningProcess,

@@ -37,7 +37,7 @@ async function guard(fn) {
 
 function registerHandlers() {
     // Start a session on an already-compiled (-g) exe, register breakpoints, run.
-    ipcMain.handle(IPC.DEBUG.START, async (event, { exePath, cwd, breakpoints, stdin, breakAtMain }) => {
+    ipcMain.handle(IPC.DEBUG.START, async (event, { exePath, cwd, breakpoints, stdin, stdinPath, breakAtMain }) => {
         return guard(async () => {
             await dbg.start({ exePath, cwd });
             const registered = [];
@@ -52,7 +52,7 @@ function registerHandlers() {
             // Auto dry run needs the program to pause on its first line even with
             // no user breakpoints — a temporary breakpoint on main does that.
             if (breakAtMain) { try { await dbg.breakAtMain(); } catch (_) { } }
-            await dbg.run(stdin);
+            await dbg.run(stdin, stdinPath);
             return { breakpoints: registered };
         });
     });

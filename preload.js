@@ -14,7 +14,7 @@
  * @license MIT
  */
 
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 let judge = null;
 try {
@@ -30,6 +30,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     openFile: () => ipcRenderer.invoke('open-file-dialog'),
     saveFile: (data) => ipcRenderer.invoke('save-file', data),
     saveFileDialog: (payload) => ipcRenderer.invoke('save-file-dialog', payload),
+
+    // Path of a File from a drop or an <input type="file">. File.path was removed in Electron 32.
+    getPathForFile: (file) => { try { return webUtils.getPathForFile(file) || ''; } catch (_) { return ''; } },
 
     // File Explorer operations
     showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),
@@ -51,6 +54,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     compile: (data) => ipcRenderer.invoke('compile', data),
     run: (data) => ipcRenderer.invoke('run', data),
     sendInput: (input) => ipcRenderer.invoke('send-input', input),
+    sendInputFile: (filePath) => ipcRenderer.invoke('send-input-file', filePath),
+    inputFileInfo: (filePath) => ipcRenderer.invoke('input-file-info', filePath),
     stopProcess: () => ipcRenderer.invoke('stop-process'),
     getCompilerStatus: () => ipcRenderer.invoke('get-compiler-status'),
     cleanPCHCache: (options) => ipcRenderer.invoke('clean-pch-cache', options),
