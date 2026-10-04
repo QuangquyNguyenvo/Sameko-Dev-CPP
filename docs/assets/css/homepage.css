@@ -141,8 +141,8 @@
     border: var(--bd); background: var(--c-surface); border-radius: 18px;
     font-size: 13px; font-weight: 700; color: var(--c-text); box-shadow: var(--pop);
 }
-.hero__sticker--compiler { left: -2%; bottom: 22%; transform: rotate(-7deg); }
-.hero__sticker--run { right: -2%; bottom: 5%; background: var(--c-accent); color: #10202c; transform: rotate(5deg); }
+.hero__sticker--compiler { left: -2%; bottom: 22%; rotate: -7deg; }
+.hero__sticker--run { right: -2%; bottom: 5%; background: var(--c-accent); color: #10202c; rotate: 5deg; }
 .hero__sticker kbd { color: #10202c; background: #fff; border-color: #2a4a5a; box-shadow: 0 3px 0 #2a4a5a; }
 .sticker-dot { width: 11px; height: 11px; border-radius: 50%; background: var(--c-brand); }
 .hero__chip { font-size: 12px; padding: 8px 14px; animation: bob 5s var(--ease-soft) infinite alternate; }
@@ -176,8 +176,8 @@
 .shape svg { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 3px 0 var(--ink-shadow)); }
 .shape svg path { fill: var(--c); stroke: var(--ink); stroke-width: 3; stroke-linejoin: round; }
 @keyframes drift {
-    0% { transform: translate(0, 0) rotate(0deg); }
-    100% { transform: translate(6px, -16px) rotate(14deg); }
+    0% { translate: 0 0; }
+    100% { translate: 6px -16px; }
 }
 
 .hero__scroll {
