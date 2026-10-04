@@ -200,6 +200,7 @@ body {
     /* Dark background underneath for transparency slider to work */
     background-color: #1a2530;
     /* Default Background Image - moved to pseudo-element for opacity support */
+    /* (light themes override this below, or a faded image turns grey) */
     background-image: none;
     color: var(--text-primary);
     height: 100vh;
@@ -210,6 +211,12 @@ body {
     /* Try to make upscaled images sharper */
     position: relative;
     z-index: 0;
+}
+
+/* The background image is drawn at --app-bg-opacity over this colour: a light theme fades it
+ * toward its own light tone instead of the dark default above. */
+[data-theme-variant="light"] body {
+    background-color: var(--bg-ocean-light);
 }
 
 /* App background is now set via inline styles in app.js, not pseudo-element */

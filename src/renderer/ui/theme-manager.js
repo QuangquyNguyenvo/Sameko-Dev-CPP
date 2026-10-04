@@ -156,18 +156,21 @@ const ThemeManager = {
                     success: '#5dbe8a',
                     error: '#e55a5a',
                     warning: '#e5a05a',
-                    border: '#a0c8e0',
+                    border: '#b9dcf0',
                     borderStrong: '#4a9bc9',
                     shadowSoft: '0 8px 32px rgba(74, 155, 201, 0.2)',
                     shadowCard: '0 4px 12px rgba(74, 155, 201, 0.15)',
                     glow: '0 0 15px rgba(74, 155, 201, 0.3)',
                     bgHeader: 'rgba(208, 232, 245, 0.4)',
-                    bgPanel: 'rgba(232, 244, 252, 0.95)',
+                    bgPanel: 'rgba(244, 250, 255, 0.96)',
                     bgInput: '#ffffff',
-                    bgButton: '#e8f4fc',
+                    bgButton: '#eef7fd',
                     bgButtonHover: '#d0e8f5',
-                    editorBg: '#1a2530',
-                    terminalBg: '#152535',
+                    // A light editor and terminal: they used to be kawaii-dark's navy, a dark
+                    // block in the middle of a light theme.
+                    editorBg: '#fbfdff',
+                    terminalBg: '#f3f9fe',
+                    terminalText: '#2a4a5a',
                     settingsLabelColor: '#4a6a7a',
                     settingsSectionColor: '#4a9bc9',
                     buttonTextOnAccent: '#ffffff',
@@ -181,27 +184,33 @@ const ThemeManager = {
                     btnPrimaryText: '#ffffff',
                     // Terminal line colors — kawaii-light overrides (were the
                     // [data-theme="kawaii-light"] .terminal-body .line.* rules).
-                    termLineSuccess: '#a3d9a5',
-                    termLineError: '#ff8fab',
-                    termLineWarning: '#ebcb8b',
-                    termLineInfo: '#88c9ea',
-                    termLineSystem: '#6a8a9a',
-                    termLineInput: '#5fb9cf'
+                    termLineSuccess: '#3f9a6a',
+                    termLineError: '#d6496b',
+                    termLineWarning: '#c98a2a',
+                    termLineInfo: '#2f86b8',
+                    termLineSystem: '#7a9aaa',
+                    termLineInput: '#2f9fb5'
                 },
                 editor: {
-                    base: 'vs-dark', inherit: true,
-                    background: '#1a2530', foreground: '#e0f0ff',
+                    base: 'vs', inherit: true,
+                    background: '#fbfdff', foreground: '#2a4a5a',
+                    lineHighlight: '#eef7fd',
+                    selection: '#cfe6f5',
+                    cursor: '#4a9bc9',
+                    lineNumber: '#a8c4d4',
+                    lineNumberActive: '#4a9bc9',
+                    // Pastel hues dark enough to read on white.
                     syntax: {
-                        comment: { color: '6a8a9a', fontStyle: 'italic' },
-                        keyword: { color: '88c9ea' },
-                        string: { color: 'a3d9a5' },
-                        escape: { color: 'ebcb8b', fontStyle: 'bold' },
-                        number: { color: 'ebcb8b' },
-                        type: { color: 'e8a8b8' },
-                        function: { color: '7ec8e3' },
-                        variable: { color: '9cdcfe' },
-                        operator: { color: 'e0f0ff' },
-                        bracket: { color: 'ffd700' }
+                        comment: { color: '8aa8b8', fontStyle: 'italic' },
+                        keyword: { color: 'd6608a' },
+                        string: { color: '3f9a6a' },
+                        escape: { color: 'c98a2a', fontStyle: 'bold' },
+                        number: { color: 'c27a2a' },
+                        type: { color: '7a6ad0' },
+                        function: { color: '2f86b8' },
+                        variable: { color: '2a4a5a' },
+                        operator: { color: '5a7a8a' },
+                        bracket: { color: 'd99a20' }
                     }
                 }
             },

@@ -31,7 +31,9 @@ function syncTerminalTheme() {
     if (!window.TerminalManager) return;
     const cs = getComputedStyle(document.documentElement);
     const bg = (cs.getPropertyValue('--terminal-bg') || '#1e2933').trim();
-    const fg = (cs.getPropertyValue('--text-primary') || '#e0f0ff').trim();
+    // --terminal-text, not --text-primary: a light theme with a dark terminal (sakura) has
+    // dark UI text, which made program output unreadable.
+    const fg = (cs.getPropertyValue('--terminal-text') || cs.getPropertyValue('--text-primary') || '#e0f0ff').trim();
     TerminalManager.applyTheme({
         background: bg || '#1e2933',
         foreground: fg || '#e0f0ff',

@@ -546,6 +546,15 @@ function normalizeLogType(type) {
     return type;
 }
 
+/** True when the theme's --terminal-bg is a light colour (relative luminance above 0.5). */
+function isLightTerminal() {
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--terminal-bg').trim();
+    const m = /^#([0-9a-f]{6})$/i.exec(bg);
+    if (!m) return false;
+    const n = parseInt(m[1], 16);
+    return (0.2126 * (n >> 16) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255 > 0.5;
+}
+
 // IDE status / build messages: each call is a discrete colored line.
 function log(msg, type = '') {
     if (!window.TerminalManager) return;
@@ -558,6 +567,12 @@ function log(msg, type = '') {
     if (colorEnabled && normalizedType) {
         const messageColors = TERMINAL_MESSAGE_COLORS[colorScheme] || TERMINAL_MESSAGE_COLORS['ansi-16'];
         hexColor = messageColors[normalizedType] || null;
+        // The schemes are tuned for dark terminals; on a light one (kawaii-light) use the
+        // theme's darker --term-line-* colours, or the lines are too pale to read.
+        if (hexColor && isLightTerminal()) {
+            const themed = getComputedStyle(document.documentElement).getPropertyValue(`--term-line-${normalizedType}`).trim();
+            if (themed) hexColor = themed;
+        }
     }
 
     TerminalManager.writeMessage(msg, hexColor, colorEnabled, normalizedType);

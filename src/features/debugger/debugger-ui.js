@@ -145,7 +145,9 @@
         const css = `
         /* One outline for the whole panel; everything inside is separated by
            hairlines and whitespace instead of nested boxes. */
-        #sameko-debug-panel{position:fixed;top:66px;right:12px;bottom:12px;width:344px;
+        /* A column of the layout (in .content-wrapper, after .main): opening it narrows the
+           editor instead of covering it. */
+        #sameko-debug-panel{position:relative;flex:0 0 344px;width:344px;min-height:0;margin:2px 12px 12px 0;
           background:var(--bg-glass-heavy,rgba(26,37,48,.97));color:var(--text-primary,#e0f0ff);
           border:1.5px solid var(--border-strong,var(--accent,#88c9ea));border-radius:var(--radius,20px);
           z-index:1400;display:none;flex-direction:column;font-family:'Nunito','Segoe UI',sans-serif;
@@ -703,7 +705,7 @@
             ${sectionHtml('watch', 'Watch', '<input class="sdbg-watchin" id="sdbg-watchin" placeholder="+ expression, Enter…" />')}
             ${sectionHtml('stack', 'Call Stack')}
           </div>`;
-        document.body.appendChild(p);
+        (document.querySelector('.content-wrapper') || document.body).appendChild(p);
         els = {
             panel: p,
             status: p.querySelector('.sdbg-status'),
@@ -807,6 +809,9 @@
         els.panel && els.panel.classList.toggle('open', show);
         document.getElementById('btn-debug')?.classList.toggle('active', show);
         if (!show) showPop(false);
+        // The panel takes width from the editor column: re-measure Monaco and the terminal.
+        if (typeof refreshEditorLayout === 'function') refreshEditorLayout();
+        if (typeof fitTerminal === 'function') fitTerminal();
     }
     /** Show/hide the shortcuts popover. */
     function showPop(show) { els.pop && els.pop.classList.toggle('open', !!show); }

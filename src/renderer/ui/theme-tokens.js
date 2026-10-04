@@ -249,7 +249,12 @@ const ThemeTokens = {
                     if (value.startsWith('data:')) {
                         element.style.setProperty(cssVar, `url("${value}")`);
                     } else {
-                        const escaped = value.replace(/'/g, "\\'");
+                        // A relative path ("assets/backgrounds/x.jpg") inside a custom property
+                        // resolves against the stylesheet that uses it (styles/base.css), not the
+                        // page, so it pointed at styles/assets/... and the image never loaded.
+                        const isRelative = !/^([a-z][a-z0-9+.-]*:|[\\/])/i.test(value);
+                        const url = isRelative ? new URL(value, document.baseURI).href : value;
+                        const escaped = url.replace(/'/g, "\\'");
                         element.style.setProperty(cssVar, `url('${escaped}')`);
                     }
                 } else {

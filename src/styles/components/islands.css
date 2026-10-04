@@ -4,17 +4,16 @@
  * theme tokens only, and nothing here uses backdrop blur (it costs a repaint of the background
  * video on every frame).
  *
- * Style: bold and round. Every card has the theme's 2px --border and a solid "sticker" shadow
- * offset straight down, pills are fully round, labels are extra bold. */
+ * Style: bold and round, with thin lines. Cards have a 1.5px theme --border and a soft shadow,
+ * pills are fully round, labels are extra bold. */
 
 :root {
     --island-radius: 22px;
     --island-gap: 10px;
     --island-bg: color-mix(in srgb, var(--bg-panel) 96%, transparent);
     --island-border: var(--border);
-    --island-line: 2px solid var(--island-border);
-    --island-drop: color-mix(in srgb, var(--border) 70%, rgba(0, 0, 0, 0.35));
-    --island-shadow: 0 4px 0 var(--island-drop), 0 10px 24px rgba(0, 0, 0, 0.12);
+    --island-line: 1.5px solid var(--island-border);
+    --island-shadow: 0 6px 20px rgba(0, 0, 0, 0.10);
 }
 
 /* ---- Header ---- */
@@ -43,7 +42,7 @@
     border: var(--island-line);
     border-radius: 20px;
     background: var(--island-bg);
-    box-shadow: 0 3px 0 var(--island-drop);
+    box-shadow: var(--island-shadow);
     flex-shrink: 0;
 }
 
@@ -291,6 +290,7 @@
 
 /* ---- Content ---- */
 .content-wrapper > .explorer-sidebar {
+    background: var(--island-bg);
     margin: 2px 0 12px 12px;
     border: var(--island-line) !important;
     border-radius: var(--island-radius);
@@ -387,6 +387,13 @@ body.performance-mode .main .editor-section {
     background: var(--terminal-bg);
 }
 
+/* Debug panel: a column of the layout like the explorer (built by debugger-ui.js). */
+.content-wrapper > #sameko-debug-panel {
+    border: var(--island-line);
+    border-radius: var(--island-radius);
+    box-shadow: var(--island-shadow);
+}
+
 /* Collapsed bottom panel: only its tab strip. */
 .editor-section > .problems-panel.collapsed {
     height: auto !important;
@@ -444,7 +451,7 @@ body.performance-mode .main .editor-section {
     border: var(--island-line);
     border-radius: 999px;
     background: var(--island-bg);
-    box-shadow: 0 3px 0 var(--island-drop);
+    box-shadow: var(--island-shadow);
     font-weight: 800;
 }
 

@@ -80,7 +80,10 @@ function applyBackgroundSettings() {
     // the old always-full look, revert this commit.
     const root = document.documentElement;
     const bgVideo = document.getElementById('app-bg-video');
-    const toBgUrl = (u) => u.startsWith('data:') ? `url("${u}")` : `url('${u.replace(/'/g, "\\'")}')`;
+    // Relative paths are made absolute: in a custom property they would resolve
+    // against styles/base.css, not the page.
+    const absolute = (u) => (/^([a-z][a-z0-9+.-]*:|[\\/])/i.test(u) ? u : new URL(u, document.baseURI).href);
+    const toBgUrl = (u) => u.startsWith('data:') ? `url("${u}")` : `url('${absolute(u).replace(/'/g, "\\'")}')`;
     document.body.style.backgroundImage = '';
 
     if (userThemeBg) {
