@@ -94,12 +94,15 @@ function toggleIO() {
         const problemsPanel = document.getElementById('problems-panel');
         const isIOActive = document.getElementById('docked-io-tab')?.classList.contains('active');
 
-        if (!App.showProblems) {
+        if (App.showProblems && isBottomPanelCollapsed()) {
+            showBottomPanel('io');
+        } else if (!App.showProblems) {
             App.showProblems = true;
             if (!App.settings.panels) App.settings.panels = {};
             App.settings.panels.showProblems = true;
             saveSettings();
             updateUI();
+            setBottomPanelCollapsed(false);
             switchDockedPanel('io');
         } else {
             if (isIOActive) {
@@ -127,13 +130,16 @@ function toggleTerm() {
         const problemsPanel = document.getElementById('problems-panel');
         const isTerminalActive = document.getElementById('docked-terminal-tab')?.classList.contains('active');
 
-        if (!App.showProblems) {
+        if (App.showProblems && isBottomPanelCollapsed()) {
+            showBottomPanel('terminal');
+        } else if (!App.showProblems) {
             // If hidden, show and switch to terminal
             App.showProblems = true;
             if (!App.settings.panels) App.settings.panels = {};
             App.settings.panels.showProblems = true;
             saveSettings();
             updateUI();
+            setBottomPanelCollapsed(false);
             switchDockedPanel('terminal');
         } else {
             // If shown...
@@ -161,7 +167,13 @@ function toggleTerm() {
     if (App.showTerm) fitTerminal();
 }
 function toggleProblems() {
+    // Ctrl+J on a collapsed panel opens it rather than hiding it.
+    if (App.showProblems && isBottomPanelCollapsed()) {
+        setBottomPanelCollapsed(false);
+        return;
+    }
     App.showProblems = !App.showProblems;
+    if (App.showProblems) setBottomPanelCollapsed(false);
     if (!App.settings.panels) App.settings.panels = {};
     App.settings.panels.showProblems = App.showProblems;
     saveSettings();
@@ -195,6 +207,7 @@ function initPanels() {
 
     document.getElementById('clear-term').onclick = clearTerm;
     document.getElementById('close-problems').onclick = () => { App.showProblems = false; updateUI(); };
+    initBottomPanelCollapse();
 
     document.getElementById('btn-send').onclick = sendInput;
 
@@ -228,6 +241,54 @@ function initPanels() {
 
     // IO textareas are the real elements — no sync needed even when docked
     initDockablePanels();
+}
+
+// ============================================================================
+// BOTTOM PANEL COLLAPSE
+// ============================================================================
+// The bottom panel (Problems / Terminal / Tests) starts collapsed to its tab
+// strip so the editor gets the room, and opens when it has something to show:
+// a run, a failed build, a click on one of its tabs. The caret in its header,
+// or a click on the tab already shown, collapses it again.
+function isBottomPanelCollapsed() {
+    return !!document.getElementById('problems-panel')?.classList.contains('collapsed');
+}
+
+function setBottomPanelCollapsed(collapsed) {
+    const panel = document.getElementById('problems-panel');
+    if (!panel || panel.classList.contains('collapsed') === collapsed) return;
+    panel.classList.toggle('collapsed', collapsed);
+    document.getElementById('resizer-problems')?.classList.toggle('collapsed', collapsed);
+    refreshEditorLayout();
+    if (!collapsed) fitTerminal();
+}
+
+/** Shows the bottom panel open on one of its views ('terminal', 'problems', 'tests', 'io'). */
+function showBottomPanel(panelId) {
+    if (!App.showProblems) {
+        App.showProblems = true;
+        updateUI();
+    }
+    setBottomPanelCollapsed(false);
+    if (panelId) switchDockedPanel(panelId);
+}
+
+function initBottomPanelCollapse() {
+    const panel = document.getElementById('problems-panel');
+    const head = panel?.querySelector('.panel-head');
+    if (!head) return;
+    document.getElementById('resizer-problems')?.classList.toggle('collapsed', isBottomPanelCollapsed());
+    document.getElementById('collapse-problems').onclick = (e) => {
+        e.stopPropagation();
+        setBottomPanelCollapsed(!isBottomPanelCollapsed());
+    };
+    // Capture phase: runs before the tab's own handler makes it active.
+    head.addEventListener('click', (e) => {
+        const title = e.target.closest('.panel-title');
+        if (!title || e.target.closest('.dock-undock')) return;
+        if (isBottomPanelCollapsed()) setBottomPanelCollapsed(false);
+        else if (title.classList.contains('active')) setBottomPanelCollapsed(true);
+    }, true);
 }
 
 // ============================================================================

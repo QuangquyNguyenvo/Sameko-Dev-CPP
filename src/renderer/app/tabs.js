@@ -299,9 +299,12 @@ function initMenus() {
     document.querySelectorAll('.menu-btn').forEach(btn => {
         btn.onclick = e => { toggleMenu('menu-' + btn.dataset.menu, btn); e.stopPropagation(); };
     });
-    document.querySelectorAll('.dropdown-item').forEach(item => {
+    // Items without data-action (Run without building, Debug panel) carry their own handlers.
+    document.querySelectorAll('.dropdown-item[data-action]').forEach(item => {
         item.onclick = () => { doAction(item.dataset.action); closeMenus(); };
     });
+    const runMenuBtn = document.getElementById('btn-run-menu');
+    if (runMenuBtn) runMenuBtn.onclick = e => { toggleMenu('menu-runbtn', runMenuBtn); e.stopPropagation(); };
     document.onclick = closeMenus;
 }
 
@@ -312,7 +315,8 @@ function toggleMenu(id, el) {
     menu.classList.add('show');
     el.classList.add('active');
     const rect = el.getBoundingClientRect();
-    menu.style.left = rect.left + 'px';
+    // Keep menus opened from the right side of the header inside the window.
+    menu.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - menu.offsetWidth - 8)) + 'px';
     menu.style.top = rect.bottom + 4 + 'px';
     if (window.Motion) Motion.menuIn(menu);
     activeMenu = id;
@@ -320,7 +324,7 @@ function toggleMenu(id, el) {
 
 function closeMenus() {
     document.querySelectorAll('.dropdown').forEach(m => m.classList.remove('show'));
-    document.querySelectorAll('.menu-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.menu-btn, .menu-trigger').forEach(b => b.classList.remove('active'));
     activeMenu = null;
 }
 

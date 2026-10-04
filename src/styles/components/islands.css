@@ -1,0 +1,454 @@
+/* Floating islands: the header groups, explorer, editor, bottom panel and status bar are separate
+ * rounded cards with gaps that let the app background show through. Loaded after toolbar.css, so
+ * it overrides the full-width bars of theme.css / themes.css for every theme. Colours come from
+ * theme tokens only, and nothing here uses backdrop blur (it costs a repaint of the background
+ * video on every frame). */
+
+:root {
+    --island-radius: 18px;
+    --island-gap: 10px;
+    --island-bg: color-mix(in srgb, var(--bg-panel) 92%, transparent);
+    --island-border: color-mix(in srgb, var(--text-primary) 9%, transparent);
+    --island-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+/* ---- Header ---- */
+/* Nothing in the header may widen the page: with many tabs it scrolled the whole window sideways. */
+.app-container {
+    overflow: hidden;
+}
+
+.app-container > .header-bar {
+    height: 60px;
+    padding: 0 8px 0 12px;
+    gap: var(--island-gap);
+    background: transparent;
+    border-bottom: none;
+    backdrop-filter: none;
+}
+
+.header-bar .header-island {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 46px;
+    padding: 0 6px;
+    border-radius: 16px;
+    background: var(--island-bg);
+    box-shadow: inset 0 0 0 1px var(--island-border), 0 4px 14px rgba(0, 0, 0, 0.14);
+    flex-shrink: 0;
+}
+
+/* Logo, explorer toggle and menus share one island. */
+#island-nav .logo {
+    padding: 5px 12px;
+    font-size: 16px;
+    border: none;
+    border-radius: 12px;
+    margin-right: 2px;
+}
+
+#island-nav .menu-group:not(.show) {
+    background: transparent;
+    padding: 0;
+    gap: 0;
+}
+
+.header-bar .header-island .toggle-btn:not(.tool-group *) {
+    width: 36px;
+    height: 34px;
+    border-radius: 10px;
+    background: transparent;
+    box-shadow: none;
+}
+
+.header-bar .header-island .toggle-btn.active:not(.tool-group *) {
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* Tabs island takes the free width; its empty part still drags the window. */
+.header-bar .tabs-wrap.header-island {
+    flex: 1;
+    min-width: 0;
+    padding: 0 6px;
+    gap: 4px;
+}
+
+.header-bar .tabs-container {
+    flex: 0 1 auto;
+    min-width: 0;
+    gap: 2px;
+    padding: 0;
+}
+
+/* Soft pill tabs: no border, the open file gets a tinted fill. */
+.header-bar .tabs-container .tab {
+    height: 32px;
+    padding: 0 8px 0 12px;
+    gap: 6px;
+    background: transparent;
+    border: none;
+    border-radius: 10px;
+    box-shadow: none;
+    color: var(--text-muted);
+    transform: none;
+    transition: background-color var(--duration-fast) var(--ease-standard),
+        color var(--duration-fast) var(--ease-standard);
+}
+
+.header-bar .tabs-container .tab:hover {
+    background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    color: var(--text-primary);
+    box-shadow: none;
+    transform: none;
+}
+
+.header-bar .tabs-container .tab.active {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--text-primary);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+/* Right island: panel toggles | Run | settings. */
+.header-bar .header-actions.header-island {
+    gap: 6px;
+}
+
+.header-bar .header-island .tool-group {
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.header-bar .header-island .tool-group::after {
+    content: '';
+    width: 1px;
+    height: 20px;
+    margin-left: 4px;
+    background: var(--island-border);
+}
+
+.header-bar > .sep {
+    display: none;
+}
+
+/* ---- Run: split button, Stop only while a program runs ---- */
+.header-bar .run-split {
+    display: flex;
+    align-items: stretch;
+    height: 34px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--btn-primary-bg, var(--accent));
+    transition: transform 0.2s var(--ease-spring), box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.header-bar .run-split:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+/* One pill: the halves share the background and only a thin rule separates them. */
+.header-bar .run-split .action-btn.primary {
+    height: 100%;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+}
+
+.header-bar .run-split .action-btn.primary:hover {
+    background: color-mix(in srgb, var(--btn-primary-text, #000) 10%, transparent);
+    transform: none;
+}
+
+.header-bar .run-split #btn-buildrun {
+    padding: 0 12px 0 12px;
+}
+
+.header-bar .run-split .run-split-caret {
+    width: 28px;
+    padding: 0;
+    justify-content: center;
+    box-shadow: inset 1px 0 0 color-mix(in srgb, var(--btn-primary-text, #000) 22%, transparent);
+}
+
+.header-bar .run-split .run-split-caret > .ico {
+    width: 14px;
+    height: 14px;
+}
+
+.header-bar .run-split .run-split-caret.active > .ico,
+.header-bar .run-split .run-split-caret:hover > .ico {
+    transform: rotate(180deg);
+}
+
+.header-bar .run-split .run-split-caret:not(.active):hover > .ico {
+    transform: translateY(1px);
+}
+
+.header-bar .run-split:has(.running) {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.header-bar #btn-stop {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
+    border: none;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--error) 16%, transparent);
+    color: var(--error);
+    box-shadow: none;
+    animation: island-pop 0.35s var(--ease-spring);
+}
+
+.header-bar #btn-stop:hover {
+    background: color-mix(in srgb, var(--error) 26%, transparent);
+    transform: none;
+}
+
+.header-bar #btn-stop:disabled {
+    display: none;
+}
+
+.header-bar #btn-stop > .ico {
+    width: 16px;
+    height: 16px;
+}
+
+@keyframes island-pop {
+    from { transform: scale(0.6); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+/* Run menu (the caret): icons, shortcut on the right, a check on the open Debug panel. */
+#menu-runbtn .dropdown-item {
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+#menu-runbtn .dropdown-item > .ico {
+    width: 17px;
+    height: 17px;
+    color: var(--accent);
+}
+
+#menu-runbtn .dropdown-item > .key {
+    margin-left: auto;
+    padding-left: 18px;
+}
+
+#menu-runbtn #btn-debug.active > .key::after {
+    content: 'On';
+    color: var(--accent);
+    font-weight: 800;
+}
+
+/* ---- Content ---- */
+.content-wrapper > .explorer-sidebar {
+    margin: 2px 0 10px 12px;
+    border: 1px solid var(--island-border) !important;
+    border-radius: var(--island-radius);
+    box-shadow: var(--island-shadow);
+}
+
+.content-wrapper > .main {
+    padding: 2px 12px 10px;
+    gap: var(--island-gap);
+}
+
+/* With the explorer open, its 4px resizer is part of the gap. */
+.explorer-sidebar.visible + .explorer-resizer + .main {
+    padding-left: 6px;
+}
+
+.explorer-sidebar > .explorer-header {
+    border-bottom: 1px solid var(--island-border);
+}
+
+/* The editor section only stacks the editor and the bottom panel; each is its own card. */
+.main .editor-section {
+    background: transparent;
+    border: none !important;
+    border-radius: 0;
+    box-shadow: none !important;
+    backdrop-filter: none;
+    overflow: visible;
+}
+
+.editor-section > .editors-container {
+    border: 1px solid var(--island-border);
+    border-radius: var(--island-radius);
+    background: var(--editor-bg);
+    box-shadow: var(--island-shadow);
+    overflow: hidden;
+}
+
+.editor-section > #resizer-problems {
+    height: var(--island-gap);
+    flex-shrink: 0;
+    background: transparent;
+}
+
+.editor-section > #resizer-problems.collapsed {
+    pointer-events: none;
+}
+
+.editor-section > .problems-panel {
+    border: 1px solid var(--island-border) !important;
+    border-radius: var(--island-radius);
+    box-shadow: var(--island-shadow);
+    overflow: hidden;
+}
+
+.main > .io-section,
+.main > .terminal-section {
+    border-radius: var(--island-radius);
+}
+
+/* Collapsed bottom panel: only its tab strip. */
+.editor-section > .problems-panel.collapsed {
+    height: auto !important;
+    min-height: 0 !important;
+    flex: none !important;
+}
+
+.problems-panel.collapsed > :not(.panel-head) {
+    display: none !important;
+}
+
+.problems-panel.collapsed > .panel-head {
+    border-bottom-color: transparent;
+}
+
+.problems-panel .panel-collapse {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    margin-left: auto;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.problems-panel .panel-collapse:hover {
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-primary);
+}
+
+.problems-panel .panel-collapse > .ico {
+    width: 14px;
+    height: 14px;
+    transition: transform 0.3s var(--ease-spring);
+}
+
+.problems-panel.collapsed .panel-collapse > .ico {
+    transform: rotate(180deg);
+}
+
+.problems-panel .panel-collapse + .panel-close {
+    margin-left: 0;
+}
+
+/* ---- Status bar ---- */
+.app-container > .status-bar {
+    height: 26px;
+    margin: 0 12px 8px;
+    padding: 0 12px;
+    border: none;
+    border-radius: 10px;
+    background: var(--island-bg);
+    box-shadow: inset 0 0 0 1px var(--island-border);
+}
+
+.status-bar .hidden,
+.problems-panel .problem-count.hidden {
+    display: none;
+}
+
+.status-bar .status-right {
+    gap: 14px;
+}
+
+.status-bar .diagnostics-summary {
+    gap: 10px;
+}
+
+.status-bar .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0;
+    background: none;
+    border: none;
+    font-weight: 800;
+}
+
+.status-bar .status-badge.error {
+    color: var(--error);
+}
+
+.status-bar .status-badge.warning {
+    color: var(--warning);
+}
+
+.status-bar .status-badge.zero {
+    color: var(--text-muted);
+    opacity: 0.75;
+}
+
+.status-bar .status-item > .ico,
+.status-bar .status-badge > .ico {
+    width: 13px;
+    height: 13px;
+}
+
+.status-bar .status-run {
+    gap: 4px;
+}
+
+.status-bar .status-run > .ico {
+    opacity: 0.75;
+}
+
+.status-bar .status-run > .ico + span + .ico {
+    margin-left: 6px;
+}
+
+.status-bar .status-std {
+    padding: 1px 8px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+}
+
+@media (max-width: 1100px) {
+    .app-container > .header-bar {
+        padding: 0 6px 0 8px;
+        gap: 6px;
+    }
+
+    .header-bar .header-island {
+        height: 42px;
+        padding: 0 4px;
+    }
+}
+
+@media (max-width: 850px) {
+    .header-bar .header-island .tool-group::after {
+        display: none;
+    }
+
+    .status-bar .status-run,
+    .status-bar .live-check-state {
+        display: none;
+    }
+}

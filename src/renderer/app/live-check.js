@@ -41,13 +41,14 @@ function updateProblemSummaryUI() {
     const problemsBadge = document.getElementById('btn-problems-badge');
     const totalVisible = summary.errors + summary.warnings;
 
+    // Status bar counters stay visible; a zero is only dimmed.
     if (errorsBadge) {
-        errorsBadge.textContent = `${summary.errors}E`;
-        errorsBadge.classList.toggle('hidden', summary.errors === 0);
+        errorsBadge.querySelector('b').textContent = summary.errors;
+        errorsBadge.classList.toggle('zero', summary.errors === 0);
     }
     if (warningsBadge) {
-        warningsBadge.textContent = `${summary.warnings}W`;
-        warningsBadge.classList.toggle('hidden', summary.warnings === 0);
+        warningsBadge.querySelector('b').textContent = summary.warnings;
+        warningsBadge.classList.toggle('zero', summary.warnings === 0);
     }
 
     if (problemsBtn) {
@@ -288,6 +289,10 @@ function applySettings() {
 
     if (App.editor) App.editor.updateOptions(opts);
     if (App.editor2) App.editor2.updateOptions(opts);
+
+    const std = App.settings.compiler.cppStandard;
+    const stdLabel = document.getElementById('status-std');
+    if (stdLabel) stdLabel.textContent = std ? std.toUpperCase() : 'C++';
 
     // Apply panel font size to terminal, I/O panels
     const panelFontSize = App.settings.execution.panelFontSize || 13;

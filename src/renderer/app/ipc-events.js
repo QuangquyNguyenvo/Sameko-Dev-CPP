@@ -111,6 +111,7 @@ if (window.electronAPI) {
         }
 
         setRunning(false);
+        showRunStats(timeStr, memStr);
 
         // Refresh diff for the latest run if expected panel is present.
         if (document.getElementById('expected-area')) {

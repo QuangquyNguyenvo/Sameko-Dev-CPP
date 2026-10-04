@@ -100,7 +100,7 @@ syntax/clangd, local history, Discord RPC.
 | `renderer/app/*.js` | The application itself, 17 files loaded in a fixed order (formerly one 7,900-line `app.js`). File index in §9. |
 | `renderer/boot.js` | Loaded first: error hooks, Monaco loader config, shared `escHtml`. |
 | `renderer/ui/` | `theme-manager.js`, `theme-tokens.js`, `theme-customizer.js`, `theme-marketplace.js`, `color-registry.js`, `confirm-dialog.js`, `motion.js`. |
-| `styles/` | `base.css` (imports `animations.css` and fonts), `components/*.css`, `themes/{theme,themes}.css`. `components/toolbar.css` loads after `themes.css` and styles the header for every theme. |
+| `styles/` | `base.css` (imports `animations.css` and fonts), `components/*.css`, `themes/{theme,themes}.css`. `components/toolbar.css` and `components/islands.css` load after `themes.css`: the header buttons, and the floating-card layout (header islands, editor / bottom panel / status bar cards, Run split button, collapsed bottom panel) for every theme. |
 | `assets/` | Fonts, icons, backgrounds (five looping `.webm` + one `.jpg`), screenshots (README only). |
 
 ### Loaded scripts, in order (`index.html`)

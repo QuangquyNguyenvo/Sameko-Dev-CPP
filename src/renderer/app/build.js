@@ -95,7 +95,7 @@ async function buildActiveTab({ runAfter }) {
             updateUI();
         }
         if (runAfter && DockingState.terminalDocked) {
-            switchDockedPanel('terminal');
+            showBottomPanel('terminal');
         }
 
         if (App.settings.execution.clearTerminal) clearTerm();
@@ -163,9 +163,7 @@ async function buildActiveTab({ runAfter }) {
             tab.exePath = null;
             if (window.FileExplorer) window.FileExplorer.notifyBuildEvent(tab.path, 'compile-fail');
 
-            if (DockingState.terminalDocked) {
-                switchDockedPanel('problems');
-            }
+            showBottomPanel(DockingState.terminalDocked ? 'problems' : null);
         }
     } finally {
         // Unlock before running so the Stop button works
@@ -193,7 +191,7 @@ async function run(clearTerminal = true) {
     }
 
     if (DockingState.terminalDocked) {
-        switchDockedPanel('terminal');
+        showBottomPanel('terminal');
     }
 
 
@@ -355,6 +353,7 @@ function renderProblems() {
     const count = document.getElementById('problem-count');
 
     count.textContent = App.problems.length;
+    count.classList.toggle('hidden', App.problems.length === 0);
     list.innerHTML = '';
     updateProblemSummaryUI();
     setActiveTabDiagnostics(App.problems);
@@ -595,6 +594,15 @@ function setRunning(v) {
     document.getElementById('btn-stop')?.classList.toggle('running', v);
 
     if (v) document.getElementById('terminal-in').focus();
+}
+
+/** Time and peak memory of the last run, kept in the status bar until the next one. */
+function showRunStats(timeStr, memStr) {
+    const item = document.getElementById('status-run');
+    if (!item) return;
+    document.getElementById('status-run-time').textContent = timeStr || '–';
+    document.getElementById('status-run-mem').textContent = memStr || '–';
+    item.classList.toggle('hidden', !timeStr && !memStr);
 }
 
 async function sendInput() {
