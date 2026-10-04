@@ -284,8 +284,12 @@ function renderTabs() {
 
     setTimeout(() => {
         const focusedTab = c.querySelector('.tab.focused') || c.querySelector('.tab.active');
+        // Scroll only the tab strip. scrollIntoView also scrolls every ancestor,
+        // overflow:hidden ones included, which shifted the whole window sideways
+        // once the tabs no longer fit.
         if (focusedTab) {
-            focusedTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            const left = focusedTab.offsetLeft - (c.clientWidth - focusedTab.offsetWidth) / 2;
+            c.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
         }
     }, 10);
 }

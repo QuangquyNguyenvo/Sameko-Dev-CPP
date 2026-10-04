@@ -32,7 +32,10 @@ const ACTION_HANDLERS = {
     'saveAs': () => saveAs(),
     'newFile': () => newFile(),
     'openFile': () => openFile(),
+    'newTab': () => newFile(),
     'closeTab': () => { if (App.activeTabId) closeTab(App.activeTabId); },
+    'nextTab': () => cycleTab(1),
+    'prevTab': () => cycleTab(-1),
     'toggleProblems': () => toggleProblems(),
     'settings': () => openSettings(),
     'toggleSplit': () => toggleSplit(),
@@ -49,6 +52,13 @@ const ACTION_HANDLERS = {
     'uiZoomOut': () => stepUiScale(-1),
     'uiZoomReset': () => setUiScale('auto'),
 };
+
+/** Ctrl+Tab / Ctrl+Shift+Tab: the next or previous tab in the tab bar, wrapping around. */
+function cycleTab(step) {
+    if (App.tabs.length < 2) return;
+    const i = App.tabs.findIndex(t => t.id === App.activeTabId);
+    setActive(App.tabs[(i + step + App.tabs.length) % App.tabs.length].id);
+}
 
 // Interface Scale (Settings › Appearance). Saving the setting is enough: the
 // main process applies it as the page zoom.
@@ -80,6 +90,10 @@ function normalizeKeyCombo(e) {
     if (e.altKey) parts.push('Alt');
 
     let key = e.key;
+    // With a modifier held, take letters and digits from the physical key: a
+    // Vietnamese IME or a non-Latin layout can report e.key as "Process" or
+    // another character, and Ctrl+W / Ctrl+T then matched nothing.
+    if ((e.ctrlKey || e.altKey) && /^(Key[A-Z]|Digit[0-9])$/.test(e.code)) key = e.code.slice(-1);
     if (key === ' ') key = 'Space';
     else if (key.length === 1) key = key.toUpperCase();
     else if (key.startsWith('Arrow')) key = key.replace('Arrow', '');

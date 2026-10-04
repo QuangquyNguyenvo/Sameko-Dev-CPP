@@ -79,6 +79,11 @@ function getSafeWindowBounds(savedBounds) {
     }
 
     const workArea = bestDisplay.workArea;
+    // A portrait window (usually one snapped to half the screen when it was
+    // closed) reopens at the default landscape size, centred, not as a strip.
+    if (baseBounds.width < baseBounds.height && workArea.width > workArea.height) {
+        return centerBoundsInArea({ ...baseBounds, width: WINDOW.DEFAULT_WIDTH, height: WINDOW.DEFAULT_HEIGHT }, workArea);
+    }
     const width = Math.min(baseBounds.width, workArea.width);
     const height = Math.min(baseBounds.height, workArea.height);
 

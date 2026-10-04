@@ -13,9 +13,11 @@
 }
 
 /* ---- Header ---- */
-/* Nothing in the header may widen the page: with many tabs it scrolled the whole window sideways. */
-.app-container {
-    overflow: hidden;
+/* clip, not hidden: an overflow:hidden box can still be scrolled by script, and the header and
+ * the whole window were scrolled sideways once the tabs no longer fit. */
+.app-container,
+.app-container > .header-bar {
+    overflow: clip;
 }
 
 .app-container > .header-bar {
@@ -75,6 +77,7 @@
 }
 
 .header-bar .tabs-container {
+    position: relative;
     flex: 0 1 auto;
     min-width: 0;
     gap: 2px;
