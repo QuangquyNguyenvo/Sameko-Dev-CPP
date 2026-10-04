@@ -417,9 +417,14 @@ const ThemeMarketplace = {
             const response = await fetch(`https://api.github.com/gists/${match[1]}`);
             if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json')) {
+                throw new Error('Unexpected response content type');
+            }
+
             const gist = await response.json();
             for (const [filename, file] of Object.entries(gist.files)) {
-                if (filename.endsWith('.json') && file.content) {
+                if (filename.endsWith('.json') && file.content && !file.truncated) {
                     const result = ThemeManager.importTheme(file.content);
                     if (result.success) {
                         this.renderCarousel();
