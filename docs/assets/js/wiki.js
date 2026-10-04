@@ -20,8 +20,21 @@
 
         function move(animate) {
             var active = nav.querySelector('.wiki-nav-link.active');
-            if (!active || !active.offsetHeight) return;
+            if (!active || !active.offsetHeight) {
+                // Between linked sections nothing is active; do not leave the pill behind.
+                if (window.gsap) gsap.to(marker, { opacity: 0, duration: 0.2, overwrite: true });
+                else marker.style.opacity = '0';
+                return;
+            }
             var props = { x: active.offsetLeft, y: active.offsetTop, width: active.offsetWidth, height: active.offsetHeight, opacity: 1 };
+            // On short screens the sidebar scrolls; keep the active link inside it.
+            var box = document.querySelector('.wiki-sidebar');
+            if (box && box.scrollHeight > box.clientHeight + 2) {
+                var linkTop = active.getBoundingClientRect().top - box.getBoundingClientRect().top;
+                if (linkTop < 40 || linkTop + active.offsetHeight > box.clientHeight - 40) {
+                    box.scrollTo({ top: box.scrollTop + linkTop - box.clientHeight / 2, behavior: animate && !reducedMotion() ? 'smooth' : 'auto' });
+                }
+            }
             if (window.gsap && animate && !reducedMotion()) {
                 gsap.to(marker, Object.assign({ duration: 0.35, ease: 'power3.out', overwrite: true }, props));
             } else if (window.gsap) {
@@ -91,7 +104,30 @@
             intro.from('.wiki-release-pill', { y: 12, autoAlpha: 0, duration: 0.5 }, 0);
             if (title) intro.from(splitWords(title), { y: 36, autoAlpha: 0, duration: 0.7, stagger: 0.07 }, 0.08);
             intro.from('.wiki-hero-copy > p, .wiki-search', { y: 16, autoAlpha: 0, duration: 0.6, stagger: 0.1 }, 0.35)
+                .from('.wiki-hero-word', { yPercent: 18, autoAlpha: 0, duration: 0.9 }, 0.1)
+                .from('.wiki-hero-art .shape', { scale: 0, autoAlpha: 0, duration: 0.6, stagger: 0.05, ease: 'back.out(3)' }, 0.3)
                 .from('.wiki-sidebar', { x: -20, autoAlpha: 0, duration: 0.7 }, 0.45);
+            var mark = document.querySelector('.wiki-hero .hl');
+            if (mark) {
+                intro.fromTo(mark, { '--highlight-scale': 0 }, { '--highlight-scale': 1, duration: 0.6, ease: 'back.out(1.6)', clearProps: '--highlight-scale' }, 0.7)
+                    .fromTo(mark.querySelectorAll('path'), { '--draw': 1 }, { '--draw': 0, duration: 0.7, stagger: 0.25, ease: 'power2.inOut' }, 1);
+            }
+
+            // Scrolling away, the hero comes apart: shapes float off, the big word slides.
+            // Each tween states its resting values so a fast scroll back never leaves it hidden.
+            var apart = gsap.timeline({
+                defaults: { ease: 'none', immediateRender: false },
+                scrollTrigger: { trigger: '.wiki-hero', start: 'top top', end: 'bottom top', scrub: 0.6 }
+            });
+            apart.fromTo('.wiki-hero-word', { xPercent: 0 }, { xPercent: -30 }, 0)
+                .fromTo('.wiki-hero-copy', { y: 0 }, { y: 80 }, 0);
+            document.querySelectorAll('.wiki-hero-art .shape').forEach(function (shape, i) {
+                apart.fromTo(shape, { y: 0, rotation: 0 }, { y: -(120 + (i % 3) * 90), rotation: (i % 2 ? 1 : -1) * (90 + i * 20) }, 0);
+            });
+            gsap.fromTo('.wiki-hero-wave', { '--wave': 1 }, {
+                '--wave': 1.6, ease: 'none',
+                scrollTrigger: { trigger: '.wiki-hero', start: 'bottom 90%', end: 'bottom top', scrub: true }
+            });
 
             // Each section rises once as it arrives; its heading leads, the body follows.
             document.querySelectorAll('.wiki-content > div > section').forEach(function (section) {
@@ -101,7 +137,8 @@
                     scrollTrigger: { trigger: section, start: 'top 88%', once: true }
                 })
                     .from(section, { y: 28, autoAlpha: 0, duration: 0.55 })
-                    .from(parts, { y: 12, autoAlpha: 0, duration: 0.4, stagger: 0.05 }, 0.12);
+                    .from(parts, { y: 12, autoAlpha: 0, duration: 0.4, stagger: 0.05 }, 0.12)
+                    .from(section, { rotation: -1.2, duration: 0.7, ease: 'back.out(2)' }, 0);
             });
 
             document.querySelectorAll('.wiki-update-grid, .tutorial-steps, .wiki-comparison-notes').forEach(function (grid) {

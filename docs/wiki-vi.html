@@ -113,11 +113,6 @@
         </svg>
     </button>
 
-    <!-- Language Switcher -->
-    <div class="lang-switcher">
-        <a href="wiki-vi.html" class="lang-btn active">VI</a>
-        <a href="wiki.html" class="lang-btn">EN</a>
-    </div>
 
     <!-- Scroll To Top Button -->
     <button class="scroll-top" id="scroll-top" aria-label="Scroll to top" title="Scroll to top">
@@ -139,17 +134,34 @@
         <div class="nav-links">
             <a href="index.html#features">Features</a>
             <a href="index.html#benchmark">Benchmarks</a>
-            <a href="wiki-vi.html" style="color: var(--primary);">Wiki</a>
+            <a href="wiki-vi.html" aria-current="page">Wiki</a>
             <a href="index.html#download-trigger">Download</a>
+        </div>
+        <div class="lang-switcher" aria-label="Language">
+        <a href="wiki-vi.html" class="lang-btn active">VI</a>
+        <a href="wiki.html" class="lang-btn">EN</a>
         </div>
     </nav>
 
     <!-- WIKI CONTENT -->
     <div class="wiki-wrapper">
         <section class="wiki-hero container" aria-labelledby="wiki-hero-title">
+            <div class="wiki-hero-art" aria-hidden="true">
+                <span class="wiki-hero-word">Wiki</span>
+                <span class="shape shape--circle" style="--x:6%;--y:18%;--sz:44px;--c:var(--shape-sky);--d:7s"></span>
+                <span class="shape shape--star" style="--x:16%;--y:58%;--sz:46px;--c:var(--shape-butter);--d:9s"><svg viewBox="0 0 48 48"><path d="M24 5l5.4 11.6 12.7 1.5-9.4 8.7 2.5 12.6L24 33.1l-11.2 6.3 2.5-12.6-9.4-8.7 12.7-1.5z"/></svg></span>
+                <span class="shape shape--pill" style="--x:3%;--y:80%;--sz:70px;--c:var(--shape-white);--d:8s;--r:-14deg"></span>
+                <span class="shape shape--ring" style="--x:20%;--y:8%;--sz:34px;--c:var(--shape-butter);--d:10s"></span>
+                <span class="shape shape--heart" style="--x:89%;--y:14%;--sz:42px;--c:var(--shape-butter);--d:6s"><svg viewBox="0 0 48 48"><path d="M24 40S7 29.5 7 17.8A8.8 8.8 0 0 1 24 13a8.8 8.8 0 0 1 17 4.8C41 29.5 24 40 24 40z"/></svg></span>
+                <span class="shape shape--spark" style="--x:80%;--y:62%;--sz:34px;--c:var(--shape-sky);--d:7.5s"><svg viewBox="0 0 48 48"><path d="M24 4c1.8 11 6.6 16.2 19 20-12.4 3.8-17.2 9-19 20-1.8-11-6.6-16.2-19-20 12.4-3.8 17.2-9 19-20z"/></svg></span>
+                <span class="shape shape--squircle" style="--x:93%;--y:76%;--sz:38px;--c:var(--shape-sky);--d:9.5s;--r:18deg"></span>
+                <span class="shape shape--circle" style="--x:77%;--y:6%;--sz:20px;--c:var(--shape-white);--d:6.5s"></span>
+                <span class="shape shape--spark" style="--x:10%;--y:40%;--sz:24px;--c:var(--shape-white);--d:8.5s"><svg viewBox="0 0 48 48"><path d="M24 4c1.8 11 6.6 16.2 19 20-12.4 3.8-17.2 9-19 20-1.8-11-6.6-16.2-19-20 12.4-3.8 17.2-9 19-20z"/></svg></span>
+            </div>
+            <div class="wiki-hero-wave" aria-hidden="true"></div>
             <div class="wiki-hero-copy" data-reveal>
                 <a class="wiki-release-pill" href="#whats-new"><b>v1.3.0</b> Có gì mới &rarr;</a>
-                <h1 id="wiki-hero-title">Code nhanh hơn, hiểu rõ hơn.</h1>
+                <h1 id="wiki-hero-title" class="is-two-line">Code nhanh hơn,<br><span class="hl">hiểu rõ hơn.<svg class="hl__squiggle" viewBox="0 0 220 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 14C24 4 40 22 60 13S96 4 116 13s36 9 56 0 32-7 44-2"/></svg><svg class="hl__shine" viewBox="0 0 40 40" aria-hidden="true"><path pathLength="1" d="M9 31 4 22M20 26 19 12M31 29l7-9"/></svg></span></h1>
                 <p>Mọi thứ về Sameko, từ <code>hello.cpp</code> đến ngày thi.</p>
                 <form class="wiki-search" id="wiki-search-form" role="search">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -175,7 +187,8 @@
                 <div class="wiki-sidebar-nav">
                     <div class="wiki-nav-group">
                         <div class="wiki-nav-title">Bắt Đầu</div>
-                        <a href="#introduction" class="wiki-nav-link active">Giới thiệu</a>
+                        <a href="#whats-new" class="wiki-nav-link active">Có gì mới</a>
+                        <a href="#introduction" class="wiki-nav-link">Giới thiệu</a>
                         <a href="#installation" class="wiki-nav-link">Cài đặt</a>
                         <a href="#first-project" class="wiki-nav-link">Project đầu tiên</a>
                         <a href="#requirements" class="wiki-nav-link">Yêu cầu hệ thống</a>
@@ -198,7 +211,6 @@
                     </div>
                     <div class="wiki-nav-group">
                         <div class="wiki-nav-title">Khám Phá</div>
-                        <a href="#whats-new" class="wiki-nav-link">Có gì mới</a>
                         <a href="#compare" class="wiki-nav-link">So sánh</a>
                     </div>
                     <div class="wiki-nav-group">
@@ -276,15 +288,12 @@
                         <h2>Cài đặt Sameko IDE</h2>
 
                         <!-- Installer vs Portable Guide -->
-                        <section id="installer-vs-portable"
-                            style="margin: 20px 0; padding: 20px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border-color);">
-                            <h3 style="margin-top: 0;">Nên dùng Installer hay Portable?</h3>
+                        <div class="callout note" id="installer-vs-portable">
+                            <div class="callout-title">Nên dùng Installer hay Portable?</div>
                             <p>Sameko cung cấp 2 lựa chọn tải xuống, tùy vào nhu cầu của bạn:</p>
                             <ul style="margin-bottom: 0;">
                                 <li style="margin-bottom: 12px;">
-                                    <b>Installer (.exe)</b> <span
-                                        style="background: rgba(76, 175, 80, 0.2); color: #4CAF50; font-size: 0.8em; padding: 2px 8px; border-radius: 12px;">Khuyên
-                                        dùng</span>
+                                    <b>Installer (.exe)</b> <span class="wiki-tag">Khuyên dùng</span>
                                     <ul>
                                         <li>Cài đặt tự động, thêm vào Start Menu.</li>
                                         <li>Tích hợp menu chuột phải (Open with Sameko).</li>
@@ -297,12 +306,12 @@
                                         <li>Giải nén là chạy được ngay, không cần quyền Admin.</li>
                                         <li>Phù hợp để chép vào USB mang đi học, ra quán net.</li>
                                         <li>Dữ liệu được lưu trong thư mục giải nén, không ảnh hưởng registry.</li>
-                                        <li><span style="color: #EF5350; font-weight: bold;">Lưu ý:</span> Bản Portable
+                                        <li><b>Lưu ý:</b> Bản Portable
                                             KHÔNG hỗ trợ tự động cập nhật.</li>
                                     </ul>
                                 </li>
                             </ul>
-                        </section>
+                        </div>
 
                         <div class="tutorial-steps">
                             <div class="tutorial-step">

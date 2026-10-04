@@ -115,11 +115,6 @@
         </svg>
     </button>
 
-    <!-- Language Switcher -->
-    <div class="lang-switcher">
-        <a href="wiki-vi.html" class="lang-btn">VI</a>
-        <a href="wiki.html" class="lang-btn active">EN</a>
-    </div>
 
     <!-- Scroll To Top Button -->
     <button class="scroll-top" id="scroll-top" aria-label="Scroll to top" title="Scroll to top">
@@ -142,17 +137,34 @@
             <a href="index.html#benchmark">Benchmarks</a>
             <a href="index.html#features">Features</a>
             <a href="index.html#faq">FAQ</a>
-            <a href="wiki.html" style="color: var(--primary);">Wiki</a>
+            <a href="wiki.html" aria-current="page">Wiki</a>
             <a href="index.html#download-trigger">Download</a>
+        </div>
+        <div class="lang-switcher" aria-label="Language">
+        <a href="wiki-vi.html" class="lang-btn">VI</a>
+        <a href="wiki.html" class="lang-btn active">EN</a>
         </div>
     </nav>
 
     <!-- WIKI CONTENT -->
     <div class="wiki-wrapper">
         <section class="wiki-hero container" aria-labelledby="wiki-hero-title">
+            <div class="wiki-hero-art" aria-hidden="true">
+                <span class="wiki-hero-word">Wiki</span>
+                <span class="shape shape--circle" style="--x:6%;--y:18%;--sz:44px;--c:var(--shape-sky);--d:7s"></span>
+                <span class="shape shape--star" style="--x:16%;--y:58%;--sz:46px;--c:var(--shape-butter);--d:9s"><svg viewBox="0 0 48 48"><path d="M24 5l5.4 11.6 12.7 1.5-9.4 8.7 2.5 12.6L24 33.1l-11.2 6.3 2.5-12.6-9.4-8.7 12.7-1.5z"/></svg></span>
+                <span class="shape shape--pill" style="--x:3%;--y:80%;--sz:70px;--c:var(--shape-white);--d:8s;--r:-14deg"></span>
+                <span class="shape shape--ring" style="--x:20%;--y:8%;--sz:34px;--c:var(--shape-butter);--d:10s"></span>
+                <span class="shape shape--heart" style="--x:89%;--y:14%;--sz:42px;--c:var(--shape-butter);--d:6s"><svg viewBox="0 0 48 48"><path d="M24 40S7 29.5 7 17.8A8.8 8.8 0 0 1 24 13a8.8 8.8 0 0 1 17 4.8C41 29.5 24 40 24 40z"/></svg></span>
+                <span class="shape shape--spark" style="--x:80%;--y:62%;--sz:34px;--c:var(--shape-sky);--d:7.5s"><svg viewBox="0 0 48 48"><path d="M24 4c1.8 11 6.6 16.2 19 20-12.4 3.8-17.2 9-19 20-1.8-11-6.6-16.2-19-20 12.4-3.8 17.2-9 19-20z"/></svg></span>
+                <span class="shape shape--squircle" style="--x:93%;--y:76%;--sz:38px;--c:var(--shape-sky);--d:9.5s;--r:18deg"></span>
+                <span class="shape shape--circle" style="--x:77%;--y:6%;--sz:20px;--c:var(--shape-white);--d:6.5s"></span>
+                <span class="shape shape--spark" style="--x:10%;--y:40%;--sz:24px;--c:var(--shape-white);--d:8.5s"><svg viewBox="0 0 48 48"><path d="M24 4c1.8 11 6.6 16.2 19 20-12.4 3.8-17.2 9-19 20-1.8-11-6.6-16.2-19-20 12.4-3.8 17.2-9 19-20z"/></svg></span>
+            </div>
+            <div class="wiki-hero-wave" aria-hidden="true"></div>
             <div class="wiki-hero-copy" data-reveal>
                 <a class="wiki-release-pill" href="#whats-new"><b>v1.3.0</b> What's new &rarr;</a>
-                <h1 id="wiki-hero-title">Build with less friction.</h1>
+                <h1 id="wiki-hero-title">Build with less <span class="hl">friction.<svg class="hl__squiggle" viewBox="0 0 220 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 14C24 4 40 22 60 13S96 4 116 13s36 9 56 0 32-7 44-2"/></svg><svg class="hl__shine" viewBox="0 0 40 40" aria-hidden="true"><path pathLength="1" d="M9 31 4 22M20 26 19 12M31 29l7-9"/></svg></span></h1>
                 <p>Everything Sameko does, from <code>hello.cpp</code> to contest day.</p>
                 <form class="wiki-search" id="wiki-search-form" role="search">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -177,7 +189,8 @@
                 <div class="wiki-sidebar-nav">
                 <div class="wiki-nav-group">
                     <div class="wiki-nav-title">Getting Started</div>
-                    <a href="#introduction-en" class="wiki-nav-link active">Introduction</a>
+                    <a href="#whats-new" class="wiki-nav-link active">What’s new</a>
+                    <a href="#introduction-en" class="wiki-nav-link">Introduction</a>
                     <a href="#installation" class="wiki-nav-link">Installation</a>
                     <a href="#first-project" class="wiki-nav-link">First Project</a>
                     <a href="#requirements" class="wiki-nav-link">System Requirements</a>
@@ -200,7 +213,6 @@
                 </div>
                 <div class="wiki-nav-group">
                     <div class="wiki-nav-title">Explore</div>
-                    <a href="#whats-new" class="wiki-nav-link">What’s new</a>
                     <a href="#compare" class="wiki-nav-link">Compare</a>
                 </div>
                 <div class="wiki-nav-group">
