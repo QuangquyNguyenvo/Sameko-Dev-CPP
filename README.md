@@ -99,16 +99,14 @@
 
 <br />
 
-## 🆕 What's New in v1.3.0
+## 🆕 What's New in v1.3.1
 
-- **A fresh look.** The header, explorer, editor, panels and status bar are floating rounded cards; dialogs, menus and notifications match them, in your theme's colours, and the loading screen follows your theme too.
-- **Input / Output / Expected.** The I/O column shows what your last run printed, with an **AC** or **WA** badge when Expected is filled.
-- **Test input from a file.** Attach (or drop) a `.txt` file to the Input card and it is fed to your program straight from disk; only its first lines are shown, so even a 100 MB test stays smooth.
-- **A new Explorer.** Your folder's files with Recent at the top, a filter box, a Done count per folder, status pills, and compiler output tucked away.
-- **Faster everywhere.** Live checking ~10× faster, unchanged files run without recompiling, Run All Tests in parallel, accurate run time and memory, and Electron 44 opens the editor ~15% sooner.
-- **Editor touches.** `struct Name {` closes as `{};`, standard-library names complete from the first second, and Ctrl+T / Ctrl+Tab work for tabs.
-- **A new setup.** One window: choose the folder and install. Updates now install silently and reopen the app.
-- **Lots of fixes.** Undo history kept per tab, no more freezes on endless output, Stop only stops your program, and more.
+- **Open with Sameko.** Files opened from Windows Explorer now open in the IDE, even when it is already running.
+- **Write-ups and test data.** `.md` is highlighted as Markdown, `.txt` / `.inp` / `.out` open as clean plain text with `# ` comments and `[SECTION]` headers, and C++ tools stay out of their way.
+- **A new Theme Customizer.** A live mini copy of the IDE, click-to-edit colors, search, ↺ to undo a single color, and highlighted Theme JSON.
+- **Smarter Open / Save.** Ctrl+O starts in the folder you are working in, and text and test files are in the file filters.
+- **Polished dialogs** and a Discord preview that looks like the real profile card.
+- **Many theme fixes**: Reset, Undo / Redo, backgrounds, import / export and more.
 
 See [CHANGELOG.md](CHANGELOG.md) for the full list.
 
@@ -128,7 +126,7 @@ Then turn it **OFF** and build again.
   <img src="https://img.shields.io/badge/Official%20Site-sameko.dev-88c9ea?style=for-the-badge&logo=cloudflare&logoColor=white&labelColor=1a2530" alt="Official Website" />
 </a>
 <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/GitHub-v1.3.0%20Release-88c9ea?style=for-the-badge&logo=github&logoColor=white&labelColor=1a2530" alt="Latest Release" />
+  <img src="https://img.shields.io/badge/GitHub-v1.3.1%20Release-88c9ea?style=for-the-badge&logo=github&logoColor=white&labelColor=1a2530" alt="Latest Release" />
 </a>
 
 </div>
@@ -321,9 +319,9 @@ as long as the session is live, and go back to Run / Compile & Run once it ends.
 **💖 Contributors**
 
 - **Yunchan** (Special thanks for designing the logo!)
-- **KingShiba3766** (Donated the `sameko.dev` domain)
-- **aiko-chan-ai** (Fixed G++ spawn issue on some machines)
-- **[MerlyStella](https://github.com/MerlyStella)** (Tested the app and shared feedback that helped improve it)
+- **[KingShiba3766](https://github.com/daonghiemminh-collab)** (Donated the `sameko.dev` domain)
+- **[aiko-chan-ai](https://github.com/aiko-chan-ai)** (Fixed G++ spawn issue on some machines)
+- **[MerlyStella](https://github.com/MerlyStella)** (Tested everything, twice. The app is better because of it :D)
 
 **📝 Want to contribute?**
 

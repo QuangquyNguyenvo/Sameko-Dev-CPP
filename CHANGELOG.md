@@ -6,6 +6,48 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [1.3.1] - 2026-10-10
+
+A rebuilt theme customizer, files that open from Windows, and proper support for write-ups and test data.
+
+### Added
+
+- **Open with Sameko Dev C++**: files opened from Windows Explorer or the command line now open in the IDE, in the running window if it is already open.
+- **Text and test files**: `.md` is highlighted as Markdown; `.txt`, `.inp`, `.out`, `.ans` and others open as plain text.
+  - In plain text, lines starting with `# ` or `//` show as comments and `[SECTION]` lines as headers. Grid input such as `#..#` stays as data.
+  - `.md` and `.txt` wrap long lines, and Vietnamese letters are no longer flagged as unusual characters.
+  - Live check, IntelliSense, Format and Build skip these files; the status bar shows `Markdown` or `Plain Text`.
+- **Undo one color** in the theme customizer with the ↺ button on a changed row; Ctrl+Z / Ctrl+Y undo and redo.
+- **Highlighted Theme JSON**, with every color value underlined in its own color.
+
+### Changed
+
+- **Theme customizer** rebuilt in the Settings style, more compact:
+  - the live preview is a small copy of the real window, background included; click any part to jump to its color;
+  - color search, HEX / RGB / RGBA input, and help moved into a **?** tooltip;
+  - edits stay in the preview until you save.
+- **Ctrl+O** opens in the current file's folder (or the Explorer folder, or the last folder used) instead of the system default.
+- **Open and Save As** list `.txt`, `.md`, `.inp`, `.out`, `.ans` and other test files; Save As preselects the filter that matches the file name.
+- **Dialogs** (confirmations, name prompts, update and Competitive Companion) match the Settings window: thicker frame, icon badge (red for destructive actions), readable body text.
+- **Discord preview** in Settings looks like the real Discord profile card, with a live timer and a list of what is and is not shared. The status line uses `-` instead of `—`.
+- Themes and background overrides are stored in `userData/state/themes.json` (moved over automatically). Saves are queued and failed saves are rolled back.
+- Exported themes include uploaded background images and videos; importing can no longer overwrite a builtin theme.
+
+### Fixed
+
+- The Reset confirmation opened behind the theme customizer.
+- The customizer could disappear after Reset or a quick reopen, and one click on Customize opened it twice.
+- Apply JSON emptied the JSON box, and invalid JSON (such as `"appBackground": 42`) was accepted.
+- Undo / Redo missed background sliders and could not redo a picked color.
+- A cleared background was not saved, and saving Settings could remove a theme's background.
+- Opening the customizer changed opacity values (0.4 became 0.004).
+- The preview differed from the saved theme, and video backgrounds were blurred twice.
+- "Copy from" another theme changed which theme Save overwrote.
+- Saving another builtin theme's background switched to it without updating Settings.
+- Import / Export in the customizer's Advanced tab did nothing.
+- Closing the customizer reset the editor's color scheme.
+- Syntax swatches showed black for themes that store colors without `#` (Nord).
+
 ## [1.3.0] - 2026-10-04
 
 A full code audit, Electron 44, a reworked interface (floating cards, Explorer, Input / Output / Expected, dialogs) and test input from a file. Numbers were measured on the bundled GCC 16.1 toolchain (16-core Windows machine).
@@ -496,7 +538,8 @@ A full code audit, Electron 44, a reworked interface (floating cards, Explorer, 
 - Keyboard shortcuts for all major actions
 - Custom frameless window with native controls
 
-[Unreleased]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.0.4...v1.1.0
