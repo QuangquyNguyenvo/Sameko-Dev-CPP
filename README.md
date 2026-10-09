@@ -59,7 +59,7 @@
     <td width="70%">
       <p><b>Sameko IDE</b> is a lightweight C++ IDE for Windows and Linux, built for competitive programming and learning. The Windows build comes with GCC 16 pre-configured — no MinGW installation needed. Just download, extract, and start coding.</p>
       <blockquote>💡 Think of it as a modern Dev-C++ alternative: simple interface, fast compilation, works out of the box.</blockquote>
-      <p><sub>An unofficial fan project, not affiliated with Sameko Saba. <a href="#-the-story-behind-it">Why the name?</a></sub></p>
+      <p>🐟 <b>Unofficial fan project</b>, not affiliated with Sameko Saba. <a href="#-the-story-behind-it">Why the name?</a></p>
     </td>
     <td width="30%" align="center">
       <img src="src/assets/icons/fish.png" alt="Sameko Fish" width="180" />
@@ -342,7 +342,9 @@ To be honest, most of this started because I just wanted to customize things my 
 
 **Art credits.** The Saba illustration on the website is by **[Nuu (@XD_zow)](https://x.com/XD_zow)**. Saba's character design is by Shouu and her illustration by Tousaki Shiina. The logo was designed by Yunchan.
 
-If you own any of this and want something changed or removed, please [open an issue](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues) and I'll fix it quickly.
+**Saba, if you ever see this:** hi! I wanted to ask your permission, but I couldn't find a way to message you. If you'd rather I change the name or anything else, please email me at [nguyenvoquangquy.it@gmail.com](mailto:nguyenvoquangquy.it@gmail.com) and I'll do it right away.
+
+If you own any of the artwork above and want something changed or removed, email me or [open an issue](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues) and I'll fix it quickly.
 
 <br />
 
