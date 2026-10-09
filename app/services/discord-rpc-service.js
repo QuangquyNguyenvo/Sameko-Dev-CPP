@@ -127,7 +127,7 @@ async function updatePresence(fileName, workspaceName, line, col) {
 
         if (fileName) {
             // "Working on filename — Ln X, Col Y" style (like VS Code status bar)
-            const posLabel = (line && col) ? ` — Ln ${line}, Col ${col}` : '';
+            const posLabel = (line && col) ? ` - Ln ${line}, Col ${col}` : '';
             activity.details = `Working on ${fileName}`;
             activity.state = workspaceName
                 ? `In ${workspaceName}${posLabel}`

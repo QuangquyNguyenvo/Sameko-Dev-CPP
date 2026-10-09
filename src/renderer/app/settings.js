@@ -53,12 +53,10 @@ function loadSettings() {
     }
 }
 
-function clearThemeBackgroundOverrides() {
+async function clearThemeBackgroundOverrides() {
     try {
         if (typeof ThemeManager !== 'undefined' && ThemeManager.builtinThemeIds) {
-            ThemeManager.builtinThemeIds.forEach(id => {
-                localStorage.removeItem(`theme-bg-${id}`);
-            });
+            await Promise.all(ThemeManager.builtinThemeIds.map(id => ThemeManager.resetBackgroundOverrides(id)));
         }
     } catch (e) {
         console.warn('Failed to clear saved theme backgrounds', e);
@@ -232,7 +230,8 @@ function initSettings() {
             // Update background input for this theme (if exists)
             const perTheme = App.settings.appearance.perTheme || {};
             const themeSettings = perTheme[newTheme] || {};
-            const themeBgUrl = themeSettings.bgUrl || '';
+            const canonicalBg = ThemeManager.getBackgroundOverrides(newTheme);
+            const themeBgUrl = canonicalBg?.appBackground ?? themeSettings.bgUrl ?? ThemeManager.themes.get(newTheme)?.colors?.appBackground ?? '';
             const bgUrlInput = document.getElementById('set-bgUrl');
             if (bgUrlInput) bgUrlInput.value = themeBgUrl;
 
@@ -730,7 +729,8 @@ function openSettings() {
     const perThemeStore = App.settings.appearance.perTheme || {};
     const themeSpecific = perThemeStore[currentTheme] || {};
     const bgUrlInput = document.getElementById('set-bgUrl');
-    if (bgUrlInput) bgUrlInput.value = themeSpecific.bgUrl || '';
+    if (bgUrlInput) bgUrlInput.value = ThemeManager.getBackgroundOverrides(currentTheme)?.appBackground
+        ?? themeSpecific.bgUrl ?? ThemeManager.themes.get(currentTheme)?.colors?.appBackground ?? '';
 
     // Template - sync to hidden textarea and update Monaco editor
     const templateCode = App.settings.template?.code || DEFAULT_SETTINGS.template.code;
@@ -753,6 +753,7 @@ function openSettings() {
     const discordEnabledEl = document.getElementById('set-discordEnabled');
     if (discordEnabledEl) {
         discordEnabledEl.checked = App.settings.discord?.enabled !== false;
+        discordEnabledEl.onchange = updateDiscordPreview;
         updateDiscordPreview();
     }
 
@@ -773,115 +774,98 @@ function closeSettings() {
     document.getElementById('settings-overlay').classList.remove('show');
 }
 
-function saveSettingsAndClose() {
-    App.settings.editor.fontSize = parseInt(document.getElementById('set-fontSize').value);
-    App.settings.editor.fontFamily = normalizeFontFamilyInput(getSelectedFontFamily());
-    App.settings.editor.tabSize = parseInt(document.getElementById('set-tabSize').value);
-    App.settings.editor.minimap = document.getElementById('set-minimap').checked;
-    App.settings.editor.wordWrap = document.getElementById('set-wordWrap').checked;
-    if (!App.settings.startup) App.settings.startup = {};
-    App.settings.startup.behavior = document.getElementById('set-startupBehavior').value;
-    App.settings.editor.colorScheme = document.getElementById('set-editorColorScheme').value;
-    App.settings.editor.autoSave = document.getElementById('set-autoSave').checked;
+async function saveSettingsAndClose() {
+    const previousSettings = JSON.parse(JSON.stringify(App.settings));
+    try {
+        App.settings.editor.fontSize = parseInt(document.getElementById('set-fontSize').value);
+        App.settings.editor.fontFamily = normalizeFontFamilyInput(getSelectedFontFamily());
+        App.settings.editor.tabSize = parseInt(document.getElementById('set-tabSize').value);
+        App.settings.editor.minimap = document.getElementById('set-minimap').checked;
+        App.settings.editor.wordWrap = document.getElementById('set-wordWrap').checked;
+        if (!App.settings.startup) App.settings.startup = {};
+        App.settings.startup.behavior = document.getElementById('set-startupBehavior').value;
+        App.settings.editor.colorScheme = document.getElementById('set-editorColorScheme').value;
+        App.settings.editor.autoSave = document.getElementById('set-autoSave').checked;
 
-    // Validate and clamp autoSaveDelay
-    let delay = parseInt(document.getElementById('set-autoSaveDelay').value);
-    if (isNaN(delay) || delay < 1) delay = 3;
-    if (delay > 300) delay = 300;
-    App.settings.editor.autoSaveDelay = delay;
+        // Validate and clamp autoSaveDelay
+        let delay = parseInt(document.getElementById('set-autoSaveDelay').value);
+        if (isNaN(delay) || delay < 1) delay = 3;
+        if (delay > 300) delay = 300;
+        App.settings.editor.autoSaveDelay = delay;
 
-    App.settings.editor.liveCheck = document.getElementById('set-liveCheck').checked;
-    App.settings.editor.liveCheckDelay = parseInt(document.getElementById('set-liveCheckDelay').value) || 1000;
-    App.settings.editor.intellisense = document.getElementById('set-intellisense').checked;
-    App.settings.editor.keywords = document.getElementById('set-keywords').checked;
-    App.settings.editor.snippets = document.getElementById('set-snippets-enabled').checked;
+        App.settings.editor.liveCheck = document.getElementById('set-liveCheck').checked;
+        App.settings.editor.liveCheckDelay = parseInt(document.getElementById('set-liveCheckDelay').value) || 1000;
+        App.settings.editor.intellisense = document.getElementById('set-intellisense').checked;
+        App.settings.editor.keywords = document.getElementById('set-keywords').checked;
+        App.settings.editor.snippets = document.getElementById('set-snippets-enabled').checked;
 
-    App.settings.compiler.cppStandard = document.getElementById('set-cppStandard').value;
-    App.settings.compiler.optimization = document.getElementById('set-optimization').value;
-    App.settings.compiler.warnings = document.getElementById('set-warnings').checked;
-    const lldToggle = document.getElementById('set-useLLD');
-    if (lldToggle) App.settings.compiler.useLLD = lldToggle.checked;
-    const singleFileToggle = document.getElementById('set-singleFileMode');
-    if (singleFileToggle) App.settings.compiler.singleFileMode = singleFileToggle.checked;
-    const extraFlagsInput = document.getElementById('set-extraFlags');
-    if (extraFlagsInput) App.settings.compiler.extraFlags = extraFlagsInput.value.trim();
+        App.settings.compiler.cppStandard = document.getElementById('set-cppStandard').value;
+        App.settings.compiler.optimization = document.getElementById('set-optimization').value;
+        App.settings.compiler.warnings = document.getElementById('set-warnings').checked;
+        const lldToggle = document.getElementById('set-useLLD');
+        if (lldToggle) App.settings.compiler.useLLD = lldToggle.checked;
+        const singleFileToggle = document.getElementById('set-singleFileMode');
+        if (singleFileToggle) App.settings.compiler.singleFileMode = singleFileToggle.checked;
+        const extraFlagsInput = document.getElementById('set-extraFlags');
+        if (extraFlagsInput) App.settings.compiler.extraFlags = extraFlagsInput.value.trim();
 
-    App.settings.execution.timeLimitEnabled = document.getElementById('set-timeLimitEnabled').checked;
-    App.settings.execution.timeLimitSeconds = parseInt(document.getElementById('set-timeLimitSeconds').value);
-    App.settings.execution.clearTerminal = document.getElementById('set-clearTerminal').checked;
-    App.settings.execution.autoSendInput = document.getElementById('set-autoSendInput').checked;
-    App.settings.execution.useExternalTerminal = document.getElementById('set-useExternalTerminal').checked;
-    const realtimeOutputToggle = document.getElementById('set-realtimeOutput');
-    if (realtimeOutputToggle) App.settings.execution.realtimeOutput = realtimeOutputToggle.checked;
+        App.settings.execution.timeLimitEnabled = document.getElementById('set-timeLimitEnabled').checked;
+        App.settings.execution.timeLimitSeconds = parseInt(document.getElementById('set-timeLimitSeconds').value);
+        App.settings.execution.clearTerminal = document.getElementById('set-clearTerminal').checked;
+        App.settings.execution.autoSendInput = document.getElementById('set-autoSendInput').checked;
+        App.settings.execution.useExternalTerminal = document.getElementById('set-useExternalTerminal').checked;
+        const realtimeOutputToggle = document.getElementById('set-realtimeOutput');
+        if (realtimeOutputToggle) App.settings.execution.realtimeOutput = realtimeOutputToggle.checked;
 
-    if (!App.settings.terminal) App.settings.terminal = {};
-    App.settings.terminal.colorScheme = document.getElementById('set-terminalColorScheme').value;
+        if (!App.settings.terminal) App.settings.terminal = {};
+        App.settings.terminal.colorScheme = document.getElementById('set-terminalColorScheme').value;
 
-    // Panel font size
-    const panelFSInput = document.getElementById('set-panelFontSize');
-    if (panelFSInput) App.settings.execution.panelFontSize = parseInt(panelFSInput.value) || 13;
+        // Panel font size
+        const panelFSInput = document.getElementById('set-panelFontSize');
+        if (panelFSInput) App.settings.execution.panelFontSize = parseInt(panelFSInput.value) || 13;
 
-    App.settings.appearance.theme = document.getElementById('set-theme').value;
-    App.settings.appearance.performanceMode = document.getElementById('set-performanceMode').checked;
-    const uiScale = document.getElementById('set-uiScale').value;
-    App.settings.appearance.uiScale = uiScale === 'auto' ? 'auto' : Number(uiScale);
+        App.settings.appearance.theme = document.getElementById('set-theme').value;
+        App.settings.appearance.performanceMode = document.getElementById('set-performanceMode').checked;
+        const uiScale = document.getElementById('set-uiScale').value;
+        App.settings.appearance.uiScale = uiScale === 'auto' ? 'auto' : Number(uiScale);
 
-    // Background settings (optional - may not exist if Background section removed)
-    const bgOpacityEl = document.getElementById('set-bgOpacity');
-    if (bgOpacityEl) {
-        App.settings.appearance.bgOpacity = parseInt(bgOpacityEl.value);
-    }
+        // Background settings (optional - may not exist if Background section removed)
+        const bgOpacityEl = document.getElementById('set-bgOpacity');
+        if (bgOpacityEl) {
+            App.settings.appearance.bgOpacity = parseInt(bgOpacityEl.value);
+        }
 
-    // Save per-theme background setting (optional)
-    const targetTheme = document.getElementById('set-theme').value;
-    const bgUrlEl = document.getElementById('set-bgUrl');
-    const normalizeBgInput = (url) => {
-        if (!url) return '';
-        const cleaned = String(url).trim();
-        if (!cleaned) return '';
-        const invalidSingletons = ['\\', '/', '.', './', '..'];
-        if (invalidSingletons.includes(cleaned)) return '';
-        if (cleaned.toLowerCase() === 'file://' || cleaned.toLowerCase() === 'file:') return '';
-        return cleaned;
-    };
+        if (!App.settings.template) App.settings.template = {};
+        App.settings.template.code = document.getElementById('set-template').value;
 
-    const targetBgUrl = normalizeBgInput(bgUrlEl ? bgUrlEl.value : '');
-
-    if (!App.settings.appearance.perTheme) App.settings.appearance.perTheme = {};
-    if (!App.settings.appearance.perTheme[targetTheme]) App.settings.appearance.perTheme[targetTheme] = {};
-
-    if (targetBgUrl) {
-        App.settings.appearance.perTheme[targetTheme].bgUrl = targetBgUrl;
-    } else {
-        delete App.settings.appearance.perTheme[targetTheme].bgUrl;
-    }
-
-
-    if (!App.settings.template) App.settings.template = {};
-    App.settings.template.code = document.getElementById('set-template').value;
-
-    // Discord RPC toggle
-    const discordEnabledEl = document.getElementById('set-discordEnabled');
-    if (discordEnabledEl) {
-        const newEnabled = discordEnabledEl.checked;
-        const wasEnabled = App.settings.discord?.enabled !== false;
-        if (!App.settings.discord) App.settings.discord = {};
-        App.settings.discord.enabled = newEnabled;
-        if (newEnabled !== wasEnabled) {
-            _discordAppliedEnabled = newEnabled; // keep guard in sync
-            if (newEnabled) {
-                window.electronAPI?.discordEnable?.();
-            } else {
-                window.electronAPI?.discordDisable?.();
+        // Discord RPC toggle
+        const discordEnabledEl = document.getElementById('set-discordEnabled');
+        if (discordEnabledEl) {
+            const newEnabled = discordEnabledEl.checked;
+            const wasEnabled = App.settings.discord?.enabled !== false;
+            if (!App.settings.discord) App.settings.discord = {};
+            App.settings.discord.enabled = newEnabled;
+            if (newEnabled !== wasEnabled) {
+                _discordAppliedEnabled = newEnabled; // keep guard in sync
+                if (newEnabled) {
+                    window.electronAPI?.discordEnable?.();
+                } else {
+                    window.electronAPI?.discordDisable?.();
+                }
             }
         }
-    }
 
-    applySettings();
-    saveSettings();
-    updateShortcutMap(); // Apply new shortcuts immediately
-    closeSettings();
-    log('Settings saved', 'success');
+        const saved = await saveSettings();
+        if (saved?.success === false) throw new Error(saved.error || 'Could not save settings.');
+        applySettings();
+        updateShortcutMap(); // Apply new shortcuts immediately
+        closeSettings();
+        log('Settings saved', 'success');
+    } catch (error) {
+        App.settings = previousSettings;
+        applySettings();
+        if (typeof showToast === 'function') showToast('Could not save settings: ' + error.message, 'error');
+    }
 }
 
 async function resetSettings() {
@@ -894,7 +878,7 @@ async function resetSettings() {
     if (confirmed) {
         App.settings = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
         // Clear any saved per-theme background overrides (Customizer)
-        clearThemeBackgroundOverrides();
+        await clearThemeBackgroundOverrides();
         App.settings.appearance.perTheme = {};
         App.settings.appearance.bgUrl = '';
 

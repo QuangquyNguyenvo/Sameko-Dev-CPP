@@ -1,0 +1,277 @@
+/* Settings › Discord: a copy of the profile card Discord shows for the activity. It uses
+ * Discord's own dark palette, since that is what people see, and the theme accent only for the
+ * banner and the file badge. Nothing here animates (the panel can stay open while you work). */
+.discord-preview-heading span {
+    margin-left: 8px;
+    color: var(--text-muted);
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.discord-preview-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 18px;
+    margin-top: 12px;
+}
+
+.discord-preview-wrap > .discord-preview {
+    flex: 1 1 320px;
+    margin-top: 0;
+}
+
+/* What the presence contains, next to the card. */
+.dp-facts {
+    flex: 1 1 180px;
+    margin: 0;
+    padding: 4px 0 0;
+    list-style: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.dp-facts li {
+    position: relative;
+    padding: 4px 0 4px 22px;
+}
+
+.dp-facts li::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    margin-top: -4.5px;
+    border-radius: 50%;
+    background: var(--success, #23a55a);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--success, #23a55a) 22%, transparent);
+}
+
+.dp-facts li.no::before {
+    background: var(--error, #f05a6e);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--error, #f05a6e) 22%, transparent);
+}
+
+.dp-facts li.dp-facts-title {
+    margin-top: 6px;
+    padding-left: 0;
+    color: var(--settings-section-color, var(--accent));
+    font-family: 'Fredoka', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.dp-facts li.dp-facts-title:first-child {
+    margin-top: 0;
+}
+
+.dp-facts li.dp-facts-title::before {
+    display: none;
+}
+
+.discord-preview {
+    --dp-card: #232428;
+    --dp-inner: #111214;
+    --dp-text: #f2f3f5;
+    --dp-sub: #dbdee1;
+    --dp-dim: #b5bac1;
+    --dp-online: #23a55a;
+    position: relative;
+    max-width: 440px;
+    margin-top: 12px;
+    overflow: hidden;
+    border: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+    border-radius: 18px;
+    background: var(--dp-card);
+    color: var(--dp-text);
+    box-shadow: 6px 6px 0 var(--shadow-card, transparent);
+    font-family: 'Nunito', 'Segoe UI', sans-serif;
+}
+
+.dp-banner {
+    height: 72px;
+    background:
+        radial-gradient(circle at 85% 20%, color-mix(in srgb, #fff 22%, transparent) 0 18%, transparent 19%),
+        linear-gradient(120deg, var(--accent), color-mix(in srgb, var(--accent) 35%, #5865f2));
+}
+
+.dp-head {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    padding: 0 16px;
+}
+
+.dp-avatar {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 76px;
+    height: 76px;
+    margin-top: -38px;
+    flex-shrink: 0;
+    border: 6px solid var(--dp-card);
+    border-radius: 50%;
+    background: #5865f2;
+    color: #fff;
+}
+
+.dp-status {
+    position: absolute;
+    right: -4px;
+    bottom: -2px;
+    width: 22px;
+    height: 22px;
+    border: 5px solid var(--dp-card);
+    border-radius: 50%;
+    background: var(--dp-online);
+}
+
+.dp-who {
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 4px;
+}
+
+.dp-name {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 19px;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.dp-handle {
+    color: var(--dp-dim);
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.dp-activity {
+    margin: 14px 12px 12px;
+    padding: 12px 14px 14px;
+    border-radius: 12px;
+    background: var(--dp-inner);
+}
+
+.dp-label {
+    margin-bottom: 10px;
+    color: var(--dp-sub);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+}
+
+.dp-body {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.dp-art {
+    position: relative;
+    flex-shrink: 0;
+    width: 76px;
+    height: 76px;
+}
+
+.dp-art img {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+/* Discord's small image: the file type. */
+.dp-badge {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    min-width: 30px;
+    height: 30px;
+    padding: 0 6px;
+    border: 4px solid var(--dp-inner);
+    border-radius: 999px;
+    background: var(--btn-primary-bg, var(--accent));
+    color: var(--btn-primary-text, #fff);
+    font-family: 'Fredoka', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 22px;
+    text-align: center;
+}
+
+.dp-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.dp-title {
+    font-size: 14.5px;
+    font-weight: 800;
+}
+
+.dp-line {
+    overflow: hidden;
+    color: var(--dp-sub);
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.dp-dim {
+    color: var(--dp-dim);
+}
+
+.dp-time {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 3px;
+    color: var(--dp-online);
+    font-size: 12.5px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Turned off: the card fades and says what Discord shows instead. */
+.dp-off {
+    display: none;
+}
+
+.discord-preview.is-off .dp-head,
+.discord-preview.is-off .dp-activity,
+.discord-preview.is-off .dp-banner {
+    filter: grayscale(1);
+    opacity: 0.35;
+}
+
+.discord-preview.is-off .dp-status {
+    background: #80848e;
+}
+
+.discord-preview.is-off .dp-off {
+    position: absolute;
+    left: 50%;
+    top: 58%;
+    display: block;
+    padding: 8px 16px;
+    transform: translate(-50%, -50%);
+    border-radius: 999px;
+    background: var(--dp-card);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}

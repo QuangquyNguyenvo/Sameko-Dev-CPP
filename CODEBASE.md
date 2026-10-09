@@ -99,14 +99,14 @@ syntax/clangd, local history, Discord RPC.
 | `splash.html` | Splash screen. |
 | `renderer/app/*.js` | The application itself, 17 files loaded in a fixed order (formerly one 7,900-line `app.js`). File index in §9. |
 | `renderer/boot.js` | Loaded first: error hooks, Monaco loader config, shared `escHtml`. |
-| `renderer/ui/` | `theme-manager.js`, `theme-tokens.js`, `theme-customizer.js`, `theme-marketplace.js`, `color-registry.js`, `confirm-dialog.js`, `motion.js`. |
+| `renderer/ui/` | `theme-manager.js`, `theme-tokens.js`, `theme-customizer.js` (draft/history/save), `theme-customizer-view.js` (controls/scoped IDE preview), `theme-marketplace.js`, `color-registry.js`, `confirm-dialog.js`, `motion.js`. |
 | `styles/` | `base.css` (imports `animations.css` and fonts), `components/*.css`, `themes/{theme,themes}.css`. `components/toolbar.css` and `components/islands.css` load after `themes.css`: the header buttons, and the floating-card layout (header islands, editor / bottom panel / status bar cards, Run split button, collapsed bottom panel) for every theme. |
 | `assets/` | Fonts, icons, backgrounds (five looping `.webm` + one `.jpg`), screenshots (README only). |
 
 ### Loaded scripts, in order (`index.html`)
 `renderer/boot.js` (error hooks, Monaco loader config, shared `escHtml`) → Monaco loader → `features/suggestions/cpp-suggestions.js` →
 `features/snippets/snippet-editor.js` → `renderer/ui/theme-tokens.js` → `color-registry.js` →
-`theme-manager.js` → `theme-marketplace.js` → `theme-customizer.js` → `confirm-dialog.js` → `motion.js` →
+`theme-manager.js` → `theme-marketplace.js` → `theme-customizer-view.js` → `theme-customizer.js` → `confirm-dialog.js` → `motion.js` →
 `features/local-history/history-manager.js` → `features/file-explorer/file-explorer.js` →
 `features/terminal/terminal-manager.js` → `features/debugger/debugger-ui.js` → `renderer/app/*.js` in
 the order of §9.
@@ -140,8 +140,12 @@ in October 2026.)
   (`fillDefaults`) and is the single apply path (`applyToElement` / `applyValue` / `applySyntax`).
 - **Apply:** `ThemeManager.setTheme(id, {editorScheme})` sets the variables on `:root`, sets
   `data-theme` and `data-theme-variant` (light/dark) and applies the Monaco theme.
-- **Persistence:** custom themes in `localStorage['sameko-user-themes']`; builtin background
-  overrides in `localStorage['theme-bg-<id>']`.
+- **Persistence:** custom themes and builtin background overrides share `userData/state/themes.json`
+  through `electronAPI.stateRead/stateWrite`; old localStorage keys migrate after a successful write.
+- **Customizer:** a separate draft owns history and validation. The dialog reuses the Settings
+  popup's classes (`.settings-*`, `.setting-row`, `.btn-save`); its Shadow DOM preview is a scaled
+  copy of the islands layout fed with all `ThemeTokens`. Editing never changes the active Monaco theme.
+  `npm run test:themes` covers editing, save/restart, backgrounds and portable export on an isolated profile.
 
 ## 5. Everything else at the root
 
@@ -254,7 +258,18 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   variable objects of the frame in one batched call (`debug:varCreateMany`) and patches values with
   `-var-update` on later stops in the same frame.
 
+**Opening files**
+- Ctrl+O starts in the active file's folder (else the Explorer folder, else the folder of the last
+  dialog). Its filters include write-ups and test data (`.txt .md .inp .out .ans …`).
+- Files on the command line ("Open with", a second launch while the app runs) go through
+  `app/services/launch-files.js`: the first launch's are fetched by the renderer with
+  `getLaunchFiles()` after the session restore; later ones arrive as `file-opened` events.
+
 **Tabs and editors**
+- `languageForFile()` (`core.js`) picks the model language from the extension: C/C++ and untitled
+  tabs are `cpp`, `.md` is `markdown`, everything else `plaintext`. `isCppTab()` gates Build,
+  live check, Format and clangd; `.md`/`.txt` wrap lines and text files do not flag non-ASCII
+  letters. `renderTabs()` re-syncs the language after a rename or Save As.
 - `App.tabs[]` holds `{id, name, path, content, original, modified, viewState, exePath, model}`.
   **Each tab owns a Monaco model** (`getTabModel`); showing a tab is `editor.setModel`, so undo
   history, markers and scroll state stay with the file, and one tab shown in both split panes is one
@@ -283,7 +298,7 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
 | Session (open tabs, unsaved text, each tab's test cases) | `userData/state/session.json`, every 30 s and 5 s after an edit |
 | Checkpoints of untitled tabs | `userData/state/untitled-<key>.json`, removed when the tab closes (stale ones swept after 14 days) |
 | Explorer state, categories, saved approaches | `userData/state/explorer.json` (batched writes, flushed on close); legacy `localStorage` keys are migrated once. `localStorage['cp-mode:<folder>']` is still read. |
-| Custom themes, background overrides | `localStorage['sameko-user-themes']`, `['theme-bg-<id>']`; images and videos are files in `userData/theme-assets/`, referenced by URL |
+| Custom themes, background overrides | `userData/state/themes.json` (`{version:1,themes,backgrounds}`); legacy localStorage keys migrate once; images/videos are files in `userData/theme-assets/`, embedded into portable exports |
 | Contest metadata | `<folder>/.sameko` |
 | Debugger panel prefs | `localStorage['sameko-debug-*']` |
 

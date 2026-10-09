@@ -19,6 +19,7 @@ const IPC = {
     // File Operations
     FILE: {
         OPEN_DIALOG: 'open-file-dialog',
+        LAUNCH_FILES: 'get-launch-files',
         SAVE: 'save-file',
         SAVE_DIALOG: 'save-file-dialog',
         READ: 'read-file',

@@ -23,6 +23,8 @@
     <link rel="stylesheet" href="styles/components/local-history.css">
     <link rel="stylesheet" href="styles/components/confirm-dialog.css">
     <link rel="stylesheet" href="styles/components/popups.css">
+    <link rel="stylesheet" href="styles/components/discord-preview.css">
+    <link rel="stylesheet" href="styles/themes/theme-customizer.css">
     <link rel="stylesheet" href="../node_modules/monaco-editor/min/vs/editor/editor.main.css">
     <link rel="stylesheet" href="../node_modules/@xterm/xterm/css/xterm.css">
 </head>
@@ -748,15 +750,47 @@
                             </div>
 
                             <div class="setting-section-divider"></div>
-                            <h3 style="margin-top:18px;font-size:13px;opacity:0.7;font-weight:600;text-transform:uppercase;letter-spacing:.05em;">Preview</h3>
-                            <div id="discord-rpc-preview" style="background:var(--bg-secondary);border-radius:8px;padding:16px;margin-top:8px;display:flex;align-items:center;gap:14px;">
-                                <img src="assets/icons/icon-256.png" style="width:60px;height:60px;border-radius:8px;flex-shrink:0;" alt="">
-                                <div style="min-width:0;">
-                                    <div style="font-weight:700;font-size:14px;">Sameko Dev C++</div>
-                                    <div id="discord-preview-details" style="font-size:13px;margin-top:3px;opacity:0.85;">Working on untitled.cpp</div>
-                                    <div id="discord-preview-state" style="font-size:12px;margin-top:2px;opacity:0.6;">In project — Ln 1, Col 1</div>
-                                    <div style="font-size:11px;margin-top:5px;opacity:0.45;">01:26 elapsed</div>
+                            <h3 class="discord-preview-heading">Preview <span>How your profile shows it in Discord</span></h3>
+                            <div class="discord-preview-wrap">
+                            <div class="discord-preview" id="discord-rpc-preview">
+                                <div class="dp-banner"></div>
+                                <div class="dp-head">
+                                    <div class="dp-avatar">
+                                        <svg class="ico" width="34" height="34" aria-hidden="true"><use href="#i-discord-logo-fill"/></svg>
+                                        <span class="dp-status"></span>
+                                    </div>
+                                    <div class="dp-who"><span class="dp-name">You</span><span class="dp-handle">online</span></div>
                                 </div>
+                                <div class="dp-activity">
+                                    <div class="dp-label">Playing</div>
+                                    <div class="dp-body">
+                                        <div class="dp-art">
+                                            <img src="assets/icons/icon-256.png" alt="">
+                                            <span class="dp-badge" id="discord-preview-badge">C++</span>
+                                        </div>
+                                        <div class="dp-text">
+                                            <div class="dp-title">Sameko Dev C++</div>
+                                            <div class="dp-line" id="discord-preview-details">Working on untitled.cpp</div>
+                                            <div class="dp-line dp-dim" id="discord-preview-state">In project - Ln 1, Col 1</div>
+                                            <div class="dp-time">
+                                                <svg class="ico" width="13" height="13" aria-hidden="true"><use href="#i-play-fill"/></svg>
+                                                <span id="discord-preview-time">00:00</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="dp-off">Rich Presence is off: Discord shows nothing.</div>
+                            </div>
+                            <ul class="dp-facts">
+                                <li class="dp-facts-title">Shared</li>
+                                <li>File name and type</li>
+                                <li>Its folder name</li>
+                                <li>Cursor line and column</li>
+                                <li>Time since you opened the IDE</li>
+                                <li class="dp-facts-title no">Never shared</li>
+                                <li class="no">Your code and test data</li>
+                                <li class="no">Full paths</li>
+                            </ul>
                             </div>
                         </div>
 
@@ -933,68 +967,6 @@
                         <!-- Themes will be rendered here -->
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- ===== THEME CUSTOMIZER POPUP ===== -->
-        <div class="fullscreen-popup" id="customizer-popup" style="display:none;">
-            <div class="fullscreen-popup-overlay"></div>
-            <div class="fullscreen-popup-container customizer-container">
-                <div class="fullscreen-popup-header">
-                    <h2>
-                        <svg class="ico" data-icon="drop" data-weight="duo" width="24" height="24"><use href="#i-drop-duo"/></svg>
-                        <span id="customizer-title">Theme Customizer</span>
-                    </h2>
-                    <button class="fullscreen-popup-close" id="customizer-close">×</button>
-                </div>
-                <div class="fullscreen-popup-body customizer-body">
-                    <!-- Left: Live Preview UI -->
-                    <div class="customizer-preview-section">
-                        <div class="customizer-live-preview" id="customizer-live-preview">
-                            <!-- Clickable UI preview will be rendered here -->
-                        </div>
-                        <div class="customizer-preview-hint">
-                            <svg class="ico" data-icon="info" width="14" height="14"><use href="#i-info"/></svg>
-                            Click on any element to customize its color
-                        </div>
-                    </div>
-
-                    <!-- Right: Controls Panel -->
-                    <div class="customizer-controls-section">
-                        <div class="customizer-tabs">
-                            <button class="customizer-tab active" data-tab="info">Info</button>
-                            <button class="customizer-tab" data-tab="colors">UI Colors</button>
-                            <button class="customizer-tab" data-tab="editor">Editor</button>
-                        </div>
-                        <div class="customizer-tab-content" id="customizer-tab-content">
-                            <!-- Tab content will be rendered here -->
-                        </div>
-                    </div>
-                </div>
-                <div class="fullscreen-popup-footer">
-                    <button class="btn-secondary" id="customizer-cancel">Cancel</button>
-                    <button class="btn-secondary" id="customizer-reset">Reset</button>
-                    <div class="customizer-save-options">
-                        <button class="btn-primary" id="customizer-save">Save as New Theme</button>
-                        <button class="btn-secondary" id="customizer-overwrite" style="display:none;">Overwrite</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Color Picker Popover -->
-        <div class="color-picker-popover" id="color-picker-popover" style="display:none;">
-            <div class="color-picker-header">
-                <span id="color-picker-label">Color</span>
-                <button class="color-picker-close" id="color-picker-close">×</button>
-            </div>
-            <div class="color-picker-body">
-                <input type="color" id="color-picker-input" value="#ffffff">
-                <input type="text" id="color-picker-text" value="#ffffff" placeholder="#RRGGBB">
-            </div>
-            <div class="color-picker-footer">
-                <button class="btn-secondary btn-sm" id="color-picker-cancel">Cancel</button>
-                <button class="btn-primary btn-sm" id="color-picker-apply">Apply</button>
             </div>
         </div>
 
@@ -1218,6 +1190,7 @@
     <script src="renderer/ui/color-registry.js"></script>
     <script src="renderer/ui/theme-manager.js"></script>
     <script src="renderer/ui/theme-marketplace.js"></script>
+    <script src="renderer/ui/theme-customizer-view.js"></script>
     <script src="renderer/ui/theme-customizer.js"></script>
     <script src="renderer/ui/confirm-dialog.js"></script>
 <script src="renderer/ui/motion.js"></script>

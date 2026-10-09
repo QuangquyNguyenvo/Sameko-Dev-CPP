@@ -108,6 +108,20 @@ function setLiveCheckUIState(state) {
     }
 }
 
+/** Status bar badge: the C++ standard for C/C++ files, else the file's language. */
+function updateLanguageStatus() {
+    const label = document.getElementById('status-std');
+    if (!label) return;
+    const tabId = App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId;
+    const tab = App.tabs.find(t => t.id === tabId);
+    const language = tab ? languageForFile(tab.path || tab.name) : 'cpp';
+    const std = App.settings.compiler.cppStandard;
+    label.textContent = language === 'markdown' ? 'Markdown'
+        : language !== 'cpp' ? 'Plain Text'
+        : std ? std.toUpperCase() : 'C++';
+    label.title = language === 'cpp' ? 'C++ standard (Settings › Compiler)' : 'File type';
+}
+
 function scheduleLiveCheck() {
     if (!App.settings.editor.liveCheck || !window.electronAPI?.syntaxCheck) {
         setLiveCheckUIState('disabled');
@@ -142,6 +156,12 @@ async function doLiveCheck(targetRevision = liveCheckRevision) {
     const tab = App.tabs.find(t => t.id === tabId);
     const model = editor?.getModel?.();
     if (!editor || !model) return;
+    if (!isCppTab(tab)) {
+        // Write-ups and test data: nothing to check.
+        clearLiveCheckMarkers();
+        setLiveCheckUIState('idle');
+        return;
+    }
 
     const code = editor.getValue();
     if (!code || !code.trim()) {
@@ -289,10 +309,9 @@ function applySettings() {
 
     if (App.editor) App.editor.updateOptions(opts);
     if (App.editor2) App.editor2.updateOptions(opts);
-
-    const std = App.settings.compiler.cppStandard;
-    const stdLabel = document.getElementById('status-std');
-    if (stdLabel) stdLabel.textContent = std ? std.toUpperCase() : 'C++';
+    applyFileTypeOptions(App.editor);
+    applyFileTypeOptions(App.editor2);
+    updateLanguageStatus();
 
     // Apply panel font size to terminal, I/O panels
     const panelFontSize = App.settings.execution.panelFontSize || 13;

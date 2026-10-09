@@ -53,7 +53,7 @@ function saveSplashPalette() {
 
 function applyBackgroundSettings() {
     const theme = App.settings.appearance.theme || 'kawaii-dark';
-    const opacity = (App.settings.appearance.bgOpacity || 50) / 100;
+    const opacity = (App.settings.appearance.bgOpacity ?? 50) / 100;
 
     // Derive the fallback gradient + container overlay from the theme definition
     // (SSOT in ThemeManager) instead of a hardcoded per-theme table.
@@ -89,7 +89,10 @@ function applyBackgroundSettings() {
 
     // Get theme-specific background from USER settings
     const perTheme = App.settings.appearance.perTheme || {};
-    const userThemeBg = normalizeBgUrl(perTheme[theme]?.bgUrl || App.settings.appearance.bgUrl);
+    const canonical = ThemeManager.getBackgroundOverrides(theme);
+    // Explicit clears and newly saved backgrounds win over the legacy Settings URL.
+    const hasCanonical = canonical !== null && canonical !== undefined;
+    const userThemeBg = hasCanonical ? '' : normalizeBgUrl(perTheme[theme]?.bgUrl || App.settings.appearance.bgUrl);
 
     // Get theme-specific background from THEME definition (default)
     const themeDefaultBg = themeObj?.colors?.appBackground; // e.g. 'assets/backgrounds/pink.gif'

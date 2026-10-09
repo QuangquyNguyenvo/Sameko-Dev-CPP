@@ -121,6 +121,8 @@ function setupAppEvents() {
         if (mainWindow) {
             restoreAndFocusWindow();
         }
+        // "Open with" while the app runs starts a second instance; its files open here.
+        require('../services/launch-files').add(commandLine, workingDirectory);
     });
 
     app.on('before-quit', () => {

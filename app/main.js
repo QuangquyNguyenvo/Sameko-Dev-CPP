@@ -22,6 +22,9 @@ if (!gotTheLock) {
 
 setupAppEvents();
 
+// Files from "Open with" / the command line; the renderer asks for them after its session restore.
+require('./services/launch-files').add(process.argv, process.cwd());
+
 app.whenReady().then(async () => {
     // Show splash screen immediately
     const { createSplashWindow, closeSplashWindow } = require('./windows/splash-window');

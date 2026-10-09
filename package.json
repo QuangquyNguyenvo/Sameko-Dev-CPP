@@ -72,7 +72,8 @@
         "codegraph:sync": "codegraph sync",
         "codegraph:status": "codegraph status",
         "test:debugger": "node scripts/test-debugger.js",
-        "test:gui": "node scripts/test-gui-smoke.js"
+        "test:gui": "node scripts/test-gui-smoke.js",
+        "test:themes": "node scripts/test-theme-customizer-gui.js"
     },
     "dependencies": {
         "@xterm/addon-fit": "^0.11.0",

@@ -1047,6 +1047,25 @@ function scheduleDiscordCursorUpdate(line, col) {
     }, 5000); // update presence every 5 s at most on cursor movement
 }
 
+// Discord's small image is the file type; the card shows it as a badge on the app icon.
+const DISCORD_BADGES = { cpp: 'C++', cc: 'C++', cxx: 'C++', c: 'C', h: 'H', hpp: 'H++', md: 'MD', json: 'JSON' };
+let _discordPreviewTimer = null;
+
+/** Elapsed time on the preview card, ticking once a second while Settings is open. */
+function tickDiscordPreview() {
+    const timeEl = document.getElementById('discord-preview-time');
+    const open = document.getElementById('settings-overlay')?.classList.contains('show');
+    if (!timeEl || !open) {
+        clearInterval(_discordPreviewTimer);
+        _discordPreviewTimer = null;
+        return;
+    }
+    const seconds = Math.max(0, Math.floor((Date.now() - performance.timeOrigin) / 1000));
+    const pad = n => String(n).padStart(2, '0');
+    const h = Math.floor(seconds / 3600);
+    timeEl.textContent = (h ? h + ':' : '') + pad(Math.floor(seconds / 60) % 60) + ':' + pad(seconds % 60) + ' elapsed';
+}
+
 /**
  * Update the Discord preview card inside settings panel
  */
@@ -1054,15 +1073,25 @@ function updateDiscordPreview() {
     const detailsEl = document.getElementById('discord-preview-details');
     const stateEl = document.getElementById('discord-preview-state');
     if (!detailsEl || !stateEl) return;
+    const card = document.getElementById('discord-rpc-preview');
+    const enabled = document.getElementById('set-discordEnabled')?.checked !== false;
+    card?.classList.toggle('is-off', !enabled);
     const activeTab = App.tabs.find(t => t.id === App.activeTabId);
+    const badge = document.getElementById('discord-preview-badge');
+    if (badge) {
+        const ext = fileExtension(activeTab?.name);
+        badge.textContent = activeTab ? DISCORD_BADGES[ext] || 'TXT' : 'C++';
+    }
+    tickDiscordPreview();
+    if (!_discordPreviewTimer) _discordPreviewTimer = setInterval(tickDiscordPreview, 1000);
     if (activeTab?.name) {
         detailsEl.textContent = `Working on ${activeTab.name}`;
         const folder = activeTab.path
             ? activeTab.path.replace(/\\/g, '/').split('/').slice(-2, -1)[0]
             : null;
         stateEl.textContent = folder
-            ? `In ${folder} \u2014 Ln ${_discordLastPos.line}, Col ${_discordLastPos.col}`
-            : `Sameko Dev C++ \u2014 Ln ${_discordLastPos.line}, Col ${_discordLastPos.col}`;
+            ? `In ${folder} - Ln ${_discordLastPos.line}, Col ${_discordLastPos.col}`
+            : `Sameko Dev C++ - Ln ${_discordLastPos.line}, Col ${_discordLastPos.col}`;
     } else {
         detailsEl.textContent = 'Idle';
         stateEl.textContent = 'Sameko Dev C++';

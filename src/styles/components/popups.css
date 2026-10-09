@@ -29,11 +29,101 @@
     -webkit-backdrop-filter: none !important;
 }
 
-/* ---- Cards ---- */
+/* ---- Small dialogs: the Settings popup's look (thick theme frame, flat offset shadow,
+ * Fredoka titles). An offset shadow without blur is cheap to paint over the video. ---- */
 .confirm-dialog,
 .note-dialog,
 .update-popup,
-.cc-popup,
+.cc-popup {
+    background: var(--pop-bg) !important;
+    border: 3px solid var(--border-strong, var(--border)) !important;
+    border-radius: 28px !important;
+    box-shadow: 6px 6px 0 var(--shadow-card, transparent) !important;
+    backdrop-filter: none !important;
+}
+
+.confirm-dialog-title,
+.note-dialog-header h3,
+.update-header h2,
+.cc-header h2 {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700 !important;
+}
+
+/* Confirm: icon badge, title, message, two equal pills. */
+.confirm-dialog {
+    width: min(400px, calc(100vw - 32px));
+    min-width: 0 !important;
+    padding: 28px 28px 22px !important;
+}
+
+.confirm-dialog-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px !important;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 7%, transparent);
+}
+
+.confirm-dialog.danger .confirm-dialog-icon {
+    background: color-mix(in srgb, var(--error, #f05a6e) 16%, transparent);
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--error, #f05a6e) 7%, transparent);
+}
+
+.confirm-dialog-icon svg {
+    width: 36px;
+    height: 36px;
+}
+
+.confirm-dialog-title {
+    margin: 0 0 8px !important;
+    font-size: 21px !important;
+}
+
+/* Body text in the text colour, not --text-secondary: several themes make that the accent. */
+.confirm-dialog-message {
+    margin: 0 0 24px !important;
+    color: color-mix(in srgb, var(--text-primary) 72%, transparent) !important;
+    font-size: 14px !important;
+    line-height: 1.55 !important;
+}
+
+.confirm-dialog-buttons {
+    gap: 10px !important;
+}
+
+.confirm-dialog-btn {
+    flex: 1 1 0;
+    min-height: 42px;
+    padding: 0 18px !important;
+    font-family: 'Fredoka', sans-serif !important;
+    font-size: 15px !important;
+}
+
+.confirm-dialog-cancel {
+    box-shadow: inset 0 0 0 2px var(--border) !important;
+    background: transparent !important;
+}
+
+.confirm-dialog-confirm {
+    box-shadow: 3px 3px 0 var(--shadow-card, transparent) !important;
+}
+
+.confirm-dialog-confirm:hover {
+    transform: translateY(-1px);
+}
+
+/* The confirm button is focused on open: a ring in its own colour, not the accent. */
+.confirm-dialog-confirm:focus-visible {
+    outline-color: color-mix(in srgb, var(--btn-primary-bg, var(--accent)) 55%, transparent) !important;
+}
+
+.confirm-dialog-confirm.danger:focus-visible {
+    outline-color: color-mix(in srgb, var(--error, #f05a6e) 55%, transparent) !important;
+}
+
+/* ---- Cards ---- */
 .local-history-modal,
 .history-preview-container,
 .snippet-editor-container,
@@ -52,10 +142,6 @@
     color: var(--text-primary);
     font-weight: 800;
     letter-spacing: 0.1px;
-}
-
-.confirm-dialog-message {
-    color: var(--text-secondary);
 }
 
 .confirm-dialog-icon svg {

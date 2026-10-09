@@ -369,6 +369,11 @@ function initSessionPersistence() {
         saveSession(true);
     });
 
-    // Restore previous session if any (delayed to ensure Monaco is ready)
-    setTimeout(() => restoreSession(), 300);
+    // Restore previous session if any (delayed to ensure Monaco is ready), then open the files
+    // the app was launched with ("Open with"), so they end up as the active tab.
+    setTimeout(async () => {
+        try { await restoreSession(); } catch (_) { /* logged inside */ }
+        const files = await window.electronAPI?.getLaunchFiles?.().catch(() => []) || [];
+        for (const filePath of files) await openFileFromPath(filePath);
+    }, 300);
 }

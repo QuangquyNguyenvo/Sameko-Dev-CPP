@@ -17,6 +17,44 @@ let mainWindow = null;
 // Monaco becomes unusable well before this; refuse instead of freezing the window.
 const MAX_OPEN_BYTES = 16 * 1024 * 1024;
 
+const SOURCE_EXTENSIONS = ['cpp', 'c', 'h', 'hpp', 'cc', 'cxx', 'hh', 'hxx'];
+// Write-ups and test data that sit next to solutions.
+const TEXT_EXTENSIONS = ['txt', 'md', 'inp', 'in', 'out', 'ans', 'ok', 'log', 'csv', 'json'];
+const ALL_FILES = { name: 'All Files', extensions: ['*'] };
+
+/** Save filters with the one matching the file's extension first (the dialog selects it). */
+function saveFilters(defaultPath) {
+    const filters = [
+        { name: 'C++ Source', extensions: ['cpp', 'cc', 'cxx'] },
+        { name: 'C Source', extensions: ['c'] },
+        { name: 'Header', extensions: ['h', 'hpp', 'hh', 'hxx'] },
+        { name: 'Text', extensions: ['txt'] },
+        { name: 'Markdown', extensions: ['md'] },
+        { name: 'Test Data', extensions: ['inp', 'in', 'out', 'ans', 'ok'] },
+        ALL_FILES
+    ];
+    const ext = path.extname(defaultPath || '').slice(1).toLowerCase();
+    const index = filters.findIndex(f => f.extensions.includes(ext));
+    if (index > 0) filters.unshift(filters.splice(index, 1)[0]);
+    else if (ext && index < 0) filters.unshift(filters.pop());
+    return filters;
+}
+
+// The folder of the last file opened or saved through a dialog: the next Open starts there.
+let lastDialogDir = null;
+
+function rememberDialogDir(filePath) {
+    if (filePath) lastDialogDir = path.dirname(filePath);
+}
+
+/** An existing folder for the Open dialog: the one the renderer suggests, else the last used. */
+function openDialogDir(suggested) {
+    for (const dir of [suggested, lastDialogDir]) {
+        try { if (dir && fs.statSync(dir).isDirectory()) return dir; } catch (_) { /* gone */ }
+    }
+    return undefined;
+}
+
 /**
  * Read a text file for the editor, refusing files above MAX_OPEN_BYTES.
  * @param {string} filePath
@@ -126,16 +164,20 @@ function updateFileWatcherMtime(filePath) {
  * Register all file-related IPC handlers
  */
 function registerHandlers() {
-    ipcMain.handle(IPC.FILE.OPEN_DIALOG, async () => {
+    ipcMain.handle(IPC.FILE.OPEN_DIALOG, async (event, options) => {
         const result = await dialog.showOpenDialog(mainWindow, {
+            defaultPath: openDialogDir(options?.defaultPath),
             properties: ['openFile', 'multiSelections'],
             filters: [
-                { name: 'C++ Files', extensions: ['cpp', 'c', 'h', 'hpp', 'cc', 'cxx'] },
-                { name: 'All Files', extensions: ['*'] }
+                { name: 'Code, Text & Test Data', extensions: [...SOURCE_EXTENSIONS, ...TEXT_EXTENSIONS] },
+                { name: 'C/C++ Files', extensions: SOURCE_EXTENSIONS },
+                { name: 'Text & Test Data (.txt .md .inp .out …)', extensions: TEXT_EXTENSIONS },
+                ALL_FILES
             ]
         });
 
         if (!result.canceled && result.filePaths.length > 0) {
+            rememberDialogDir(result.filePaths[0]);
             for (const filePath of result.filePaths) {
                 try {
                     const content = await readTextFile(filePath);
@@ -146,6 +188,16 @@ function registerHandlers() {
             }
         }
     });
+
+    // Files from the command line. Later launches are sent as file-opened events.
+    ipcMain.handle(IPC.FILE.LAUNCH_FILES, async () => require('../services/launch-files').take(async filePath => {
+        try {
+            const content = await readTextFile(filePath);
+            mainWindow.webContents.send(IPC.EVENTS.FILE_OPENED, { path: filePath, content });
+        } catch (error) {
+            dialog.showErrorBox('Cannot open file', path.basename(filePath) + ': ' + error.message);
+        }
+    }));
 
     ipcMain.handle(IPC.FILE.SAVE, async (event, { path: filePath, content }) => {
         try {
@@ -162,14 +214,11 @@ function registerHandlers() {
 
         const result = await dialog.showSaveDialog(mainWindow, {
             defaultPath,
-            filters: [
-                { name: 'C++ Files', extensions: ['cpp'] },
-                { name: 'C Files', extensions: ['c'] },
-                { name: 'All Files', extensions: ['*'] }
-            ]
+            filters: saveFilters(defaultPath)
         });
 
         if (!result.canceled) {
+            rememberDialogDir(result.filePath);
             try {
                 await writeTextFile(result.filePath, content);
                 return { success: true, path: result.filePath };

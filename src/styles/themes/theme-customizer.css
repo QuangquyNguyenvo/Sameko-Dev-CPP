@@ -1,0 +1,782 @@
+/*
+ * Theme customizer
+ *
+ * The dialog is built from the Settings popup's own classes (.settings-overlay,
+ * .settings-popup, .settings-header, .settings-sidebar/.settings-tab,
+ * .settings-content, .setting-row, .settings-footer, .btn-save, .btn-reset,
+ * .btn-theme-action), so it picks up their look and the per-theme overrides in
+ * themes.css.  This file only adds the three-column layout and the controls
+ * Settings does not have.  Colours come from theme tokens only.
+ */
+.theme-customizer-view.settings-overlay {
+    z-index: 2100;
+    /* No backdrop blur: it re-renders the background video under the window. */
+    backdrop-filter: none;
+}
+
+.theme-customizer-view *,
+.theme-customizer-view *::before,
+.theme-customizer-view *::after {
+    box-sizing: border-box;
+}
+
+.theme-customizer-view [hidden] {
+    display: none !important;
+}
+
+.theme-customizer-view button:disabled,
+.theme-customizer-view input:disabled,
+.theme-customizer-view select:disabled,
+.theme-customizer-view textarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+    pointer-events: none;
+}
+
+/* ---- Frame ---- */
+/* A notch smaller than Settings throughout: the customizer holds three
+ * columns and a long list of rows in about the same window. */
+.tcf-dialog.settings-popup {
+    width: min(1220px, 95vw);
+    height: min(780px, 92vh);
+    border-width: 3px;
+}
+
+.tcf-header.settings-header {
+    gap: 18px;
+    padding: 10px 18px 10px 24px;
+}
+
+.tcf-header.settings-header h2 {
+    font-size: 19px;
+    gap: 10px;
+}
+
+.tcf-header .settings-close {
+    width: 32px;
+    height: 32px;
+    border-width: 2px;
+}
+
+.tcf-header-fields input[type="text"],
+.tcf-header-fields select {
+    padding: 5px 12px;
+    font-size: 13px;
+}
+
+.tcf-heading {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    min-width: 0;
+}
+
+.tcf-heading h2 {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.tcf-dirty {
+    color: var(--text-muted);
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.tcf-dirty[data-state="dirty"] {
+    color: var(--warning);
+}
+
+.tcf-header-fields {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-left: auto;
+}
+
+.tcf-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--settings-label-color, var(--text-secondary));
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+[data-theme-variant="dark"] .tcf-field {
+    color: var(--text-secondary);
+}
+
+.tcf-field input {
+    width: 200px;
+}
+
+.tcf-field select {
+    min-width: 110px;
+}
+
+.tcf-body.settings-container {
+    display: grid;
+    grid-template-columns: 158px minmax(300px, 370px) minmax(0, 1fr);
+    gap: 14px;
+    min-height: 0;
+    padding: 14px;
+}
+
+/* ---- Sidebar ---- */
+.tcf-sidebar.settings-sidebar {
+    width: auto;
+    max-height: none;
+    min-height: 0;
+    gap: 4px;
+    padding: 10px 8px;
+    border-width: 2px;
+    border-radius: 24px;
+}
+
+.tcf-sidebar .settings-tab {
+    gap: 8px;
+    padding: 9px 12px;
+    font-size: 13px;
+}
+
+.tcf-sidebar .settings-tab svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* ---- Controls column ---- */
+.tcf-main.settings-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 0;
+    overflow: hidden;
+    border-width: 2px;
+    border-radius: 24px;
+}
+
+.tcf-panel-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 auto;
+    padding: 12px 12px 8px 14px;
+}
+
+/* The explorer's filter pill (islands.css). */
+.tcf-search {
+    display: flex;
+    align-items: center;
+    flex: 1 1 auto;
+    gap: 7px;
+    min-width: 0;
+    height: 32px;
+    padding: 0 6px 0 12px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+    color: var(--text-muted);
+    cursor: text;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.tcf-search:focus-within {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+}
+
+.tcf-search input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    border: none;
+    outline: none;
+    background: none;
+    box-shadow: none;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.tcf-search input::placeholder {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.tcf-search input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+}
+
+.tcf-search button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.tcf-panel-hint {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 8px;
+}
+
+/* Without the search box the toolbar shows the panel's name, help at the right. */
+.tcf-search[hidden] + .tcf-panel-hint {
+    flex: 1 1 auto;
+    min-height: 32px;
+}
+
+.tcf-panel-name {
+    margin-right: auto;
+    color: var(--settings-section-color, var(--accent));
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.tcf-panel-name:empty {
+    display: none;
+}
+
+.tcf-panel-hint .tooltip {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 20px;
+}
+
+.tcf-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 8px 14px 14px;
+}
+
+.tcf-token-group + .tcf-token-group {
+    margin-top: 14px;
+}
+
+.tcf-panel h3.tcf-token-group-title {
+    margin-bottom: 8px;
+    padding-bottom: 6px;
+    font-size: 12px;
+}
+
+/* Token rows are .setting-row cards, a little tighter: there are many. */
+.tcf-token-row.setting-row {
+    gap: 10px;
+    margin-bottom: 6px;
+    padding: 5px 7px 5px 14px;
+    border-radius: 14px;
+}
+
+.tcf-token-label {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+}
+
+.tcf-token-name {
+    overflow: hidden;
+    color: var(--settings-label-color, var(--text-primary));
+    font-size: 12.5px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+[data-theme-variant="dark"] .tcf-token-name {
+    color: var(--text-primary);
+}
+
+.tcf-token-var {
+    overflow: hidden;
+    color: var(--text-muted);
+    font: 10.5px 'JetBrains Mono', Consolas, monospace;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tcf-token-editor {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 6px;
+}
+
+.theme-customizer-view input[type="color"].tcf-color-picker {
+    width: 32px;
+    height: 28px;
+    padding: 1px;
+    border-width: 2px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.tcf-color-picker::-webkit-color-swatch-wrapper {
+    padding: 0;
+}
+
+.tcf-color-picker::-webkit-color-swatch {
+    border: none;
+    border-radius: 8px;
+}
+
+.theme-customizer-view input[type="text"].tcf-token-input {
+    width: 116px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font: 11.5px 'JetBrains Mono', Consolas, monospace;
+}
+
+.theme-customizer-view input[type="text"]:focus,
+.theme-customizer-view select:focus,
+.tcf-json:focus {
+    border-color: var(--accent);
+    outline: none;
+}
+
+.tcf-token-input[aria-invalid="true"],
+.tcf-background-url[aria-invalid="true"] {
+    border-color: var(--error) !important;
+}
+
+/* An edited row: an accent bar on the left and a button back to the saved value. */
+.tcf-token-row.tcf-changed {
+    box-shadow: inset 4px 0 0 var(--accent);
+}
+
+.tcf-revert {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.25s ease;
+}
+
+.tcf-revert > .ico {
+    transform: scaleX(-1);
+}
+
+.tcf-revert:hover,
+.tcf-revert:focus-visible {
+    background: color-mix(in srgb, var(--accent) 28%, transparent);
+    transform: rotate(-30deg);
+}
+
+.tcf-token-row.tcf-preview-row-selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.tcf-empty {
+    margin: 24px 0;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+/* ---- Backgrounds ---- */
+.tcf-background-card.setting-row {
+    display: block;
+    margin-bottom: 10px;
+    padding: 12px 14px 14px;
+    border-radius: 14px;
+}
+
+.tcf-card-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.tcf-card-title {
+    margin: 0 0 10px;
+    color: var(--settings-label-color, var(--text-primary));
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.tcf-card-heading .tcf-card-title {
+    margin: 0;
+}
+
+[data-theme-variant="dark"] .tcf-card-title {
+    color: var(--text-primary);
+}
+
+.tcf-source-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.theme-customizer-view input[type="text"].tcf-background-url {
+    flex: 1;
+    min-width: 0;
+    font: 12px 'JetBrains Mono', Consolas, monospace;
+}
+
+/* .btn-theme-action is sized for the Settings header; these sit inside a card. */
+.theme-customizer-view .btn-theme-action.tcf-file-button,
+.theme-customizer-view .btn-theme-action.tcf-small-button {
+    flex-shrink: 0;
+    min-height: 34px !important;
+    padding: 4px 14px !important;
+    font-size: 13px !important;
+    white-space: nowrap;
+}
+
+.theme-customizer-view .btn-theme-action.tcf-small-button {
+    min-height: 28px !important;
+    font-size: 12px !important;
+}
+
+.tcf-file-button input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+}
+
+.tcf-range-grid {
+    display: grid;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.tcf-range-row {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr) 52px;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* The rows are <label>s inside a .setting-row, so Settings' label colours
+ * (one of them !important) would paint only the first one. */
+.tcf-background-card .tcf-range-row {
+    color: var(--settings-label-color, var(--text-primary)) !important;
+}
+
+[data-theme-variant="dark"] .tcf-background-card .tcf-range-row {
+    color: var(--text-primary) !important;
+}
+
+.tcf-range-row input[type="range"] {
+    width: 100%;
+}
+
+.tcf-range-row output {
+    color: var(--accent);
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: right;
+}
+
+.theme-customizer-view input[type="text"].tcf-position-input {
+    grid-column: 2 / 4;
+    padding: 6px 12px;
+    font: 12px 'JetBrains Mono', Consolas, monospace;
+}
+
+/* ---- Advanced ---- */
+.tcf-base-theme select {
+    min-width: 200px;
+}
+
+.tcf-advanced-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 16px 0;
+}
+
+.tcf-json-label {
+    display: grid;
+    gap: 8px;
+    color: var(--settings-label-color, var(--text-secondary));
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+[data-theme-variant="dark"] .tcf-json-label {
+    color: var(--text-secondary);
+}
+
+/* The textarea is transparent over a highlighted copy of its text, so typing,
+ * selection and undo stay native.  Both share font, padding and no wrapping. */
+.tcf-json-editor {
+    position: relative;
+    border: 2px solid var(--border);
+    border-radius: 15px;
+    background: var(--tcf-json-bg, var(--editor-bg, var(--bg-input)));
+    overflow: hidden;
+}
+
+.tcf-json-editor:focus-within {
+    border-color: var(--accent);
+}
+
+.tcf-json-highlight,
+.tcf-json {
+    margin: 0;
+    padding: 12px 14px;
+    font: 12px/1.6 'JetBrains Mono', Consolas, monospace;
+    tab-size: 2;
+    white-space: pre;
+    overflow-wrap: normal;
+}
+
+.tcf-json-highlight {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    color: var(--tcf-json-text, var(--text-primary));
+    pointer-events: none;
+}
+
+.tcf-json {
+    position: relative;
+    display: block;
+    width: 100%;
+    min-height: 300px;
+    resize: vertical;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: transparent;
+    caret-color: var(--tcf-json-text, var(--text-primary));
+    user-select: text;
+}
+
+.tcf-json::selection {
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
+    color: transparent;
+}
+
+/* The edited theme's own syntax colours, set by the view; app tokens as fallback. */
+.tcf-json-key { color: var(--tcf-json-key, var(--accent)); }
+.tcf-json-string { color: var(--tcf-json-string, var(--success)); }
+.tcf-json-number { color: var(--tcf-json-number, var(--warning)); }
+.tcf-json-literal { color: var(--tcf-json-literal, var(--error)); }
+.tcf-json-punct { color: var(--tcf-json-punct, var(--text-muted)); }
+
+.tcf-json-color {
+    text-decoration-line: underline;
+    text-decoration-thickness: 3px;
+    text-underline-offset: 3px;
+}
+
+.theme-customizer-view .btn-save.tcf-apply-json {
+    margin-top: 12px;
+    padding: 10px 24px;
+}
+
+/* ---- Preview ---- */
+.tcf-preview-pane {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    min-height: 0;
+}
+
+.tcf-preview-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 2px 8px 0;
+}
+
+.tcf-preview-heading h3 {
+    margin: 0;
+    color: var(--settings-section-color, var(--accent));
+    font-family: 'Fredoka', sans-serif;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.tcf-preview-help {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* A small window: the same frame as the Settings content card. */
+.tcf-preview-host {
+    position: relative;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    border: 2px solid var(--border);
+    border-radius: 22px;
+    background: var(--bg-input);
+}
+
+/* ---- Footer ---- */
+.tcf-footer.settings-footer {
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+}
+
+.tcf-footer-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+    margin-right: auto;
+}
+
+.tcf-status {
+    overflow: hidden;
+    color: var(--text-muted);
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tcf-status[data-tone="error"] {
+    color: var(--error);
+}
+
+.tcf-danger-link {
+    padding: 4px 0;
+    border: none;
+    background: none;
+    color: var(--error);
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tcf-danger-link:hover,
+.tcf-danger-link:focus-visible {
+    text-decoration: underline;
+}
+
+.tcf-footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.tcf-footer .btn-reset,
+.tcf-footer .btn-save {
+    padding: 7px 16px;
+    border-width: 2px;
+    font-size: 13px;
+    white-space: nowrap;
+}
+
+.tcf-footer .btn-save {
+    box-shadow: 3px 3px 0 var(--shadow-card);
+}
+
+.tcf-footer .btn-reset.tcf-secondary {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+    color: var(--accent);
+}
+
+/* ---- Narrow windows ---- */
+@media (max-width: 1150px) {
+    .tcf-body.settings-container {
+        grid-template-columns: 148px minmax(280px, 340px) minmax(0, 1fr);
+        gap: 12px;
+        padding: 12px;
+    }
+
+    .tcf-field input {
+        width: 160px;
+    }
+
+    .tcf-footer .btn-reset,
+    .tcf-footer .btn-save {
+        padding: 6px 12px;
+    }
+}
+
+@media (max-width: 920px) {
+    .tcf-body.settings-container {
+        grid-template-columns: 150px minmax(0, 1fr);
+        grid-template-rows: minmax(0, 1fr) minmax(200px, 38%);
+    }
+
+    .tcf-preview-pane {
+        grid-column: 1 / -1;
+    }
+
+    .tcf-header.settings-header {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 640px) {
+    .tcf-dialog.settings-popup {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+    }
+
+    .tcf-header-fields {
+        order: 3;
+        width: 100%;
+        margin-left: 0;
+    }
+
+    .tcf-field input {
+        width: 100%;
+    }
+
+    .tcf-body.settings-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(0, 1fr) 200px;
+    }
+
+    .tcf-sidebar.settings-sidebar {
+        flex-direction: row;
+        overflow-x: auto;
+    }
+
+    .tcf-footer.settings-footer {
+        flex-wrap: wrap;
+    }
+}

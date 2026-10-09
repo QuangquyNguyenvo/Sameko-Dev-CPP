@@ -21,6 +21,106 @@ const toOpaque = (color) => {
     return color;
 };
 
+const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
+
+const isPlainObject = (value) => {
+    if (value === null || typeof value !== 'object') return false;
+    if (Object.prototype.toString.call(value) !== '[object Object]') return false;
+    const prototype = Object.getPrototypeOf(value);
+    if (prototype === null || prototype === Object.prototype) return true;
+    // Object literals crossing a VM/iframe boundary have a different
+    // Object.prototype identity, but are still safe theme records.
+    const constructor = prototype.constructor;
+    return typeof constructor === 'function'
+        && Function.prototype.toString.call(constructor) === Function.prototype.toString.call(Object);
+};
+
+const cloneValue = (value) => {
+    if (Array.isArray(value)) return value.map(cloneValue);
+    if (isPlainObject(value)) {
+        const copy = {};
+        for (const [key, child] of Object.entries(value)) copy[key] = cloneValue(child);
+        return copy;
+    }
+    return value;
+};
+
+const toFiniteNumber = (value) => {
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null;
+    if (typeof value !== 'string') return null;
+    const text = value.trim();
+    if (!/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(text)) return null;
+    const number = Number(text);
+    return Number.isFinite(number) ? number : null;
+};
+
+const syntaxHexPattern = /^#?(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+const colorHexPattern = /^#(?:[0-9a-f]{3}|[0-9a-f]{4}|[0-9a-f]{6}|[0-9a-f]{8})$/i;
+const colorFunctionPattern = /^(rgb|rgba|hsl|hsla|hwb|lab|lch|oklab|oklch|color)\(\s*([^()<>;]+)\s*\)$/i;
+const colorKeywordPattern = /^(?:black|white|red|green|blue|yellow|orange|purple|pink|gray|grey|brown|cyan|magenta|lime|navy|teal|olive|maroon|silver|aqua|fuchsia|transparent|currentcolor|rebeccapurple)$/i;
+const customColorPattern = /^var\(\s*--[a-z0-9_-]+(?:\s*,\s*[^()<>;]+)?\s*\)$/i;
+
+const isCssColor = (value) => {
+    if (typeof value !== 'string') return false;
+    const color = value.trim();
+    if (!color || /[\u0000-\u001f<>]/.test(color)) return false;
+
+    // Renderer validation gets the browser's actual CSS parser when available.
+    // The Node-side fallback intentionally covers the formats used by saved themes.
+    const cssApi = typeof CSS !== 'undefined' ? CSS : null;
+    if (cssApi && typeof cssApi.supports === 'function') {
+        try {
+            return cssApi.supports('color', color);
+        } catch (_) {
+            // Fall through to the conservative parser below.
+        }
+    }
+
+    const functionMatch = colorFunctionPattern.exec(color);
+    const functionParts = functionMatch
+        ? functionMatch[2].trim().split(/[,\s/]+/).filter(Boolean)
+        : [];
+    const functionName = functionMatch?.[1].toLowerCase();
+    const validFunction = functionMatch && (
+        (/^rgba?$/.test(functionName) || /^hsla?$/.test(functionName))
+            ? functionParts.length >= 3 && functionParts.length <= 4
+            : functionParts.length >= 2
+    );
+
+    return colorHexPattern.test(color)
+        || validFunction
+        || colorKeywordPattern.test(color)
+        || customColorPattern.test(color);
+};
+
+const isImageValue = (value) => {
+    if (typeof value !== 'string') return false;
+    const image = value.trim();
+    // An empty string is the persisted explicit-clear sentinel. Missing keys
+    // still mean "use the builtin/default background" to ThemeManager.
+    if (image === '') return value === '';
+    if (/[\u0000-\u001f<>]/.test(image)) return false;
+    if (image === 'none') return true;
+    if (/^url\(\s*(?:"[^"]*"|'[^']*'|[^)]*)\s*\)$/i.test(image)) return true;
+    if (/^data:(?:image|video)\/[a-z0-9.+-]+(?:;[^,]*)?,/i.test(image)) return true;
+    if (/^(?:https?|file|blob|app):\/\//i.test(image)) return true;
+    // Theme assets are stored as relative paths; local absolute paths are accepted
+    // for imported themes and are resolved by the caller before CSS is applied.
+    return /^(?:\.\.?(?:[\\/])|[a-z]:[\\/]|[^\\/:<>"\u0000-\u001f]+(?:[\\/][^<>"\u0000-\u001f]+)*)$/i.test(image);
+};
+
+const positionPartPattern = '(?:left|center|right|top|bottom|[+-]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:%|px|em|rem|vh|vw|vmin|vmax)?|calc\\([^;{}]+\\))';
+const positionPattern = new RegExp(`^${positionPartPattern}(?:\\s+${positionPartPattern})?$`, 'i');
+
+const isBackgroundPosition = (value) => {
+    return typeof value === 'string' && positionPattern.test(value.trim());
+};
+
+const editorColorKeys = [
+    'background', 'foreground', 'lineHighlight', 'selection', 'cursor',
+    'lineNumber', 'lineNumberActive', 'scrollbar', 'scrollbarHover', 'scrollbarActive'
+];
+
 const ThemeTokens = {
     /**
      * Token Definitions
@@ -227,6 +327,181 @@ const ThemeTokens = {
     },
 
     /**
+     * Normalize legacy `{ meta: {...}, colors, editor, terminal }` themes and
+     * the current flat draft shape into one non-mutating representation.
+     * Missing optional sections are kept empty so callers can fill defaults
+     * after validation without changing the source object.
+     *
+     * @param {Object} theme - Theme JSON object
+     * @returns {Object} Canonical flat theme draft
+     */
+    normalizeTheme(theme) {
+        if (!isPlainObject(theme)) return theme;
+
+        const meta = isPlainObject(theme.meta) ? theme.meta : {};
+        const read = (key) => theme[key] !== undefined ? theme[key] : meta[key];
+        const normalized = {};
+
+        for (const key of ['id', 'name', 'author', 'type', 'version', 'description', 'tags']) {
+            const value = read(key);
+            if (value !== undefined) normalized[key] = cloneValue(value);
+        }
+
+        normalized.colors = theme.colors === undefined ? undefined : cloneValue(theme.colors);
+        normalized.editor = cloneValue(theme.editor === undefined ? {} : theme.editor);
+        normalized.terminal = cloneValue(theme.terminal === undefined ? {} : theme.terminal);
+
+        // Sliders historically serialized numbers as strings in a few paths.
+        // Normalize only typed numeric tokens; leave unknown legacy values alone.
+        if (isPlainObject(normalized.colors)) {
+            for (const [key, definition] of Object.entries(this.definitions)) {
+                if (!['opacity', 'brightness', 'blur'].includes(definition.type)) continue;
+                if (!hasOwn(normalized.colors, key)) continue;
+                const number = toFiniteNumber(normalized.colors[key]);
+                if (number !== null) {
+                    // Early custom themes stored welcome opacity as a CSS alpha
+                    // (0.4) while all current opacity tokens use percentages.
+                    normalized.colors[key] = key === 'welcomeBoxOpacity' && number > 0 && number < 1
+                        ? number * 100
+                        : number;
+                }
+            }
+        }
+
+        return normalized;
+    },
+
+    /**
+     * Validate a theme without requiring every token to be present. Builtins
+     * and old user themes intentionally omit many optional tokens; callers can
+     * run fillDefaults() after this check. The result is stable and suitable
+     * for displaying in an import/customizer error message.
+     *
+     * @param {Object} theme - Theme JSON object, flat or legacy meta-shaped
+     * @returns {{valid: boolean, errors: string[]}}
+     */
+    validateTheme(theme) {
+        const errors = [];
+        if (!isPlainObject(theme)) {
+            return { valid: false, errors: ['theme must be an object'] };
+        }
+
+        const normalized = this.normalizeTheme(theme);
+        const add = (path, message) => errors.push(`${path} ${message}`);
+
+        const validateText = (value, path, required = false) => {
+            if (value === undefined || value === null) {
+                if (required) add(path, 'must be a non-empty string');
+                return;
+            }
+            if (typeof value !== 'string' || (required && !value.trim()) || /[\u0000-\u001f]/.test(value)) {
+                add(path, 'must be a non-empty string');
+            }
+        };
+
+        // ID and name identify the persisted theme. Other metadata is optional
+        // for legacy themes and is validated only when it is supplied.
+        validateText(normalized.id, 'id', true);
+        validateText(normalized.name, 'name', true);
+        validateText(normalized.author, 'author');
+        validateText(normalized.type, 'type');
+        validateText(normalized.version, 'version');
+        validateText(normalized.description, 'description');
+        if (typeof normalized.type === 'string' && normalized.type.trim()
+            && !['dark', 'light'].includes(normalized.type.trim().toLowerCase())) {
+            add('type', 'must be dark or light');
+        }
+        if (normalized.tags !== undefined && (!Array.isArray(normalized.tags)
+            || normalized.tags.some(tag => typeof tag !== 'string'))) {
+            add('tags', 'must be an array of strings');
+        }
+
+        if (!isPlainObject(normalized.colors)) {
+            add('colors', 'must be an object');
+        } else {
+            for (const [key, value] of Object.entries(normalized.colors)) {
+                const definition = this.definitions[key];
+                if (!definition || value === undefined || value === null) continue;
+
+                switch (definition.type) {
+                    case 'color':
+                        if (!isCssColor(value)) add(`colors.${key}`, 'must be a valid CSS color');
+                        break;
+                    case 'opacity': {
+                        const opacity = toFiniteNumber(value);
+                        if (opacity === null || opacity < 0 || opacity > 100) {
+                            add(`colors.${key}`, 'must be a number from 0 to 100');
+                        }
+                        break;
+                    }
+                    case 'brightness': {
+                        const brightness = toFiniteNumber(value);
+                        if (brightness === null || brightness < 0 || brightness > 200) {
+                            add(`colors.${key}`, 'must be a number from 0 to 200');
+                        }
+                        break;
+                    }
+                    case 'blur': {
+                        const blur = toFiniteNumber(value);
+                        if (blur === null || blur < 0 || blur > 100) {
+                            add(`colors.${key}`, 'must be a number from 0 to 100');
+                        }
+                        break;
+                    }
+                    case 'image':
+                        if (!isImageValue(value)) add(`colors.${key}`, 'must be a valid image or video URL');
+                        break;
+                    case 'position':
+                        if (!isBackgroundPosition(value)) add(`colors.${key}`, 'must be a valid background position');
+                        break;
+                    case 'raw':
+                        if (typeof value !== 'string') add(`colors.${key}`, 'must be a string');
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        if (!isPlainObject(normalized.editor)) {
+            add('editor', 'must be an object');
+        } else {
+            for (const key of editorColorKeys) {
+                if (normalized.editor[key] !== undefined && !isCssColor(normalized.editor[key])) {
+                    add(`editor.${key}`, 'must be a valid CSS color');
+                }
+            }
+            if (normalized.editor.base !== undefined) validateText(normalized.editor.base, 'editor.base');
+            if (normalized.editor.inherit !== undefined && typeof normalized.editor.inherit !== 'boolean') {
+                add('editor.inherit', 'must be a boolean');
+            }
+
+            const syntax = normalized.editor.syntax;
+            if (syntax !== undefined && !isPlainObject(syntax)) {
+                add('editor.syntax', 'must be an object');
+            } else if (isPlainObject(syntax)) {
+                for (const [key, entry] of Object.entries(syntax)) {
+                    if (!isPlainObject(entry)) {
+                        add(`editor.syntax.${key}`, 'must be an object');
+                        continue;
+                    }
+                    if (typeof entry.color !== 'string' || !syntaxHexPattern.test(entry.color)) {
+                        add(`editor.syntax.${key}.color`, 'must be a hexadecimal color');
+                    }
+                    if (entry.fontStyle !== undefined
+                        && (typeof entry.fontStyle !== 'string' || !/^[a-z ]+$/i.test(entry.fontStyle))) {
+                        add(`editor.syntax.${key}.fontStyle`, 'must be a CSS font style string');
+                    }
+                }
+            }
+        }
+
+        if (!isPlainObject(normalized.terminal)) add('terminal', 'must be an object');
+
+        return { valid: errors.length === 0, errors };
+    },
+
+    /**
      * Apply a single value to an element
      * Handles type-specific transformations (opacity, blur, image, etc.)
      * 
@@ -245,6 +520,7 @@ const ThemeTokens = {
 
         switch (type) {
             case 'image':
+                if (typeof value !== 'string') return;
                 if (value && value !== 'none' && !value.startsWith('url(')) {
                     if (value.startsWith('data:')) {
                         element.style.setProperty(cssVar, `url("${value}")`);
@@ -262,19 +538,29 @@ const ThemeTokens = {
                 }
                 break;
 
-            case 'opacity':
-                element.style.setProperty(cssVar, (parseFloat(value) / 100).toString());
+            case 'opacity': {
+                const opacity = toFiniteNumber(value);
+                if (opacity === null || opacity < 0 || opacity > 100) return;
+                element.style.setProperty(cssVar, (opacity / 100).toString());
                 break;
+            }
 
-            case 'brightness':
-                element.style.setProperty(cssVar, (parseFloat(value) / 100).toString());
+            case 'brightness': {
+                const brightness = toFiniteNumber(value);
+                if (brightness === null || brightness < 0 || brightness > 200) return;
+                element.style.setProperty(cssVar, (brightness / 100).toString());
                 break;
+            }
 
-            case 'blur':
-                element.style.setProperty(cssVar, `${parseInt(value)}px`);
+            case 'blur': {
+                const blur = toFiniteNumber(value);
+                if (blur === null || blur < 0 || blur > 100) return;
+                element.style.setProperty(cssVar, `${blur}px`);
                 break;
+            }
 
             case 'position':
+                if (typeof value !== 'string') return;
                 element.style.setProperty(cssVar, value || 'center center');
                 break;
 
@@ -327,7 +613,7 @@ const ThemeTokens = {
         const syntaxKeys = ['keyword', 'string', 'number', 'type', 'function', 'comment', 'variable', 'operator', 'bracket'];
         for (const name of syntaxKeys) {
             const data = syntax[name];
-            if (data?.color) {
+            if (data && typeof data.color === 'string' && syntaxHexPattern.test(data.color)) {
                 const hexColor = data.color.startsWith('#') ? data.color : '#' + data.color;
                 element.style.setProperty(`--syntax-${name}`, hexColor);
             }
@@ -342,57 +628,74 @@ const ThemeTokens = {
      * @param {Object} c - theme.colors (mutated in place)
      */
     fillDefaults(c) {
-        // Helper: set key from first truthy fallback (string = key ref, other = literal)
+        if (!isPlainObject(c)) return c;
+
+        const legacyWelcomeOpacity = toFiniteNumber(c.welcomeBoxOpacity);
+        if (legacyWelcomeOpacity !== null && legacyWelcomeOpacity > 0 && legacyWelcomeOpacity < 1) {
+            c.welcomeBoxOpacity = legacyWelcomeOpacity * 100;
+        }
+
+        // References are explicit so a literal such as '#ffffff' or 'rgba(...)'
+        // can never be mistaken for a token key. This also keeps future token names
+        // from silently changing the meaning of an existing literal fallback.
+        const ref = (key) => ({ __themeTokenRef: key });
         const d = (key, ...fallbacks) => {
             if (c[key] !== undefined && c[key] !== null) return;
             for (const f of fallbacks) {
-                if (typeof f === 'string') {
-                    if (c[f] !== undefined && c[f] !== null) { c[key] = c[f]; return; }
-                } else {
-                    c[key] = f; return;
+                if (f && typeof f === 'object' && hasOwn(f, '__themeTokenRef')) {
+                    const sourceKey = f.__themeTokenRef;
+                    if (c[sourceKey] !== undefined && c[sourceKey] !== null) {
+                        c[key] = c[sourceKey];
+                        return;
+                    }
+                    continue;
                 }
+                c[key] = f;
+                return;
             }
         };
 
         // Numeric / effect defaults
-        d('bgOpacity',           100);
+        d('bgOpacity',           50);
         d('bgBrightness',        100);
         d('bgBlur',              0);
-        d('editorBgOpacity',     100);
+        d('editorBgOpacity',     15);
         d('editorBgBrightness',  100);
         d('editorBgBlur',        0);
-        d('welcomeBoxOpacity',   0.4);
+        d('terminalOpacity',     100);
+        d('panelOpacity',        100);
+        d('welcomeBoxOpacity',   40);
 
         // Derived color defaults — order matters (dependents after their sources)
-        d('accentHover',             'accent', '#5eb7e0');
-        d('borderStrong',            'accent', '#88c9ea');
-        d('bgGlassBorder',           'border', 'borderStrong', '#3a6075');
-        d('bgBase',                  'bgOceanDark', 'editorBg', '#0d1a25');
-        d('bgSurface',               'bgOceanLight', 'bgPanel', '#1a3a50');
+        d('accentHover',             ref('accent'), '#5eb7e0');
+        d('borderStrong',            ref('accent'), '#88c9ea');
+        d('bgGlassBorder',           ref('border'), ref('borderStrong'), '#3a6075');
+        d('bgBase',                  ref('bgOceanDark'), ref('editorBg'), '#0d1a25');
+        d('bgSurface',               ref('bgOceanLight'), ref('bgPanel'), '#1a3a50');
         d('buttonTextOnAccent',      '#ffffff');
-        d('settingsLabelColor',      'textSecondary', 'textPrimary', '#a0c0d0');
-        d('settingsSectionColor',    'accent', '#88c9ea');
-        d('bgButton',                'bgOceanLight', '#243040');
-        d('bgButtonHover',           'bgOceanMedium', '#3a5060');
+        d('settingsLabelColor',      ref('textSecondary'), ref('textPrimary'), '#a0c0d0');
+        d('settingsSectionColor',    ref('accent'), '#88c9ea');
+        d('bgButton',                ref('bgOceanLight'), '#243040');
+        d('bgButtonHover',           ref('bgOceanMedium'), '#3a5060');
 
         // Button tokens
-        d('btnBg',                   'bgButton',      'rgba(255, 255, 255, 0.1)');
-        d('btnBgHover',              'bgButtonHover', 'bgOceanLight', 'rgba(255, 255, 255, 0.15)');
-        d('btnBorder',               'border',        '#a0c8e0');
-        d('btnText',                 'textPrimary',   'textSecondary', '#e0f0ff');
-        d('btnTextHover',            'accent',        '#88c9ea');
-        d('btnPrimaryBg',            'accent',        'bgOceanDeep', '#4a9bc9');
-        d('btnPrimaryBgHover',       'accentHover',   'bgOceanMedium', '#3a8ab8');
-        d('btnPrimaryText',          'buttonTextOnAccent', '#ffffff');
-        d('btnSuccessBg',            'success',       '#50fa7b');
-        d('btnSuccessText',          'buttonTextOnAccent', '#ffffff');
-        d('btnErrorBg',              'error',         '#ff5555');
-        d('btnErrorText',            'buttonTextOnAccent', '#ffffff');
+        d('btnBg',                   ref('bgButton'),      'rgba(255, 255, 255, 0.1)');
+        d('btnBgHover',              ref('bgButtonHover'), ref('bgOceanLight'), 'rgba(255, 255, 255, 0.15)');
+        d('btnBorder',               ref('border'),        '#a0c8e0');
+        d('btnText',                 ref('textPrimary'),   ref('textSecondary'), '#e0f0ff');
+        d('btnTextHover',            ref('accent'),        '#88c9ea');
+        d('btnPrimaryBg',            ref('accent'),        ref('bgOceanDeep'), '#4a9bc9');
+        d('btnPrimaryBgHover',       ref('accentHover'),   ref('bgOceanMedium'), '#3a8ab8');
+        d('btnPrimaryText',          ref('buttonTextOnAccent'), '#ffffff');
+        d('btnSuccessBg',            ref('success'),       '#50fa7b');
+        d('btnSuccessText',          ref('buttonTextOnAccent'), '#ffffff');
+        d('btnErrorBg',              ref('error'),         '#ff5555');
+        d('btnErrorText',            ref('buttonTextOnAccent'), '#ffffff');
 
         // Welcome box tokens
-        d('welcomeBoxBg',            'bgGlass', 'bgPanel', 'rgba(37, 64, 90, 0.4)');
-        d('welcomeBtnBorder',        'borderStrong', 'border', '#88c9ea');
-        d('welcomeBtnPrimaryBorder', 'accent', '#88c9ea');
+        d('welcomeBoxBg',            ref('bgGlass'), ref('bgPanel'), 'rgba(37, 64, 90, 0.4)');
+        d('welcomeBtnBorder',        ref('borderStrong'), ref('border'), '#88c9ea');
+        d('welcomeBtnPrimaryBorder', ref('accent'), '#88c9ea');
 
         // Load-bearing tokens promoted from themes.css in Phase 06. Defaults match
         // the exact theme.css :root / usage fallback each resolves to today, so a
@@ -400,7 +703,7 @@ const ThemeTokens = {
         d('successDark',      '#1b7d3f');
         d('successHover',     '#219150');
         d('errorDark',        '#a8071a');
-        d('danger',           'error', '#d84860');
+        d('danger',           ref('error'), '#d84860');
         d('folderIconClosed', '#f0c674');
         d('folderIconOpen',   '#f5b942');
         d('borderGlassEdge',  'rgba(255, 255, 255, 0.4)');
@@ -415,9 +718,11 @@ const ThemeTokens = {
         d('termLineInput',    '#56b6c2');
 
         // Test result colors inherit the theme's semantic colors by default.
-        d('testPass',    'success', '#2ecc71');
-        d('testFail',    'error',   '#e74c3c');
-        d('testPending', 'textSecondary', '#7f8c8d');
+        d('testPass',    ref('success'), '#2ecc71');
+        d('testFail',    ref('error'),   '#e74c3c');
+        d('testPending', ref('textSecondary'), '#7f8c8d');
+
+        return c;
     },
 
     /**
@@ -434,6 +739,7 @@ Object.freeze(ThemeTokens.definitions);
 Object.freeze(ThemeTokens.inheritance);
 Object.freeze(ThemeTokens);
 
-// Make globally available
-window.ThemeTokens = ThemeTokens;
+// Make globally available in the renderer and importable in isolated Node tests.
+if (typeof module !== 'undefined' && module.exports) module.exports = ThemeTokens;
+else window.ThemeTokens = ThemeTokens;
 

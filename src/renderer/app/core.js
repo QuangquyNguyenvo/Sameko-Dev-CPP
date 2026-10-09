@@ -318,10 +318,84 @@ function ensureMonaco() {
 // Markers and decorations now belong to the file they were made for, and the
 // same tab shown in both split panes is one live document.
 
+// The file's extension picks its language. C/C++ (and untitled tabs) get IntelliSense, live
+// check, Build and Format; write-ups open as Markdown and test data (.inp .out .txt ...) as plain
+// text. JSON stays plain text: Monaco's JSON mode needs a web worker this page does not set up.
+const CPP_EXTENSIONS = new Set(['cpp', 'cc', 'cxx', 'c', 'h', 'hpp', 'hh', 'hxx', 'ipp', 'tpp', 'inl']);
+
+/**
+ * Plain text and test data: a line starting with "# " (or a lone "#") or "//" is a comment,
+ * a line that is only "[...]" is a section header. "#" glued to more text ("#..#", "##.")
+ * stays data, so grids and other test input are not mistaken for comments.
+ */
+let textLanguageRegistered = false;
+
+function registerTextLanguage() {
+    if (textLanguageRegistered || typeof monaco === 'undefined') return;
+    textLanguageRegistered = true;
+    monaco.languages.register({ id: 'sameko-text', aliases: ['Plain Text'] });
+    monaco.languages.setMonarchTokensProvider('sameko-text', {
+        tokenizer: {
+            root: [
+                [/^\s*(?:#(?:\s.*)?|\/\/.*)$/, 'comment'],
+                [/^\s*\[[^\]]+\]\s*$/, 'keyword']
+            ]
+        }
+    });
+}
+
+function fileExtension(name) {
+    const base = String(name || '').split(/[/\x5c]/).pop();
+    const dot = base.lastIndexOf('.');
+    return dot > 0 ? base.slice(dot + 1).toLowerCase() : '';
+}
+
+/** Monaco language id for a file name or path. */
+function languageForFile(name) {
+    const ext = fileExtension(name);
+    if (!ext || CPP_EXTENSIONS.has(ext)) return 'cpp';
+    if (ext === 'md' || ext === 'markdown') return 'markdown';
+    return 'sameko-text';
+}
+
+/** Whether C++ tooling (build, live check, format) applies to the tab. */
+function isCppTab(tab) {
+    return !tab || languageForFile(tab.path || tab.name) === 'cpp';
+}
+
+/** After a rename or Save As the extension may have changed. */
+function syncTabLanguage(tab) {
+    if (!tab?.model || tab.model.isDisposed()) return;
+    registerTextLanguage();
+    const language = languageForFile(tab.path || tab.name);
+    if (tab.model.getLanguageId() !== language) monaco.editor.setModelLanguage(tab.model, language);
+    for (const editor of [App.editor, App.editor2]) {
+        if (editor?.getModel() === tab.model) applyFileTypeOptions(editor);
+    }
+}
+
+/**
+ * Options that follow the file shown: write-ups (.md, .txt) wrap long lines, and text files do
+ * not flag Vietnamese and other non-ASCII letters as "ambiguous" or "invisible" characters.
+ */
+function applyFileTypeOptions(editor) {
+    if (!editor) return;
+    const tab = getTabForModel(editor.getModel());
+    const language = tab ? languageForFile(tab.path || tab.name) : 'cpp';
+    const prose = language === 'markdown' || fileExtension(tab?.path || tab?.name) === 'txt';
+    const text = language !== 'cpp';
+    editor.updateOptions({
+        wordWrap: prose || App.settings.editor.wordWrap ? 'on' : 'off',
+        unicodeHighlight: { ambiguousCharacters: !text, invisibleCharacters: !text }
+    });
+    if (typeof updateLanguageStatus === 'function') updateLanguageStatus();
+}
+
 /** The tab's model, created on first use. Requires Monaco to be loaded. */
 function getTabModel(tab) {
     if (!tab.model || tab.model.isDisposed()) {
-        tab.model = monaco.editor.createModel(tab.content || '', 'cpp');
+        registerTextLanguage();
+        tab.model = monaco.editor.createModel(tab.content || '', languageForFile(tab.path || tab.name));
     }
     return tab.model;
 }
@@ -337,6 +411,7 @@ function showTabInEditor(editor, tab) {
     if (!editor || !tab) return;
     const model = getTabModel(tab);
     if (editor.getModel() !== model) editor.setModel(model);
+    applyFileTypeOptions(editor);
 }
 
 /** Detach whatever is shown, leaving the editor on its empty placeholder model. */
@@ -565,7 +640,7 @@ function initMonaco(onReady) {
         // first theme apply. Copy-only: never deletes, so both UIs keep working.
         if (typeof ThemeManager !== 'undefined'
             && typeof ThemeManager._migratePerThemeBackgrounds === 'function') {
-            try { ThemeManager._migratePerThemeBackgrounds(); }
+            try { await ThemeManager._migratePerThemeBackgrounds(); }
             catch (e) { console.warn('[ThemeManager] bg migration failed:', e); }
         }
 

@@ -76,6 +76,7 @@ async function buildActiveTab({ runAfter }) {
     const tab = App.tabs.find(t => t.id === getPreferredTabId());
     const editor = getActiveEditor();
     if (!tab) { log('No file open', 'warning'); return; }
+    if (!isCppTab(tab)) { log(`${tab.name} is not a C/C++ file. Switch to the solution's tab to ${verb.toLowerCase()} it.`, 'warning'); return; }
 
     setBuildingState(true);
     let built = false;

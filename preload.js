@@ -27,7 +27,8 @@ try {
 
 contextBridge.exposeInMainWorld('electronAPI', {
     // File operations
-    openFile: () => ipcRenderer.invoke('open-file-dialog'),
+    openFile: (options) => ipcRenderer.invoke('open-file-dialog', options),
+    getLaunchFiles: () => ipcRenderer.invoke('get-launch-files'),
     saveFile: (data) => ipcRenderer.invoke('save-file', data),
     saveFileDialog: (payload) => ipcRenderer.invoke('save-file-dialog', payload),
 

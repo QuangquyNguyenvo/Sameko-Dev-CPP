@@ -92,7 +92,7 @@ function setActive(id) {
         // preamble for a #include<bits/stdc++.h> file takes ~1-2s; without
         // this, that first request races the build and clangd falls back to
         // its dumb "identifiers from buffer" completion (see cpp-suggestions.js).
-        if (window.electronAPI?.getClangdCompletions) {
+        if (window.electronAPI?.getClangdCompletions && isCppTab(tab)) {
             window.electronAPI.getClangdCompletions(tab.path || tab.id, tab.content, 0, 0).catch(() => {});
         }
     }
@@ -240,6 +240,8 @@ function renderTabs() {
     const c = document.getElementById('tabs-container');
     c.innerHTML = '';
     App.tabs.forEach(t => {
+        // Every rename and Save As ends here; a new extension may mean a new language.
+        syncTabLanguage(t);
         const isActiveTab = t.id === App.activeTabId;
         const isSplitTab = App.isSplit && t.id === App.splitTabId;
         const isFocused = (App.activeEditor === 1 && isActiveTab) || (App.activeEditor === 2 && isSplitTab);
@@ -385,7 +387,15 @@ function getActiveEditor() {
 // ============================================================================
 // FILE OPERATIONS
 // ============================================================================
-async function openFile() { await window.electronAPI.openFile(); }
+// The Open dialog starts in the active file's folder, else the open Explorer folder; main falls
+// back to the folder of the last file opened or saved through a dialog.
+async function openFile() {
+    const tabId = App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId;
+    const tabPath = App.tabs.find(t => t.id === tabId)?.path;
+    const slash = tabPath ? Math.max(tabPath.lastIndexOf('/'), tabPath.lastIndexOf('\x5c')) : -1;
+    const dir = slash > 0 ? tabPath.slice(0, slash) : (window.FileExplorer?.currentFolder || '');
+    await window.electronAPI.openFile({ defaultPath: dir || undefined });
+}
 
 async function save() {
 

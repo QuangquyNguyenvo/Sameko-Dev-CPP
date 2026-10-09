@@ -47,15 +47,7 @@ const ThemeMarketplace = {
             this.openMarketplace();
         });
 
-        document.getElementById('btn-open-customizer')?.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const currentTheme = App?.settings?.appearance?.theme;
-            if (typeof ThemeCustomizer !== 'undefined') {
-                ThemeCustomizer.open(currentTheme);
-            } else {
-                console.error('[ThemeMarketplace] ThemeCustomizer not available');
-            }
-        });
+        // Settings owns the Customize button; binding it here as well opens two sessions.
 
         document.getElementById('btn-import-file')?.addEventListener('click', () => this._importFile());
         document.getElementById('btn-import-gist')?.addEventListener('click', () => this._importGist());
@@ -318,8 +310,10 @@ const ThemeMarketplace = {
     /**
      * Export theme to file
      */
-    _exportTheme(themeId) {
-        const json = ThemeManager.exportTheme(themeId);
+    async _exportTheme(themeId) {
+        let json;
+        try { json = await ThemeManager.exportThemePortable(themeId); }
+        catch (error) { this._notify('Export failed: ' + error.message, 'error'); return; }
         if (!json) return;
 
         const theme = ThemeManager.themes.get(themeId);
@@ -347,12 +341,12 @@ const ThemeMarketplace = {
             return;
         }
 
-        this._confirm(`Delete theme "${theme.name || themeId}"?`, 'Delete theme', 'Delete', true).then((confirmed) => {
+        this._confirm(`Delete theme "${theme.name || themeId}"?`, 'Delete theme', 'Delete', true).then(async (confirmed) => {
             if (!confirmed) return;
 
             const isCurrentTheme = App?.settings?.appearance?.theme === themeId;
 
-            const result = ThemeManager.deleteTheme(themeId);
+            const result = await ThemeManager.deleteTheme(themeId);
             if (result.success) {
                 if (isCurrentTheme) {
                     const themes = ThemeManager.getThemeList();
@@ -366,7 +360,7 @@ const ThemeMarketplace = {
             } else {
                 this._notify(result.message || 'Failed to delete theme', 'error');
             }
-        });
+        }).catch(error => this._notify('Delete failed: ' + error.message, 'error'));
     },
 
     /**
@@ -381,10 +375,11 @@ const ThemeMarketplace = {
             if (!file) return;
 
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = async (event) => {
                 try {
                     const result = ThemeManager.importTheme(event.target.result);
                     if (result.success) {
+                        await result.persistence;
                         this.renderCarousel();
                         this._renderMarketplaceContent();
                         this._notify(`Imported: ${result.message}`, 'success');
@@ -422,6 +417,7 @@ const ThemeMarketplace = {
                 if (filename.endsWith('.json') && file.content) {
                     const result = ThemeManager.importTheme(file.content);
                     if (result.success) {
+                        await result.persistence;
                         this.renderCarousel();
                         this._renderMarketplaceContent();
                         this._notify(`Imported: ${result.message}`, 'success');

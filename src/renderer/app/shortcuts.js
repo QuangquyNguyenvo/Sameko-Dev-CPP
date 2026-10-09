@@ -28,8 +28,8 @@ const ACTION_HANDLERS = {
     'stop': () => { if (window.Debugger && window.Debugger.isActive()) window.Debugger.stop(); else stop(); },
     'debugStart': () => { if (window.Debugger) window.Debugger.start(); },
     'debugStepOut': () => { if (window.Debugger && window.Debugger.isActive()) window.Debugger.stepOut(); },
-    'save': () => save(),
-    'saveAs': () => saveAs(),
+    'save': () => window.ThemeCustomizer?.popup ? ThemeCustomizer.save() : save(),
+    'saveAs': () => window.ThemeCustomizer?.popup ? ThemeCustomizer.save({ asNew: true }) : saveAs(),
     'newFile': () => newFile(),
     'openFile': () => openFile(),
     'newTab': () => newFile(),
@@ -160,6 +160,18 @@ function initShortcuts() {
         // The Settings "press a key" capture owns the keyboard while it is active.
         if (editingKeybinding) return;
 
+        // A theme editing session owns focus. Text fields retain native undo/redo;
+        // only the configured Save actions are dispatched to the draft.
+        if (window.ThemeCustomizer?.popup) {
+            const action = currentShortcutMap.get(normalizeKeyCombo(e));
+            if (action === 'save' || action === 'saveAs') {
+                e.preventDefault();
+                e.stopPropagation();
+                ACTION_HANDLERS[action]();
+            }
+            return;
+        }
+
         // Escape closes Settings from anywhere, including while the editor
         // (a textarea) still has focus behind the overlay.
         if (e.key === 'Escape') closeSettings();
@@ -225,6 +237,8 @@ function initShortcuts() {
 async function formatCode() {
     const editor = App.activeEditor === 2 && App.editor2 ? App.editor2 : App.editor;
     if (!editor) return;
+    // AStyle formats C/C++ only; on a write-up it would reflow the text as code.
+    if (!isCppTab(getTabForModel(editor.getModel()))) return;
 
     const code = editor.getValue();
     if (!code.trim()) return;
