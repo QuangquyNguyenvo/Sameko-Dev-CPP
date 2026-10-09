@@ -26,6 +26,7 @@ const log = {
     error: (...args) => getLog().error(...args),
 };
 const { IS_WIN, IS_LINUX } = require('../shared/platform');
+const { readSettings } = require('../shared/settings-store');
 
 /**
  * electron-updater's HttpError packs the whole response — every header plus a
@@ -75,8 +76,8 @@ class AutoUpdateService {
         this._updater = autoUpdater;
         autoUpdater.logger = createUpdateLogger();
 
-        // Allow pre-release updates (beta versions)
-        autoUpdater.allowPrerelease = true;
+        // Pre-releases are opt-in (Settings > About); set again before every check.
+        autoUpdater.allowPrerelease = this.wantsPrerelease();
 
         // Auto-download updates in background
         autoUpdater.autoDownload = true;
@@ -274,6 +275,20 @@ class AutoUpdateService {
         }
     }
 
+    /**
+     * Beta builds are offered only to users who turned on "Get beta updates",
+     * or who already run a pre-release version (so they keep receiving fixes).
+     * @returns {boolean}
+     */
+    wantsPrerelease() {
+        if (app.getVersion().includes('-')) return true;
+        try {
+            return readSettings()?.updates?.prerelease === true;
+        } catch {
+            return false;
+        }
+    }
+
     async checkForUpdates(showNoUpdateDialog = true) {
         // A .deb install is owned by apt — electron-updater must not touch it.
         // initialize() already skips the startup check, but the renderer can
@@ -301,6 +316,7 @@ class AutoUpdateService {
                 setTimeout(() => reject(new Error('Update check timed out')), 15000);
             });
 
+            this.updater.allowPrerelease = this.wantsPrerelease();
             const result = await Promise.race([
                 this.updater.checkForUpdates(),
                 timeoutPromise

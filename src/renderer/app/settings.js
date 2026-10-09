@@ -38,7 +38,8 @@ function loadSettings() {
                 keybindings: { ...DEFAULT_SETTINGS.keybindings, ...saved.keybindings },
                 snippets: saved.snippets || DEFAULT_SETTINGS.snippets,
                 localHistory: { ...DEFAULT_SETTINGS.localHistory, ...saved.localHistory },
-                discord: { ...DEFAULT_SETTINGS.discord, ...saved.discord }
+                discord: { ...DEFAULT_SETTINGS.discord, ...saved.discord },
+                updates: { ...DEFAULT_SETTINGS.updates, ...saved.updates }
             };
         }
 
@@ -750,6 +751,9 @@ function openSettings() {
     renderKeybindings();
 
     // Discord settings
+    const prereleaseEl = document.getElementById('set-updatesPrerelease');
+    if (prereleaseEl) prereleaseEl.checked = App.settings.updates?.prerelease === true;
+
     const discordEnabledEl = document.getElementById('set-discordEnabled');
     if (discordEnabledEl) {
         discordEnabledEl.checked = App.settings.discord?.enabled !== false;
@@ -837,6 +841,12 @@ async function saveSettingsAndClose() {
 
         if (!App.settings.template) App.settings.template = {};
         App.settings.template.code = document.getElementById('set-template').value;
+
+        const prereleaseEl = document.getElementById('set-updatesPrerelease');
+        if (prereleaseEl) {
+            if (!App.settings.updates) App.settings.updates = {};
+            App.settings.updates.prerelease = prereleaseEl.checked;
+        }
 
         // Discord RPC toggle
         const discordEnabledEl = document.getElementById('set-discordEnabled');

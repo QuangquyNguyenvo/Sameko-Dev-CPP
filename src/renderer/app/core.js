@@ -132,6 +132,9 @@ int main() {
     ],
     discord: {
         enabled: true
+    },
+    updates: {
+        prerelease: false
     }
 };
 
