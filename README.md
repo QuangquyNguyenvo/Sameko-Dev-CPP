@@ -59,6 +59,7 @@
     <td width="70%">
       <p><b>Sameko IDE</b> is a lightweight C++ IDE for Windows and Linux, built for competitive programming and learning. The Windows build comes with GCC 16 pre-configured — no MinGW installation needed. Just download, extract, and start coding.</p>
       <blockquote>💡 Think of it as a modern Dev-C++ alternative: simple interface, fast compilation, works out of the box.</blockquote>
+      <p><sub>An unofficial fan project, not affiliated with Sameko Saba. <a href="#-the-story-behind-it">Why the name?</a></sub></p>
     </td>
     <td width="30%" align="center">
       <img src="src/assets/icons/fish.png" alt="Sameko Fish" width="180" />
@@ -326,6 +327,22 @@ as long as the session is live, and go back to Run / Compile & Run once it ends.
 **📝 Want to contribute?**
 
 Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a PR.
+
+<br />
+
+## 🐟 The story behind it
+
+I like making my coding space feel like mine: themes, wallpapers, characters I like. Sameko Saba is one of them.
+
+Classic Dev-C++ can barely be customized. VS Code can, but every time I changed computers (at school, for example) I had to set everything up again: the compiler, extensions, settings, theme. So I made my own IDE, one that comes with its compiler, works as soon as you open it, and lets me change every colour.
+
+To be honest, most of this started because I just wanted to customize things my way. Saba is what kept me motivated while building it, so the app is named after her.
+
+**Not an official project.** Sameko Dev C++ is a free, unofficial fan project. It is not affiliated with or endorsed by Sameko Saba or anyone who represents her. All rights to her name, likeness and artwork belong to their owners. The built-in themes don't use her artwork; I'd love to make a Saba theme one day, but only with permission.
+
+**Art credits.** The Saba illustration on the website is by **[Nuu (@XD_zow)](https://x.com/XD_zow)**. Saba's character design is by Shouu and her illustration by Tousaki Shiina. The logo was designed by Yunchan.
+
+If you own any of this and want something changed or removed, please [open an issue](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues) and I'll fix it quickly.
 
 <br />
 

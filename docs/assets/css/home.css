@@ -601,6 +601,9 @@ a.card {
     color: var(--c-text-muted);
 }
 
+.foot__credit { flex-basis: 100%; }
+.foot__credit a { color: inherit; text-decoration: underline; }
+
 .hero__visual {
     position: relative;
     display: grid;
