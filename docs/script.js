@@ -277,8 +277,9 @@ fetch('https://api.github.com/repos/QuangquyNguyenvo/Sameko-Dev-CPP/releases')
         Object.keys(MATCHERS).forEach(id => {
             const el = document.getElementById(id);
             if (!el) return;
-            // Từ 1.3.0 có hai file .exe: ưu tiên bộ cài mới Sameko-Setup-*.exe
-            const hit = (id === 'dl-installer' && assets.find(a => a.name.toLowerCase().startsWith('sameko-setup-')))
+            // Có hai file .exe: ưu tiên bộ cài mới (*-installer.exe từ 1.3.1, Sameko-Setup-*.exe ở 1.3.0)
+            const isSetup = n => n.endsWith('-installer.exe') || n.startsWith('sameko-setup-');
+            const hit = (id === 'dl-installer' && assets.find(a => isSetup(a.name.toLowerCase())))
                 || assets.find(a => MATCHERS[id](a.name.toLowerCase()));
 
             if (hit) {

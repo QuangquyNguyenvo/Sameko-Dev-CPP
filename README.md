@@ -139,7 +139,7 @@ Then turn it **OFF** and build again.
 
 | Package | Format | Description | Recommendation |
 | :--- | :---: | :--- | :--- |
-| **Setup** | `Sameko-Setup-<version>.exe` | One-window setup: pick a folder and install, with Start Menu shortcuts & auto-update | **⭐ Recommended for most users** |
+| **Setup** | `sameko-dev-cpp-<version>-installer.exe` | One-window setup: pick a folder and install, with Start Menu shortcuts & auto-update | **⭐ Recommended for most users** |
 | **Installer** | `sameko-dev-cpp-setup-<version>.exe` | The classic step-by-step installer (same install, used by auto-update) | If you prefer the wizard |
 | **Portable** | `.zip` | Standalone archive. Extract anywhere (including USB drives) and run | Ideal for school / restricted PCs |
 
@@ -250,7 +250,7 @@ Everything lands in `samekodevcpp/`. A full `npm run build` produces:
 
 | Artifact | Notes |
 | :--- | :--- |
-| `Sameko-Setup-<version>.exe` | Windows setup window, with the NSIS installer inside |
+| `sameko-dev-cpp-<version>-installer.exe` | Windows setup window, with the NSIS installer inside |
 | `sameko-dev-cpp-setup-<version>.exe` | Windows installer (NSIS); the in-app updater uses this one |
 | `sameko-dev-cpp-<version>-portable.zip` | Windows portable folder, zipped |
 | `sameko-dev-cpp-<version>-linux-x86_64.AppImage` | Linux, runs on any distribution |

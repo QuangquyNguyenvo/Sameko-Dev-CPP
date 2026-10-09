@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * Builds Sameko-Setup-<version>.exe: the themed setup window (installer/setup/) with the NSIS
+ * Builds sameko-dev-cpp-<version>-installer.exe: the themed setup window (installer/setup/) with the NSIS
  * installer from electron-builder embedded in it. Windows only; uses the C# compiler that ships
  * with .NET Framework 4.8, so nothing has to be installed.
  *
@@ -67,7 +67,7 @@ try {
     fs.writeFileSync(path.join(work, 'version.txt'), pkg.version);
 
     fs.mkdirSync(outDir, { recursive: true });
-    const out = path.join(outDir, `Sameko-Setup-${pkg.version}.exe`);
+    const out = path.join(outDir, `sameko-dev-cpp-${pkg.version}-installer.exe`);
     const res = (file, name) => `/resource:${file},${name}`;
     execFileSync(csc, [
         '/nologo', '/target:winexe', '/optimize+', '/platform:anycpu',

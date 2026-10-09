@@ -7,8 +7,8 @@
 // Built by scripts/build-setup.js with the C# 5 compiler that ships with .NET Framework 4.8
 // (present on every Windows 10/11), so it needs no SDK and no runtime download.
 //
-//   Sameko-Setup.exe            install
-//   Sameko-Setup.exe --demo     walk through every step without installing anything
+//   sameko-dev-cpp-<version>-installer.exe          install
+//   sameko-dev-cpp-<version>-installer.exe --demo     walk through every step without installing anything
 
 using System;
 using System.ComponentModel;
