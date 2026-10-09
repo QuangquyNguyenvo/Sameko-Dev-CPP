@@ -37,7 +37,7 @@ A rebuilt theme customizer, files that open from Windows, and proper support for
 - **Ctrl+O** opens in the current file's folder (or the Explorer folder, or the last folder used) instead of the system default.
 - **Open and Save As** list `.txt`, `.md`, `.inp`, `.out`, `.ans` and other test files; Save As preselects the filter that matches the file name.
 - **Dialogs** (confirmations, name prompts, update and Competitive Companion) match the Settings window: thicker frame, icon badge (red for destructive actions), readable body text.
-- **Discord preview** in Settings looks like the real Discord profile card, with a live timer and a list of what is and is not shared. The status line uses `-` instead of `-`.
+- **Discord preview** in Settings looks like the real Discord profile card, with a live timer and a list of what is and is not shared. The status line uses a hyphen instead of an em dash.
 - The one-window setup is now named `sameko-dev-cpp-<version>-installer.exe` (was `Sameko-Setup-<version>.exe`), like the other downloads.
 - Themes and background overrides are stored in `userData/state/themes.json` (moved over automatically). Saves are queued and failed saves are rolled back.
 - Exported themes include uploaded background images and videos; importing can no longer overwrite a builtin theme.
