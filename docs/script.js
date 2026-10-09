@@ -1,4 +1,4 @@
-// ===== REVEAL ANIMATIONS (Critical — must run first) =====
+// ===== REVEAL ANIMATIONS (Critical - must run first) =====
 try {
     const observerOptions = {
         threshold: 0.1,
@@ -253,7 +253,7 @@ try {
         syncDownloadMenuAria(false);
     }
 
-// Fetch Releases — gán URL cho từng artifact theo nền tảng
+// Fetch Releases - gán URL cho từng artifact theo nền tảng
 fetch('https://api.github.com/repos/QuangquyNguyenvo/Sameko-Dev-CPP/releases')
     .then(res => res.json())
     .then(data => {
@@ -265,7 +265,8 @@ fetch('https://api.github.com/repos/QuangquyNguyenvo/Sameko-Dev-CPP/releases')
 
         // id phần tử -> hàm nhận diện tên file (đã toLowerCase)
         const MATCHERS = {
-            'dl-installer': n => n.endsWith('.exe'),
+            // Chỉ bộ cài NSIS; bỏ qua bộ cài một cửa sổ (*-installer.exe, Sameko-Setup-*.exe) ở 1.3.0-1.3.1
+            'dl-installer': n => n.endsWith('.exe') && !n.endsWith('-installer.exe') && !n.startsWith('sameko-setup-'),
             'dl-portable': n => n.endsWith('.zip'),
             'dl-appimage': n => n.endsWith('.appimage'),
             'dl-deb': n => n.endsWith('.deb'),
@@ -277,10 +278,7 @@ fetch('https://api.github.com/repos/QuangquyNguyenvo/Sameko-Dev-CPP/releases')
         Object.keys(MATCHERS).forEach(id => {
             const el = document.getElementById(id);
             if (!el) return;
-            // Có hai file .exe: ưu tiên bộ cài mới (*-installer.exe từ 1.3.1, Sameko-Setup-*.exe ở 1.3.0)
-            const isSetup = n => n.endsWith('-installer.exe') || n.startsWith('sameko-setup-');
-            const hit = (id === 'dl-installer' && assets.find(a => isSetup(a.name.toLowerCase())))
-                || assets.find(a => MATCHERS[id](a.name.toLowerCase()));
+            const hit = assets.find(a => MATCHERS[id](a.name.toLowerCase()));
 
             if (hit) {
                 el.href = hit.browser_download_url;
@@ -330,7 +328,7 @@ fetch('https://api.github.com/repos/QuangquyNguyenvo/Sameko-Dev-CPP/releases')
     if (!hint) return;
     if (os === 'windows') hint.textContent = 'Windows 10/11 · 64-bit · Free & open source';
     else if (os === 'linux') hint.textContent = 'Linux x64 · AppImage, .deb, tar.gz · Free & open source';
-    else if (os === 'mac') hint.textContent = 'No official macOS build yet — see the wiki to build from source';
+    else if (os === 'mac') hint.textContent = 'No official macOS build yet - see the wiki to build from source';
     else hint.textContent = 'Windows 10/11 · Linux x64 · Free & open source';
 })();
 } catch (e) { console.warn('Dropdown/fetch section error:', e); }

@@ -57,7 +57,7 @@
 <table>
   <tr>
     <td width="70%">
-      <p><b>Sameko IDE</b> is a lightweight C++ IDE for Windows and Linux, built for competitive programming and learning. The Windows build comes with GCC 16 pre-configured — no MinGW installation needed. Just download, extract, and start coding.</p>
+      <p><b>Sameko IDE</b> is a lightweight C++ IDE for Windows and Linux, built for competitive programming and learning. The Windows build comes with GCC 16 pre-configured - no MinGW installation needed. Just download, extract, and start coding.</p>
       <blockquote>💡 Think of it as a modern Dev-C++ alternative: simple interface, fast compilation, works out of the box.</blockquote>
       <p>🐟 <b>Unofficial fan project</b>, not affiliated with Sameko Saba. <a href="#-the-story-behind-it">Why the name?</a></p>
     </td>
@@ -140,9 +140,10 @@ Then turn it **OFF** and build again.
 
 | Package | Format | Description | Recommendation |
 | :--- | :---: | :--- | :--- |
-| **Setup** | `sameko-dev-cpp-<version>-installer.exe` | One-window setup: pick a folder and install, with Start Menu shortcuts & auto-update | **⭐ Recommended for most users** |
-| **Installer** | `sameko-dev-cpp-setup-<version>.exe` | The classic step-by-step installer (same install, used by auto-update) | If you prefer the wizard |
+| **Installer** | `sameko-dev-cpp-setup-<version>.exe` | Step-by-step installer with Start Menu shortcuts & auto-update | **⭐ Recommended for most users** |
 | **Portable** | `.zip` | Standalone archive. Extract anywhere (including USB drives) and run | Ideal for school / restricted PCs |
+
+> 🛡️ **Windows SmartScreen** may warn that the app is from an unknown publisher, because the builds are not code-signed yet. Click **More info → Run anyway**. The 1.3.1 installer scans clean on [VirusTotal (0/49)](https://www.virustotal.com/gui/file/9a75adbaa997597b277ef9257b2112f583da062d5d30769bb6b0ab034cc5ee53).
 
 <br />
 
@@ -175,13 +176,13 @@ Get the latest Linux release from [**sameko.dev**](https://sameko.dev/) or [**Gi
 
 #### 📌 Step 3: Run or install the application
 
-- 🔹 **Option A: AppImage** *(Universal — no installation needed)*
+- 🔹 **Option A: AppImage** *(Universal - no installation needed)*
   ```bash
   chmod +x sameko-dev-cpp-*.AppImage
   ./sameko-dev-cpp-*.AppImage
   ```
 
-- 🔹 **Option B: `.deb` Package** *(Debian / Ubuntu / Mint — auto-configures app menu & sandbox)*
+- 🔹 **Option B: `.deb` Package** *(Debian / Ubuntu / Mint - auto-configures app menu & sandbox)*
   ```bash
   sudo apt install ./sameko-dev-cpp-*.deb
   sameko-dev-cpp
@@ -251,8 +252,7 @@ Everything lands in `samekodevcpp/`. A full `npm run build` produces:
 
 | Artifact | Notes |
 | :--- | :--- |
-| `sameko-dev-cpp-<version>-installer.exe` | Windows setup window, with the NSIS installer inside |
-| `sameko-dev-cpp-setup-<version>.exe` | Windows installer (NSIS); the in-app updater uses this one |
+| `sameko-dev-cpp-setup-<version>.exe` | Windows installer (NSIS); the in-app updater uses this one too |
 | `sameko-dev-cpp-<version>-portable.zip` | Windows portable folder, zipped |
 | `sameko-dev-cpp-<version>-linux-x86_64.AppImage` | Linux, runs on any distribution |
 | `latest.yml` + `.blockmap` | Update metadata the in-app updater reads |
@@ -260,13 +260,13 @@ Everything lands in `samekodevcpp/`. A full `npm run build` produces:
 > **How the AppImage gets built on Windows.** Packing an AppImage requires creating symlinks, which
 > Windows only allows from an elevated terminal or with Developer Mode on; otherwise electron-builder
 > stops at `A required privilege is not held by the client`. `scripts/build-appimage.js` checks for
-> that permission up front and, when it is missing, runs the same build **through WSL** — which has
+> that permission up front and, when it is missing, runs the same build **through WSL** - which has
 > no such restriction and can build in place from `/mnt/<drive>`. So `npm run build` produces all
 > three artifacts on a plain terminal as long as WSL is installed; if it is not, the script prints
 > every way to fix it. The Windows targets are built first either way, so they survive a Linux-side
 > failure.
 >
-> `.deb` additionally needs `fpm`, which has no Windows build — run `npm run build:linux` inside WSL
+> `.deb` additionally needs `fpm`, which has no Windows build - run `npm run build:linux` inside WSL
 > or on a real Linux machine for the `.deb` and `.tar.gz`.
 
 ### Housekeeping
