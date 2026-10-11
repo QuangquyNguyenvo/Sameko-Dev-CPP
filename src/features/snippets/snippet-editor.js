@@ -125,10 +125,6 @@ function pushSnippet(snippetData) {
     } else {
         App.settings.snippets.push(snippetData);
     }
-
-    renderSnippetsList();
-    if (typeof saveSettings === 'function') saveSettings();
-    closeSnippetEditor();
 }
 
 function snippetTriggerExists(trigger) {
@@ -160,6 +156,11 @@ function saveSnippet() {
     }
 
     pushSnippet({ trigger, name: trigger, content });
+
+    renderSnippetsList();
+    if (typeof saveSettings === 'function') saveSettings();
+    closeSnippetEditor();
+}
 }
 
 function addSnippetFromFile() {
