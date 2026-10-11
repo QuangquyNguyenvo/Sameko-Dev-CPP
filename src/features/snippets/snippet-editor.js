@@ -165,19 +165,19 @@ function saveSnippet() {
 function snippetImportFeedback(successfulImports, failedImports) {
     if (successfulImports > 0 && failedImports === 0) {
         alert(`Successfully imported ${successfulImports} snippet(s)!`);
-    }
-    else if (successfulImports > 0 && failedImports > 0) {
+    } else if (successfulImports > 0 && failedImports > 0) {
         alert(
-            `Successfully imported ${successfulImports} snippet(s)!\n\n
-            Failed to import ${failedImports} snippet(s).\n
-            Check for duplicate triggers!`
+            `Successfully imported ${successfulImports} snippet(s)!\n\n` +
+            `Failed to import ${failedImports} snippet(s).\n` +
+            `Check for duplicate triggers!`
         );
-    }
-    else if (successfulImports === 0 && failedImports > 0) {
-        alert(`
-            Failed to import ${failedImports} snippet(s).\n
-            Check for duplicate triggers!`
+    } else if (successfulImports === 0 && failedImports > 0) {
+        alert(
+            `Failed to import ${failedImports} snippet(s).\n` +
+            `Check for duplicate triggers!`
         );
+    } else {
+        alert('No snippets were found to import.');
     }
 }
 
