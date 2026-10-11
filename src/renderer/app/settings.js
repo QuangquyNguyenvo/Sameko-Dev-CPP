@@ -1093,7 +1093,32 @@ async function resetTemplate() {
 }
 
 async function importTemplateFromFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    
+    // Restrict to C++ or text file formats
+    input.accept = '.cpp,.cc,.cxx,.h,.hpp,.hxx,.txt';
 
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const content = event.target.result;
+
+            // Update monaco editor with file
+            if (templateEditor) {
+                templateEditor.setValue(content);
+            }
+        };
+        reader.onerror = (err) => {
+            console.error('Error reading template file:', err);
+        };
+        reader.readAsText(file);
+    };
+
+    input.click();
 }
 
 // ============================================================================
