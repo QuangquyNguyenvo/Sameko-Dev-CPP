@@ -233,7 +233,7 @@
                     "Name": "Sameko Dev C++",
                     "Comment": "A fast, modern C++ IDE",
                     "Categories": "Development;IDE;",
-                    "StartupWMClass": "Sameko Dev C++"
+                    "StartupWMClass": "sameko-dev-cpp"
                 }
             }
         },
