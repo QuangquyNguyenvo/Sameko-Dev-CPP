@@ -175,11 +175,11 @@ function addSnippetFromFile() {
         for (const file of files) {
             try {
                 // Remove extension for cleaner trigger name
-                const trigger = file.name.replace(/\.[^/.]+$/, '');
+                const trigger = file.name.replace(/\.[^/.]+$/, '').trim();
                 const content = await file.text();
 
-                // Check for duplicate triggers
-                if (snippetTriggerExists(trigger)) {
+                // Check for duplicate or empty triggers and empty files
+                if (snippetTriggerExists(trigger) || !trigger || file.size === 0) {
                     failedImports++;
                     continue;
                 }
