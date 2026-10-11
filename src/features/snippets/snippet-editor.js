@@ -162,6 +162,41 @@ function saveSnippet() {
     pushSnippet({ trigger, name: trigger, content });
 }
 
+function addSnippetFromFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true; // Import many snippets at once
+    input.accept = '.cpp,.cc,.cxx,.h,.hpp,.hxx,.txt'; // Only C++/txt
+
+    input.onchange = async (e) => {
+        const files = Array.from(e.target.files || []);
+        let failedImports = 0;
+
+        for (const file of files) {
+            try {
+                // Remove extension for cleaner trigger name
+                const trigger = file.name.replace(/\.[^/.]+$/, '');
+                const content = await file.text();
+
+                // Check for duplicate triggers
+                if (snippetTriggerExists(trigger)) {
+                    failedImports++;
+                    continue;
+                }
+
+                pushSnippet({ trigger, name: trigger, content });
+            }
+            catch {
+                failedImports++;
+            }
+        }
+
+        if (failedImports > 0) {
+            alert(`Failed to import ${failedImports} file(s).\nCheck for duplicate triggers!`);
+        }
+    };
+
+    input.click();
 }
 
 // Setup listeners
@@ -171,12 +206,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveBtn = document.getElementById('btn-save-snippet');
     const overlay = document.querySelector('.snippet-editor-overlay');
     const addBtn = document.getElementById('btn-add-snippet');
+    const addFromFileBtn = document.getElementById('btn-add-snippet-from-file')
 
     if (closeBtn) closeBtn.addEventListener('click', closeSnippetEditor);
     if (cancelBtn) cancelBtn.addEventListener('click', closeSnippetEditor);
     if (saveBtn) saveBtn.addEventListener('click', saveSnippet);
     if (overlay) overlay.addEventListener('click', closeSnippetEditor);
     if (addBtn) addBtn.addEventListener('click', addNewSnippet);
+    if (addFromFileBtn) addFromFileBtn.addEventListener('click', addSnippetFromFile);
 
     // Initial render if App is already loaded
     if (typeof App !== 'undefined' && App.settings) {
