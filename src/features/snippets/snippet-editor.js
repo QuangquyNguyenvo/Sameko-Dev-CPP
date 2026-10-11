@@ -74,7 +74,8 @@ window.renderSnippetsList = function () {
                     <line x1="12" y1="18" x2="12" y2="12"></line>
                     <line x1="9" y1="15" x2="15" y2="15"></line>
                 </svg>
-                <p>No snippets found. Click "Add New Snippet" to create one.</p>
+                <p>No snippets found.</p>
+                <p>Click "Add New Snippet" or "Import from File(s)" to add some.</p>
             </div>
         `;
         return;
