@@ -119,29 +119,7 @@ window.deleteSnippet = function (index) {
     }
 };
 
-function saveSnippet() {
-    const trigger = document.getElementById('snippet-trigger-input').value.trim();
-    const content = snippetEditor ? snippetEditor.getValue() : '';
-
-    if (!trigger) { alert('Please enter a trigger keyword.'); return; }
-    if (!content) { alert('Please enter snippet content.'); return; }
-
-    if (!App.settings.snippets) App.settings.snippets = [];
-
-    const existingIndex = App.settings.snippets.findIndex(s => s.trigger === trigger);
-
-    // Check for duplicate triggers
-    if (currentEditingIndex === null && existingIndex !== -1) {
-        alert('A snippet with this trigger already exists!');
-        return;
-    }
-    if (currentEditingIndex !== null && existingIndex !== -1 && existingIndex !== currentEditingIndex) {
-        alert('A snippet with this trigger already exists!');
-        return;
-    }
-
-    const snippetData = { trigger, name: 'Custom', content };
-
+function pushSnippet(snippetData) {
     if (currentEditingIndex !== null) {
         App.settings.snippets[currentEditingIndex] = snippetData;
     } else {
@@ -151,6 +129,39 @@ function saveSnippet() {
     renderSnippetsList();
     if (typeof saveSettings === 'function') saveSettings();
     closeSnippetEditor();
+}
+
+function snippetTriggerExists(trigger) {
+    const existingIndex = App.settings.snippets.findIndex(s => s.trigger === trigger);
+
+    if (currentEditingIndex === null && existingIndex !== -1) {
+        return true;
+    }
+    if (currentEditingIndex !== null && existingIndex !== -1 && existingIndex !== currentEditingIndex) {
+        return true;
+    }
+
+    return false;
+}
+
+function saveSnippet() {
+    const trigger = document.getElementById('snippet-trigger-input').value.trim();
+    const content = snippetEditor ? snippetEditor.getValue() : '';
+
+    if (!trigger) { alert('Please enter a trigger keyword.'); return; }
+    if (!content) { alert('Please enter snippet content.'); return; }
+
+    if (!App.settings.snippets) App.settings.snippets = [];
+
+    // Check for duplicate triggers
+    if (snippetTriggerExists(trigger)) {
+        alert('A snippet with this trigger already exists!');
+        return;
+    }
+
+    pushSnippet({ trigger, name: trigger, content });
+}
+
 }
 
 // Setup listeners
