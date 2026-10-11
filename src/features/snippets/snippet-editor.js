@@ -161,6 +161,24 @@ function saveSnippet() {
     if (typeof saveSettings === 'function') saveSettings();
     closeSnippetEditor();
 }
+
+function snippetImportFeedback(successfulImports, failedImports) {
+    if (successfulImports > 0 && failedImports === 0) {
+        alert(`Successfully imported ${successfulImports} snippet(s)!`);
+    }
+    else if (successfulImports > 0 && failedImports > 0) {
+        alert(
+            `Successfully imported ${successfulImports} snippet(s)!\n\n
+            Failed to import ${failedImports} snippet(s).\n
+            Check for duplicate triggers!`
+        );
+    }
+    else if (successfulImports === 0 && failedImports > 0) {
+        alert(`
+            Failed to import ${failedImports} snippet(s).\n
+            Check for duplicate triggers!`
+        );
+    }
 }
 
 function addSnippetFromFile() {
@@ -192,9 +210,11 @@ function addSnippetFromFile() {
             }
         }
 
-        if (failedImports > 0) {
-            alert(`Failed to import ${failedImports} file(s).\nCheck for duplicate triggers!`);
-        }
+        renderSnippetsList();
+        if (typeof saveSettings === 'function') saveSettings();
+
+        const successfulImports = files.length - failedImports;
+        snippetImportFeedback(successfulImports, failedImports);
     };
 
     input.click();
