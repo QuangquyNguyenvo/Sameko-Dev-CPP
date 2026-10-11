@@ -327,6 +327,12 @@ function initSettings() {
         templateResetBtn.onclick = resetTemplate;
     }
 
+    // Template add from file button
+    const importTemplateFromFileBtn = document.getElementById('btn-template-reset');
+    if (importTemplateFromFileBtn) {
+        importTemplateFromFileBtn.onclick = importTemplateFromFile;
+    }
+
     // Template Monaco editor will be initialized when settings panel opens
 
 
@@ -1084,6 +1090,10 @@ async function resetTemplate() {
             templateEditor.setValue(defaultCode);
         }
     }
+}
+
+async function importTemplateFromFile() {
+
 }
 
 // ============================================================================
