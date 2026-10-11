@@ -328,7 +328,7 @@ function initSettings() {
     }
 
     // Template add from file button
-    const importTemplateFromFileBtn = document.getElementById('btn-template-reset');
+    const importTemplateFromFileBtn = document.getElementById('btn-import-template-from-file');
     if (importTemplateFromFileBtn) {
         importTemplateFromFileBtn.onclick = importTemplateFromFile;
     }
