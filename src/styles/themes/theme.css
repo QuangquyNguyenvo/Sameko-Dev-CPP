@@ -4649,6 +4649,25 @@ body.split-active .editor-pane {
     margin-top: 12px;
     display: flex;
     justify-content: flex-end;
+    gap: 12px;
+}
+
+.btn-import-template-from-file {
+    padding: 8px 16px;
+    background: var(--bg-button, #e8f4fc);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.btn-import-template-from-file:hover {
+    background: var(--bg-button-hover, #d8ecf8);
+    border-color: var(--bg-ocean-medium);
+    color: var(--text-primary);
 }
 
 .btn-template-reset,
