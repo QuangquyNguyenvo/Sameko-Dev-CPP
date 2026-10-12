@@ -74,7 +74,8 @@ window.renderSnippetsList = function () {
                     <line x1="12" y1="18" x2="12" y2="12"></line>
                     <line x1="9" y1="15" x2="15" y2="15"></line>
                 </svg>
-                <p>No snippets found. Click "Add New Snippet" to create one.</p>
+                <p>No snippets found.</p>
+                <p>Click "Add New Snippet" or "Import from File(s)" to add some.</p>
             </div>
         `;
         return;
@@ -119,6 +120,27 @@ window.deleteSnippet = function (index) {
     }
 };
 
+function pushSnippet(snippetData) {
+    if (currentEditingIndex !== null) {
+        App.settings.snippets[currentEditingIndex] = snippetData;
+    } else {
+        App.settings.snippets.push(snippetData);
+    }
+}
+
+function snippetTriggerExists(trigger) {
+    const existingIndex = App.settings.snippets.findIndex(s => s.trigger === trigger);
+
+    if (currentEditingIndex === null && existingIndex !== -1) {
+        return true;
+    }
+    if (currentEditingIndex !== null && existingIndex !== -1 && existingIndex !== currentEditingIndex) {
+        return true;
+    }
+
+    return false;
+}
+
 function saveSnippet() {
     const trigger = document.getElementById('snippet-trigger-input').value.trim();
     const content = snippetEditor ? snippetEditor.getValue() : '';
@@ -128,29 +150,75 @@ function saveSnippet() {
 
     if (!App.settings.snippets) App.settings.snippets = [];
 
-    const existingIndex = App.settings.snippets.findIndex(s => s.trigger === trigger);
-
     // Check for duplicate triggers
-    if (currentEditingIndex === null && existingIndex !== -1) {
-        alert('A snippet with this trigger already exists!');
-        return;
-    }
-    if (currentEditingIndex !== null && existingIndex !== -1 && existingIndex !== currentEditingIndex) {
+    if (snippetTriggerExists(trigger)) {
         alert('A snippet with this trigger already exists!');
         return;
     }
 
-    const snippetData = { trigger, name: 'Custom', content };
-
-    if (currentEditingIndex !== null) {
-        App.settings.snippets[currentEditingIndex] = snippetData;
-    } else {
-        App.settings.snippets.push(snippetData);
-    }
+    pushSnippet({ trigger, name: trigger, content });
 
     renderSnippetsList();
     if (typeof saveSettings === 'function') saveSettings();
     closeSnippetEditor();
+}
+
+function snippetImportFeedback(successfulImports, failedImports) {
+    if (successfulImports > 0 && failedImports === 0) {
+        alert(`Successfully imported ${successfulImports} snippet(s)!`);
+    } else if (successfulImports > 0 && failedImports > 0) {
+        alert(
+            `Successfully imported ${successfulImports} snippet(s)!\n\n` +
+            `Failed to import ${failedImports} snippet(s).\n` +
+            `Check for duplicate triggers!`
+        );
+    } else if (successfulImports === 0 && failedImports > 0) {
+        alert(
+            `Failed to import ${failedImports} snippet(s).\n` +
+            `Check for duplicate triggers!`
+        );
+    } else {
+        alert('No snippets were found to import.');
+    }
+}
+
+function addSnippetFromFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true; // Import many snippets at once
+    input.accept = '.cpp,.cc,.cxx,.h,.hpp,.hxx,.txt'; // Only C++/txt
+
+    input.onchange = async (e) => {
+        const files = Array.from(e.target.files || []);
+        let failedImports = 0;
+
+        for (const file of files) {
+            try {
+                // Remove extension for cleaner trigger name
+                const trigger = file.name.replace(/\.[^/.]+$/, '').trim();
+                const content = await file.text();
+
+                // Check for duplicate or empty triggers and empty files
+                if (snippetTriggerExists(trigger) || !trigger || file.size === 0) {
+                    failedImports++;
+                    continue;
+                }
+
+                pushSnippet({ trigger, name: trigger, content });
+            }
+            catch {
+                failedImports++;
+            }
+        }
+
+        renderSnippetsList();
+        if (typeof saveSettings === 'function') saveSettings();
+
+        const successfulImports = files.length - failedImports;
+        snippetImportFeedback(successfulImports, failedImports);
+    };
+
+    input.click();
 }
 
 // Setup listeners
@@ -160,12 +228,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveBtn = document.getElementById('btn-save-snippet');
     const overlay = document.querySelector('.snippet-editor-overlay');
     const addBtn = document.getElementById('btn-add-snippet');
+    const addFromFileBtn = document.getElementById('btn-add-snippet-from-file')
 
     if (closeBtn) closeBtn.addEventListener('click', closeSnippetEditor);
     if (cancelBtn) cancelBtn.addEventListener('click', closeSnippetEditor);
     if (saveBtn) saveBtn.addEventListener('click', saveSnippet);
     if (overlay) overlay.addEventListener('click', closeSnippetEditor);
     if (addBtn) addBtn.addEventListener('click', addNewSnippet);
+    if (addFromFileBtn) addFromFileBtn.addEventListener('click', addSnippetFromFile);
 
     // Initial render if App is already loaded
     if (typeof App !== 'undefined' && App.settings) {

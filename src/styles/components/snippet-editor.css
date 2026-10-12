@@ -365,7 +365,7 @@
     border-color: var(--error, #ff6b6b);
 }
 
-#btn-add-snippet {
+.btn-add-snippet {
     width: 100%;
     padding: 12px 16px;
     margin-bottom: 16px;
@@ -384,7 +384,7 @@
     font-family: 'Nunito', sans-serif;
 }
 
-#btn-add-snippet:hover {
+.btn-add-snippet:hover {
     background: var(--accent-hover, #6ab8dc);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
