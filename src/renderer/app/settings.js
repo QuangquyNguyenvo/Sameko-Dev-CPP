@@ -1264,13 +1264,19 @@ async function importTemplateFromFile() {
     // Restrict to C++ or text file formats
     input.accept = '.cpp,.cc,.cxx,.c,.h,.hpp,.hxx,.txt';
 
-    const lang = templateLang;  // the template shown when Import was clicked
     input.onchange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
+        // The extension picks the template (.c -> C, .cpp/.cc/.cxx/.hpp/.hxx -> C++);
+        // .h and .txt go to the template on screen.
+        const ext = (file.name.match(/\.([^.]+)$/) || [])[1]?.toLowerCase();
+        const lang = ext === 'c' ? 'c' : /^(cpp|cc|cxx|hpp|hxx)$/.test(ext) ? 'cpp' : templateLang;
 
         const reader = new FileReader();
-        reader.onload = (event) => setTemplateText(lang, event.target.result);
+        reader.onload = (event) => {
+            setTemplateText(lang, event.target.result);
+            if (lang !== templateLang) switchTemplateLang(lang);
+        };
         reader.onerror = (err) => {
             console.error('Error reading template file:', err);
         };

@@ -747,6 +747,15 @@ function initCtrlWheelZoom() {
 // ============================================================================
 
 
+// Windows and macOS file systems ignore case (a.cpp and A.cpp are one file); Linux does not.
+const PATHS_IGNORE_CASE = !/linux/i.test(navigator.platform || '');
+
+/** A path in the form used to compare two paths: forward slashes, case folded where the OS ignores case. */
+function pathKey(p) {
+    const s = String(p || '').replace(/\\/g, '/');
+    return PATHS_IGNORE_CASE ? s.toLowerCase() : s;
+}
+
 function resolveMultiCursorModifier() {
     const configured = App.settings?.editor?.multiCursorModifier;
     if (configured === 'alt' || configured === 'ctrlCmd') return configured;

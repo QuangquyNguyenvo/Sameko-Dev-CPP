@@ -285,6 +285,9 @@
     box-shadow: none !important;
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
+    /* A menu over the tab bar sits on the window's drag area, which Windows hit-tests before the
+     * page: without this, clicks on the part above the tab bar's edge move the window instead. */
+    -webkit-app-region: no-drag;
 }
 
 .tab-context-menu {

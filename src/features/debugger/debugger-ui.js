@@ -1284,6 +1284,19 @@
         }
         return out;
     }
+    /** A file was renamed on disk (tab or Explorer): its breakpoints move with it. */
+    function onFileRenamed(oldPath, newPath) {
+        const from = norm(oldPath), to = norm(newPath);
+        const m = bpByFile.get(from);
+        realPathByKey.delete(from);
+        if (!m || from === to) return;
+        bpByFile.delete(from);
+        bpByFile.set(to, m);
+        realPathByKey.set(to, newPath);
+        if (bpDecoKey === from) bpDecoKey = to;
+        renderBreakpoints();
+    }
+
     function resolveRealPath(normKey) {
         const tabs = (window.App && window.App.tabs) || [];
         const t = tabs.find(x => norm(x.path) === normKey);
@@ -1891,6 +1904,7 @@
         toggleAutoDryRun: toggleAuto,
         onFileShown,
         onFileHidden,
+        onFileRenamed,
         isActive: () => isSessionLive(),
     };
 

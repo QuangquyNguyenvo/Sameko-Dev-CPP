@@ -186,7 +186,7 @@ function addSnippetFromFile() {
     const input = document.createElement('input');
     input.type = 'file';
     input.multiple = true; // Import many snippets at once
-    input.accept = '.cpp,.cc,.cxx,.h,.hpp,.hxx,.txt'; // Only C++/txt
+    input.accept = '.cpp,.cc,.cxx,.c,.h,.hpp,.hxx,.txt'; // Only C/C++/txt
 
     input.onchange = async (e) => {
         const files = Array.from(e.target.files || []);

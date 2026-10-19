@@ -151,19 +151,19 @@ Then turn it **OFF** and build again.
 
 Sameko on Linux uses your system's compiler and debugger. Follow these 3 simple steps:
 
-#### 📌 Step 1: Install prerequisites (`g++` & `gdb`)
+#### 📌 Step 1: Install prerequisites (`g++`, `gdb`, `clangd` & `astyle`)
 
-Open your terminal and run the command for your Linux distribution:
+Open your terminal and run the command for your Linux distribution. `g++` and `gdb` build and debug your code; `clangd` gives IntelliSense and live error checking, and `astyle` powers Format Code. The `.deb` package pulls all four in by itself.
 
 ```bash
 # Debian / Ubuntu / Linux Mint / Pop!_OS
-sudo apt update && sudo apt install -y g++ gdb
+sudo apt update && sudo apt install -y g++ gdb clangd astyle
 
 # Fedora / RHEL
-sudo dnf install -y gcc-c++ gdb
+sudo dnf install -y gcc-c++ gdb clang-tools-extra astyle
 
 # Arch Linux / Manjaro
-sudo pacman -S --noconfirm gcc gdb
+sudo pacman -S --noconfirm gcc gdb clang astyle
 ```
 
 ---
@@ -213,6 +213,13 @@ Get the latest Linux release from [**sameko.dev**](https://sameko.dev/) or [**Gi
   sudo chown root:root chrome-sandbox && sudo chmod 4755 chrome-sandbox
   ```
   *(The `.deb` installer configures sandbox permissions automatically).*
+
+- **AppImage closes right away with a sandbox error** (`The SUID sandbox helper binary was found, but is not configured correctly`): Ubuntu 24.04+ blocks the sandbox for apps that are not installed. Install the `.deb` instead (it sets this up), or start the AppImage with:
+  ```bash
+  ./sameko-dev-cpp-*.AppImage --no-sandbox
+  ```
+
+- **No IntelliSense or Format Code does nothing**: install `clangd` and `astyle` (Step 1), then restart Sameko.
 
 </details>
 

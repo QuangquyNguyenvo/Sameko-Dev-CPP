@@ -170,6 +170,33 @@ function registerHistoryHandlers() {
     });
 }
 
+/**
+ * A file was renamed: its snapshots move to the new path's folder. The folder is keyed by the
+ * path string the renderer saved with, so both slash styles of the old path are tried.
+ * @param {string} oldPath
+ * @param {string} newPath
+ */
+async function moveFileHistory(oldPath, newPath) {
+    const to = getHistoryDirForFile(newPath);
+    const variants = new Set([oldPath, oldPath.replace(/\\/g, '/'), oldPath.replace(/\//g, '\\')]);
+    for (const variant of variants) {
+        const from = getHistoryDirForFile(variant);
+        if (from === to) continue;
+        let names;
+        try {
+            names = await fsp.readdir(from);
+        } catch {
+            continue;
+        }
+        await fsp.mkdir(to, { recursive: true });
+        for (const name of names) {
+            if (name.endsWith('.snapshot')) await fsp.rename(path.join(from, name), path.join(to, name)).catch(() => {});
+        }
+        await fsp.rmdir(from).catch(() => {});  // only once empty: a snapshot that did not move stays
+    }
+}
+
 module.exports = {
     registerHistoryHandlers,
+    moveFileHistory,
 };

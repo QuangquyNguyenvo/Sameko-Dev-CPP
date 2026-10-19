@@ -450,8 +450,12 @@ async function save() {
 
     const tab = App.tabs.find(t => t.id === tabId);
     if (!tab) return;
-    if (App.settings.editor.formatOnSave) await formatCode(editor, { silent: true });
-    tab.content = editor.getValue();
+    if (App.settings.editor.formatOnSave) {
+        await formatCode(editor, { silent: true });
+        // The editor may show another tab by now, or this one was closed: read the tab's own model.
+        if (!App.tabs.includes(tab)) return;
+    }
+    tab.content = getTabModel(tab).getValue();
 
     if (tab.path) {
         // Create backup before saving (async, non-blocking)
@@ -469,11 +473,10 @@ async function save() {
 async function saveAs(tabIdOverride = null) {
 
     const tabId = tabIdOverride || (App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId);
-    const editor = App.activeEditor === 2 && App.editor2 ? App.editor2 : App.editor;
 
     const tab = App.tabs.find(t => t.id === tabId);
     if (!tab) return;
-    tab.content = editor.getValue();
+    tab.content = getTabModel(tab).getValue();
     const oldPath = tab.path;
     const r = await window.electronAPI.saveFileDialog({
         content: tab.content,
@@ -521,9 +524,11 @@ async function renameTab(tabId, newName) {
     return true;
 }
 
-/** A file was renamed on disk (from its tab or the Explorer): open tabs follow it. */
+/** A file was renamed on disk (from its tab or the Explorer): open tabs and the Explorer's
+ *  status, notes, pins and categories, and its breakpoints follow it. */
 function onFileRenamed(oldPath, newPath) {
-    const key = (p) => String(p).replace(/\\/g, '/').toLowerCase();
+    const key = pathKey;
+    if (typeof FileExplorer !== 'undefined' && FileExplorer.movePathState) FileExplorer.movePathState(oldPath, newPath);
     let changed = false;
     for (const tab of App.tabs) {
         if (!tab.path || key(tab.path) !== key(oldPath)) continue;
@@ -533,6 +538,8 @@ function onFileRenamed(oldPath, newPath) {
         startFileWatch(newPath);
         changed = true;
     }
+    // After the tabs: the debugger redraws the breakpoints of the active tab's (new) path.
+    window.Debugger?.onFileRenamed?.(oldPath, newPath);
     if (changed) {
         renderTabs();
         scheduleSessionSave();

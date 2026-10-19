@@ -2502,6 +2502,36 @@ const FileExplorer = {
     },
 
     /**
+     * A file was renamed on disk: its status, note, approaches, pin, recent entry and category
+     * item move to the new path, so nothing is lost (called from onFileRenamed in tabs.js).
+     */
+    movePathState(oldPath, newPath) {
+        const norm = (p) => String(p).replace(/\\/g, '/');
+        const same = (p) => pathKey(p) === pathKey(oldPath);  // pathKey: core.js
+        const to = norm(newPath);
+        for (const map of [this.fileStatuses, this.fileNotes, this.fileApproaches]) {
+            for (const k of Object.keys(map || {})) {
+                if (same(k) && k !== to) { map[to] = map[k]; delete map[k]; }
+            }
+        }
+        this.pinnedItems = this.pinnedItems.map(p => same(p) ? to : p);
+        this.recentFiles = this.recentFiles.map(p => same(p) ? to : p);
+        this.expandedFiles = new Set([...this.expandedFiles].map(p => same(p) ? to : p));
+        const oldBase = norm(oldPath).split('/').pop();
+        const newBase = to.split('/').pop();
+        for (const cat of this.categories || []) {
+            for (const item of cat.items || []) {
+                if (!same(item.filePath)) continue;
+                // A display name taken from the file name follows it; a custom one is kept.
+                if (item.name === oldBase.replace(/\.[^.]+$/, '')) item.name = newBase.replace(/\.[^.]+$/, '');
+                item.filePath = to;
+                item.fileName = newBase;
+            }
+        }
+        this.saveState();
+    },
+
+    /**
      * Confirm and delete file
      */
     confirmDelete(filePath) {

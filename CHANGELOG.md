@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.3.2] - Unreleased
+
+A Markdown preview, formatting styles with format on save, new file types and tab rename from the tab bar, and search in Settings.
 
 ### Added
 
@@ -12,13 +14,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Format style and format on save** (#59): pick one of 13 AStyle styles in **Settings > Editor > Format Style**, and turn on **Format on Save** to format C/C++ files on Ctrl+S (one Ctrl+Z undoes it; Auto Save does not format).
 - **Settings > Appearance > Animated Background**: turn the theme's background video off. It is also off when Windows' animation effects are turned off.
 - **New file of any type**: right-click the **+** next to the tabs to start a C++, C, input (.inp), output (.out), text or Markdown file. C++ and C files start from their template in **Settings > Template**; the others start empty.
-- **Rename a tab**: right-click a tab > **Rename** edits its name in place (Enter to apply, Esc to cancel). A saved file is renamed on disk; an untitled tab changes the name Save offers and its language.
+- **Rename a tab**: right-click a tab > **Rename** edits its name in place (Enter to apply, Esc to cancel). A saved file is renamed on disk and in the Explorer, keeping its status, note, pin, collection, breakpoints and local history (renaming in the Explorer keeps them too); an untitled tab changes the name Save offers and its language.
 - **Search in Settings**: type in the box at the top of Settings to see only the matching settings and shortcuts from every tab. Esc clears the search; clicking a tab goes back to that tab.
+- **Import a template or snippets from files** (#62, #63, by @aguajardoc): **Import** on the Template card loads a file into the template (a `.c` file into the C one), and **Import from File(s)** under Snippets adds one snippet per file, named after the file.
+- **Drop files onto the window to open them**; several files open in the order they were dropped. Dropping onto the Input box or an Explorer collection still does what it did before.
 
 ### Changed
 
-- **Settings > Template** matches the other tabs: Reset and Import sit on the code card, the editor fills the rest of the page, and a **C++ / C** switch on the card sets a separate template for C files (also used by the Explorer's New File for `.c`).
+- **Settings > Template** matches the other tabs: Reset and Import sit on the code card, the editor fills the rest of the page, and a **C++ / C** switch on the card sets a separate template for C files (also used by the Explorer's New File for `.c`). Import puts a `.c` file in the C template and a `.cpp` file in the C++ one.
 - **The frosted glass is lighter**: the welcome card and other glass panels blur the background less.
+- **Settings and dialogs respond at once**: they open and switch without animations, and dragging the split-editor divider follows the mouse without lag.
 - **The background video pauses while you work in another window.** Each video frame repaints the whole window (about 6% GPU), and it kept playing behind other apps, which made screen sharing and recording lag.
 - **Beta updates are opt-in**: auto-update now offers only stable releases. Turn on **Settings > About > Get beta updates** to also receive pre-releases (installs already on a beta keep getting betas).
 
@@ -33,6 +38,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Format Code no longer garbles accented letters or emoji** in files over about 64 KB (they came back as `�`).
 - **Format Code keeps breakpoints, error marks and the caret on their code.** It now changes only the lines that differ instead of replacing the whole file.
 - **Breakpoints follow the code when lines are added or removed above them.** Before, switching tabs drew them back on the old line number, and debugging stopped there.
+- **The Linux dock shows the app's icon** (#64, by @aguajardoc): the desktop entry's `StartupWMClass` now matches the window.
+- **`__int128` is highlighted as a type**, like `long long`.
 - **UTF-16 files open as text** instead of a NUL after every character. Windows PowerShell's `>` and Notepad's "Unicode" save this way; the file is saved back as UTF-8.
 
 ### Removed

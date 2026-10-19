@@ -13,6 +13,7 @@ const MarkdownPreview = {
     },
     LANG_ALIASES: { 'c++': 'cpp', cc: 'cpp', cxx: 'cpp', h: 'cpp', hpp: 'cpp', c: 'cpp', js: 'javascript', ts: 'typescript', py: 'python', sh: 'shell', bash: 'shell', ps1: 'powershell', yml: 'yaml', md: 'markdown', 'c#': 'csharp', cs: 'csharp' },
     RENDER_DELAY: 120,
+    ID_PREFIX: 'md-',  // on every id in the preview (fixUp)
 
     libs: null,      // Promise<{ marked, DOMPurify } | null>
     states: [],      // one per editor: { editor, pane, el, button, timer, renderId, shownModel, shownTab, cache, cacheLinks }
@@ -295,6 +296,11 @@ const MarkdownPreview = {
             }).catch(() => { });
         });
 
+        // Ids from the file get a prefix, as GitHub does: `## Status` or `<div id="status">` would
+        // otherwise share an id with the IDE's own elements, and the preview comes first in the
+        // page, so getElementById('status') would find the file's element.
+        each('[id]', (n) => { n.id = this.ID_PREFIX + n.id; });
+
         // Duplicate titles are numbered in document order, so ids are redone across the file.
         const used = new Map();
         for (const h of state.el.querySelectorAll('h1, h2, h3, h4, h5, h6')) {
@@ -302,7 +308,7 @@ const MarkdownPreview = {
             const n = used.get(slug) || 0;
             used.set(slug, n + 1);
             if (n) slug += '-' + n;
-            h.id = slug;
+            h.id = this.ID_PREFIX + slug;
         }
     },
 
@@ -329,7 +335,7 @@ const MarkdownPreview = {
         const href = a.getAttribute('href');
         if (href.startsWith('#')) {
             let target = null;
-            try { target = state.el.querySelector('#' + CSS.escape(decodeURIComponent(href.slice(1)))); } catch (_) { }
+            try { target = state.el.querySelector('#' + CSS.escape(this.ID_PREFIX + decodeURIComponent(href.slice(1)))); } catch (_) { }
             if (target) state.el.scrollTop = target.offsetTop - 8;
             return;
         }

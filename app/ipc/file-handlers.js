@@ -291,10 +291,13 @@ function registerHandlers() {
         }
         try {
             await fsp.rename(oldPath, newPath);
-            return { success: true };
         } catch (error) {
             throw new Error(`Cannot rename file: ${error.message}`);
         }
+        // Local history follows the file; the rename has happened even if this fails.
+        await require('./history-handlers').moveFileHistory(oldPath, newPath)
+            .catch((error) => console.warn('[rename] local history not moved:', error.message));
+        return { success: true };
     });
 
     ipcMain.handle('copy-file', async (event, { src, dest }) => {

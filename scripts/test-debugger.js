@@ -136,7 +136,7 @@ function partA() {
 // PART B — gdb-session (integration; SKIP without gdb)
 // ===========================================================================
 function locateToolchain() {
-    // Bundled MinGW lives at <repo>/Sameko-GCC/bin. Fall back to nothing.
+    // Bundled MinGW lives at <repo>/Sameko-GCC/bin.
     const bin = path.join(ROOT, 'Sameko-GCC', 'bin');
     const gpp = path.join(bin, 'g++.exe');
     const gdb = path.join(bin, 'gdb.exe');
@@ -152,6 +152,24 @@ function locateToolchain() {
             }
         } catch (_) { /* no share dir */ }
         return { gpp, gdb, bin, printerDir };
+    }
+    // Linux/macOS builds use the system g++ and gdb, so the E2E parts test those there.
+    if (process.platform !== 'win32') {
+        const { which } = require(path.join(ROOT, 'app/shared/platform'));
+        const sysGpp = which('g++');
+        const sysGdb = which('gdb');
+        if (sysGpp && sysGdb) {
+            // Same lookup as detector.getPrinterPythonDir() (which needs Electron's `app`).
+            const sysShare = path.join(path.dirname(path.dirname(sysGpp)), 'share');
+            let sysPrinters = null;
+            try {
+                for (const e of fs.readdirSync(sysShare)) {
+                    const p = path.join(sysShare, e, 'python');
+                    if (/^gcc-/i.test(e) && fs.existsSync(path.join(p, 'libstdcxx', 'v6', 'printers.py'))) { sysPrinters = p; break; }
+                }
+            } catch (_) { /* no share dir */ }
+            return { gpp: sysGpp, gdb: sysGdb, bin: path.dirname(sysGpp), printerDir: sysPrinters };
+        }
     }
     return null;
 }
@@ -191,7 +209,7 @@ const LOOP_SAMPLE = [
 async function partB() {
     console.log('\nPart B — gdb-session.js (integration)');
     const tc = locateToolchain();
-    if (!tc) { skip('gdb-session E2E', 'bundled gdb/g++ not found'); return; }
+    if (!tc) { skip('gdb-session E2E', 'no gdb/g++ found'); return; }
 
     const { GdbSession } = require(path.join(ROOT, 'app/services/debugger/gdb-session'));
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-dbgtest-'));
@@ -297,7 +315,7 @@ async function partB() {
 async function partC() {
     console.log('\nPart C — interrupt / Pause');
     const tc = locateToolchain();
-    if (!tc) { skip('interrupt E2E', 'bundled gdb/g++ not found'); return; }
+    if (!tc) { skip('interrupt E2E', 'no gdb/g++ found'); return; }
 
     const { GdbSession } = require(path.join(ROOT, 'app/services/debugger/gdb-session'));
     const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-dbgint-'));
