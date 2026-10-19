@@ -2255,7 +2255,7 @@ const FileExplorer = {
                 let template = '';
                 if (/\.(cpp|c|cc|cxx)$/i.test(fileName)) {
                     const baseName = fileName.replace(/\.[^.]+$/, '');
-                    template = `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // TODO: solve ${baseName}\n\n    return 0;\n}\n`;
+                    template = this.newFileTemplate(baseName, fileName.trim());
                 }
 
                 if (window.electronAPI && window.electronAPI.saveFile) {
@@ -2384,6 +2384,19 @@ const FileExplorer = {
     /**
      * Show custom input dialog (replacement for native prompt)
      */
+    /**
+     * Content for a new C/C++ file: the template from Settings > Template (the same one
+     * Ctrl+N uses; the C template for a .c file), or a starter solution when none is set.
+     */
+    newFileTemplate(baseName, fileName = '') {
+        const isC = /\.c$/i.test(fileName);
+        const tpl = (typeof App !== 'undefined') ? App.settings?.template : null;
+        const custom = isC ? (tpl?.cCode ?? DEFAULT_SETTINGS.template.cCode) : tpl?.code;
+        if (custom && custom.trim()) return custom.endsWith('\n') ? custom : custom + '\n';
+        if (isC) return '';
+        return `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // TODO: solve ${baseName}\n\n    return 0;\n}\n`;
+    },
+
     showInputDialog(title, defaultValue, callback) {
         const overlay = document.createElement('div');
         overlay.className = 'note-dialog-overlay';
@@ -2476,6 +2489,8 @@ const FileExplorer = {
         try {
             if (window.electronAPI && window.electronAPI.renameFile) {
                 await window.electronAPI.renameFile(oldPath, newPath);
+                // An open tab of the file follows it (it would otherwise save to the old name).
+                if (typeof onFileRenamed === 'function') onFileRenamed(oldPath, newPath);
                 this.refreshTree();
             } else {
                 console.error('[FileExplorer] Rename API not available');
@@ -3692,7 +3707,7 @@ const FileExplorer = {
 
                     for (const pid of problemIds) {
                         const filePath = `${subFolder}/${pid}.cpp`.replace(/\\/g, '/');
-                        const template = `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // TODO: solve ${pid}\n\n    return 0;\n}\n`;
+                        const template = this.newFileTemplate(pid);
                         if (window.electronAPI && window.electronAPI.saveFile) {
                             await window.electronAPI.saveFile({ path: filePath, content: template });
                         }
@@ -4242,7 +4257,7 @@ const FileExplorer = {
 
         // Generate template
         const baseName = fileName.replace(/\.[^.]+$/, '');
-        const template = `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // TODO: solve ${baseName}\n\n    return 0;\n}\n`;
+        const template = this.newFileTemplate(baseName);
 
         // Create file
         if (window.electronAPI && window.electronAPI.saveFile) {
@@ -5505,7 +5520,7 @@ const FileExplorer = {
             let template = '';
             if (/\.(cpp|c|cc|cxx)$/i.test(fileName)) {
                 const baseName = fileName.replace(/\.[^.]+$/, '');
-                template = `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    // TODO: solve ${baseName}\n\n    return 0;\n}\n`;
+                template = this.newFileTemplate(baseName, fileName.trim());
             }
 
             if (window.electronAPI && window.electronAPI.saveFile) {

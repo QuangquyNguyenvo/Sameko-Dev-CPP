@@ -65,14 +65,12 @@ class ConfirmDialog {
         this.previouslyFocusedEl = document.activeElement;
         try { this.previouslyFocusedEl?.blur?.(); } catch (_) {}
 
-        setTimeout(() => {
-            window.focus();
-            this.confirmBtn.focus();
-        }, 30);
-        
-        return new Promise((resolve) => {
+        const result = new Promise((resolve) => {
             this.resolver = resolve;
         });
+        window.focus();
+        this.confirmBtn.focus();
+        return result;
     }
     
     close(result) {
@@ -82,16 +80,13 @@ class ConfirmDialog {
 
         const restoreTarget = this.previouslyFocusedEl;
         this.previouslyFocusedEl = null;
+        const resolve = this.resolver;
+        this.resolver = null;
         if (restoreTarget && typeof restoreTarget.focus === 'function') {
-            setTimeout(() => {
-                try { restoreTarget.focus(); } catch (_) {}
-            }, 30);
+            try { restoreTarget.focus(); } catch (_) {}
         }
         
-        if (this.resolver) {
-            this.resolver(result);
-            this.resolver = null;
-        }
+        if (resolve) resolve(result);
     }
 }
 

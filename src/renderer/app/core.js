@@ -30,7 +30,9 @@ const DEFAULT_SETTINGS = {
         liveCheckDelay: 1000,  // milliseconds
         snippets: true,  // Enable snippet suggestions
         keywords: true,  // Enable keyword suggestions
-        intellisense: true  // Clangd-backed completions + hover
+        intellisense: true,  // Clangd-backed completions + hover
+        formatStyle: 'google',  // AStyle preset (app/services/formatter/styles.js)
+        formatOnSave: false     // Format C/C++ files on Ctrl+S (not on auto-save)
     },
     compiler: {
         cppStandard: '',
@@ -59,6 +61,7 @@ const DEFAULT_SETTINGS = {
         bgOpacity: 50,
         bgUrl: '',
         performanceMode: true,
+        animatedBackground: true,  // play a theme's background video (only while the window has focus)
         uiScale: 'auto'   // 'auto' or a percentage; applied by the main process as the page zoom
     },
     startup: {
@@ -94,7 +97,14 @@ using namespace std;
 int main() {
     cout << "hello gaialime";
     return 0;
-}`
+}`,
+        cCode: `#include <stdio.h>
+
+int main() {
+
+    return 0;
+}
+`
     },
     keybindings: {
         compile: 'F9',
@@ -115,6 +125,7 @@ int main() {
         settings: 'Ctrl+,',
         toggleSplit: 'Ctrl+\\',
         formatCode: 'Ctrl+Shift+A',
+        markdownPreview: 'Ctrl+Shift+V',
         toggleExplorer: 'Ctrl+E',
         commentLine: 'Ctrl+/',
         selectNextOccurrence: 'Ctrl+D',
@@ -251,6 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
     initTabsScroll();
     initSettings();
     initTabDrag();
+    initFileDrop();
     initCompetitiveCompanion();
     detectPortableVersion();
     validateCompilerOnStartup();
@@ -502,7 +514,8 @@ function initMonaco(onReady) {
                 'double', 'float', 'int', 'long', 'short',
                 'void', 'wchar_t',
                 'size_t', 'ptrdiff_t', 'int8_t', 'int16_t', 'int32_t', 'int64_t',
-                'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t'
+                'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t',
+                '__int128', '__int128_t', '__uint128_t'
             ],
             builtins: [
                 'cout', 'cin', 'endl', 'cerr', 'clog',
@@ -522,13 +535,8 @@ function initMonaco(onReady) {
                 'stoi', 'stol', 'stoll', 'stof', 'stod',
                 'to_string', 'getline', 'substr'
             ],
-            operators: [
-                '=', '>', '<', '!', '~', '?', ':', '==', '<=', '>=', '!=',
-                '&&', '||', '++', '--', '+', '-', '*', '/', '&', '|', '^', '%',
-                '<<', '>>', '+=', '-=', '*=', '/=', '&=', '|=', '^=',
-                '%=', '<<=', '>>=', '->', '::', '...'
-            ],
-            symbols: /[=><!~?:&|+\-*\/\^%]+/,
+            // A '/' that starts a comment is not an operator (`i++// note`).
+            symbols: /(?:[=><!~?:&|+\-*\^%]|\/(?![\/*]))+/,
             escapes: /\\(?:[abfnrtv\\"'0?]|x[0-9A-Fa-f]{1,4}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|[0-7]{1,3})/,
             tokenizer: {
                 root: [
@@ -538,6 +546,9 @@ function initMonaco(onReady) {
                     [/^\s*#\s*include/, 'keyword'],
                     // Preprocessor directives
                     [/^\s*#\s*\w+/, 'keyword'],
+                    // Raw strings R"(...)" / R"x(...)x" (may span lines), and encoding prefixes
+                    [/(?:u8|[uUL])?R"([^()\\\s"]{0,16})\(/, { token: 'string', next: '@raw.$1' }],
+                    [/(?:u8|[uUL])(?=["'])/, 'string'],
                     // Identifiers and keywords
                     [/[a-zA-Z_]\w*(?=\s*\()/, {
                         cases: {
@@ -560,24 +571,24 @@ function initMonaco(onReady) {
                     // Delimiters and operators
                     [/[{}()\[\]]/, '@brackets'],
                     [/[<>](?!@symbols)/, '@brackets'],
-                    [/@symbols/, {
-                        cases: {
-                            '@operators': 'operator',
-                            '@default': ''
-                        }
-                    }],
+                    // One operator at a time, longest first: a greedy run of symbols left
+                    // `x=-1` and `a==-b` uncolored.
+                    [/<=>|<<=|>>=|\.\.\.|->|::|&&|\|\||\+\+|--|[<>=!]=|[+\-*\/%&|^]=|<<|>>|[=<>!~?:&|+\-*\/^%]/, 'operator'],
                     // Numbers
-                    [/\d*\.\d+([eE][\-+]?\d+)?[fFlL]?/, 'number.float'],
-                    [/0[xX][0-9a-fA-F]+[uUlL]*/, 'number.hex'],
-                    [/0[bB][01]+[uUlL]*/, 'number.binary'],
-                    [/0[0-7]+[uUlL]*/, 'number.octal'],
-                    [/\d+[uUlL]*/, 'number'],
+                    // Floats: 1.5, .5, 1., 1e5, 2.5e-3f; ' is a C++14 digit separator (1'000'000)
+                    [/(?:\d(?:'?\d)*\.(?:\d(?:'?\d)*)?|\.\d(?:'?\d)*)(?:[eE][\-+]?\d+)?[fFlL]?/, 'number.float'],
+                    [/\d(?:'?\d)*[eE][\-+]?\d+[fFlL]?/, 'number.float'],
+                    [/0[xX][0-9a-fA-F](?:'?[0-9a-fA-F])*[uUlLzZ]*/, 'number.hex'],
+                    [/0[bB][01](?:'?[01])*[uUlLzZ]*/, 'number.binary'],
+                    [/0[0-7](?:'?[0-7])*[uUlLzZ]*/, 'number.octal'],
+                    [/\d(?:'?\d)*[uUlLzZ]*/, 'number'],
                     // Delimiter
                     [/[;,.]/, 'delimiter'],
                     // Strings with escape sequences
                     [/"([^"\\]|\\.)*$/, 'string.invalid'], // non-terminated string
                     [/"/, 'string', '@string_double'],
-                    // Characters with escape sequences
+                    // Characters with escape sequences; an unclosed one ends with its line
+                    [/'([^'\\]|\\.)*$/, 'string.invalid'],
                     [/'[^\\']'/, 'string'],
                     [/'/, 'string', '@string_single'],
                 ],
@@ -593,13 +604,21 @@ function initMonaco(onReady) {
                 ],
                 string_double: [
                     [/@escapes/, 'string.escape'],
+                    [/\\./, 'string.escape.invalid'],
                     [/[^\\"]+/, 'string'],
                     [/"/, 'string', '@pop']
                 ],
                 string_single: [
                     [/@escapes/, 'string.escape'],
+                    [/\\./, 'string.escape.invalid'],
                     [/[^\\']+/, 'string'],
                     [/'/, 'string', '@pop']
+                ],
+                // Ends only at `)delim"` with the delimiter it was opened with ($S2).
+                raw: [
+                    [/\)([^()\\\s"]{0,16})"/, { cases: { '$1==$S2': { token: 'string', next: '@pop' }, '@default': 'string' } }],
+                    [/[^)]+/, 'string'],
+                    [/\)/, 'string']
                 ]
             }
         });
@@ -817,7 +836,7 @@ function createEditor(containerId) {
         detectIndentation: false,
         emptySelectionClipboard: false,
         cursorBlinking: App.settings.appearance.performanceMode ? 'solid' : 'smooth',
-        smoothScrolling: !App.settings.appearance.performanceMode,
+        smoothScrolling: false,
         bracketPairColorization: { enabled: !App.settings.appearance.performanceMode },
         // Monaco defaults this to false, which silently collapses the glyph margin
         // to 0px — every `glyphMarginClassName` decoration (debugger breakpoint
@@ -1020,6 +1039,8 @@ function createEditor(containerId) {
             // Allow file and external text drops to proceed
         }, true);
     }
+
+    if (window.MarkdownPreview) MarkdownPreview.attach(editor);
 
     return editor;
 }

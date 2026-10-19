@@ -66,7 +66,25 @@ async function readTextFile(filePath) {
         const mb = (n) => (n / (1024 * 1024)).toFixed(1);
         throw new Error(`File is too large to open (${mb(size)} MB, limit ${mb(MAX_OPEN_BYTES)} MB)`);
     }
-    return fsp.readFile(filePath, 'utf-8');
+    return decodeText(await fsp.readFile(filePath));
+}
+
+/**
+ * UTF-8 unless the file starts with a UTF-16 byte-order mark. Windows PowerShell 5.1's `>`
+ * and Notepad's "Unicode" write UTF-16 LE; read as UTF-8 that is a NUL after every character.
+ * Saving writes UTF-8, which g++ and git also expect.
+ * @param {Buffer} buf
+ * @returns {string}
+ */
+function decodeText(buf) {
+    if (buf.length >= 2 && buf[0] === 0xFF && buf[1] === 0xFE) {
+        return buf.toString('utf16le', 2);
+    }
+    if (buf.length >= 2 && buf[0] === 0xFE && buf[1] === 0xFF) {
+        const le = Buffer.from(buf.subarray(2, buf.length - (buf.length % 2)));
+        return le.swap16().toString('utf16le');
+    }
+    return buf.toString('utf-8');
 }
 
 async function writeTextFile(filePath, content) {
@@ -264,6 +282,13 @@ function registerHandlers() {
     });
 
     ipcMain.handle(IPC.FILE.RENAME, async (event, { oldPath, newPath }) => {
+        // On Windows rename() silently replaces an existing file. A change of case only
+        // (main.cpp -> Main.cpp) is the same file there and is allowed.
+        const fold = (p) => (process.platform === 'linux' ? path.resolve(p) : path.resolve(p).toLowerCase());
+        const sameFile = fold(oldPath) === fold(newPath);
+        if (!sameFile && await fsp.access(newPath).then(() => true, () => false)) {
+            throw new Error(`"${path.basename(newPath)}" already exists`);
+        }
         try {
             await fsp.rename(oldPath, newPath);
             return { success: true };
@@ -335,6 +360,13 @@ function registerHandlers() {
         } catch (error) {
             throw new Error(`Cannot show item in folder: ${error.message}`);
         }
+    });
+
+    // A link clicked in the Markdown preview: web and mail links only, in the user's browser.
+    ipcMain.handle(IPC.FILE.OPEN_LINK, async (event, url) => {
+        if (typeof url !== 'string' || !/^(https?:\/\/|mailto:)/i.test(url)) return { success: false, error: 'URL not allowed' };
+        await shell.openExternal(url);
+        return { success: true };
     });
 }
 

@@ -37,7 +37,8 @@ function updateUI() {
 // HEADER
 // ============================================================================
 function initHeader() {
-    document.getElementById('btn-new-tab').onclick = newFile;
+    document.getElementById('btn-new-tab').onclick = () => newFile();
+    document.getElementById('btn-new-tab').oncontextmenu = e => { e.preventDefault(); showNewFileMenu(e); };
     document.getElementById('btn-buildrun').onclick = buildRun;
     document.getElementById('btn-run-only').onclick = run;
     document.getElementById('btn-stop').onclick = stop;
@@ -126,11 +127,7 @@ function toggleIO() {
     App.settings.panels.showIO = App.showIO;
     saveSettings();
     updateUI();
-
-    setTimeout(() => {
-        if (App.editor) App.editor.layout();
-        if (App.editor2) App.editor2.layout();
-    }, 50);
+    refreshEditorLayout();
 }
 function toggleTerm() {
     if (DockingState.terminalDocked) {
@@ -166,11 +163,7 @@ function toggleTerm() {
     App.settings.panels.showTerm = App.showTerm;
     saveSettings();
     updateUI();
-
-    setTimeout(() => {
-        if (App.editor) App.editor.layout();
-        if (App.editor2) App.editor2.layout();
-    }, 50);
+    refreshEditorLayout();
     if (App.showTerm) fitTerminal();
 }
 function toggleProblems() {
@@ -186,10 +179,7 @@ function toggleProblems() {
     saveSettings();
     updateUI();
     // Refresh editor layout after panel visibility changes
-    setTimeout(() => {
-        if (App.editor) App.editor.layout();
-        if (App.editor2) App.editor2.layout();
-    }, 50);
+    refreshEditorLayout();
 }
 
 // ============================================================================
@@ -858,22 +848,27 @@ function updateDockedTestNavUI() {
     }
 }
 
+let pendingEditorLayout = 0;
+
 function refreshEditorLayout() {
-    setTimeout(() => {
+    if (pendingEditorLayout) return;
+    pendingEditorLayout = requestAnimationFrame(() => {
+        pendingEditorLayout = 0;
         if (App.editor) App.editor.layout();
         if (App.editor2) App.editor2.layout();
-    }, 50);
+    });
 }
 
 // Re-fit the xterm terminal after a layout change (dock/undock/switch/show).
-// xterm computes a fixed row/col count in fit(); when the container changes
-// size we must recompute or it keeps stale dimensions and won't fill. Two rAFs
-// + a fallback timeout cover both instant reflows and CSS transitions.
+// Panel geometry is immediate; coalesce repeated requests before the next paint.
+let pendingTerminalFit = 0;
+
 function fitTerminal() {
-    if (!window.TerminalManager) return;
-    const doFit = () => TerminalManager.fit();
-    requestAnimationFrame(() => requestAnimationFrame(doFit));
-    setTimeout(doFit, 120); // after the panel height/opacity transition
+    if (!window.TerminalManager || pendingTerminalFit) return;
+    pendingTerminalFit = requestAnimationFrame(() => {
+        pendingTerminalFit = 0;
+        TerminalManager.fit();
+    });
 }
 
 

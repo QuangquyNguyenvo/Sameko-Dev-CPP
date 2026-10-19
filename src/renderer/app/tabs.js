@@ -10,11 +10,17 @@
 // ============================================================================
 // TABS
 // ============================================================================
-function newFile() {
+const pendingFileOpens = new Map();
+
+/** A new untitled tab. `ext` picks the file type (right-click the + button); C++ by default.
+ *  .cpp and .c start from their template in Settings > Template, other types empty. */
+function newFile(ext = 'cpp') {
+    if (typeof ext !== 'string') ext = 'cpp';   // called as a click handler
     const id = createRestoredTabId();
 
-    const templateCode = App.settings.template?.code || DEFAULT_CODE;
-    const tab = { id, name: 'untitled.cpp', path: null, untitledHistoryKey: createUntitledHistoryKey(), content: templateCode, original: templateCode, modified: false, viewState: null };
+    const templateCode = ext === 'cpp' ? (App.settings.template?.code ?? DEFAULT_CODE)
+        : ext === 'c' ? (App.settings.template?.cCode ?? DEFAULT_SETTINGS.template.cCode) : '';
+    const tab = { id, name: 'untitled.' + ext, path: null, untitledHistoryKey: createUntitledHistoryKey(), content: templateCode, original: templateCode, modified: false, viewState: null };
     App.tabs.push(tab);
     setActive(id);
     updateUI();
@@ -194,47 +200,86 @@ async function openFileFromPath(filePath) {
         return;
     }
 
-    // Read file content
-    try {
-        let content;
-        if (window.electronAPI && window.electronAPI.readFile) {
-            content = await window.electronAPI.readFile(filePath);
-        } else {
-            console.error('[openFileFromPath] electronAPI.readFile not available');
-            return;
+    // Concurrent Explorer/session requests share one read and one tab creation.
+    if (pendingFileOpens.has(normalizedPath)) return pendingFileOpens.get(normalizedPath);
+    const opening = (async () => {
+        try {
+            let content;
+            if (window.electronAPI && window.electronAPI.readFile) {
+                content = await window.electronAPI.readFile(filePath);
+            } else {
+                console.error('[openFileFromPath] electronAPI.readFile not available');
+                return;
+            }
+
+            // Another opening route may have added the tab while the read was pending.
+            const openedTab = App.tabs.find(t => t.path && t.path.replace(/\\/g, '/') === normalizedPath);
+            if (openedTab) {
+                setActive(openedTab.id);
+                return;
+            }
+
+            // Create new tab
+            const id = createRestoredTabId();
+            const fileName = filePath.split(/[/\\]/).pop();
+            const tab = {
+                id,
+                name: fileName,
+                path: filePath,
+                untitledHistoryKey: null,
+                content: content,
+                original: content,
+                modified: false
+            };
+            App.tabs.push(tab);
+            setActive(id);
+            updateUI();
+            scheduleSessionSave();
+            startFileWatch(filePath);
+
+            // Hide welcome screen
+            const welcome = document.getElementById('welcome');
+            if (welcome) welcome.style.display = 'none';
+        } catch (err) {
+            // ipcRenderer wraps the handler's message: "Error invoking remote method '…': Error: …"
+            const msg = String(err?.message || err).replace(/^Error invoking remote method '[^']+': (Error: )?/, '');
+            showToast(msg, 'error');
         }
-
-        // Create new tab
-        const id = createRestoredTabId();
-        const fileName = filePath.split(/[/\\]/).pop();
-        const tab = {
-            id,
-            name: fileName,
-            path: filePath,
-            untitledHistoryKey: null,
-            content: content,
-            original: content,
-            modified: false
-        };
-        App.tabs.push(tab);
-        setActive(id);
-        updateUI();
-        scheduleSessionSave();
-        startFileWatch(filePath);
-
-        // Hide welcome screen
-        const welcome = document.getElementById('welcome');
-        if (welcome) welcome.style.display = 'none';
-
-    } catch (err) {
-        // ipcRenderer wraps the handler's message: "Error invoking remote method '…': Error: …"
-        const msg = String(err?.message || err).replace(/^Error invoking remote method '[^']+': (Error: )?/, '');
-        showToast(msg, 'error');
+    })();
+    pendingFileOpens.set(normalizedPath, opening);
+    try {
+        await opening;
+    } finally {
+        pendingFileOpens.delete(normalizedPath);
     }
 }
 
 // Expose to window for FileExplorer
 window.openFromPath = openFileFromPath;
+
+function initFileDrop() {
+    const shouldOpenFiles = event => event.dataTransfer?.types?.includes('Files')
+        && !event.target.closest?.('.io-panel-input, .cat-group, input[type="file"]');
+
+    // Capture before Monaco or Chromium can insert the file/path or navigate away.
+    document.addEventListener('dragover', event => {
+        if (!shouldOpenFiles(event)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = 'copy';
+    }, true);
+
+    document.addEventListener('drop', async event => {
+        if (!shouldOpenFiles(event)) return;
+        event.preventDefault();
+        event.stopPropagation();
+
+        // Snapshot the protected drag data before the first asynchronous read.
+        const paths = new Set(Array.from(event.dataTransfer.files,
+            file => window.electronAPI?.getPathForFile?.(file) || '').filter(Boolean));
+        for (const filePath of paths) await openFileFromPath(filePath);
+    }, true);
+}
 
 function renderTabs() {
     const c = document.getElementById('tabs-container');
@@ -341,6 +386,7 @@ function doAction(action) {
     const map = {
         new: newFile, open: openFile, save, saveas: () => saveAs(), run, buildrun: buildRun, stop,
         compile: compileOnly,
+        mdpreview: () => window.MarkdownPreview?.toggle(getActiveEditor()),
         // Same as the toolbar button, which narrow windows hide.
         gettests: () => document.getElementById('btn-cc')?.click(),
         debugstart: () => window.Debugger?.start(),
@@ -404,6 +450,7 @@ async function save() {
 
     const tab = App.tabs.find(t => t.id === tabId);
     if (!tab) return;
+    if (App.settings.editor.formatOnSave) await formatCode(editor, { silent: true });
     tab.content = editor.getValue();
 
     if (tab.path) {
@@ -443,4 +490,86 @@ async function saveAs(tabIdOverride = null) {
         setStatus(`Saved ${tab.name}`, 'success');
         scheduleSessionSave();
     }
+}
+
+/**
+ * Renames a tab. A saved file is renamed on disk first, never over another file; an untitled
+ * tab only changes its name, which also sets its language and the name Save offers.
+ */
+async function renameTab(tabId, newName) {
+    const tab = App.tabs.find(t => t.id === tabId);
+    const name = String(newName || '').trim().replace(/[<>:"/\\|?*]/g, '_');
+    if (!tab || !name || name === tab.name) return false;
+    if (!tab.path) {
+        tab.name = name;
+        renderTabs();
+        scheduleSessionSave();
+        return true;
+    }
+    const cut = Math.max(tab.path.lastIndexOf('/'), tab.path.lastIndexOf('\\'));
+    const newPath = tab.path.slice(0, cut + 1) + name;
+    try {
+        await window.electronAPI.renameFile(tab.path, newPath);
+    } catch (err) {
+        const reason = String(err.message || err).replace(/^.*?Error: /, '');
+        setStatus('error', `Rename failed: ${reason}`);
+        log(`Cannot rename ${tab.name}: ${reason}`, 'error');
+        return false;
+    }
+    onFileRenamed(tab.path, newPath);
+    if (typeof FileExplorer !== 'undefined' && FileExplorer.refreshTree) FileExplorer.refreshTree();
+    return true;
+}
+
+/** A file was renamed on disk (from its tab or the Explorer): open tabs follow it. */
+function onFileRenamed(oldPath, newPath) {
+    const key = (p) => String(p).replace(/\\/g, '/').toLowerCase();
+    let changed = false;
+    for (const tab of App.tabs) {
+        if (!tab.path || key(tab.path) !== key(oldPath)) continue;
+        stopFileWatch(tab.path);
+        tab.path = newPath;
+        tab.name = newPath.split(/[/\\]/).pop();
+        startFileWatch(newPath);
+        changed = true;
+    }
+    if (changed) {
+        renderTabs();
+        scheduleSessionSave();
+    }
+}
+
+/** Turns the tab's name into a text box; Enter or clicking away renames, Esc cancels. */
+function startTabRename(tabId) {
+    const el = document.querySelector(`#tabs-container .tab[data-id="${CSS.escape(tabId)}"]`);
+    const tab = App.tabs.find(t => t.id === tabId);
+    const label = el?.querySelector('.tab-name');
+    if (!tab || !label) return;
+    const input = document.createElement('input');
+    input.className = 'tab-rename';
+    input.value = tab.name;
+    input.spellcheck = false;
+    const size = () => { input.style.width = Math.max(60, Math.min(260, input.value.length * 7.5 + 16)) + 'px'; };
+    size();
+    label.replaceWith(input);
+    el.draggable = false;
+    let done = false;
+    const finish = async (commit) => {
+        if (done) return;
+        done = true;
+        if (!commit || !(await renameTab(tabId, input.value))) renderTabs();
+    };
+    input.addEventListener('input', size);
+    input.addEventListener('keydown', (e) => {
+        e.stopPropagation();
+        if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+        else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    });
+    input.addEventListener('blur', () => finish(true));
+    input.addEventListener('click', (e) => e.stopPropagation());
+    input.addEventListener('mousedown', (e) => e.stopPropagation());
+    input.focus();
+    // select the name without its extension, like renaming in the Explorer
+    const dot = tab.name.lastIndexOf('.');
+    input.setSelectionRange(0, dot > 0 ? dot : tab.name.length);
 }

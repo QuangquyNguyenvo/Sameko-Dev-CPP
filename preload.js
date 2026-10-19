@@ -46,6 +46,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     deleteFolder: (folderPath) => ipcRenderer.invoke('delete-folder', folderPath),
     createDirectory: (dirPath) => ipcRenderer.invoke('create-directory', dirPath),
     showItemInFolder: (filePath) => ipcRenderer.invoke('show-item-in-folder', filePath),
+    openExternalLink: (url) => ipcRenderer.invoke('open-external-link', url),
 
     // Settings operations
     saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),

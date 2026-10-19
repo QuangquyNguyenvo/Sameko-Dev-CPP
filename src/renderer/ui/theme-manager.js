@@ -1442,14 +1442,18 @@ const ThemeManager = {
 
     /**
      * Play the background video only while it can be seen (not hidden behind a user image,
-     * not minimised). Decoding it costs ~4% of a core in the GPU process and ~15 MB in the
-     * renderer; paused, it keeps showing its current frame. Performance Mode no longer
-     * pauses it.
+     * not minimised) and the window has focus. Each video frame repaints the whole window
+     * (~6% GPU), and a window behind other apps is not `document.hidden`, so an IDE in the
+     * background kept a screen share or recording busy. Paused, the video keeps showing its
+     * current frame. Off with Settings > Animated Background or the system's reduced-motion
+     * setting; Performance Mode does not pause it.
      */
     syncBackgroundVideo() {
         const bgVideo = document.getElementById('app-bg-video');
         if (!bgVideo || !bgVideo.getAttribute('src')) return;
-        const play = bgVideo.style.display !== 'none' && !document.hidden;
+        const animated = (typeof App === 'undefined' || App.settings?.appearance?.animatedBackground !== false)
+            && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        const play = animated && bgVideo.style.display !== 'none' && !document.hidden && document.hasFocus();
         bgVideo.autoplay = play;
         if (play) bgVideo.play().catch(() => { });
         else bgVideo.pause();

@@ -6,9 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- **Markdown preview**: a `.md` file opens with its rendered view beside the editor. It updates while you type, each side scrolls on its own, remembers where each file's preview was scrolled, colors code blocks, shows images next to the file, and opens web links in the browser and links to other files in a tab. Toggle it with the **Preview** button in the editor, **View > Markdown Preview** or **Ctrl+Shift+V**. Scripts, styles and form fields in the file are not rendered. Typing re-renders only the changed blocks, so images do not reload and code blocks do not flash.
+- **Format style and format on save** (#59): pick one of 13 AStyle styles in **Settings > Editor > Format Style**, and turn on **Format on Save** to format C/C++ files on Ctrl+S (one Ctrl+Z undoes it; Auto Save does not format).
+- **Settings > Appearance > Animated Background**: turn the theme's background video off. It is also off when Windows' animation effects are turned off.
+- **New file of any type**: right-click the **+** next to the tabs to start a C++, C, input (.inp), output (.out), text or Markdown file. C++ and C files start from their template in **Settings > Template**; the others start empty.
+- **Rename a tab**: right-click a tab > **Rename** edits its name in place (Enter to apply, Esc to cancel). A saved file is renamed on disk; an untitled tab changes the name Save offers and its language.
+- **Search in Settings**: type in the box at the top of Settings to see only the matching settings and shortcuts from every tab. Esc clears the search; clicking a tab goes back to that tab.
+
 ### Changed
 
+- **Settings > Template** matches the other tabs: Reset and Import sit on the code card, the editor fills the rest of the page, and a **C++ / C** switch on the card sets a separate template for C files (also used by the Explorer's New File for `.c`).
+- **The frosted glass is lighter**: the welcome card and other glass panels blur the background less.
+- **The background video pauses while you work in another window.** Each video frame repaints the whole window (about 6% GPU), and it kept playing behind other apps, which made screen sharing and recording lag.
 - **Beta updates are opt-in**: auto-update now offers only stable releases. Turn on **Settings > About > Get beta updates** to also receive pre-releases (installs already on a beta keep getting betas).
+
+### Fixed
+
+- **Renaming in the Explorer no longer replaces an existing file** with the same name, and an open tab of the renamed file follows it instead of saving back to the old name.
+- **Readable text in Settings**: descriptions under each heading are brighter, and the Snippets buttons use the theme's button text color instead of white on a bright accent.
+- **Settings > Keybindings** shows readable names for the debugger, explorer and line-editing shortcuts instead of internal ids such as `debugStart`.
+- **C++ highlighting** (#61): `1e5`, `1.`, `.5` and `2.5e-3f` are numbers, and digit separators (`1'000'000`) no longer start a character literal. Operators next to each other (`x=-1`, `a==-b`, `y=!z`) are colored, a comment right after an operator (`i++// note`) is a comment, raw strings `R"(...)"` (also over several lines) are one string, `L"…"`/`u8"…"` prefixes are part of the string, and an unclosed `'` no longer colors the rest of the file as a string.
+- **Explorer's New File uses the template from Settings > Template** (#55), as Ctrl+N does; the starter solution is used only when the template is empty.
+- **Format Code no longer reports "Format error"** after it has formatted the file.
+- **Format Code no longer garbles accented letters or emoji** in files over about 64 KB (they came back as `�`).
+- **Format Code keeps breakpoints, error marks and the caret on their code.** It now changes only the lines that differ instead of replacing the whole file.
+- **Breakpoints follow the code when lines are added or removed above them.** Before, switching tabs drew them back on the old line number, and debugging stopped there.
+- **UTF-16 files open as text** instead of a NUL after every character. Windows PowerShell's `>` and Notepad's "Unicode" save this way; the file is saved back as UTF-8.
 
 ### Removed
 

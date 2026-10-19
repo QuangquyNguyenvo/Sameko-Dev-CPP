@@ -30,6 +30,7 @@ const IPC = {
         UNWATCH: 'unwatch-file',
         RELOAD: 'reload-file',
         SHOW_IN_FOLDER: 'show-item-in-folder',
+        OPEN_LINK: 'open-external-link',
     },
 
     // Compiler & Build

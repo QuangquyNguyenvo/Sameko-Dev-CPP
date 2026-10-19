@@ -11,32 +11,8 @@ const ThemeMarketplace = {
      * Initialize
      */
     async init() {
-        this._setupCarousel();
         this._setupButtons();
         this.renderCarousel();
-    },
-
-    /**
-     * Setup carousel interactions
-     */
-    _setupCarousel() {
-        const carousel = document.getElementById('theme-carousel');
-        if (!carousel) return;
-
-        document.getElementById('theme-carousel-left')?.addEventListener('click', () => {
-            carousel.scrollBy({ left: -180, behavior: 'smooth' });
-        });
-
-        document.getElementById('theme-carousel-right')?.addEventListener('click', () => {
-            carousel.scrollBy({ left: 180, behavior: 'smooth' });
-        });
-
-        carousel.addEventListener('wheel', (e) => {
-            if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                e.preventDefault();
-                carousel.scrollLeft += e.deltaY;
-            }
-        }, { passive: false });
     },
 
     /**
@@ -488,11 +464,9 @@ const ThemeMarketplace = {
                 if (e.key === 'Enter') close(input.value.trim() || null);
             };
 
-            setTimeout(() => {
-                window.focus();
-                input.focus();
-                input.select();
-            }, 50);
+            window.focus();
+            input.focus();
+            input.select();
         });
     },
 

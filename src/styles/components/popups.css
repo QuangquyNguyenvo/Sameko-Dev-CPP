@@ -326,6 +326,15 @@
     color: var(--accent);
 }
 
+/* File extension on the right of a New File menu row */
+.tab-context-hint {
+    margin-left: auto;
+    padding-left: 18px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+}
+
 .tab-context-sep {
     height: 1.5px;
     margin: 5px 8px;

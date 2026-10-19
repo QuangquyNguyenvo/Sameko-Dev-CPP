@@ -12,60 +12,77 @@
 // ============================================================================
 let tabContextMenu = null;
 
+const MENU_ICON = (paths) => `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${paths}</svg>`;
+const NEW_FILE_ICON = MENU_ICON('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>');
+
 function showTabContextMenu(e, tab) {
-    // Remove existing menu
-    if (tabContextMenu) {
-        tabContextMenu.remove();
-    }
-
-    // Styled by islands.css (.tab-context-menu), from the theme's tokens.
-    tabContextMenu = document.createElement('div');
-    tabContextMenu.className = 'tab-context-menu';
-
-    // Menu items with SVG icons
-    const items = [
+    openContextMenu(e, [
         {
-            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>`,
-            label: 'Checkpoints',
-            action: () => {
-                if (typeof LocalHistory !== 'undefined') {
-                    setActive(tab.id);
-                    if (tab.path) {
-                        LocalHistory.showHistoryModal(tab.path);
-                    } else {
-                        LocalHistory.showUntitledHistoryModal(tab);
-                    }
-                }
-            },
-            disabled: false
+            icon: MENU_ICON('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>'),
+            label: 'Rename',
+            action: () => startTabRename(tab.id)
         },
-        { divider: true },
         {
-            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`,
+            icon: MENU_ICON('<rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>'),
             label: 'Copy Path',
             action: () => {
-                if (tab.path) {
-                    navigator.clipboard.writeText(tab.path);
-                    setStatus('Path copied to clipboard', 'success');
-                }
+                navigator.clipboard.writeText(tab.path);
+                setStatus('Path copied to clipboard', 'success');
             },
             disabled: !tab.path
         },
         {
-            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`,
+            icon: MENU_ICON('<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>'),
+            label: 'Checkpoints',
+            action: () => {
+                if (typeof LocalHistory === 'undefined') return;
+                setActive(tab.id);
+                if (tab.path) LocalHistory.showHistoryModal(tab.path);
+                else LocalHistory.showUntitledHistoryModal(tab);
+            }
+        },
+        { divider: true },
+        {
+            icon: MENU_ICON('<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'),
             label: 'Close',
             action: () => closeTab(tab.id)
         },
         {
-            icon: `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="11" x2="23" y2="11"/></svg>`,
+            icon: MENU_ICON('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="11" x2="23" y2="11"/>'),
             label: 'Close Others',
-            action: () => {
-                const tabsToClose = App.tabs.filter(t => t.id !== tab.id);
-                tabsToClose.forEach(t => closeTab(t.id));
-            },
+            action: () => App.tabs.filter(t => t.id !== tab.id).forEach(t => closeTab(t.id)),
             disabled: App.tabs.length <= 1
         }
-    ];
+    ]);
+}
+
+// Right-click on the + button: the kind of file the new tab starts as.
+const NEW_FILE_TYPES = [
+    { ext: 'cpp', label: 'C++ file' },
+    { ext: 'c', label: 'C file' },
+    { divider: true },
+    { ext: 'inp', label: 'Input' },
+    { ext: 'out', label: 'Output' },
+    { ext: 'txt', label: 'Text' },
+    { ext: 'md', label: 'Markdown' }
+];
+
+function showNewFileMenu(e) {
+    openContextMenu(e, NEW_FILE_TYPES.map(t => t.divider ? t : {
+        icon: NEW_FILE_ICON,
+        label: t.label,
+        hint: '.' + t.ext,
+        action: () => newFile(t.ext)
+    }));
+}
+
+/** A small menu at the mouse. items: {icon, label, hint?, action, disabled?} or {divider: true}. */
+function openContextMenu(e, items) {
+    if (tabContextMenu) tabContextMenu.remove();
+
+    // Styled by popups.css (.tab-context-menu), from the theme's tokens.
+    tabContextMenu = document.createElement('div');
+    tabContextMenu.className = 'tab-context-menu';
 
     items.forEach(item => {
         if (item.divider) {
@@ -77,13 +94,14 @@ function showTabContextMenu(e, tab) {
 
         const menuItem = document.createElement('div');
         menuItem.className = 'tab-context-item' + (item.disabled ? ' disabled' : '');
-        menuItem.innerHTML = `<span class="tab-context-icon">${item.icon}</span><span>${item.label}</span>`;
+        menuItem.innerHTML = `<span class="tab-context-icon">${item.icon}</span><span>${escapeHtml(item.label)}</span>`
+            + (item.hint ? `<span class="tab-context-hint">${escapeHtml(item.hint)}</span>` : '');
 
         if (!item.disabled) {
             menuItem.onclick = () => {
-                item.action();
                 tabContextMenu.remove();
                 tabContextMenu = null;
+                item.action();
             };
         }
 

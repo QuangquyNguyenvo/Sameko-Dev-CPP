@@ -278,6 +278,7 @@ function clearLiveCheckMarkers() {
 }
 
 function applySettings() {
+    const performanceMode = !!App.settings.appearance.performanceMode;
     const opts = {
         fontSize: App.settings.editor.fontSize,
         fontFamily: App.settings.editor.fontFamily,
@@ -285,7 +286,13 @@ function applySettings() {
         insertSpaces: true,
         detectIndentation: false,
         emptySelectionClipboard: false,
-        minimap: { enabled: App.settings.editor.minimap },
+        smoothScrolling: false,
+        minimap: {
+            enabled: App.settings.editor.minimap && !performanceMode && !App.isSplit,
+            renderCharacters: !performanceMode
+        },
+        bracketPairColorization: { enabled: !performanceMode },
+        cursorBlinking: performanceMode ? 'solid' : 'smooth',
         wordWrap: App.settings.editor.wordWrap ? 'on' : 'off',
         multiCursorModifier: resolveMultiCursorModifier(),
         quickSuggestions: buildQuickSuggestions(),
@@ -298,14 +305,6 @@ function applySettings() {
     // Editor zoom is driven only by fontSize + initCtrlWheelZoom; never let Monaco's
     // built-in wheel zoom back on, or a settings re-apply would resurrect #36.
     opts.mouseWheelZoom = false;
-
-    // Performance optimizations
-    if (App.settings.appearance.performanceMode) {
-        opts.minimap = { enabled: false };
-        opts.bracketPairColorization = { enabled: false };
-        opts.cursorBlinking = 'solid';
-        opts.smoothScrolling = false;
-    }
 
     if (App.editor) App.editor.updateOptions(opts);
     if (App.editor2) App.editor2.updateOptions(opts);

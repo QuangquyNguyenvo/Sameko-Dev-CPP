@@ -10,6 +10,8 @@
 // ============================================================================
 // SPLIT EDITOR
 // ============================================================================
+let cancelSplitResize = null;
+
 function toggleSplit() {
     if (App.isSplit) {
         closeSplit();
@@ -61,26 +63,12 @@ function openSplit() {
     }
 
 
-    // Use transitionend to trigger layout exactly when animation finishes
-    const onTransitionEnd = (e) => {
-        if (e.propertyName === 'width' || e.propertyName === 'flex-grow') {
-            if (App.editor) App.editor.layout();
-            if (App.editor2) App.editor2.layout();
-            pane2.removeEventListener('transitionend', onTransitionEnd);
-        }
-    };
-    pane2.addEventListener('transitionend', onTransitionEnd);
-
-    // Fallback in case transition doesn't fire (e.g. hidden)
-    setTimeout(() => {
-        if (App.editor) App.editor.layout();
-        if (App.editor2) App.editor2.layout();
-        pane2.removeEventListener('transitionend', onTransitionEnd);
-    }, 350); // Slightly longer than CSS transition time
+    refreshEditorLayout();
 }
 
 function closeSplit() {
     if (!App.isSplit) return;
+    if (cancelSplitResize) cancelSplitResize();
 
 
     if (App.splitTabId && App.editor2) {
@@ -98,30 +86,20 @@ function closeSplit() {
     document.getElementById('resizer-split').style.display = 'none';
 
 
-    const minimapEnabled = App.settings?.editor?.minimap !== false;
+    const minimapEnabled = App.settings?.editor?.minimap !== false
+        && !App.settings?.appearance?.performanceMode;
     if (App.editor) App.editor.updateOptions({ minimap: { enabled: minimapEnabled } });
 
 
-    const resizer = document.getElementById('resizer-split');
-    const onTransitionEnd = (e) => {
-        if (App.editor) App.editor.layout();
-        resizer.removeEventListener('transitionend', onTransitionEnd);
-    };
-    resizer.addEventListener('transitionend', onTransitionEnd);
-
-    // Fallback
-    setTimeout(() => {
-        if (App.editor) App.editor.layout();
-        resizer.removeEventListener('transitionend', onTransitionEnd);
-    }, 350);
-
-    // Reset pane 1 to full width
-    const pane1 = document.getElementById('editor-pane-1');
-    if (pane1) {
-        pane1.style.flex = '1';
-        pane1.style.width = '';
-        pane1.style.maxWidth = '';
+    // Clear both panes so reopening starts with a balanced split.
+    for (const paneId of ['editor-pane-1', 'editor-pane-2']) {
+        const pane = document.getElementById(paneId);
+        if (!pane) continue;
+        pane.style.flex = '1';
+        pane.style.width = '';
+        pane.style.maxWidth = '';
     }
+    refreshEditorLayout();
 }
 
 // Swap files between left and right editors
@@ -361,57 +339,60 @@ function setupSplitResizer() {
     const pane1 = document.getElementById('editor-pane-1');
     const pane2 = document.getElementById('editor-pane-2');
     let dragging = false;
-    let startX, startW1, startW2;
+    let startX, startW1, startW2, latestX, lastWidth;
+    let rafId = null;
+
+    const resize = () => {
+        rafId = null;
+        if (!dragging || !App.isSplit) return;
+        const totalWidth = startW1 + startW2;
+        if (totalWidth <= 0) return;
+        const minWidth = Math.min(200, totalWidth / 2);
+        const newW1 = Math.max(minWidth, Math.min(totalWidth - minWidth, startW1 + latestX - startX));
+        if (newW1 === lastWidth) return;
+        lastWidth = newW1;
+
+        // Flex weights divide the space left after the divider, without overflow.
+        pane1.style.flex = `${newW1} 1 0px`;
+        pane2.style.flex = `${totalWidth - newW1} 1 0px`;
+        if (App.editor) App.editor.layout();
+        if (App.editor2) App.editor2.layout();
+    };
+
+    cancelSplitResize = () => {
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        rafId = null;
+        if (!dragging) return;
+        dragging = false;
+        resizer.classList.remove('dragging');
+        document.body.style.cursor = '';
+    };
 
     resizer.onmousedown = e => {
+        if (e.button !== 0 || !App.isSplit) return;
+        cancelSplitResize();
         dragging = true;
-        startX = e.clientX;
-        startW1 = pane1.offsetWidth;
-        startW2 = pane2.offsetWidth;
+        startX = latestX = e.clientX;
+        startW1 = pane1.getBoundingClientRect().width;
+        startW2 = pane2.getBoundingClientRect().width;
+        lastWidth = startW1;
         resizer.classList.add('dragging');
         document.body.style.cursor = 'col-resize';
         e.preventDefault();
     };
 
-    let rafId = null;
     document.addEventListener('mousemove', e => {
         if (!dragging) return;
-
-        if (rafId) return;
-        rafId = requestAnimationFrame(() => {
-            const dx = e.clientX - startX;
-            const totalWidth = startW1 + startW2;
-
-            // Calc new width for pane1, clamping min 200px
-            let newW1 = startW1 + dx;
-
-            // Constraint: pane1 min 200px
-            if (newW1 < 200) newW1 = 200;
-            // Constraint: pane2 min 200px (meaning pane1 max = total - 200)
-            if (newW1 > totalWidth - 200) newW1 = totalWidth - 200;
-
-            // Convert to percentage
-            const p1 = (newW1 / totalWidth) * 100;
-            const p2 = 100 - p1;
-
-            pane1.style.flex = 'none';
-            pane2.style.flex = 'none';
-            pane1.style.width = `${p1}%`;
-            pane2.style.width = `${p2}%`;
-
-            // Layout immediately during resize for responsiveness
-            if (App.editor) App.editor.layout();
-            if (App.editor2) App.editor2.layout();
-
-            rafId = null;
-        });
+        latestX = e.clientX;
+        if (rafId === null) rafId = requestAnimationFrame(resize);
     });
 
-    document.addEventListener('mouseup', () => {
-        if (dragging) {
-            dragging = false;
-            resizer.classList.remove('dragging');
-            document.body.style.cursor = '';
-        }
+    document.addEventListener('mouseup', e => {
+        if (!dragging) return;
+        latestX = e.clientX;
+        if (rafId !== null) cancelAnimationFrame(rafId);
+        resize();
+        cancelSplitResize();
     });
+    window.addEventListener('blur', cancelSplitResize);
 }

@@ -156,12 +156,13 @@ function updateFakeBlur() {
         if (job !== fakeBlurJob || !width || !height) return;
         const cs = getComputedStyle(root);
         const canvas = document.createElement('canvas');
-        canvas.width = 320;
-        canvas.height = Math.round(320 * height / width);
+        // 640 px wide, stretched over the window: blur(3px) here reads as a light ~7 px frost.
+        canvas.width = 640;
+        canvas.height = Math.round(640 * height / width);
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = cs.getPropertyValue('--editor-bg').trim() || '#1a2530';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.filter = `blur(6px) brightness(${parseFloat(cs.getPropertyValue('--app-bg-brightness')) || 1})`;
+        ctx.filter = `blur(3px) brightness(${parseFloat(cs.getPropertyValue('--app-bg-brightness')) || 1})`;
         ctx.globalAlpha = opacity;
         // Drawn past the edges, so the blur does not fade them to the fill colour.
         ctx.drawImage(src, -12, -12, canvas.width + 24, canvas.height + 24);
@@ -196,3 +197,7 @@ function updateFakeBlur() {
 
 // Minimised or fully covered: stop decoding the background video until it is seen again.
 document.addEventListener('visibilitychange', () => ThemeManager.syncBackgroundVideo());
+// Working in another window (or sharing the screen from one): pause it there too.
+window.addEventListener('focus', () => ThemeManager.syncBackgroundVideo());
+window.addEventListener('blur', () => ThemeManager.syncBackgroundVideo());
+window.matchMedia?.('(prefers-reduced-motion: reduce)').addEventListener?.('change', () => ThemeManager.syncBackgroundVideo());

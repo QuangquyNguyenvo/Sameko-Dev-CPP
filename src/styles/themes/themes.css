@@ -421,7 +421,7 @@
     border-color: var(--border);
 }
 
-[data-theme-variant="dark"] .slider {
+[data-theme-variant="dark"] .switch > .slider {
     background: var(--bg-ocean-medium);
 }
 
@@ -1485,7 +1485,7 @@
     display: flex;
     gap: 12px;
     overflow-x: auto;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
     padding: 8px 0;
     scrollbar-width: none;
     -ms-overflow-style: none;

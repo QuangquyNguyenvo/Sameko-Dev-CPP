@@ -38,6 +38,8 @@
     const bpByFile = new Map();         // normPath -> Map(line -> {condition, id})
     const realPathByKey = new Map();    // normPath -> original-case path (survives tab close)
     let bpDecoIds = [];
+    let bpDecoLines = [];               // line of each bpDecoIds entry when it was drawn
+    let bpDecoKey = '';                 // normPath the bpDecoIds were drawn for
     let curLineDecoIds = [];
     let hoverDecoIds = [];              // faint "ghost" glyph shown under the cursor in the gutter
     let hoverLine = 0;                  // last gutter line hovered (0 = none)
@@ -896,6 +898,32 @@
         });
         ed.onMouseLeave(() => { if (hoverLine) { hoverLine = 0; renderHoverGlyph(); } });
 
+        // Breakpoints are kept by line number. Monaco moves their glyphs as lines are
+        // added or removed above them; copy those moves back so the next redraw and
+        // the next debug run use the line the code is on now.
+        ed.onDidChangeModelContent(() => {
+            const m = bpByFile.get(bpDecoKey);
+            const model = ed.getModel();
+            if (!m || !model || !bpDecoIds.length) return;
+            let moved = false;
+            const next = new Map();
+            bpDecoIds.forEach((id, i) => {
+                const bp = m.get(bpDecoLines[i]);
+                const r = model.getDecorationRange(id);
+                if (!bp || !r) return;
+                if (r.startLineNumber !== bpDecoLines[i]) moved = true;
+                if (!next.has(r.startLineNumber)) next.set(r.startLineNumber, bp);
+                // Deleting the lines between two breakpoints merges them into one.
+                else if (next.get(r.startLineNumber) !== bp && bp.id != null) {
+                    Promise.resolve().then(() => api().debugRemoveBreakpoint(bp.id)).catch(() => { });
+                }
+            });
+            if (!moved) return;
+            m.clear();
+            for (const [line, bp] of next) m.set(line, bp);
+            bpDecoLines = bpDecoIds.map(id => (model.getDecorationRange(id) || { startLineNumber: 0 }).startLineNumber);
+        });
+
         // Run to Cursor — context-menu action, visible only while stopped (via a
         // context key) instead of always showing and no-oping.
         try {
@@ -1087,6 +1115,8 @@
             }
         }
         bpDecoIds = ed.deltaDecorations(bpDecoIds, decos);
+        bpDecoLines = decos.map(d => d.range.startLineNumber);
+        bpDecoKey = norm(path);
         renderHoverGlyph();   // keep the hover ghost consistent with real breakpoints
         // Adding/removing a breakpoint ON the paused line flips its mark between
         // the plain arrow and the dot+arrow, so the paused mark is redrawn too.

@@ -144,9 +144,12 @@ function initSettings() {
         };
     }
 
+    initSettingsSearch();
+
     // Tab switching
     document.querySelectorAll('.settings-tab').forEach(tab => {
         tab.onclick = () => {
+            clearSettingsSearch();
             // Remove active from all tabs
             document.querySelectorAll('.settings-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.settings-panel').forEach(p => p.classList.remove('active'));
@@ -155,6 +158,7 @@ function initSettings() {
             tab.classList.add('active');
             const panelId = 'panel-' + tab.dataset.tab;
             document.getElementById(panelId)?.classList.add('active');
+            if (tab.dataset.tab === 'template') showTemplateEditor();
 
             // Re-apply theme colors to fix inline styles
             updateThemePreview();
@@ -332,6 +336,9 @@ function initSettings() {
     if (importTemplateFromFileBtn) {
         importTemplateFromFileBtn.onclick = importTemplateFromFile;
     }
+    document.querySelectorAll('#panel-template .template-lang').forEach((b) => {
+        b.onclick = () => switchTemplateLang(b.dataset.lang);
+    });
 
     // Template Monaco editor will be initialized when settings panel opens
 
@@ -346,16 +353,129 @@ function initSettings() {
     initAbout();
 }
 
-// Template editor (Monaco mini editor for settings)
+// ============================================================================
+// SETTINGS SEARCH
+// ============================================================================
+// Typing in the header search shows every panel at once, keeping only the rows that match
+// (label, tooltip, select options, keybinding name or key). A panel whose own name matches
+// is shown whole. Clicking a tab or clearing the box returns to the normal one-panel view.
+const SETTINGS_SEARCH_ITEMS = '.setting-row, .keybinding-item';
+
+function initSettingsSearch() {
+    const input = document.getElementById('settings-search');
+    if (!input) return;
+    input.addEventListener('input', () => applySettingsSearch(input.value));
+}
+
+function settingsSearchText(el) {
+    const parts = [el.textContent];
+    el.querySelectorAll('[title]').forEach(t => parts.push(t.title));
+    return parts.join(' ').toLowerCase().replace(/\s+/g, ' ');
+}
+
+function applySettingsSearch(raw) {
+    const content = document.querySelector('#settings-popup .settings-content');
+    if (!content) return;
+    const words = raw.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    content.querySelectorAll('.search-hidden').forEach(el => el.classList.remove('search-hidden'));
+    content.querySelector('.settings-search-empty')?.remove();
+    document.querySelectorAll('#settings-popup .settings-tab.search-empty').forEach(t => t.classList.remove('search-empty'));
+    content.classList.toggle('searching', words.length > 0);
+    if (!words.length) return;
+
+    const matches = (text) => words.every(w => text.includes(w));
+    // Hides what has no match inside; returns whether `el` holds a match.
+    const filter = (el) => {
+        if (el.matches(SETTINGS_SEARCH_ITEMS)) {
+            const hit = matches(settingsSearchText(el));
+            el.classList.toggle('search-hidden', !hit);
+            return hit;
+        }
+        let hit = false;
+        for (const child of el.children) if (filter(child)) hit = true;
+        el.classList.toggle('search-hidden', !hit);
+        return hit;
+    };
+
+    let any = false;
+    content.querySelectorAll(':scope > .settings-panel').forEach(panel => {
+        const tab = document.querySelector(`#settings-popup .settings-tab[data-tab="${panel.id.replace(/^panel-/, '')}"]`);
+        const title = panel.querySelector('h3');
+        const whole = matches(((tab?.textContent || '') + ' ' + (title?.textContent || '')).toLowerCase());
+        let hit = whole;
+        if (!whole) {
+            hit = false;
+            for (const child of panel.children) if (filter(child)) hit = true;
+            // keep the panel's title as the group heading
+            if (hit && title) {
+                for (let el = title; el && el !== panel; el = el.parentElement) el.classList.remove('search-hidden');
+            }
+        }
+        panel.classList.toggle('search-hidden', !hit);
+        tab?.classList.toggle('search-empty', !hit);
+        if (hit) any = true;
+        if (hit && panel.id === 'panel-template') showTemplateEditor();
+    });
+
+    if (!any) {
+        const empty = document.createElement('p');
+        empty.className = 'settings-search-empty';
+        empty.textContent = `No settings match "${raw.trim()}".`;
+        content.prepend(empty);
+    }
+    content.scrollTop = 0;
+}
+
+/** Empties the search box. Returns true when there was a search to clear. */
+function clearSettingsSearch() {
+    const input = document.getElementById('settings-search');
+    if (!input || !input.value) return false;
+    input.value = '';
+    applySettingsSearch('');
+    return true;
+}
+
+// Template editor (Monaco mini editor for settings). One model per language, so switching
+// between the C++ and C template keeps each one's undo history.
 let templateEditor = null;
+let templateLang = 'cpp';
+const templateModels = {};
+const TEMPLATE_FIELDS = { cpp: 'set-template', c: 'set-template-c' };
+const TEMPLATE_DEFAULTS = { cpp: () => DEFAULT_SETTINGS.template.code, c: () => DEFAULT_SETTINGS.template.cCode };
+
+function setTemplateText(lang, code) {
+    document.getElementById(TEMPLATE_FIELDS[lang]).value = code;
+    if (templateModels[lang]) templateModels[lang].setValue(code);
+}
+
+function switchTemplateLang(lang) {
+    templateLang = lang;
+    document.querySelectorAll('#panel-template .template-lang').forEach((b) => {
+        b.classList.toggle('active', b.dataset.lang === lang);
+        b.setAttribute('aria-selected', b.dataset.lang === lang);
+    });
+    if (templateEditor) {
+        templateEditor.setModel(templateModels[lang]);
+        updateTemplateLineCount();
+        fitTemplateEditor();
+    }
+}
 
 function initTemplateEditor() {
     const container = document.getElementById('template-editor-container');
     if (!container || templateEditor) return;
 
+    for (const lang of Object.keys(TEMPLATE_FIELDS)) {
+        const field = document.getElementById(TEMPLATE_FIELDS[lang]);
+        templateModels[lang] = monaco.editor.createModel(field.value, 'cpp');
+        templateModels[lang].onDidChangeContent(() => {
+            field.value = templateModels[lang].getValue();
+            if (lang === templateLang) updateTemplateLineCount();
+        });
+    }
+
     templateEditor = monaco.editor.create(container, {
-        value: App.settings.template?.code || DEFAULT_SETTINGS.template.code,
-        language: 'cpp',
+        model: templateModels[templateLang],
         theme: App.settings.appearance.theme || 'kawaii-dark',
         fontSize: 13,
         fontFamily: "'JetBrains Mono', 'Consolas', monospace",
@@ -370,6 +490,7 @@ function initTemplateEditor() {
         overviewRulerBorder: false,
         overviewRulerLanes: 0,
         hideCursorInOverviewRuler: true,
+        padding: { top: 12, bottom: 12 },
         scrollbar: {
             vertical: 'auto',
             horizontal: 'auto',
@@ -378,9 +499,52 @@ function initTemplateEditor() {
         }
     });
 
-    // Sync to hidden textarea on change
-    templateEditor.onDidChangeModelContent(() => {
-        document.getElementById('set-template').value = templateEditor.getValue();
+    // The editor fills the rest of the panel; in search results it grows with the code instead.
+    templateEditor.onDidContentSizeChange(fitTemplateEditor);
+    new ResizeObserver(fitTemplateEditor).observe(document.querySelector('#settings-popup .settings-content'));
+    fitTemplateEditor();
+    updateTemplateLineCount();
+}
+
+function fitTemplateEditor() {
+    if (!templateEditor) return;
+    const container = document.getElementById('template-editor-container');
+    const content = container.closest('.settings-content');
+    if (!container.offsetParent) return;
+    const lineHeight = templateEditor.getOption(monaco.editor.EditorOption.lineHeight);
+    const pad = 24;  // padding top + bottom
+    const min = 8 * lineHeight + pad;
+    let height;
+    if (content.classList.contains('searching')) {
+        height = Math.max(min, Math.min(22 * lineHeight + pad, templateEditor.getContentHeight()));
+    } else {
+        const card = container.closest('.template-editor');
+        const below = parseFloat(getComputedStyle(content).paddingBottom) + parseFloat(getComputedStyle(card).borderBottomWidth);
+        height = Math.max(min, Math.floor(content.getBoundingClientRect().bottom - parseFloat(getComputedStyle(content).borderBottomWidth)
+            - below - container.getBoundingClientRect().top));
+    }
+    if (container.style.height !== height + 'px') {
+        container.style.height = height + 'px';
+        templateEditor.layout();
+    }
+}
+
+function updateTemplateLineCount() {
+    const el = document.getElementById('template-line-count');
+    if (!el || !templateEditor) return;
+    const n = templateEditor.getModel().getLineCount();
+    el.textContent = `· ${n} line${n === 1 ? '' : 's'}`;
+}
+
+function showTemplateEditor() {
+    ensureMonaco().then(() => {
+        const panel = document.getElementById('panel-template');
+        const shown = panel.classList.contains('active')
+            || (panel.parentElement.classList.contains('searching') && !panel.classList.contains('search-hidden'));
+        if (!document.getElementById('settings-overlay').classList.contains('show') || !shown) return;
+        initTemplateEditor();
+        if (templateEditor) templateEditor.layout();
+        fitTemplateEditor();
     });
 }
 
@@ -488,7 +652,7 @@ function selectThemeFromCarousel(themeId, scrollIntoView = false) {
         });
         if (scrollIntoView) {
             const active = carousel.querySelector(`.theme-pill[data-theme-id="${themeId}"]`);
-            active?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+            active?.scrollIntoView({ behavior: 'instant', inline: 'center', block: 'nearest' });
         }
     }
 
@@ -519,10 +683,10 @@ function bindThemeCarouselInteractions() {
     });
 
     if (leftBtn) {
-        leftBtn.addEventListener('click', () => carousel.scrollBy({ left: -320, behavior: 'smooth' }));
+        leftBtn.addEventListener('click', () => carousel.scrollBy({ left: -320, behavior: 'instant' }));
     }
     if (rightBtn) {
-        rightBtn.addEventListener('click', () => carousel.scrollBy({ left: 320, behavior: 'smooth' }));
+        rightBtn.addEventListener('click', () => carousel.scrollBy({ left: 320, behavior: 'instant' }));
     }
 }
 
@@ -666,6 +830,7 @@ function openSettings() {
         ThemeMarketplace.renderCarousel();
     }
 
+    clearSettingsSearch();
     document.getElementById('set-fontSize').value = App.settings.editor.fontSize;
     document.getElementById('val-fontSize').textContent = App.settings.editor.fontSize + 'px';
     setFontFamilyInputs(App.settings.editor.fontFamily);
@@ -679,6 +844,8 @@ function openSettings() {
     autoSaveDelayInput.value = App.settings.editor.autoSaveDelay || 3;
     autoSaveDelayInput.disabled = !autoSaveEnabled;
     autoSaveDelayInput.style.opacity = autoSaveEnabled ? '1' : '0.5';
+    document.getElementById('set-formatStyle').value = FORMAT_STYLE_NAMES[App.settings.editor.formatStyle] ? App.settings.editor.formatStyle : 'google';
+    document.getElementById('set-formatOnSave').checked = !!App.settings.editor.formatOnSave;
     document.getElementById('set-liveCheck').checked = App.settings.editor.liveCheck || false;
     document.getElementById('set-liveCheckDelay').value = App.settings.editor.liveCheckDelay || 1000;
     document.getElementById('set-intellisense').checked = App.settings.editor.intellisense !== false;
@@ -723,6 +890,7 @@ function openSettings() {
     selectThemeFromCarousel(App.settings.appearance.theme, true);
     document.getElementById('set-editorColorScheme').value = App.settings.editor.colorScheme || 'auto';
     document.getElementById('set-performanceMode').checked = App.settings.appearance.performanceMode || false;
+    document.getElementById('set-animatedBackground').checked = App.settings.appearance.animatedBackground !== false;
     document.getElementById('set-uiScale').value = String(App.settings.appearance.uiScale ?? 'auto');
 
     // Background settings (optional - may not exist if Background section removed)
@@ -740,18 +908,9 @@ function openSettings() {
         ?? themeSpecific.bgUrl ?? ThemeManager.themes.get(currentTheme)?.colors?.appBackground ?? '';
 
     // Template - sync to hidden textarea and update Monaco editor
-    const templateCode = App.settings.template?.code || DEFAULT_SETTINGS.template.code;
-    document.getElementById('set-template').value = templateCode;
-
-    // Initialize template editor if not exists, or update its content
-    if (!templateEditor) {
-        // Delay to ensure container is visible
-        setTimeout(() => {
-            initTemplateEditor();
-        }, 100);
-    } else {
-        templateEditor.setValue(templateCode);
-    }
+    // The mini editor is created only when its tab is visible.
+    setTemplateText('cpp', App.settings.template?.code ?? DEFAULT_SETTINGS.template.code);
+    setTemplateText('c', App.settings.template?.cCode ?? DEFAULT_SETTINGS.template.cCode);
 
 
     renderKeybindings();
@@ -777,7 +936,7 @@ function openSettings() {
 
     const overlay = document.getElementById('settings-overlay');
     overlay.classList.add('show');
-    if (window.Motion) Motion.popIn(overlay, overlay.querySelector('.settings-popup'));
+    if (document.getElementById('panel-template').classList.contains('active')) showTemplateEditor();
 }
 
 function closeSettings() {
@@ -803,6 +962,8 @@ async function saveSettingsAndClose() {
         if (delay > 300) delay = 300;
         App.settings.editor.autoSaveDelay = delay;
 
+        App.settings.editor.formatStyle = document.getElementById('set-formatStyle').value;
+        App.settings.editor.formatOnSave = document.getElementById('set-formatOnSave').checked;
         App.settings.editor.liveCheck = document.getElementById('set-liveCheck').checked;
         App.settings.editor.liveCheckDelay = parseInt(document.getElementById('set-liveCheckDelay').value) || 1000;
         App.settings.editor.intellisense = document.getElementById('set-intellisense').checked;
@@ -836,6 +997,7 @@ async function saveSettingsAndClose() {
 
         App.settings.appearance.theme = document.getElementById('set-theme').value;
         App.settings.appearance.performanceMode = document.getElementById('set-performanceMode').checked;
+        App.settings.appearance.animatedBackground = document.getElementById('set-animatedBackground').checked;
         const uiScale = document.getElementById('set-uiScale').value;
         App.settings.appearance.uiScale = uiScale === 'auto' ? 'auto' : Number(uiScale);
 
@@ -847,6 +1009,7 @@ async function saveSettingsAndClose() {
 
         if (!App.settings.template) App.settings.template = {};
         App.settings.template.code = document.getElementById('set-template').value;
+        App.settings.template.cCode = document.getElementById('set-template-c').value;
 
         const prereleaseEl = document.getElementById('set-updatesPrerelease');
         if (prereleaseEl) {
@@ -930,6 +1093,8 @@ const KEYBINDING_LABELS = {
     buildRun: 'Compile & Run',
     run: 'Run Only',
     stop: 'Stop Process',
+    debugStart: 'Start Debugging',
+    debugStepOut: 'Debug: Step Out',
     save: 'Save File',
     saveAs: 'Save File As',
     newFile: 'New File',
@@ -942,6 +1107,15 @@ const KEYBINDING_LABELS = {
     settings: 'Open Settings',
     toggleSplit: 'Toggle Split',
     formatCode: 'Format Code',
+    markdownPreview: 'Toggle Markdown Preview',
+    toggleExplorer: 'Toggle Explorer',
+    commentLine: 'Toggle Line Comment',
+    selectNextOccurrence: 'Select Next Occurrence',
+    selectAllOccurrences: 'Select All Occurrences',
+    moveLineUp: 'Move Line Up',
+    moveLineDown: 'Move Line Down',
+    copyLineUp: 'Copy Line Up',
+    copyLineDown: 'Copy Line Down',
     uiZoomIn: 'Interface Scale: Larger',
     uiZoomOut: 'Interface Scale: Smaller',
     uiZoomReset: 'Interface Scale: Auto'
@@ -1074,22 +1248,13 @@ async function resetKeybindings() {
 }
 
 async function resetTemplate() {
+    const lang = templateLang;
     const confirmed = await showConfirmDialog({
         title: 'Reset Template',
-        message: 'Reset template to default?',
+        message: `Reset the ${lang === 'c' ? 'C' : 'C++'} template to default?`,
         confirmText: 'Reset'
     });
-    if (confirmed) {
-        const defaultCode = DEFAULT_SETTINGS.template.code;
-        const textarea = document.getElementById('set-template');
-        if (textarea) {
-            textarea.value = defaultCode;
-        }
-        // Also update Monaco editor if exists
-        if (templateEditor) {
-            templateEditor.setValue(defaultCode);
-        }
-    }
+    if (confirmed) setTemplateText(lang, TEMPLATE_DEFAULTS[lang]());
 }
 
 async function importTemplateFromFile() {
@@ -1097,21 +1262,15 @@ async function importTemplateFromFile() {
     input.type = 'file';
     
     // Restrict to C++ or text file formats
-    input.accept = '.cpp,.cc,.cxx,.h,.hpp,.hxx,.txt';
+    input.accept = '.cpp,.cc,.cxx,.c,.h,.hpp,.hxx,.txt';
 
+    const lang = templateLang;  // the template shown when Import was clicked
     input.onchange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         const reader = new FileReader();
-        reader.onload = (event) => {
-            const content = event.target.result;
-
-            // Update monaco editor with file
-            if (templateEditor) {
-                templateEditor.setValue(content);
-            }
-        };
+        reader.onload = (event) => setTemplateText(lang, event.target.result);
         reader.onerror = (err) => {
             console.error('Error reading template file:', err);
         };

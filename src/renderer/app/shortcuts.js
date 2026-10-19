@@ -40,6 +40,7 @@ const ACTION_HANDLERS = {
     'settings': () => openSettings(),
     'toggleSplit': () => toggleSplit(),
     'formatCode': () => formatCode(),
+    'markdownPreview': () => window.MarkdownPreview?.toggle(getActiveEditor()),
     'toggleExplorer': () => { if (window.FileExplorer) window.FileExplorer.toggle(); },
     'commentLine': () => getActiveEditor()?.getAction('editor.action.commentLine')?.run(),
     'selectNextOccurrence': () => getActiveEditor()?.getAction('editor.action.addSelectionToNextFindMatch')?.run(),
@@ -174,7 +175,8 @@ function initShortcuts() {
 
         // Escape closes Settings from anywhere, including while the editor
         // (a textarea) still has focus behind the overlay.
-        if (e.key === 'Escape') closeSettings();
+        // A search in Settings is cleared first; the next Escape closes.
+        if (e.key === 'Escape' && !clearSettingsSearch()) closeSettings();
 
         // PERFORMANCE: Early exit for uninteresting keys to prevent "freeze"
         // If it's a regular key typing in an input/editor, and NO modifiers are pressed, 
@@ -234,64 +236,155 @@ function initShortcuts() {
 // ============================================================================
 // CODE FORMATTING - AStyle Integration
 // ============================================================================
-async function formatCode() {
-    const editor = App.activeEditor === 2 && App.editor2 ? App.editor2 : App.editor;
-    if (!editor) return;
+// Labels for the AStyle presets in app/services/formatter/styles.js.
+const FORMAT_STYLE_NAMES = {
+    google: 'Google', allman: 'Allman', java: 'Java', kr: 'K&R', stroustrup: 'Stroustrup',
+    whitesmith: 'Whitesmith', vtk: 'VTK', ratliff: 'Ratliff', gnu: 'GNU', linux: 'Linux',
+    horstmann: 'Horstmann', lisp: 'Lisp', pico: 'Pico'
+};
+
+/**
+ * The edits that turn `model` into `text`, touching only lines that changed, so breakpoints,
+ * error marks and the caret stay on their code. Lines are paired when they are equal apart
+ * from whitespace; a reindented line is edited in place, and runs that were split or joined
+ * are replaced as a block. Returns null when the files differ too much to be worth pairing.
+ */
+function formatEdits(model, text) {
+    const eol = model.getEOL();
+    const a = model.getLinesContent();
+    const b = text.split(/\r\n|\n/);
+    const key = (s) => s.replace(/\s+/g, '');
+    const pairs = matchLines(a.map(key), b.map(key), 2000);
+    if (!pairs) return null;
+
+    const starts = (lines) => { const s = [0]; for (let i = 0; i < lines.length; i++) s.push(s[i] + lines[i].length + eol.length); return s; };
+    const sa = starts(a), sb = starts(b);
+    const oldText = a.join(eol), newText = b.join(eol);
+    const end = (s, lines, i) => (i < 0 ? 0 : s[i] + lines[i].length);
+    const begin = (s, lines, i) => (i >= lines.length ? end(s, lines, lines.length - 1) : s[i]);
+
+    const edits = [];
+    const replace = (from, to, str) => edits.push({
+        range: monaco.Range.fromPositions(model.getPositionAt(from), model.getPositionAt(to)),
+        text: str
+    });
+    let pi = -1, pj = -1;
+    for (const [i, j] of [...pairs, [a.length, b.length]]) {
+        // the text between this pair and the previous one, line breaks included
+        const from = end(sa, a, pi), to = begin(sa, a, i);
+        const str = newText.slice(end(sb, b, pj), begin(sb, b, j));
+        if (oldText.slice(from, to) !== str) replace(from, to, str);
+        if (i < a.length && a[i] !== b[j]) replace(sa[i], sa[i] + a[i].length, b[j]);
+        pi = i; pj = j;
+    }
+    return edits;
+}
+
+/** Pairs [i, j] of equal entries of a and b in order (Myers diff), or null past maxD changes. */
+function matchLines(a, b, maxD) {
+    const n = a.length, m = b.length, off = n + m + 1;
+    const v = new Int32Array(2 * off + 1);
+    const trace = [];
+    for (let d = 0; d <= Math.min(n + m, maxD); d++) {
+        for (let k = -d; k <= d; k += 2) {
+            let x = (k === -d || (k !== d && v[off + k - 1] < v[off + k + 1])) ? v[off + k + 1] : v[off + k - 1] + 1;
+            let y = x - k;
+            while (x < n && y < m && a[x] === b[y]) { x++; y++; }
+            v[off + k] = x;
+            if (x >= n && y >= m) {
+                trace.push(v.slice(off - d, off + d + 1));
+                return backtrack(trace, n, m);
+            }
+        }
+        trace.push(v.slice(off - d, off + d + 1));
+    }
+    return null;
+}
+
+function backtrack(trace, n, m) {
+    const pairs = [];
+    let x = n, y = m;
+    for (let d = trace.length - 1; d > 0; d--) {
+        const prev = trace[d - 1], at = (k) => prev[k + d - 1];
+        const k = x - y;
+        const pk = (k === -d || (k !== d && at(k - 1) < at(k + 1))) ? k + 1 : k - 1;
+        const px = at(pk), py = px - pk;
+        while (x > px && y > py) { x--; y--; pairs.push([x, y]); }
+        x = px; y = py;
+    }
+    while (x > 0 && y > 0) { x--; y--; pairs.push([x, y]); }
+    return pairs.reverse();
+}
+
+/**
+ * Format the C/C++ file in `editor` (the active one by default) with the style from Settings.
+ * The result is one undoable edit. `silent` (format on save) skips the success message.
+ * Resolves to true when the text was formatted.
+ */
+async function formatCode(editor = null, { silent = false } = {}) {
+    editor = editor || (App.activeEditor === 2 && App.editor2 ? App.editor2 : App.editor);
+    if (!editor) return false;
+    const model = editor.getModel();
     // AStyle formats C/C++ only; on a write-up it would reflow the text as code.
-    if (!isCppTab(getTabForModel(editor.getModel()))) return;
+    if (!model || !isCppTab(getTabForModel(model))) return false;
 
-    const code = editor.getValue();
-    if (!code.trim()) return;
+    const code = model.getValue();
+    if (!code.trim()) return false;
 
-
+    const style = FORMAT_STYLE_NAMES[App.settings.editor?.formatStyle] ? App.settings.editor.formatStyle : 'google';
     const position = editor.getPosition();
     const scrollTop = editor.getScrollTop();
 
-
-    setStatus('formatting', 'Formatting code...');
+    if (!silent) setStatus('formatting', 'Formatting code...');
 
     try {
         if (!window.electronAPI?.formatCode) {
             setStatus('error', 'Format unavailable');
-            termLog('⚠ Code formatting is not available in this environment', 'warning');
-            return;
+            log('⚠ Code formatting is not available in this environment', 'warning');
+            return false;
         }
 
-        const result = await window.electronAPI.formatCode(code, 'google');
+        const result = await window.electronAPI.formatCode(code, style);
 
         if (result.success) {
-            const model = editor.getModel();
-            if (!model) return;
+            // The user may have switched files or kept typing while AStyle ran.
+            if (editor.getModel() !== model || model.getValue() !== code) return false;
+            if (result.code === code) {
+                if (!silent) setStatus('ready', 'Code is already formatted');
+                return true;
+            }
 
             // Use executeEdits to preserve undo history (allows Ctrl+Z)
-            const fullRange = model.getFullModelRange();
-
-            editor.pushUndoStop(); // Create undo point before edit
-            editor.executeEdits('format-code', [{
-                range: fullRange,
+            const edits = formatEdits(model, result.code);
+            editor.pushUndoStop();
+            editor.executeEdits('format-code', edits || [{
+                range: model.getFullModelRange(),
                 text: result.code,
                 forceMoveMarkers: true
             }]);
             editor.pushUndoStop();
 
-
-            if (position) {
-                const newLineCount = result.code.split('\n').length;
-                const newLine = Math.min(position.lineNumber, newLineCount);
+            // Line-by-line edits keep the caret on its line; a whole-file replace loses it.
+            if (!edits && position) {
+                const newLine = Math.min(position.lineNumber, model.getLineCount());
                 editor.setPosition({ lineNumber: newLine, column: position.column });
             }
             editor.setScrollTop(scrollTop);
 
-            setStatus('ready', 'Format successful!');
-            termLog('✓ Code has been formatted (Google Style) - Press Ctrl+Z to undo', 'success');
+            if (!silent) {
+                setStatus('ready', 'Format successful!');
+                log(`✓ Code has been formatted (${FORMAT_STYLE_NAMES[style]} style) - Press Ctrl+Z to undo`, 'success');
+            }
+            return true;
         } else {
             setStatus('error', 'Format failed');
-            termLog(`Format failed: ${result.error}`, 'error');
+            log(`Format failed: ${result.error}`, 'error');
         }
     } catch (err) {
         setStatus('error', 'Format error');
-        termLog(`Format error: ${err.message}`, 'error');
+        log(`Format error: ${err.message}`, 'error');
     }
+    return false;
 }
 
 

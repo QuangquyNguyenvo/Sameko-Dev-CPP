@@ -1095,6 +1095,92 @@ body.customizer-open::before {
     transform: rotate(90deg);
 }
 
+/* Header search (settings.js applySettingsSearch) */
+.settings-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: min(320px, 40%);
+    margin: 0 14px 0 auto;
+    padding: 0 14px;
+    height: 36px;
+    background: var(--bg-input);
+    border: 2px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-muted);
+    cursor: text;
+    transition: border-color 0.15s ease;
+}
+
+.settings-search:focus-within {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.settings-search input {
+    flex: 1;
+    min-width: 0;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 13px;
+}
+
+.settings-search input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Native clear button, recoloured to the theme (it is blue by default). */
+.settings-search input::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: var(--text-muted);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2 2l8 8M10 2l-8 8' stroke='black' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+    cursor: pointer;
+}
+
+.settings-search input::-webkit-search-cancel-button:hover {
+    background: var(--text-primary);
+}
+
+/* The tab that was open is not the one being shown while searching. */
+.settings-popup:has(.settings-content.searching) .settings-tab.active {
+    background: transparent !important;
+    color: var(--text-secondary) !important;
+}
+
+.settings-popup:has(.settings-content.searching) .settings-tab.active svg {
+    color: inherit;
+}
+
+/* While searching: every panel with a match is shown, one after another. */
+.settings-content.searching .settings-panel {
+    display: block;
+    margin-bottom: 26px;
+}
+
+.settings-content.searching .settings-panel:last-child {
+    margin-bottom: 0;
+}
+
+.settings-content.searching .search-hidden {
+    display: none !important;
+}
+
+.settings-tab.search-empty {
+    opacity: 0.4;
+}
+
+.settings-search-empty {
+    padding: 40px 0;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
 /* Settings Container */
 .settings-container {
     flex: 1;
@@ -1782,7 +1868,8 @@ input[type="color"] {
     height: 0;
 }
 
-.slider {
+/* Monaco scrollbar thumbs also use .slider; keep toggle styles scoped. */
+.switch > .slider {
     position: absolute;
     cursor: pointer;
     top: 0;
@@ -1795,7 +1882,7 @@ input[type="color"] {
     border: 3px solid var(--border);
 }
 
-.slider::before {
+.switch > .slider::before {
     position: absolute;
     content: "";
     height: 18px;
@@ -2213,10 +2300,9 @@ body.split-active .editor-pane {
     background: var(--bg-panel-problems, var(--bg-panel, var(--bg-glass-heavy)));
     border-top: 2px solid var(--border);
     border-radius: 0 0 var(--radius) var(--radius);
-    transition: height 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), border-top 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    transform-origin: bottom;
+    /* Geometry follows the resize handle immediately instead of chasing it. */
+    transition: opacity 0.15s ease;
     opacity: 1;
-    transform: translateY(0);
     overflow: hidden;
 }
 
@@ -2225,10 +2311,8 @@ body.split-active .editor-pane {
     min-height: 0 !important;
     max-height: 0 !important;
     opacity: 0;
-    transform: translateY(15px);
     pointer-events: none;
     border-top: none;
-    transition: height 0.25s ease-out, opacity 0.25s ease-out, transform 0.25s ease-out, border-top 0.25s ease-out;
 }
 
 .problems-body {
@@ -2360,6 +2444,18 @@ body.split-active .editor-pane {
     max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+/* In-place rename box that replaces .tab-name (tabs.js startTabRename) */
+.tab-rename {
+    height: 20px;
+    padding: 0 6px;
+    background: var(--bg-input);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    outline: none;
+    color: var(--text-primary);
+    font: inherit;
 }
 
 .tab.has-errors {
@@ -4622,55 +4718,140 @@ body.split-active .editor-pane {
 }
 
 /* ===== TEMPLATE SETTINGS ===== */
+/* --text-muted is too faint for a sentence on the panel; this stays readable in every theme. */
 .setting-desc {
     font-size: 12px;
-    color: var(--text-muted);
+    line-height: 1.5;
+    color: color-mix(in srgb, var(--text-primary) 68%, transparent);
     margin-bottom: 12px;
 }
 
+/* The template is one card in the style of .setting-row: file name and actions on top,
+ * the editor below it filling the rest of the panel (settings.js fitTemplateEditor). */
 .template-editor {
-    border: 2px solid var(--border);
-    border-radius: 12px;
+    background: var(--bg-panel);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 16px;
     overflow: hidden;
+    transition: border-color 0.2s ease;
+}
+
+[data-theme-variant="dark"] .template-editor {
+    background: var(--bg-input);
+    border-color: var(--border);
+}
+
+.template-editor:focus-within {
+    border-color: var(--accent);
+}
+
+.template-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px 10px 18px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.template-editor-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* C++ / C switch: the active file reads like an open tab, the other one is dimmed. */
+.template-langs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 3px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+.template-lang {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 11px 4px 5px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.template-lang:hover {
+    color: var(--text-primary);
+}
+
+.template-lang.active {
+    background: var(--editor-bg);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.template-lang:not(.active) .template-language {
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-muted);
+}
+
+.template-language {
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    font-family: 'Fredoka', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.template-editor-lines {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.template-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.template-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-secondary);
+    font-family: 'Fredoka', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.template-action:hover {
+    background: var(--bg-button-hover);
+    border-color: var(--accent);
+    color: var(--text-primary);
 }
 
 #template-editor-container {
     width: 100%;
-    height: 200px;
-    background: var(--editor-bg, #1a2530);
-    padding-top: 8px;
+    height: 180px;
+    background: var(--editor-bg);
 }
 
-.template-editor:focus-within {
-    border-color: var(--bg-ocean-deep);
-}
-
-.template-actions {
-    margin-top: 12px;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-}
-
-.btn-import-template-from-file {
-    padding: 8px 16px;
-    background: var(--bg-button, #e8f4fc);
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    color: var(--text-secondary);
-    font-weight: 600;
-    font-size: 12px;
-    cursor: pointer;
-    transition: background 0.2s, border-color 0.2s, color 0.2s;
-}
-
-.btn-import-template-from-file:hover {
-    background: var(--bg-button-hover, #d8ecf8);
-    border-color: var(--bg-ocean-medium);
-    color: var(--text-primary);
-}
-
-.btn-template-reset,
 .btn-keybindings-reset {
     padding: 8px 16px;
     background: var(--bg-button, #e8f4fc);
@@ -4683,7 +4864,6 @@ body.split-active .editor-pane {
     transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
 
-.btn-template-reset:hover,
 .btn-keybindings-reset:hover {
     background: var(--bg-button-hover, #d8ecf8);
     border-color: var(--bg-ocean-medium);

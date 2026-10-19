@@ -259,6 +259,8 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   `-var-update` on later stops in the same frame.
 
 **Opening files**
+- Dropping OS files onto the app opens tabs through `initFileDrop()` / `openFileFromPath()`;
+  Input and Explorer category drop targets keep their own behavior. Multiple files open in drop order.
 - Ctrl+O starts in the active file's folder (else the Explorer folder, else the folder of the last
   dialog). Its filters include write-ups and test data (`.txt .md .inp .out .ans …`).
 - Files on the command line ("Open with", a second launch while the app runs) go through
@@ -270,6 +272,12 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   tabs are `cpp`, `.md` is `markdown`, everything else `plaintext`. `isCppTab()` gates Build,
   live check, Format and clangd; `.md`/`.txt` wrap lines and text files do not flag non-ASCII
   letters. `renderTabs()` re-syncs the language after a rename or Save As.
+- Markdown preview (`src/features/markdown/markdown-preview.js`): `createEditor` attaches one
+  `.md-preview` element per editor pane; it follows the pane's model (`onDidChangeModel`), so a
+  `markdown` tab shows it unless `tab.mdPreview === false`. marked + DOMPurify load through the
+  AMD loader on first use; the two sides scroll independently (by request). A re-render sanitizes
+  only changed top-level blocks (`state.cache`) and `patch()` swaps only those DOM nodes. Links
+  go to `electronAPI.openExternalLink` (http/https/mailto only) or open a tab.
 - `App.tabs[]` holds `{id, name, path, content, original, modified, viewState, exePath, model}`.
   **Each tab owns a Monaco model** (`getTabModel`); showing a tab is `editor.setModel`, so undo
   history, markers and scroll state stay with the file, and one tab shown in both split panes is one

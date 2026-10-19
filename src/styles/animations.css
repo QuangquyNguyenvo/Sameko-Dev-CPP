@@ -133,5 +133,15 @@
     }
 }
 
-/* Performance Mode keeps animations: they are transform/opacity only and cheap. It turns off
- * the editor's costly options instead (live-check.js applySettings). */
+/* Settings and their dialogs respond immediately, including nested controls and
+ * legacy !important rules. Keep this independent of Performance Mode. */
+:is(#settings-overlay, .settings-overlay, .fullscreen-popup, .snippet-editor-modal, .confirm-dialog-overlay, .confirm-dialog, .note-dialog-overlay),
+:is(#settings-overlay, .settings-overlay, .fullscreen-popup, .snippet-editor-modal, .confirm-dialog-overlay, .confirm-dialog, .note-dialog-overlay)::before,
+:is(#settings-overlay, .settings-overlay, .fullscreen-popup, .snippet-editor-modal, .confirm-dialog-overlay, .confirm-dialog, .note-dialog-overlay)::after,
+:is(#settings-overlay, .settings-overlay, .fullscreen-popup, .snippet-editor-modal, .confirm-dialog-overlay, .confirm-dialog, .note-dialog-overlay) *,
+:is(#settings-overlay, .settings-overlay, .fullscreen-popup, .snippet-editor-modal, .confirm-dialog-overlay, .confirm-dialog, .note-dialog-overlay) *::before,
+:is(#settings-overlay, .settings-overlay, .fullscreen-popup, .snippet-editor-modal, .confirm-dialog-overlay, .confirm-dialog, .note-dialog-overlay) *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+}

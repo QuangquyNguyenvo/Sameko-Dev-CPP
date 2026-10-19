@@ -255,19 +255,6 @@
     overflow-y: auto;
 }
 
-/* Snippet Settings Header Optimization */
-#panel-snippets .setting-row {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 4px !important;
-    margin-bottom: 20px !important;
-}
-
-#panel-snippets .setting-row label {
-    font-size: 1.1em;
-    color: var(--accent);
-}
-
 /* Snippet item row */
 .snippet-item {
     display: grid;
@@ -365,29 +352,47 @@
     border-color: var(--error, #ff6b6b);
 }
 
+/* Add (primary) and Import (outlined) side by side; text colours are the theme's button
+ * tokens, so a bright accent gets dark text instead of white. */
+.snippet-buttons {
+    display: flex;
+    gap: 10px;
+    margin: 14px 0 16px;
+}
+
 .btn-add-snippet {
-    width: 100%;
-    padding: 12px 16px;
-    margin-bottom: 16px;
-    background: var(--accent, #88c9ea);
-    color: white;
-    border: none;
-    border-radius: 10px;
+    flex: 1;
+    padding: 11px 16px;
+    background: var(--btn-primary-bg, var(--accent));
+    color: var(--btn-primary-text, #fff);
+    border: 2px solid var(--btn-primary-bg, var(--accent));
+    border-radius: 12px;
     cursor: pointer;
+    font-family: 'Fredoka', sans-serif;
     font-weight: 600;
-    font-size: 0.95em;
+    font-size: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
-    font-family: 'Nunito', sans-serif;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
 }
 
 .btn-add-snippet:hover {
-    background: var(--accent-hover, #6ab8dc);
+    background: var(--btn-primary-bg-hover, var(--accent-hover));
+    border-color: var(--btn-primary-bg-hover, var(--accent-hover));
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-add-snippet.secondary {
+    background: transparent;
+    color: var(--text-primary);
+    border-color: var(--border);
+}
+
+.btn-add-snippet.secondary:hover {
+    background: var(--bg-button-hover);
+    border-color: var(--accent);
 }
 
 /* Empty state */

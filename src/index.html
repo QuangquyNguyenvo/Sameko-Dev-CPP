@@ -24,6 +24,7 @@
     <link rel="stylesheet" href="styles/components/confirm-dialog.css">
     <link rel="stylesheet" href="styles/components/popups.css">
     <link rel="stylesheet" href="styles/components/discord-preview.css">
+    <link rel="stylesheet" href="styles/components/markdown-preview.css">
     <link rel="stylesheet" href="styles/themes/theme-customizer.css">
     <link rel="stylesheet" href="../node_modules/monaco-editor/min/vs/editor/editor.main.css">
     <link rel="stylesheet" href="../node_modules/@xterm/xterm/css/xterm.css">
@@ -63,7 +64,7 @@
 
             <div class="tabs-wrap island header-island">
                 <div class="tabs-container" id="tabs-container"></div>
-                <button class="tab-add" id="btn-new-tab" title="New File (Ctrl+N)"><svg class="ico" data-icon="plus"><use href="#i-plus"/></svg></button>
+                <button class="tab-add" id="btn-new-tab" title="New File (Ctrl+N) - right-click for other file types"><svg class="ico" data-icon="plus"><use href="#i-plus"/></svg></button>
             </div>
 
             <div class="header-actions island header-island">
@@ -163,6 +164,7 @@
             <div class="dropdown-item" data-action="spliteditor"><span>Split</span><span class="key">Ctrl+\</span></div>
             <div class="dropdown-item" data-action="swapsplit"><span>Swap</span><span class="key">Ctrl+⇧+\</span></div>
             <div class="dropdown-item" data-action="closesplit"><span>Close Split</span></div>
+            <div class="dropdown-item" data-action="mdpreview"><span>Markdown Preview</span><span class="key">Ctrl+⇧+V</span></div>
             <div class="dropdown-sep"></div>
             <div class="dropdown-item" data-action="settings"><span>Settings</span><span class="key">Ctrl+,</span></div>
         </div>
@@ -289,6 +291,10 @@
             <div class="settings-popup" id="settings-popup">
                 <div class="settings-header">
                     <h2><svg class="ico" data-icon="gear-six" data-weight="duo" width="20" height="20"><use href="#i-gear-six-duo"/></svg> Settings</h2>
+                    <label class="settings-search">
+                        <svg class="ico" width="16" height="16"><use href="#i-magnifying-glass"/></svg>
+                        <input type="search" id="settings-search" placeholder="Search settings" autocomplete="off" spellcheck="false">
+                    </label>
                     <button class="settings-close" id="settings-close">×</button>
                 </div>
 
@@ -429,6 +435,33 @@
                                         style="width:60px;margin-left:10px;text-align:center">
                                     <span>sec</span>
                                 </div>
+                            </div>
+                            <div class="setting-row">
+                                <label>Format Style <span class="tooltip"
+                                        title="Brace and indentation style used by Format Code">?</span></label>
+                                <select id="set-formatStyle">
+                                    <option value="google">Google</option>
+                                    <option value="allman">Allman</option>
+                                    <option value="java">Java</option>
+                                    <option value="kr">K&amp;R</option>
+                                    <option value="stroustrup">Stroustrup</option>
+                                    <option value="whitesmith">Whitesmith</option>
+                                    <option value="vtk">VTK</option>
+                                    <option value="ratliff">Ratliff</option>
+                                    <option value="gnu">GNU</option>
+                                    <option value="linux">Linux</option>
+                                    <option value="horstmann">Horstmann</option>
+                                    <option value="lisp">Lisp</option>
+                                    <option value="pico">Pico</option>
+                                </select>
+                            </div>
+                            <div class="setting-row">
+                                <label>Format on Save <span class="tooltip"
+                                        title="Format C/C++ files when you save with Ctrl+S. Auto Save does not format.">?</span></label>
+                                <label class="switch">
+                                    <input type="checkbox" id="set-formatOnSave">
+                                    <span class="slider"></span>
+                                </label>
                             </div>
                             <div class="setting-row">
                                 <label>Live Code Checking <span class="tooltip"
@@ -654,9 +687,17 @@
                             <div class="appearance-section">
                                 <div class="setting-row">
                                     <label>Performance Mode <span class="tooltip"
-                                            title="For low-end machines: turns off the minimap, bracket pair colors, smooth scrolling and cursor animation. The background and animations stay.">?</span></label>
+                                            title="For low-end machines: turns off the minimap, bracket pair colors and cursor animation. The background and animations stay.">?</span></label>
                                     <label class="switch">
                                         <input type="checkbox" id="set-performanceMode" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="setting-row">
+                                    <label>Animated Background <span class="tooltip"
+                                            title="Play the theme's background video. It always pauses while you work in another window. Turn it off if screen sharing or recording lags.">?</span></label>
+                                    <label class="switch">
+                                        <input type="checkbox" id="set-animatedBackground" checked>
                                         <span class="slider"></span>
                                     </label>
                                 </div>
@@ -681,14 +722,24 @@
                         <!-- Template Tab -->
                         <div class="settings-panel" id="panel-template">
                             <h3>Code Template</h3>
-                            <p class="setting-desc">Template code for new files. Use this as your starting point.</p>
+                            <p class="setting-desc">Choose the code that appears whenever you create a new C++ or C file.</p>
                             <div class="template-editor">
+                                <div class="template-editor-header">
+                                    <span class="template-editor-file">
+                                        <span class="template-langs" role="tablist">
+                                            <button class="template-lang active" data-lang="cpp" role="tab"><span class="template-language">C++</span> untitled.cpp</button>
+                                            <button class="template-lang" data-lang="c" role="tab"><span class="template-language">C</span> untitled.c</button>
+                                        </span>
+                                        <span class="template-editor-lines" id="template-line-count"></span>
+                                    </span>
+                                    <span class="template-actions">
+                                        <button class="template-action" id="btn-template-reset" title="Replace with the built-in template"><svg class="ico" width="14" height="14"><use href="#i-arrows-clockwise"/></svg> Reset</button>
+                                        <button class="template-action" id="btn-import-template-from-file" title="Load a .cpp / .c / .h / .txt file"><svg class="ico" width="14" height="14"><use href="#i-folder-open-duo"/></svg> Import</button>
+                                    </span>
+                                </div>
                                 <div id="template-editor-container"></div>
                                 <textarea id="set-template" style="display:none"></textarea>
-                            </div>
-                            <div class="template-actions">
-                                <button class="btn-template-reset" id="btn-template-reset">Reset to Default</button>
-                                <button class="btn-import-template-from-file" id="btn-import-template-from-file">Import from File</button>
+                                <textarea id="set-template-c" style="display:none"></textarea>
                             </div>
                         </div>
 
@@ -714,7 +765,7 @@
                             </p>
 
                             <!-- Enable toggle -->
-                            <div class="setting-row" style="margin-bottom: 15px;">
+                            <div class="setting-row">
                                 <label>Enable Snippets <span class="tooltip"
                                         title="Show snippet suggestions when typing">?</span></label>
                                 <label class="switch">
@@ -724,14 +775,16 @@
                             </div>
 
                             <div class="setting-group" style="display: block;">
-                                <button class="btn-add-snippet" id="btn-add-snippet">
-                                    <svg class="ico" data-icon="plus" width="14" height="14"><use href="#i-plus"/></svg>
-                                    Add New Snippet
-                                </button>
-                                <button class="btn-add-snippet" id="btn-add-snippet-from-file">
-                                    <svg class="ico" data-icon="upload-simple" width="14" height="14"><use href="#i-upload-simple"/></svg>
-                                    Import from File(s)
-                                </button>
+                                <div class="snippet-buttons">
+                                    <button class="btn-add-snippet" id="btn-add-snippet">
+                                        <svg class="ico" data-icon="plus" width="14" height="14"><use href="#i-plus"/></svg>
+                                        Add New Snippet
+                                    </button>
+                                    <button class="btn-add-snippet secondary" id="btn-add-snippet-from-file">
+                                        <svg class="ico" data-icon="upload-simple" width="14" height="14"><use href="#i-upload-simple"/></svg>
+                                        Import from File(s)
+                                    </button>
+                                </div>
                                 <div class="snippets-list-container">
                                     <div id="snippets-list"></div>
                                 </div>
@@ -1209,6 +1262,7 @@
     <script src="features/local-history/history-manager.js"></script>
     <script src="features/file-explorer/file-explorer.js"></script>
     <script src="features/terminal/terminal-manager.js"></script>
+    <script src="features/markdown/markdown-preview.js"></script>
     <script src="features/debugger/debugger-ui.js"></script>
     <!-- The app itself, in load order (formerly one renderer/app.js). -->
     <script src="renderer/app/core.js"></script>

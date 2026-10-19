@@ -101,27 +101,23 @@ async function formatCode(code, style = 'google') {
             stdio: ['pipe', 'pipe', 'pipe']
         });
 
-        let formattedCode = '';
-        let errorOutput = '';
+        // Decode once at the end: a chunk can end in the middle of a multi-byte character.
+        const out = [];
+        const err = [];
 
-        astyle.stdout.on('data', (data) => {
-            formattedCode += data.toString();
-        });
-
-        astyle.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-        });
+        astyle.stdout.on('data', (data) => out.push(data));
+        astyle.stderr.on('data', (data) => err.push(data));
 
         astyle.on('close', (exitCode) => {
             if (exitCode === 0) {
                 resolve({
                     success: true,
-                    code: formattedCode
+                    code: Buffer.concat(out).toString('utf-8')
                 });
             } else {
                 resolve({
                     success: false,
-                    error: errorOutput || `AStyle exited with code ${exitCode}`
+                    error: Buffer.concat(err).toString('utf-8') || `AStyle exited with code ${exitCode}`
                 });
             }
         });
