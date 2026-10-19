@@ -143,7 +143,7 @@ Then turn it **OFF** and build again.
 | **Installer** | `sameko-dev-cpp-setup-<version>.exe` | Step-by-step installer with Start Menu shortcuts & auto-update | **⭐ Recommended for most users** |
 | **Portable** | `.zip` | Standalone archive. Extract anywhere (including USB drives) and run | Ideal for school / restricted PCs |
 
-> 🛡️ **Windows SmartScreen** may warn that the app is from an unknown publisher, because the builds are not code-signed yet. Click **More info → Run anyway**. The 1.3.1 installer scans clean on [VirusTotal (0/49)](https://www.virustotal.com/gui/file/9a75adbaa997597b277ef9257b2112f583da062d5d30769bb6b0ab034cc5ee53).
+> 🛡️ **Windows SmartScreen** may warn that the app is from an unknown publisher, because the builds are not code-signed yet. Click **More info → Run anyway**. You can check the 1.3.2 installer's [VirusTotal scan](https://www.virustotal.com/gui/file/d637ba43334f6bd5995686485d7b4a83469a9ced145483bd1e8322135c95723a).
 
 <br />
 
