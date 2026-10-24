@@ -80,19 +80,18 @@
         "@xterm/addon-fit": "^0.11.0",
         "@xterm/xterm": "^6.0.0",
         "discord-rpc": "^4.0.1",
-        "dompurify": "3.4.16",
+        "dompurify": "3.4.17",
         "electron-log": "^5.4.4",
         "electron-updater": "^6.8.9",
         "gsap": "^3.15.0",
-        "marked": "18.0.14",
-        "monaco-editor": "^0.45.0",
-        "v8-compile-cache": "^2.4.0"
+        "marked": "18.1.1",
+        "monaco-editor": "^0.52.2"
     },
     "devDependencies": {
         "@phosphor-icons/core": "^2.1.1",
-        "electron": "^44.5.1",
+        "electron": "^44.9.3",
         "electron-builder": "^26.15.3",
-        "playwright-core": "^1.63.0",
+        "playwright-core": "^1.64.1",
         "sharp": "^0.35.5"
     },
     "build": {
@@ -104,8 +103,9 @@
         },
         "files": [
             "app/**/*",
+            "!app/services/competitive/judge-selftest.js",
+            "!app/shared/types.js",
             "preload.js",
-            "shared/**/*",
             "src/**/*",
             "node_modules/**/*",
             "!Sameko-GCC/**/*",
@@ -116,7 +116,7 @@
             "!node_modules/monaco-editor/CHANGELOG.md",
             "!node_modules/monaco-editor/ThirdPartyNotices.txt",
             "!node_modules/monaco-editor/min/vs/language/{typescript,css,html}/**",
-            "!node_modules/monaco-editor/min/vs/**/*.nls.{de,es,fr,it,ja,ko,ru,zh-cn,zh-tw}.js",
+            "!node_modules/monaco-editor/min/vs/nls.messages.*.js",
             "!node_modules/@xterm/{xterm,addon-fit}/{src,typings}/**",
             "!node_modules/gsap/{src,types,utils}/**",
             "!node_modules/gsap/*.{js,md}",
