@@ -180,6 +180,18 @@ function initTerminalUX() {
 
                         if (termHistory.length === 0 || termHistory[termHistory.length - 1] !== val) {
                             termHistory.push(val);
+                            // Up/Down recall, not an archive: pasted test inputs can be
+                            // megabytes each, so keep the last 100 or ~2 MB.
+                            let chars = 0, keepFrom = 0;
+                            for (let i = termHistory.length - 1; i >= 0; i--) {
+                                chars += termHistory[i].length;
+                                const newest = i === termHistory.length - 1;
+                                if (termHistory.length - i > 100 || (chars > 2e6 && !newest)) {
+                                    keepFrom = i + 1;
+                                    break;
+                                }
+                            }
+                            if (keepFrom > 0) termHistory.splice(0, keepFrom);
                         }
                         termHistoryIndex = -1;
                         termCurrentDraft = '';

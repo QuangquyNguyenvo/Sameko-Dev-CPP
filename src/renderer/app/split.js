@@ -36,11 +36,11 @@ function openSplit() {
 
     if (!App.editor2) {
         App.editor2 = createEditor('editor-container-2');
-        document.getElementById('editor-container-2').addEventListener('mousedown', () => {
-            if (App.activeEditor === 2) return;
-            App.activeEditor = 2;
-            renderTabs();
-        });
+        document.getElementById('editor-container-2').addEventListener('mousedown', () => focusEditorPane(2));
+        // Breakpoints and the paused-line arrow work in this pane too.
+        if (window.Debugger && typeof window.Debugger.attachEditor === 'function') {
+            try { window.Debugger.attachEditor(App.editor2); } catch (_) { }
+        }
     }
 
 
@@ -66,6 +66,47 @@ function openSplit() {
     refreshEditorLayout();
 }
 
+/**
+ * Give keyboard focus to editor pane 1 or 2. The Input/Expected boxes and the
+ * test cases describe the focused tab, so they are saved for the tab losing
+ * focus and loaded for the one gaining it.
+ */
+function focusEditorPane(pane) {
+    const target = pane === 2 && App.isSplit && App.splitTabId ? 2 : 1;
+    if (App.activeEditor === target) return;
+    const beforeId = getPreferredTabId();
+    const beforeTab = App.tabs.find(t => t.id === beforeId) || null;
+    if (beforeTab) {
+        persistCurrentTabIO();
+        saveTestStateToTab(beforeTab);
+    }
+    App.activeEditor = target;
+    const afterId = getPreferredTabId();
+    if (afterId !== beforeId) {
+        restoreTabIO(afterId);
+        loadTestStateFromTab(App.tabs.find(t => t.id === afterId) || null);
+    }
+    renderTabs();
+}
+
+/** Show a tab in the right pane, moving the panels with it when that pane has focus. */
+function showInSplitPane(tab) {
+    const focused = App.activeEditor === 2;
+    const beforeTab = focused ? App.tabs.find(t => t.id === App.splitTabId) || null : null;
+    const changing = !focused || !beforeTab || beforeTab.id !== tab.id;
+    if (focused && beforeTab && changing) {
+        persistCurrentTabIO();
+        saveTestStateToTab(beforeTab);
+    }
+    App.splitTabId = tab.id;
+    if (App.editor2) showTabInEditor(App.editor2, tab);
+    if (focused && changing) {
+        restoreTabIO(tab.id);
+        loadTestStateFromTab(tab);
+    }
+    renderTabs();
+}
+
 function closeSplit() {
     if (!App.isSplit) return;
     if (cancelSplitResize) cancelSplitResize();
@@ -76,6 +117,8 @@ function closeSplit() {
         if (tab) tab.content = App.editor2.getValue();
     }
 
+    // Hand the panels back to the left tab before the right pane goes away.
+    focusEditorPane(1);
     App.isSplit = false;
     App.splitTabId = null;
     App.activeEditor = 1;
@@ -114,9 +157,19 @@ function swapSplitEditors() {
     if (rightTab) rightTab.content = App.editor2.getValue();
 
 
+    // The focused pane now shows the other file: its Input/Expected and tests go with it.
+    const focusedBefore = App.tabs.find(t => t.id === getPreferredTabId()) || null;
+    if (focusedBefore) { persistCurrentTabIO(); saveTestStateToTab(focusedBefore); }
+
     const tempId = App.activeTabId;
     App.activeTabId = App.splitTabId;
     App.splitTabId = tempId;
+
+    const focusedAfter = App.tabs.find(t => t.id === getPreferredTabId()) || null;
+    if (focusedAfter && focusedAfter !== focusedBefore) {
+        restoreTabIO(focusedAfter.id);
+        loadTestStateFromTab(focusedAfter);
+    }
 
 
     // Swap the documents themselves, so each keeps its own undo history.
@@ -150,22 +203,7 @@ function initTabDrag() {
         return dropIndicator;
     }
 
-    container.addEventListener('dragstart', e => {
-        const tab = e.target.closest('.tab');
-        if (tab) {
-            draggedTabId = tab.dataset.id;
-            draggedTabEl = tab;
-            e.dataTransfer.effectAllowed = 'move';
-            tab.classList.add('dragging');
-
-            // Set custom type to prevent drop into editor
-            e.dataTransfer.setData('application/x-sameko-tab', tab.dataset.id);
-
-            e.dataTransfer.setDragImage(tab, tab.offsetWidth / 2, tab.offsetHeight / 2);
-        }
-    });
-
-    // Cache for drag operations to prevent layout thrashing
+    // Tab positions measured once per drag, so dragover does not force layout.
     let cachedTabs = [];
 
     container.addEventListener('dragstart', e => {
@@ -175,13 +213,14 @@ function initTabDrag() {
             draggedTabEl = tab;
             e.dataTransfer.effectAllowed = 'move';
             tab.classList.add('dragging');
+
+            // Custom type so the editor does not accept the drop as text.
+            e.dataTransfer.setData('application/x-sameko-tab', tab.dataset.id);
             e.dataTransfer.setDragImage(tab, tab.offsetWidth / 2, tab.offsetHeight / 2);
 
-            // Cache positions once at start
             cachedTabs = [...container.querySelectorAll('.tab:not(.dragging)')].map(child => ({
                 element: child,
-                rect: child.getBoundingClientRect(),
-                offset: 0
+                rect: child.getBoundingClientRect()
             }));
         }
     });
@@ -326,8 +365,7 @@ function initTabDrag() {
             } else {
 
                 if (!App.isSplit) openSplit();
-                App.splitTabId = draggedTabId;
-                if (App.editor2) showTabInEditor(App.editor2, tab);
+                showInSplitPane(tab);
             }
         });
     });

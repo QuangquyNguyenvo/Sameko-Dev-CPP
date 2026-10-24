@@ -78,22 +78,7 @@ function getStyleArgs(style) {
     return STYLE_ARGS[style] || STYLE_ARGS['google'];
 }
 
-function getAvailableStyles() {
-    return Object.keys(STYLE_ARGS);
-}
-
-/**
- * Check if style is valid
- * @param {string} style
- * @returns {boolean}
- */
-function isValidStyle(style) {
-    return style in STYLE_ARGS;
-}
-
 module.exports = {
     STYLE_ARGS,
     getStyleArgs,
-    getAvailableStyles,
-    isValidStyle,
 };

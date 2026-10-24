@@ -668,10 +668,6 @@ const ThemeManager = {
         return next;
     },
 
-    _saveUserThemesPromise() {
-        return this._saveUserThemes();
-    },
-
     /** Keys of `theme.colors` that may hold an image or video. */
     ASSET_KEYS: ['appBackground', 'editorBackground'],
 
@@ -1128,14 +1124,7 @@ const ThemeManager = {
         this.activeThemeId = themeId;
 
         if (this.builtinThemeIds.includes(themeId)) {
-            this._loadSavedBackground(themeId, theme);
-
-            const hasBackgroundOverride = Object.prototype.hasOwnProperty.call(this.backgroundOverrides || {}, themeId)
-                || this._legacyBackgroundExists(themeId);
-            if (themeId === 'kawaii-light' && !hasBackgroundOverride && (!theme.colors || !theme.colors.appBackground)) {
-                if (!theme.colors) theme.colors = {};
-                theme.colors.appBackground = 'assets/backgrounds/background.jpg';
-            }
+            this._applyBuiltinBackground(themeId, theme);
         }
 
         document.documentElement.setAttribute('data-theme', themeId);
@@ -1190,6 +1179,30 @@ const ThemeManager = {
      * @param {object} theme - Theme object to modify
      * @private
      */
+    /** A builtin theme's saved background overrides (or kawaii-light's default image) onto `theme`. */
+    _applyBuiltinBackground(themeId, theme) {
+        this._loadSavedBackground(themeId, theme);
+        const hasBackgroundOverride = Object.prototype.hasOwnProperty.call(this.backgroundOverrides || {}, themeId)
+            || this._legacyBackgroundExists(themeId);
+        if (themeId === 'kawaii-light' && !hasBackgroundOverride && (!theme.colors || !theme.colors.appBackground)) {
+            if (!theme.colors) theme.colors = {};
+            theme.colors.appBackground = 'assets/backgrounds/background.jpg';
+        }
+    },
+
+    /**
+     * A theme as it looks when applied. A builtin theme's registry entry gets its
+     * saved background only when setTheme() applies it, so editing or exporting
+     * an inactive one saw (and saved back) the built-in background instead.
+     */
+    getEffectiveTheme(themeId) {
+        const theme = this.themes.get(themeId);
+        if (!theme || !this.builtinThemeIds.includes(themeId)) return theme || null;
+        const copy = this._clone(theme);
+        this._applyBuiltinBackground(themeId, copy);
+        return copy;
+    },
+
     _loadSavedBackground(themeId, theme) {
         try {
             if (!theme.colors) theme.colors = {};
@@ -1240,17 +1253,6 @@ const ThemeManager = {
     },
 
     /**
-     * Apply inheritance: if child not set, use parent value
-     */
-    _applyInheritance(root, colors, childKey, parentKey, cssVar) {
-        const hasChild = colors[childKey] !== undefined && colors[childKey] !== null;
-        if (!hasChild && colors[parentKey]) {
-            root.style.setProperty(cssVar, colors[parentKey]);
-        }
-    },
-
-
-    /**
      * Get list of all available themes
      */
     getThemeList() {
@@ -1271,7 +1273,7 @@ const ThemeManager = {
      * Export theme to JSON string
      */
     exportTheme(themeId) {
-        const theme = this.themes.get(themeId);
+        const theme = this.getEffectiveTheme(themeId);
         if (!theme) return null;
         return JSON.stringify(this._exportData(theme), null, 2);
     },
@@ -1349,7 +1351,7 @@ const ThemeManager = {
      * file:// assets and is the API for the new customizer/export flow.
      */
     async exportThemePortable(themeId) {
-        const theme = this.themes.get(themeId);
+        const theme = this.getEffectiveTheme(themeId);
         if (!theme) return null;
         return this.serializeThemePortable(theme);
     },
@@ -1553,54 +1555,6 @@ const ThemeManager = {
 
         return { success: true, message: 'Theme deleted' };
     },
-
-    /**
-     * Duplicate a theme for customization
-     * @param {string} sourceThemeId 
-     * @param {string} newName 
-     */
-    async duplicateTheme(sourceThemeId, newName) {
-        const source = this.themes.get(sourceThemeId);
-        if (!source) {
-            return { success: false, message: 'Source theme not found' };
-        }
-
-        const newId = newName.toLowerCase().replace(/\s+/g, '-');
-
-        const newTheme = JSON.parse(JSON.stringify(source));
-        newTheme.id = newId;
-        newTheme.name = newName;
-        newTheme.author = 'User';
-
-        const previousTheme = this.themes.get(newId);
-        const hadPreviousTheme = this.themes.has(newId);
-        this.registerTheme({
-            meta: {
-                id: newId,
-                name: newName,
-                author: 'User',
-                type: source.type,
-                version: '1.0.0'
-            },
-            colors: newTheme.colors,
-            editor: newTheme.editor,
-            terminal: newTheme.terminal
-        });
-
-        try {
-            await this._saveUserThemes();
-        } catch (error) {
-            if (hadPreviousTheme) {
-                this.themes.set(newId, previousTheme);
-                if (typeof monaco !== 'undefined') this._defineMonacoTheme(previousTheme);
-            } else {
-                this.themes.delete(newId);
-            }
-            throw error;
-        }
-
-        return { success: true, themeId: newId, message: `Created "${newName}"` };
-    }
 };
 
 // Make globally available

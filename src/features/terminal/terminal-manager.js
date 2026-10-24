@@ -90,15 +90,6 @@ function scheduleMount() {
     idle(attempt);
 }
 
-// Plain-text line buffer mirroring what was written, used by compareOutput()
-// (the xterm canvas isn't DOM-queryable). Program output is reconstructed into
-// complete logical lines (split on real newlines) with a trailing partial held
-// in `pending`; IDE status messages are pushed as discrete lines. Capped to
-// avoid unbounded growth under infinite output loops.
-const MAX_BUFFER_LINES = 5000;
-let lineBuffer = []; // Array<{ text: string, type: string }>
-let pending = null;  // { text, type } partial program line not yet \n-terminated
-
 const ANSI_RE = /\x1b\[[0-9;]*m/g;
 
 // ============================================================================
@@ -176,43 +167,6 @@ function hexToRgbParts(hex) {
     return `${r};${g};${b}`;
 }
 
-// --- line buffer helpers ----------------------------------------------------
-
-function capBuffer() {
-    if (lineBuffer.length > MAX_BUFFER_LINES) {
-        lineBuffer.splice(0, lineBuffer.length - MAX_BUFFER_LINES);
-    }
-}
-
-function finalizePending() {
-    if (pending !== null) {
-        lineBuffer.push(pending);
-        capBuffer();
-        pending = null;
-    }
-}
-
-// Append raw program output, reconstructing complete lines on real newlines.
-function bufferAppendProgram(rawText, type) {
-    const clean = String(rawText).replace(ANSI_RE, '').replace(/\r/g, '');
-    const parts = clean.split('\n');
-    if (pending === null) pending = { text: '', type: type || '' };
-    pending.text += parts[0];
-    pending.type = type || '';
-    for (let i = 1; i < parts.length; i++) {
-        lineBuffer.push(pending);
-        capBuffer();
-        pending = { text: parts[i], type: type || '' };
-    }
-}
-
-// Push a discrete IDE message as its own line (closing any open program line).
-function bufferPushLine(text, type) {
-    finalizePending();
-    lineBuffer.push({ text: String(text).replace(ANSI_RE, ''), type: type || '' });
-    capBuffer();
-}
-
 // --- write paths ------------------------------------------------------------
 
 /**
@@ -223,9 +177,8 @@ function bufferPushLine(text, type) {
  * @param {string} rawData
  * @param {string|null} hexColor  tint color, or null for untinted stdout
  * @param {boolean} colorEnabled
- * @param {string} type           buffer line type ('' or 'error')
  */
-function writeProgram(rawData, hexColor, colorEnabled, type) {
+function writeProgram(rawData, hexColor, colorEnabled) {
     if (!terminal && !mountTarget) return;
     let text = String(rawData);
     const hasOwnAnsi = colorEnabled && text.includes('\x1b[');
@@ -238,7 +191,6 @@ function writeProgram(rawData, hexColor, colorEnabled, type) {
     }
 
     withTerminal((t) => t.write(text)); // verbatim, no synthetic newline
-    bufferAppendProgram(rawData, type);
 }
 
 /**
@@ -247,9 +199,8 @@ function writeProgram(rawData, hexColor, colorEnabled, type) {
  * @param {string} msg
  * @param {string|null} hexColor
  * @param {boolean} colorEnabled
- * @param {string} type
  */
-function writeMessage(msg, hexColor, colorEnabled, type) {
+function writeMessage(msg, hexColor, colorEnabled) {
     if (!terminal && !mountTarget) return;
     let text = String(msg);
     const hasOwnAnsi = colorEnabled && text.includes('\x1b[');
@@ -262,19 +213,6 @@ function writeMessage(msg, hexColor, colorEnabled, type) {
     }
 
     withTerminal((t) => t.write(text + '\r\n'));
-    bufferPushLine(msg, type);
-}
-
-/**
- * @returns {Array<{text:string,type:string}>} buffer snapshot incl. partial line
- */
-function getLines() {
-    return pending !== null ? lineBuffer.concat([pending]) : lineBuffer;
-}
-
-function resetBuffer() {
-    lineBuffer = [];
-    pending = null;
 }
 
 /**
@@ -294,12 +232,11 @@ function writeLine(line) {
 }
 
 /**
- * Clear terminal + line buffer
+ * Clear the terminal
  */
 function clear() {
     if (terminal) terminal.clear();
     else queued = []; // nothing shown yet: drop what was waiting
-    resetBuffer();
 }
 
 /**
@@ -365,13 +302,30 @@ function isRunning() {
     return isProcessRunning;
 }
 
+/**
+ * The terminal's lines (scrollback included) as [{ text }], read from xterm's
+ * buffer when called, so nothing is copied while programs print. For probes
+ * and tests; empty until xterm has loaded.
+ * @returns {{text: string}[]}
+ */
+function getLines() {
+    if (!terminal) return [];
+    const buffer = terminal.buffer.active;
+    const lines = [];
+    for (let i = 0; i < buffer.length; i++) {
+        const line = buffer.getLine(i);
+        lines.push({ text: line ? line.translateToString(true) : '' });
+    }
+    return lines;
+}
+
 // ============================================================================
 // EXPORTS
 // ============================================================================
 
 const api = {
-    initTerminal, write, writeLine, writeProgram, writeMessage, getLines, resetBuffer,
-    clear, fit, applyTheme, setFontSize, dispose, setProcessRunning, isRunning
+    initTerminal, write, writeLine, writeProgram, writeMessage,
+    clear, fit, applyTheme, setFontSize, dispose, setProcessRunning, isRunning, getLines
 };
 
 if (typeof module !== 'undefined' && module.exports) {

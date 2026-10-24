@@ -51,6 +51,7 @@ const IPC = {
         REMOVE_BREAKPOINT: 'debug:removeBreakpoint',
         ENABLE_BREAKPOINT: 'debug:enableBreakpoint',
         DISABLE_BREAKPOINT: 'debug:disableBreakpoint',
+        SET_BREAKPOINT_CONDITION: 'debug:setBreakpointCondition',
         RUN_TO_LINE: 'debug:runToLine',
         VAR_SET_FORMAT: 'debug:varSetFormat',
         CONTINUE: 'debug:continue',

@@ -110,9 +110,6 @@ function startDeferredCompilerWork() {
     }
 }
 
-function cleanupBeforeQuit() {
-}
-
 function setupAppEvents() {
     app.on('second-instance', (event, commandLine, workingDirectory) => {
         const { getMainWindow, restoreAndFocusWindow } = require('../windows/main-window');
@@ -123,10 +120,6 @@ function setupAppEvents() {
         }
         // "Open with" while the app runs starts a second instance; its files open here.
         require('../services/launch-files').add(commandLine, workingDirectory);
-    });
-
-    app.on('before-quit', () => {
-        cleanupBeforeQuit();
     });
 
     app.on('window-all-closed', () => {
@@ -147,7 +140,6 @@ function setupAppEvents() {
 module.exports = {
     initializeApp,
     startDeferredCompilerWork,
-    cleanupBeforeQuit,
     setupAppEvents,
     getCompilerStatus,
 };

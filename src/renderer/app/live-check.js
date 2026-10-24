@@ -141,7 +141,10 @@ function scheduleLiveCheck() {
 
     const delay = App.settings.editor.liveCheckDelay || 1000;
     const targetRevision = liveCheckRevision;
-    liveCheckTimer = setTimeout(() => doLiveCheck(targetRevision), delay);
+    liveCheckTimer = setTimeout(() => {
+        liveCheckTimer = null;
+        doLiveCheck(targetRevision);
+    }, delay);
 }
 
 async function doLiveCheck(targetRevision = liveCheckRevision) {
@@ -156,8 +159,9 @@ async function doLiveCheck(targetRevision = liveCheckRevision) {
     const tab = App.tabs.find(t => t.id === tabId);
     const model = editor?.getModel?.();
     if (!editor || !model) return;
-    if (!isCppTab(tab)) {
-        // Write-ups and test data: nothing to check.
+    if (!tab || !isCppTab(tab)) {
+        // No tab (the last one closed while a check was pending), write-ups and
+        // test data: nothing to check.
         clearLiveCheckMarkers();
         setLiveCheckUIState('idle');
         return;
@@ -166,10 +170,7 @@ async function doLiveCheck(targetRevision = liveCheckRevision) {
     const code = editor.getValue();
     if (!code || !code.trim()) {
         clearLiveCheckMarkers();
-        if (!hasBuildProblems) {
-            App.problems = [];
-            renderProblems();
-        }
+        if (!hasBuildProblems) clearProblems(tab.id);
         setLiveCheckUIState('idle');
         if (!isBuilding && !App.isRunning) {
             setStatus('Ready', 'ready');
@@ -184,10 +185,18 @@ async function doLiveCheck(targetRevision = liveCheckRevision) {
         setStatus('Checking syntax...', 'checking');
     }
 
+    const requestPath = tab?.path || null;
     try {
         // The tab id lets clangd reuse the document it already has open for
         // completions (an untitled tab has no path).
-        const result = await window.electronAPI.syntaxCheck(code, tab?.path || null, tab?.id || null);
+        const result = await window.electronAPI.syntaxCheck(code, requestPath, tab?.id || null);
+        // Closed, or saved under another name (Save As .md/.txt) while g++ or
+        // clangd was busy: these diagnostics are for a file that is gone.
+        if (tab && (!App.tabs.includes(tab) || !isCppTab(tab) || (tab.path || null) !== requestPath)) {
+            if (App.tabs.includes(tab) && isCppTab(tab)) liveCheckQueued = true;
+            else if (tab.model && !tab.model.isDisposed()) monaco.editor.setModelMarkers(tab.model, 'live-check', []);
+            return;
+        }
         const isStale = targetRevision !== liveCheckRevision || editor.getModel() !== model;
         if (isStale) {
             liveCheckQueued = true;
@@ -199,10 +208,7 @@ async function doLiveCheck(targetRevision = liveCheckRevision) {
         } else if (result && result.success) {
             // No errors - clear markers silently
             clearLiveCheckMarkers();
-            if (!hasBuildProblems) {
-                App.problems = [];
-                renderProblems();
-            }
+            if (!hasBuildProblems) clearProblems(tab ? tab.id : null);
             setLiveCheckUIState('clean');
             if (!isBuilding && !App.isRunning) {
                 setStatus('No issues', 'success');
@@ -213,9 +219,14 @@ async function doLiveCheck(targetRevision = liveCheckRevision) {
     } finally {
         isLiveChecking = false;
         if (liveCheckQueued || targetRevision !== liveCheckRevision) {
-            const queuedRevision = liveCheckRevision;
             liveCheckQueued = false;
-            setTimeout(() => doLiveCheck(queuedRevision), 0);
+            // An edit made during the check already armed the typing timer, which
+            // will check the latest text once the user pauses. Retrying now as
+            // well checked half-typed code and ran one check too many per burst.
+            if (!liveCheckTimer) {
+                const queuedRevision = liveCheckRevision;
+                setTimeout(() => doLiveCheck(queuedRevision), 0);
+            }
         }
     }
 }
@@ -243,6 +254,7 @@ function applyLiveCheckMarkers(editor, diagnostics) {
 
     // Don't overwrite build problems with live-check results
     if (!hasBuildProblems) {
+        App.problemsTabId = getTabForModel(model)?.id || null;
         App.problems = diagnostics.map(d => ({
             file: d.file || 'untitled.cpp',
             type: d.severity,

@@ -13,6 +13,4 @@ module.exports = {
     // Styles
     STYLE_ARGS: styles.STYLE_ARGS,
     getStyleArgs: styles.getStyleArgs,
-    getAvailableStyles: styles.getAvailableStyles,
-    isValidStyle: styles.isValidStyle,
 };

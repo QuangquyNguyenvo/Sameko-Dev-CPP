@@ -37,13 +37,12 @@
     let inited = false;
     const bpByFile = new Map();         // normPath -> Map(line -> {condition, id})
     const realPathByKey = new Map();    // normPath -> original-case path (survives tab close)
-    let bpDecoIds = [];
-    let bpDecoLines = [];               // line of each bpDecoIds entry when it was drawn
-    let bpDecoKey = '';                 // normPath the bpDecoIds were drawn for
-    let curLineDecoIds = [];
-    let hoverDecoIds = [];              // faint "ghost" glyph shown under the cursor in the gutter
-    let hoverLine = 0;                  // last gutter line hovered (0 = none)
-    let dbgStoppedCtx = null;           // Monaco context key: true only while stopped
+    // Breakpoint dots, the paused-line arrow, the hover ghost and the replay
+    // arrow are drawn per editor pane: decoration ids only exist on the model
+    // they were created on, and the two panes of split view show different files.
+    const paneState = new Map();        // editor -> { model, bp, bpLines, bpKey, cur, hover, hoverLine, hist }
+    const wiredEditors = new WeakSet();
+    const stoppedCtxKeys = [];          // one Monaco context key per editor: true only while stopped
     let hoverProviderReg = null;
     let varSeq = 0;
     // Registry of live GDB variable objects, keyed by varobj name. Each record
@@ -112,11 +111,46 @@
     }
     function activePath() { const t = activeTab(); return t ? t.path : null; }
 
+    /** Every editor pane that exists (the right one once split view has been opened). */
+    function editors() {
+        const A = window.App;
+        return A ? [A.editor, A.editor2].filter(Boolean) : [];
+    }
+    /** Path of the file a pane shows; null for the empty placeholder model. */
+    function pathIn(ed) {
+        const model = ed && ed.getModel ? ed.getModel() : null;
+        if (!model) return null;
+        const t = ((window.App && window.App.tabs) || []).find(x => x.model === model);
+        return t ? t.path : null;
+    }
+    function blankPane(model) {
+        return { model, bp: [], bpLines: [], bpKey: '', cur: [], hover: [], hoverLine: 0, hist: [] };
+    }
+    /**
+     * Decoration state of one pane, for the model it shows NOW. When the pane
+     * has moved to another file since we last drew, our marks are removed from
+     * the file it left (they would reappear when that file is shown again).
+     */
+    function paneOf(ed) {
+        const model = ed.getModel();
+        let s = paneState.get(ed);
+        if (!s) { s = blankPane(model); paneState.set(ed, s); }
+        if (s.model !== model) {
+            const ids = s.bp.concat(s.cur, s.hover, s.hist);
+            if (ids.length && s.model && !s.model.isDisposed()) {
+                try { s.model.deltaDecorations(ids, []); } catch (_) { }
+            }
+            s = blankPane(model);
+            paneState.set(ed, s);
+        }
+        return s;
+    }
+
     // ---- terminal routing --------------------------------------------------
     function toTerminalRaw(text) {
         if (!text) return;
         if (window.TerminalManager && window.TerminalManager.writeProgram) {
-            window.TerminalManager.writeProgram(text, null, true, 'output');
+            window.TerminalManager.writeProgram(text, null, true);
         } else if (typeof window.log === 'function') {
             window.log(text, '');
         }
@@ -136,7 +170,7 @@
         step('injectStyles', injectStyles);
         step('buildPanel', buildPanel);
         step('wireToolbar', wireToolbar);
-        step('wireEditor', wireEditor);
+        step('wireEditor', () => { for (const ed of editors()) wireEditor(ed); });
         step('wireEvents', wireEvents);
         step('wireHover', wireHover);
     }
@@ -521,7 +555,6 @@
     const HIST_MAX = 800;
     const history = [];
     let histIndex = -1;                 // -1 = live, otherwise an index into history
-    let histDecoIds = [];
 
     function recordStep(d) {
         history.push({
@@ -559,24 +592,27 @@
     }
 
     /** Highlight the recorded line in the editor (distinct from the live arrow). */
-    function renderHistoryLine(h) {
-        const ed = mainEditor();
+    function renderHistoryLine(h, reveal = true) {
         const monaco = mon();
-        if (!ed || !monaco) return;
-        let decos = [];
-        if (h && h.line && norm(h.file) === norm(activePath())) {
-            decos = [{
-                range: new monaco.Range(h.line, 1, h.line, 1),
-                options: {
-                    isWholeLine: true,
-                    className: 'sameko-histline',
-                    glyphMarginClassName: 'sameko-hist-arrow',
-                    glyphMarginHoverMessage: { value: 'Recorded step — the program is not here right now' },
-                },
-            }];
-            ed.revealLineInCenterIfOutsideViewport(h.line);
+        if (!monaco) return;
+        for (const ed of editors()) {
+            const s = paneOf(ed);
+            const path = pathIn(ed);
+            let decos = [];
+            if (h && h.line && path && norm(h.file) === norm(path)) {
+                decos = [{
+                    range: new monaco.Range(h.line, 1, h.line, 1),
+                    options: {
+                        isWholeLine: true,
+                        className: 'sameko-histline',
+                        glyphMarginClassName: 'sameko-hist-arrow',
+                        glyphMarginHoverMessage: { value: 'Recorded step — the program is not here right now' },
+                    },
+                }];
+                if (reveal) ed.revealLineInCenterIfOutsideViewport(h.line);
+            }
+            s.hist = ed.deltaDecorations(s.hist, decos);
         }
-        histDecoIds = ed.deltaDecorations(histDecoIds, decos);
     }
 
     /** One step back through the recording. */
@@ -822,7 +858,7 @@
         state = s;
         if (els.statusText) els.statusText.textContent = s;
         if (els.status) els.status.dataset.s = s;
-        if (dbgStoppedCtx) { try { dbgStoppedCtx.set(s === 'stopped'); } catch (_) { } }
+        for (const key of stoppedCtxKeys) { try { key.set(s === 'stopped'); } catch (_) { } }
         const live = (s === 'running' || s === 'stopped' || s === 'starting');
         // The primary button morphs with the run lifecycle (Run ▶ / Continue ▶ / Pause ‖).
         const prim = els.panel && els.panel.querySelector('[data-act="primary"]');
@@ -865,10 +901,11 @@
     // ========================================================================
     // BREAKPOINTS (Monaco glyph margin)
     // ========================================================================
-    function wireEditor() {
-        const ed = mainEditor();
+    function wireEditor(ed) {
         const monaco = mon();
         if (!ed || !monaco) { console.warn('[Debugger] editor/monaco unavailable at init'); return; }
+        if (wiredEditors.has(ed)) return;
+        wiredEditors.add(ed);
         const MT = monaco.editor.MouseTargetType;
         // Accept any click in the left gutter (glyph margin, line numbers, or the
         // line-decorations strip) so the breakpoint target is easy to hit.
@@ -882,9 +919,12 @@
             if (ev && ev.leftButton === false) return;
             const line = e.target.position && e.target.position.lineNumber;
             if (!line) return;
-            if (ev && ev.altKey) addConditionalBreakpoint(line);
-            else if (ev && (ev.ctrlKey || ev.metaKey)) toggleEnableBreakpoint(line);
-            else toggleBreakpoint(line);
+            // The file of the pane that was clicked: the click lands before the
+            // pane takes focus, so the focused tab may still be the other one.
+            const path = pathIn(ed);
+            if (ev && ev.altKey) addConditionalBreakpoint(line, path);
+            else if (ev && (ev.ctrlKey || ev.metaKey)) toggleEnableBreakpoint(line, path);
+            else toggleBreakpoint(line, path);
         });
 
         // Hover affordance: show a faint breakpoint under the cursor while it is
@@ -892,81 +932,103 @@
         ed.onMouseMove((e) => {
             const t = e.target && e.target.type;
             const line = (GUTTER.has(t) && e.target.position) ? e.target.position.lineNumber : 0;
-            if (line === hoverLine) return;
-            hoverLine = line;
-            renderHoverGlyph();
+            const s = paneOf(ed);
+            if (line === s.hoverLine) return;
+            s.hoverLine = line;
+            renderHoverGlyph(ed);
         });
-        ed.onMouseLeave(() => { if (hoverLine) { hoverLine = 0; renderHoverGlyph(); } });
+        ed.onMouseLeave(() => {
+            const s = paneOf(ed);
+            if (s.hoverLine) { s.hoverLine = 0; renderHoverGlyph(ed); }
+        });
 
-        // Breakpoints are kept by line number. Monaco moves their glyphs as lines are
-        // added or removed above them; copy those moves back so the next redraw and
-        // the next debug run use the line the code is on now.
-        ed.onDidChangeModelContent(() => {
-            const m = bpByFile.get(bpDecoKey);
-            const model = ed.getModel();
-            if (!m || !model || !bpDecoIds.length) return;
-            let moved = false;
-            const next = new Map();
-            bpDecoIds.forEach((id, i) => {
-                const bp = m.get(bpDecoLines[i]);
-                const r = model.getDecorationRange(id);
-                if (!bp || !r) return;
-                if (r.startLineNumber !== bpDecoLines[i]) moved = true;
-                if (!next.has(r.startLineNumber)) next.set(r.startLineNumber, bp);
-                // Deleting the lines between two breakpoints merges them into one.
-                else if (next.get(r.startLineNumber) !== bp && bp.id != null) {
-                    Promise.resolve().then(() => api().debugRemoveBreakpoint(bp.id)).catch(() => { });
-                }
-            });
-            if (!moved) return;
-            m.clear();
-            for (const [line, bp] of next) m.set(line, bp);
-            bpDecoLines = bpDecoIds.map(id => (model.getDecorationRange(id) || { startLineNumber: 0 }).startLineNumber);
-        });
+        ed.onDidChangeModelContent(() => trackBreakpointMoves(ed));
+
+        // The pane now shows another file: draw that file's marks. paneOf()
+        // removes the old ones from the file the pane left.
+        ed.onDidChangeModel(() => renderPane(ed));
 
         // Run to Cursor — context-menu action, visible only while stopped (via a
         // context key) instead of always showing and no-oping.
         try {
-            if (ed.createContextKey) dbgStoppedCtx = ed.createContextKey('samekoDebugStopped', false);
+            const stoppedKey = ed.createContextKey ? ed.createContextKey('samekoDebugStopped', state === 'stopped') : null;
+            if (stoppedKey) stoppedCtxKeys.push(stoppedKey);
             ed.addAction({
                 id: 'sameko-run-to-cursor',
                 label: 'Debug: Run to Cursor',
                 contextMenuGroupId: 'debug',
                 contextMenuOrder: 1.5,
-                precondition: dbgStoppedCtx ? 'samekoDebugStopped' : undefined,
+                precondition: stoppedKey ? 'samekoDebugStopped' : undefined,
                 run: (edi) => {
                     if (state !== 'stopped') return;
-                    const path = activePath();
+                    const path = pathIn(edi);
                     const pos = edi.getPosition && edi.getPosition();
                     if (path && pos) { try { api().debugRunToLine(path, pos.lineNumber); } catch (_) { } }
                 },
             });
         } catch (_) { /* older Monaco without addAction — skip */ }
+        renderPane(ed);
+    }
+
+    /**
+     * Breakpoints are kept by line number. Monaco moves their glyphs as lines are
+     * added or removed above them; copy those moves back so the next redraw and
+     * the next debug run use the line the code is on now. When both panes show
+     * the same file only the first one does this, then the other is redrawn.
+     */
+    function trackBreakpointMoves(ed) {
+        const model = ed.getModel();
+        if (!model || editors().find(x => x.getModel() === model) !== ed) return;
+        const s = paneOf(ed);
+        const m = bpByFile.get(s.bpKey);
+        if (!m || !s.bp.length) return;
+        let moved = false;
+        const next = new Map();
+        s.bp.forEach((id, i) => {
+            const bp = m.get(s.bpLines[i]);
+            const r = model.getDecorationRange(id);
+            if (!bp || !r) return;
+            if (r.startLineNumber !== s.bpLines[i]) moved = true;
+            if (!next.has(r.startLineNumber)) next.set(r.startLineNumber, bp);
+            // Deleting the lines between two breakpoints merges them into one.
+            else if (next.get(r.startLineNumber) !== bp) {
+                for (const oldId of [bp.id, bp.staleId]) {
+                    if (oldId != null) Promise.resolve().then(() => api().debugRemoveBreakpoint(oldId)).catch(() => { });
+                }
+            }
+        });
+        if (!moved) return;
+        m.clear();
+        for (const [line, bp] of next) m.set(line, bp);
+        s.bpLines = s.bp.map(id => (model.getDecorationRange(id) || { startLineNumber: 0 }).startLineNumber);
+        for (const other of editors()) {
+            if (other !== ed && other.getModel() === model) renderPaneBreakpoints(other);
+        }
     }
 
     /** Draw/clear the faint hover breakpoint (skipped on lines that already have one). */
-    function renderHoverGlyph() {
-        const ed = mainEditor();
+    function renderHoverGlyph(ed) {
         const monaco = mon();
         if (!ed || !monaco) return;
+        const s = paneOf(ed);
         let decos = [];
-        const m = bpByFile.get(norm(activePath()));
-        if (hoverLine && !(m && m.has(hoverLine))) {
+        const path = pathIn(ed);
+        const m = path ? bpByFile.get(norm(path)) : null;
+        if (s.hoverLine && !(m && m.has(s.hoverLine))) {
             decos = [{
-                range: new monaco.Range(hoverLine, 1, hoverLine, 1),
+                range: new monaco.Range(s.hoverLine, 1, s.hoverLine, 1),
                 options: { glyphMarginClassName: 'sameko-bp-hover' },
             }];
         }
-        hoverDecoIds = ed.deltaDecorations(hoverDecoIds, decos);
+        s.hover = ed.deltaDecorations(s.hover, decos);
     }
 
     /** Ctrl/Cmd+click a breakpoint to toggle enabled/disabled (keeps the entry). */
-    async function toggleEnableBreakpoint(line) {
-        const path = activePath();
+    async function toggleEnableBreakpoint(line, path = activePath()) {
         if (!path) return;
         const m = bpByFile.get(norm(path));
         const bp = m && m.get(line);
-        if (!bp) { toggleBreakpoint(line); return; }   // nothing there → fall back to add
+        if (!bp) { toggleBreakpoint(line, path); return; }   // nothing there → fall back to add
         bp.enabled = bp.enabled === false;             // flip (undefined/true -> false, false -> true)
         renderBreakpoints();
         if (bp.id != null && isSessionLive()) {
@@ -985,15 +1047,16 @@
         return m;
     }
 
-    async function toggleBreakpoint(line) {
-        const path = activePath();
+    async function toggleBreakpoint(line, path = activePath()) {
         if (!path) { sys('Save the file before setting breakpoints.', 'warning'); return; }
         const m = fileMap(path);
         if (m.has(line)) {
             const bp = m.get(line);
             m.delete(line);
             renderBreakpoints();            // instant visual feedback, before the gdb round-trip
-            if (bp.id != null) { try { await api().debugRemoveBreakpoint(bp.id); } catch (_) { } }
+            for (const oldId of [bp.id, bp.staleId]) {
+                if (oldId != null) { try { await api().debugRemoveBreakpoint(oldId); } catch (_) { } }
+            }
         } else {
             const bp = { condition: null, id: null, enabled: true };
             m.set(line, bp);
@@ -1022,8 +1085,8 @@
             ov.id = 'sameko-debug-prompt';
             ov.innerHTML = `
               <div class="sdbg-prompt-card">
-                <div class="sdbg-prompt-h">${escapeHtml(title || 'Input')}</div>
-                <input class="sdbg-prompt-in" type="text" placeholder="${escapeHtml(placeholder || '')}" />
+                <div class="sdbg-prompt-h">${escHtml(title || 'Input')}</div>
+                <input class="sdbg-prompt-in" type="text" placeholder="${escHtml(placeholder || '')}" />
                 <div class="sdbg-prompt-row">
                   <button class="sdbg-prompt-cancel">Cancel</button>
                   <button class="sdbg-prompt-ok">OK</button>
@@ -1045,8 +1108,7 @@
         });
     }
 
-    async function addConditionalBreakpoint(line) {
-        const path = activePath();
+    async function addConditionalBreakpoint(line, path = activePath()) {
         if (!path) { sys('Save the file before setting breakpoints.', 'warning'); return; }
         const m = fileMap(path);
         const existing = m.get(line);
@@ -1060,24 +1122,57 @@
         bp.condition = cond.trim() || null;
         m.set(line, bp);
         if (state === 'stopped') {
-            if (bp.id != null) { try { await api().debugRemoveBreakpoint(bp.id); } catch (_) { } bp.id = null; }
+            for (const oldId of [bp.id, bp.staleId]) {
+                if (oldId != null) { try { await api().debugRemoveBreakpoint(oldId); } catch (_) { } }
+            }
+            bp.id = null;
+            bp.staleId = null;
             const r = await api().debugSetBreakpoint({ file: path, line, condition: bp.condition });
             if (r && r.ok) {
                 bp.id = r.id;
                 if (r.line && r.line !== line) { m.delete(line); m.set(r.line, bp); }
             }
         } else if (state === 'running' || state === 'starting') {
-            sys('Breakpoint will apply on next pause.', 'system');
+            // gdb still has the old condition. With async MI it accepts a new one
+            // while the program runs; if it refuses, syncPendingBreakpoints()
+            // replaces the breakpoint on the next pause.
+            let applied = false;
+            if (bp.id != null && typeof api().debugSetBreakpointCondition === 'function') {
+                try {
+                    const r = await api().debugSetBreakpointCondition(bp.id, bp.condition || '');
+                    applied = !!(r && r.ok);
+                } catch (_) { }
+            }
+            if (applied) {
+                sys('Breakpoint condition updated.', 'system');
+            } else {
+                if (bp.id != null) { bp.staleId = bp.id; bp.id = null; }
+                sys('Breakpoint will apply on next pause.', 'system');
+            }
         }
         renderBreakpoints();
     }
 
     function renderBreakpoints() {
-        const ed = mainEditor();
+        for (const ed of editors()) renderPaneBreakpoints(ed);
+        // Adding/removing a breakpoint ON the paused line flips its mark between
+        // the plain arrow and the dot+arrow, so the paused mark is redrawn too.
+        renderCurrentLine(false);
+    }
+
+    /** Every mark of one pane, e.g. after it switched to another file. */
+    function renderPane(ed) {
+        renderPaneBreakpoints(ed);
+        renderCurrentLine(false);
+        renderHistoryLine(isReplaying() ? history[histIndex] : null, false);
+    }
+
+    function renderPaneBreakpoints(ed) {
         const monaco = mon();
         if (!ed || !monaco) return;
-        const path = activePath();
-        const m = bpByFile.get(norm(path));
+        const s = paneOf(ed);
+        const path = pathIn(ed);
+        const m = path ? bpByFile.get(norm(path)) : null;
         const decos = [];
         if (m) {
             // Line the program is paused on, if it is in this file. Its glyph is
@@ -1114,32 +1209,27 @@
                 });
             }
         }
-        bpDecoIds = ed.deltaDecorations(bpDecoIds, decos);
-        bpDecoLines = decos.map(d => d.range.startLineNumber);
-        bpDecoKey = norm(path);
-        renderHoverGlyph();   // keep the hover ghost consistent with real breakpoints
-        // Adding/removing a breakpoint ON the paused line flips its mark between
-        // the plain arrow and the dot+arrow, so the paused mark is redrawn too.
-        renderCurrentLine(false);
+        s.bp = ed.deltaDecorations(s.bp, decos);
+        s.bpLines = decos.map(d => d.range.startLineNumber);
+        s.bpKey = norm(path);
+        renderHoverGlyph(ed);   // keep the hover ghost consistent with real breakpoints
     }
 
     /**
-     * The editor is about to show another file. Decoration ids are only valid
-     * for the model they were created on, so remove ours while that model is
-     * still attached — otherwise they would stay behind on the old file.
+     * An editor is about to show another file. Panes clean up after themselves
+     * when their model changes (paneOf), so this only drops the hover ghost.
      */
     function onFileHidden() {
-        const ed = mainEditor();
-        if (!ed) return;
-        bpDecoIds = ed.deltaDecorations(bpDecoIds, []);
-        curLineDecoIds = ed.deltaDecorations(curLineDecoIds, []);
-        hoverDecoIds = ed.deltaDecorations(hoverDecoIds, []);
-        histDecoIds = ed.deltaDecorations(histDecoIds, []);
-        hoverLine = 0;
+        for (const ed of editors()) {
+            const s = paneOf(ed);
+            s.hoverLine = 0;
+            s.hover = ed.deltaDecorations(s.hover, []);
+        }
     }
 
     /** Re-render decorations when the visible file changes (each tab has its own model). */
     function onFileShown() {
+        for (const ed of editors()) wireEditor(ed);
         renderBreakpoints();
         renderCurrentLine(true);
     }
@@ -1154,11 +1244,16 @@
      *   after a gutter click must NOT yank the caret away from the user.
      */
     function renderCurrentLine(reveal) {
-        const ed = mainEditor();
         const monaco = mon();
-        if (!ed || !monaco) return;
+        if (!monaco) return;
+        for (const ed of editors()) renderPaneCurrentLine(ed, monaco, reveal);
+    }
+
+    function renderPaneCurrentLine(ed, monaco, reveal) {
+        const s = paneOf(ed);
+        const path = pathIn(ed);
         let decos = [];
-        if (state === 'stopped' && stopLine && norm(stopFile) === norm(activePath())) {
+        if (state === 'stopped' && stopLine && path && norm(stopFile) === norm(path)) {
             // On a breakpoint the mark becomes the red dot with the arrow inside,
             // so "paused here" and "breakpoint here" stay tellable apart.
             const m = bpByFile.get(norm(stopFile));
@@ -1183,7 +1278,7 @@
                 ed.setPosition({ lineNumber: stopLine, column: 1 });
             }
         }
-        curLineDecoIds = ed.deltaDecorations(curLineDecoIds, decos);
+        s.cur = ed.deltaDecorations(s.cur, decos);
     }
 
     // ========================================================================
@@ -1198,15 +1293,28 @@
         if (isSessionLive()) { return continueExec(); }
         let tab = activeTab();
         if (!tab) { sys('⚠ Open a C++ file before debugging.', 'error'); return; }
+        if (typeof isCppTab === 'function' && !isCppTab(tab)) {
+            sys(`⚠ ${tab.name} is not a C/C++ file. Switch to the solution's tab to debug it.`, 'error');
+            return;
+        }
         if (!tab.path) {
             sys('⚠ Please save the file first (Ctrl+S) — the debugger needs a file on disk. Opening Save…', 'error');
             try { if (typeof window.saveAs === 'function') await window.saveAs(); } catch (_) { }
             tab = activeTab();
             if (!tab || !tab.path) { sys('Debug cancelled: file not saved.', 'warning'); return; }
         }
-        const ed = mainEditor();
-        if (ed) tab.content = ed.getValue();
-        try { await api().saveFile({ path: tab.path, content: tab.content }); } catch (_) { }
+        // The focused tab may be the right pane's: read its own model, never
+        // whichever file the left editor happens to show.
+        if (tab.model && !tab.model.isDisposed()) tab.content = tab.model.getValue();
+        const text = tab.content;
+        let saved = null;
+        try { saved = await api().saveFile({ path: tab.path, content: text }); }
+        catch (e) { saved = { success: false, error: e && e.message ? e.message : String(e) }; }
+        if (!saved || saved.success === false) {
+            sys('Could not save ' + tab.name + ': ' + ((saved && saved.error) || 'unknown error') + '. Debugging needs the file on disk.', 'error');
+            return;
+        }
+        if (typeof markTabSaved === 'function') markTabSaved(tab, text);
 
         showPanel(true);
         maybeShowGuide();
@@ -1293,7 +1401,7 @@
         bpByFile.delete(from);
         bpByFile.set(to, m);
         realPathByKey.set(to, newPath);
-        if (bpDecoKey === from) bpDecoKey = to;
+        for (const s of paneState.values()) if (s.bpKey === from) s.bpKey = to;
         renderBreakpoints();
     }
 
@@ -1314,6 +1422,11 @@
             const realPath = resolveRealPath(key) || key;
             for (const [line, bp] of Array.from(m.entries())) {
                 if (bp.id != null) continue;
+                if (bp.staleId != null) {
+                    const oldId = bp.staleId;
+                    bp.staleId = null;
+                    try { await api().debugRemoveBreakpoint(oldId); } catch (_) { }
+                }
                 try {
                     const r = await api().debugSetBreakpoint({ file: realPath, line, condition: bp.condition });
                     if (r && r.ok) {
@@ -1374,7 +1487,7 @@
         // program finishes looked like a crash — the user closes it via ✕.
         setTreesPlaceholder(reason || 'Set a breakpoint, then F5.');
         // keep breakpoints, but their gdb ids + pending flags are now stale.
-        for (const m of bpByFile.values()) for (const bp of m.values()) { bp.id = null; bp.pending = false; }
+        for (const m of bpByFile.values()) for (const bp of m.values()) { bp.id = null; bp.staleId = null; bp.pending = false; }
         renderBreakpoints();
     }
 
@@ -1523,7 +1636,7 @@
         const tabs = (window.App && window.App.tabs) || [];
         const existing = tabs.find(t => t.path && norm(t.path) === norm(path));
         const target = existing ? existing.path : path;
-        if (norm(target) === norm(activePath())) return;
+        if (editors().some(ed => norm(pathIn(ed)) === norm(target))) return;
         const fn = (typeof openFileFromPath === 'function') ? openFileFromPath
             : (typeof window.openFileFromPath === 'function' ? window.openFileFromPath : null);
         if (fn) { try { await fn(target); } catch (_) { } }
@@ -1544,7 +1657,7 @@
             row.className = 'sdbg-frame' + (sel ? ' sel' : '');
             const loc = (f.file ? f.file.split(/[\\/]/).pop() : '??') + (f.line ? ':' + f.line : '');
             row.innerHTML = `<span class="tick">${sel ? '✓' : ''}</span>`
-                + `<span class="fn">${escapeHtml(f.func || '??')}</span> <span class="loc">${escapeHtml(loc)}</span>`;
+                + `<span class="fn">${escHtml(f.func || '??')}</span> <span class="loc">${escHtml(loc)}</span>`;
             row.addEventListener('click', () => selectFrame(i));
             els.stack.appendChild(row);
         });
@@ -1746,8 +1859,8 @@
         row.className = 'sdbg-row';
         row.style.paddingLeft = (8 + depth * 14) + 'px';
         const tw = expandable ? '<span class="sdbg-tw">&#9654;</span>' : '<span class="sdbg-tw"></span>';
-        row.innerHTML = `${tw}<span class="sdbg-name">${escapeHtml(label)}</span>`
-            + `<span class="sdbg-eq">=</span><span class="sdbg-val">${escapeHtml(String(value))}</span>`;
+        row.innerHTML = `${tw}<span class="sdbg-name">${escHtml(label)}</span>`
+            + `<span class="sdbg-eq">=</span><span class="sdbg-val">${escHtml(String(value))}</span>`;
         if (watch) {
             const del = document.createElement('span');
             del.className = 'sdbg-del';
@@ -1856,8 +1969,9 @@
     async function provideHover(model, position) {
         if (state !== 'stopped') return null;
         let expr = null;
-        const sel = mainEditor() && mainEditor().getSelection();
-        if (sel && !sel.isEmpty() && sel.containsPosition(position)) {
+        const sel = editors().filter(ed => ed.getModel() === model).map(ed => ed.getSelection())
+            .find(s => s && !s.isEmpty() && s.containsPosition(position));
+        if (sel) {
             expr = model.getValueInRange(sel);
         } else {
             const w = model.getWordAtPosition(position);
@@ -1884,12 +1998,6 @@
     }
 
     // ---- util --------------------------------------------------------------
-    function escapeHtml(s) {
-        return String(s).replace(/[&<>"']/g, c => (
-            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
-        ));
-    }
-
     // ---- public api --------------------------------------------------------
     // Keyboard shortcuts land here. A manual command means the user has taken
     // over, so it cancels Auto dry run just like clicking the toolbar does.
@@ -1905,6 +2013,8 @@
         onFileShown,
         onFileHidden,
         onFileRenamed,
+        /** Called when the split view creates its editor. */
+        attachEditor: (ed) => { if (inited) wireEditor(ed); },
         isActive: () => isSessionLive(),
     };
 

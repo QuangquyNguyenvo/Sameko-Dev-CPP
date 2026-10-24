@@ -54,6 +54,8 @@ const FileExplorer = {
     hiddenBuildCount: 0,       // how many were hidden in the loaded part of the tree
     filterText: '',
     _allFiles: null,           // every file under the folder, for the filter; null = not walked yet
+    _allFilesScan: null,       // { gen, promise } of the walk in progress
+    _allFilesGen: 0,           // bumped on refresh, so an older walk cannot fill the cache
 
     // ==================== CONTEST MODE STATE ====================
     displayMode: 'normal', // 'normal' | 'contest'
@@ -129,6 +131,13 @@ const FileExplorer = {
             for (const p of contestMeta.problems) {
                 p.timeSpentMs = this.accumulated[p.id] || 0;
             }
+        },
+
+        /** Start over for another contest: problem ids (A, B, …) repeat across contests. */
+        reset() {
+            this.accumulated = {};
+            this.sessionStart = null;
+            this.currentProblem = null;
         }
     },
 
@@ -631,12 +640,14 @@ const FileExplorer = {
             if (window.electronAPI && window.electronAPI.readDirectory) {
                 this.tree = await this.loadDirectory(this.currentFolder);
                 this._allFiles = null;
+                this._allFilesGen++;
                 if (this.filterText) await this.collectAllFiles();
 
                 // Determine display mode (contest or normal)
                 this.displayMode = this.resolveDisplayMode(this.currentFolder, this.tree);
 
                 if (this.displayMode === 'contest') {
+                    if (this.contestFolder !== this.currentFolder) this.leaveContest();
                     this.contestFolder = this.currentFolder;
                     // Load .sameko if exists
                     const meta = await this.loadContestMeta(this.currentFolder);
@@ -649,9 +660,8 @@ const FileExplorer = {
                         await this.saveContestMeta(this.currentFolder, this.contestMeta);
                         this.SessionTimer.loadFromMeta(this.contestMeta);
                     }
-                } else {
-                    this.contestMeta = null;
-                    this.contestFolder = null;
+                } else if (this.contestFolder) {
+                    this.leaveContest();
                 }
 
                 // Sync collection folders with disk contents
@@ -798,6 +808,47 @@ const FileExplorer = {
     },
 
     /**
+     * Save the active contest's metadata (with the time spent so far) and stop
+     * editing it. Called before another contest becomes the active one, so a
+     * status change can never write one contest's .sameko into another folder.
+     */
+    leaveContest() {
+        if (this.contestMeta && this.contestFolder && window.electronAPI?.writeSameko) {
+            this.SessionTimer.saveToMeta(this.contestMeta);
+            window.electronAPI.writeSameko(this.contestFolder, this.contestMeta).catch(() => { });
+        }
+        this.SessionTimer.reset();
+        this.contestMeta = null;
+        this.contestFolder = null;
+    },
+
+    /**
+     * Older versions numbered a new approach by the count of approaches, so
+     * after a deletion two could share an id and picking the newer one loaded
+     * the older. Give each later duplicate an unused id.
+     */
+    dedupeApproachIds(meta) {
+        for (const prob of (meta && Array.isArray(meta.problems) ? meta.problems : [])) {
+            if (!Array.isArray(prob.approaches)) continue;
+            const seen = new Set();
+            for (const a of prob.approaches) {
+                if (!a || !seen.has(a.id)) { if (a) seen.add(a.id); continue; }
+                a.id = this.nextApproachId(prob);
+                seen.add(a.id);
+            }
+        }
+        return meta;
+    },
+
+    /** v1, v2, … : one more than the highest number in use (deleting v2 of v1..v3 gives v4 next). */
+    nextApproachId(prob) {
+        const used = (prob.approaches || [])
+            .map(a => parseInt(String(a && a.id || '').replace(/^v/, ''), 10))
+            .filter(n => Number.isFinite(n));
+        return 'v' + (Math.max((prob.approaches || []).length, 0, ...used) + 1);
+    },
+
+    /**
      * Load .sameko metadata for a contest folder
      */
     async loadContestMeta(folderPath) {
@@ -805,7 +856,7 @@ const FileExplorer = {
         try {
             const result = await window.electronAPI.readSameko(folderPath);
             if (result.exists && result.data) {
-                return result.data;
+                return this.dedupeApproachIds(result.data);
             }
         } catch (e) {
             console.error('[FileExplorer] Failed to load .sameko:', e);
@@ -934,24 +985,71 @@ const FileExplorer = {
         }
     },
 
+    /** The open tab of a file, or null. */
+    findOpenTab(filePath) {
+        const app = window.App;
+        if (!app || !Array.isArray(app.tabs) || !filePath) return null;
+        const key = (p) => (typeof pathKey === 'function' ? pathKey(p) : String(p || '').replace(/\\/g, '/'));
+        const target = key(filePath);
+        return app.tabs.find(t => t.path && key(t.path) === target) || null;
+    },
+
+    /** Current text of a file: its tab's document when open, else the file on disk (null if unreadable). */
+    async readCurrentFileText(filePath) {
+        const tab = this.findOpenTab(filePath);
+        if (tab) {
+            return tab.model && !tab.model.isDisposed() ? tab.model.getValue() : (tab.content || '');
+        }
+        try {
+            return await window.electronAPI.readFile(filePath);
+        } catch (err) {
+            console.error('[FileExplorer] Could not read file:', err);
+            return null;
+        }
+    },
+
+    /** Replace the whole text of a tab as one undoable edit; the tab becomes modified. */
+    replaceTabText(tab, text) {
+        const model = tab.model && !tab.model.isDisposed()
+            ? tab.model
+            : (typeof getTabModel === 'function' ? getTabModel(tab) : null);
+        if (model) {
+            model.pushStackElement();
+            model.pushEditOperations([], [{ range: model.getFullModelRange(), text }], () => null);
+            model.pushStackElement();
+        }
+        tab.content = text;
+        tab.modified = text !== tab.original;
+        window.App?.renderTabs?.();
+    },
+
     /**
-     * Save current editor content as a new approach in .sameko
+     * Save a problem's current code as a new approach in .sameko.
+     * @param {string} [filePath] the problem's source file; its own text is saved,
+     *   not whatever the editor happens to show.
      */
-    async saveApproachToMeta(problemId, name) {
+    async saveApproachToMeta(problemId, name, filePath) {
         if (!this.contestMeta) return;
         const prob = this.getProblemMeta(problemId);
         if (!prob) return;
 
         let content = '';
-        if (window.App && window.App.editor) {
+        if (filePath) {
+            content = await this.readCurrentFileText(filePath);
+            if (content === null) {
+                alert('Cannot save approach - the file could not be read.');
+                return;
+            }
+        } else if (window.App && window.App.editor) {
             content = window.App.editor.getValue();
         }
         if (!content) return;
 
-        const id = 'v' + (prob.approaches.length + 1);
+        if (!Array.isArray(prob.approaches)) prob.approaches = [];
+        const id = this.nextApproachId(prob);
         const approach = {
             id,
-            name: name || `Approach ${prob.approaches.length + 1}`,
+            name: name || `Approach ${id.slice(1)}`,
             status: prob.status || 'coding',
             savedAt: new Date().toISOString(),
             snapshot: content
@@ -964,9 +1062,10 @@ const FileExplorer = {
     },
 
     /**
-     * Load approach snapshot into editor
+     * Load an approach snapshot into its problem's tab (opened first if needed).
+     * Applied as one undoable edit, so Ctrl+Z brings the previous code back.
      */
-    loadApproachFromMeta(problemId, approachId) {
+    async loadApproachFromMeta(problemId, approachId, filePath) {
         if (!this.contestMeta) return;
         const prob = this.getProblemMeta(problemId);
         if (!prob) return;
@@ -974,14 +1073,19 @@ const FileExplorer = {
         const approach = prob.approaches.find(a => a.id === approachId);
         if (!approach || !approach.snapshot) return;
 
-        prob.activeApproach = approachId;
+        if (filePath) await this.openFile(filePath);
+        const tab = filePath ? this.findOpenTab(filePath) : null;
+        if (!tab) return;
 
-        if (window.App && window.App.editor) {
-            const model = window.App.editor.getModel();
-            if (model) {
-                model.setValue(approach.snapshot);
-            }
+        // Unsaved edits are about to be replaced: ask first (Ctrl+Z still undoes it).
+        const current = tab.model && !tab.model.isDisposed() ? tab.model.getValue() : (tab.content || '');
+        if (current !== approach.snapshot && tab.modified
+            && !confirm(`Load approach "${approach.name || approach.id}"?\n\nYour unsaved changes in ${tab.name} will be replaced (Ctrl+Z can bring them back).`)) {
+            return;
         }
+
+        prob.activeApproach = approachId;
+        if (current !== approach.snapshot) this.replaceTabText(tab, approach.snapshot);
 
         this.saveContestMeta(this.contestFolder, this.contestMeta);
         this.renderTree();
@@ -1056,6 +1160,24 @@ const FileExplorer = {
      */
     async collectAllFiles() {
         if (this._allFiles || !this.currentFolder) return this._allFiles || [];
+        // One walk per refresh, shared by the filter keystrokes that arrive while it
+        // runs (each keystroke used to start its own recursive walk).
+        const gen = this._allFilesGen;
+        if (this._allFilesScan && this._allFilesScan.gen === gen) return this._allFilesScan.promise;
+        const root = this.currentFolder;
+        const promise = this._walkAllFiles(root).then((out) => {
+            if (gen === this._allFilesGen && root === this.currentFolder) this._allFiles = out;
+            return out;
+        });
+        this._allFilesScan = { gen, promise };
+        try {
+            return await promise;
+        } finally {
+            if (this._allFilesScan && this._allFilesScan.promise === promise) this._allFilesScan = null;
+        }
+    },
+
+    async _walkAllFiles(root) {
         const out = [];
         const LIMIT = 3000;
         const walk = async (dir, depth) => {
@@ -1071,15 +1193,16 @@ const FileExplorer = {
                 else out.push({ name: item.name, path: full });
             }
         };
-        await walk(this.currentFolder.replace(/\\/g, '/'), 0);
-        this._allFiles = out;
+        await walk(root.replace(/\\/g, '/'), 0);
         return out;
     },
 
     async setFilter(text) {
-        this.filterText = String(text || '').trim();
-        document.getElementById('explorer-filter-clear')?.classList.toggle('hidden', !this.filterText);
-        if (this.filterText) await this.collectAllFiles();
+        const value = String(text || '').trim();
+        this.filterText = value;
+        document.getElementById('explorer-filter-clear')?.classList.toggle('hidden', !value);
+        if (value) await this.collectAllFiles();
+        if (this.filterText !== value) return; // a newer keystroke renders
         this.renderTree();
     },
 
@@ -1350,48 +1473,6 @@ const FileExplorer = {
                 </div>
             </div>
         `;
-    },
-
-    /**
-     * Render quick status bar (clickable problem chips)
-     */
-    renderQuickStatusBar() {
-        if (!this.contestMeta || !this.contestMeta.problems) return '';
-
-        const chips = this.contestMeta.problems.map((prob, idx) => {
-            const statusInfo = this.CP_STATUSES[prob.status] || this.CP_STATUSES.todo;
-            const icon = this.STATUS_ICONS[prob.status] || this.STATUS_ICONS.todo;
-            const timeStr = this.SessionTimer.getDisplay(prob.id);
-            const tooltip = `${prob.id}${prob.label ? ' · ' + prob.label : ''} · ${statusInfo.label}${timeStr ? ' · ' + timeStr : ''}\nCtrl+click to select · Shift+click for range`;
-            const isActive = this.isActiveProblem(prob.id);
-            const isSelected = this.selectedChips.has(prob.id);
-            // Show truncated label if set (max ~8 chars)
-            const shortLabel = prob.label ? (prob.label.length > 8 ? prob.label.slice(0, 7) + '…' : prob.label) : '';
-
-            return `
-                <div class="cp-problem-chip ${isActive ? 'active' : ''} ${isSelected ? 'cp-chip-selected' : ''} cp-status-${prob.status || 'todo'}"
-                     data-problem="${escHtml(prob.id)}" data-chip-idx="${idx}" title="${escHtml(tooltip)}">
-                    <span class="cp-chip-label">${escHtml(prob.id)}</span>
-                    ${shortLabel ? `<span class="cp-chip-sublabel">${escHtml(shortLabel)}</span>` : ''}
-                    <span class="cp-chip-icon">${icon}</span>
-                </div>
-            `;
-        }).join('');
-
-        const selCount = this.selectedChips.size;
-        const selBar = selCount > 0 ? `
-            <div class="cp-chip-selbar">
-                <span class="cp-chip-selcount">${selCount} selected</span>
-                <button class="cp-chip-del-btn" data-action="delete-selected-problems" title="Delete selected problems">
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                    Delete ${selCount}
-                </button>
-                <button class="cp-chip-clear-btn" data-action="clear-chip-selection" title="Clear selection">
-                    <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
-            </div>` : '';
-
-        return `<div class="cp-status-bar">${chips}</div>${selBar}`;
     },
 
     /**
@@ -1759,8 +1840,7 @@ const FileExplorer = {
                         // Contest mode approach — load from .sameko
                         const problemId = item.dataset.problemId;
                         const approachId = item.dataset.approachId;
-                        this.openFile(path);
-                        setTimeout(() => this.loadApproachFromMeta(problemId, approachId), 300);
+                        this.loadApproachFromMeta(problemId, approachId, path);
                     } else {
                         // Legacy approach
                         const approachId = item.dataset.approachId;
@@ -2258,15 +2338,7 @@ const FileExplorer = {
                     template = this.newFileTemplate(baseName, fileName.trim());
                 }
 
-                if (window.electronAPI && window.electronAPI.saveFile) {
-                    window.electronAPI.saveFile({ path: filePath, content: template }).then(() => {
-                        this.refreshTree();
-                        this.openFile(filePath);
-                    }).catch((err) => {
-                        console.error('[FileExplorer] Failed to create file in folder:', err);
-                        alert('Failed to create file: ' + (err?.message || err));
-                    });
-                }
+                this.createFileFromTemplate(filePath, template);
             });
         };
 
@@ -2583,6 +2655,19 @@ const FileExplorer = {
         try {
             // Check if electronAPI has writeFile
             if (window.electronAPI && window.electronAPI.saveFile) {
+                // Never clear an existing test file without asking.
+                const slash = Math.max(newPath.lastIndexOf('/'), newPath.lastIndexOf('\\'));
+                const dir = slash >= 0 ? newPath.slice(0, slash) : '';
+                const fileName = newPath.slice(slash + 1);
+                if (dir && window.electronAPI.readDirectory) {
+                    const entries = await window.electronAPI.readDirectory(dir);
+                    const exists = Array.isArray(entries) && entries.some(entry =>
+                        entry && !entry.isDirectory && String(entry.name).toLowerCase() === fileName.toLowerCase());
+                    if (exists && !confirm(`"${fileName}" already exists. Replace it with an empty file?`)) {
+                        return;
+                    }
+                }
+
                 await window.electronAPI.saveFile({ path: newPath, content: '' });
                 this.refreshTree();
             } else {
@@ -2674,8 +2759,8 @@ const FileExplorer = {
             currentItem.classList.add('active');
         }
 
-        // Open file via app's existing function
-        window.openFromPath?.(filePath);
+        // Open file via app's existing function (resolves once its tab exists)
+        return window.openFromPath?.(filePath);
     },
 
     /**
@@ -2794,22 +2879,17 @@ const FileExplorer = {
      * Save current file content as a new approach
      */
     saveAsApproach(filePath) {
-        // Check if this file is currently open in editor
-        const currentFilePath = window.App?.currentFilePath || window.currentFilePath;
-
-        if (!currentFilePath || currentFilePath !== filePath) {
+        // The file must be open: its tab holds the text being saved.
+        if (!this.findOpenTab(filePath)) {
             alert('Please open the file first before saving as approach.\n\nFile: ' + filePath.split(/[/\\]/).pop());
             return;
         }
 
-        this.showInputDialog('Save as New Approach', 'My Approach', (name) => {
+        this.showInputDialog('Save as New Approach', 'My Approach', async (name) => {
             if (!name || !name.trim()) return;
 
-            // Get current file content from editor
-            let content = '';
-            if (window.App && window.App.editor) {
-                content = window.App.editor.getValue();
-            }
+            // The file's own text, whichever pane shows it.
+            const content = (await this.readCurrentFileText(filePath)) || '';
 
             if (!content) {
                 alert('Cannot save approach - editor content is empty.');
@@ -2859,9 +2939,8 @@ const FileExplorer = {
         if (!approach) return;
 
         // Check if this file is currently open
-        const currentFilePath = window.App?.currentFilePath || window.currentFilePath;
-
-        if (!currentFilePath || currentFilePath !== filePath) {
+        const tab = this.findOpenTab(filePath);
+        if (!tab) {
             // Open the file first, then switch approach
             alert('Please open the file first, then click the approach again to switch.\n\nFile: ' + filePath.split(/[/\\]/).pop());
             this.openFile(filePath);
@@ -2876,14 +2955,8 @@ const FileExplorer = {
         // Set as current
         approaches.current = approachId;
 
-        // Load content into editor using execCommand to preserve some undo capability
-        if (window.App && window.App.editor) {
-            const editor = window.App.editor;
-            // Select all and replace - this can be undone with Ctrl+Z
-            editor.execCommand('selectAll');
-            editor.replaceSelection(approach.content);
-            editor.setCursor(0, 0);
-        }
+        // Replace the file's text as one edit - this can be undone with Ctrl+Z
+        this.replaceTabText(tab, approach.content || '');
 
         this.saveState();
         this.renderTree();
@@ -3135,7 +3208,7 @@ const FileExplorer = {
         }
 
         // Quick Status Bar chips & problem row items
-        const chips = this.elements.tree.querySelectorAll('.cp-problem-chip, .cp-problem-row-item');
+        const chips = this.elements.tree.querySelectorAll('.cp-problem-row-item');
         chips.forEach(chip => {
             chip.addEventListener('click', (e) => {
                 const problemId = chip.dataset.problem;
@@ -3355,7 +3428,7 @@ const FileExplorer = {
         menu.querySelector('[data-action="save-approach-meta"]').onclick = () => {
             menu.remove();
             this.showInputDialog('Save Approach', 'My Approach', (name) => {
-                if (name) this.saveApproachToMeta(problemId, name);
+                if (name) this.saveApproachToMeta(problemId, name, filePath);
             });
         };
 
@@ -3496,9 +3569,8 @@ const FileExplorer = {
         const loadBtn = menu.querySelector('[data-action="load-approach"]');
         if (loadBtn) {
             loadBtn.onclick = () => {
-                this.openFile(filePath);
-                setTimeout(() => this.loadApproachFromMeta(problemId, approachId), 300);
                 menu.remove();
+                this.loadApproachFromMeta(problemId, approachId, filePath);
             };
         }
 
@@ -3692,22 +3764,30 @@ const FileExplorer = {
                 });
 
                 if (result.success) {
-                    // Add as a contest sub-category (separate from collections)
-                    const color = this.CATEGORY_COLORS[this.categories.length % this.CATEGORY_COLORS.length];
-                    const catId = 'cat-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
-                    const newCat = {
-                        id: catId,
-                        name: name,
-                        color: color,
-                        type: 'contest',
-                        folderPath: result.contestDir,
-                        items: [],
-                        createdAt: new Date().toISOString(),
-                    };
+                    // The folder may already be one of our contests: add to it
+                    // instead of listing it twice.
+                    const key = (p) => (typeof pathKey === 'function' ? pathKey(p) : String(p || '').replace(/\\/g, '/'));
+                    let newCat = this.categories.find(c => c.type === 'contest' && c.folderPath && key(c.folderPath) === key(result.contestDir));
+                    if (!newCat) {
+                        // Add as a contest sub-category (separate from collections)
+                        const color = this.CATEGORY_COLORS[this.categories.length % this.CATEGORY_COLORS.length];
+                        const catId = 'cat-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+                        newCat = {
+                            id: catId,
+                            name: name,
+                            color: color,
+                            type: 'contest',
+                            folderPath: result.contestDir,
+                            items: [],
+                            createdAt: new Date().toISOString(),
+                        };
+                        this.categories.push(newCat);
+                    }
 
                     // Add the created problem files to the category
                     for (const pid of problemIds) {
                         const filePath = `${result.contestDir}/${pid}.cpp`.replace(/\\/g, '/');
+                        if (newCat.items.some(i => key(i.filePath) === key(filePath))) continue;
                         newCat.items.push({
                             filePath,
                             name: pid,
@@ -3717,7 +3797,7 @@ const FileExplorer = {
                         });
                     }
 
-                    this.categories.push(newCat);
+                    if (result.existed) this.reportExistingContest(name, result.added);
                     this.saveState();
                     await this.refreshTree();
                     closeDialog();
@@ -3817,69 +3897,40 @@ const FileExplorer = {
         const fileName = srcPath.split(/[/\\]/).pop();
         const destPath = `${this.currentFolder}/${fileName}`.replace(/\\/g, '/');
 
-        // Normalize paths for comparison
-        const normSrc = srcPath.replace(/\\/g, '/');
-        const normDest = destPath;
-        if (normSrc === normDest) return;
+        const key = (p) => (typeof pathKey === 'function' ? pathKey(p) : String(p || '').replace(/\\/g, '/'));
+        if (key(srcPath) === key(destPath)) return;
+        const api = window.electronAPI;
+        if (!api || !api.copyFile || !api.moveFile) return;
 
         try {
-            if (mode === 'cut') {
-                if (window.electronAPI && window.electronAPI.moveFile) {
-                    await window.electronAPI.moveFile(srcPath, destPath);
+            const transfer = (overwrite) => (mode === 'cut'
+                ? api.moveFile(srcPath, destPath, overwrite)
+                : api.copyFile(srcPath, destPath, overwrite));
+            let result = await transfer(false);
+            if (result && result.exists) {
+                // Its tab would keep showing the text that was just replaced.
+                if (this.findOpenTab(destPath)) {
+                    alert(`"${fileName}" already exists here and is open in a tab. Close that tab first to replace it.`);
+                    return;
                 }
+                if (!confirm(`"${fileName}" already exists in this folder.\n\nReplace it with the file being ${mode === 'cut' ? 'moved' : 'copied'}?`)) return;
+                result = await transfer(true);
+            }
+            if (!result || result.success === false) throw new Error((result && result.error) || 'unknown error');
+
+            if (mode === 'cut') {
                 this.clipboardFile = null;
                 this.selectedFilePath = destPath;
-            } else {
-                if (window.electronAPI && window.electronAPI.copyFile) {
-                    await window.electronAPI.copyFile(srcPath, destPath);
-                }
+                // An open tab of the moved file (or of files in a moved folder)
+                // now saves to the new place instead of recreating the old one.
+                if (typeof onFileRenamed === 'function') onFileRenamed(srcPath, destPath);
+                if (typeof onFolderRenamed === 'function') onFolderRenamed(srcPath, destPath);
             }
             await this.refreshTree();
         } catch (err) {
             console.error('[FileExplorer] Paste failed:', err);
             alert('Paste failed: ' + (err.message || err));
         }
-    },
-
-    /**
-     * Show a quick status picker for a contest problem (from right-click on chip)
-     */
-    showQuickStatusMenu(e, problemId) {
-        document.querySelectorAll('.explorer-context-menu').forEach(el => el.remove());
-
-        const prob = this.getProblemMeta(problemId);
-        const currentStatus = prob ? prob.status : 'todo';
-
-        const menu = document.createElement('div');
-        menu.className = 'explorer-context-menu';
-
-        let itemsHtml = `<div class="context-label" style="padding:4px 12px 2px;font-size:11px;opacity:.6;">Set Status — ${problemId}</div>`;
-        for (const [key, info] of Object.entries(this.CP_STATUSES)) {
-            const isActive = currentStatus === key;
-            itemsHtml += `
-                <div class="context-item ${isActive ? 'active' : ''}" data-status="${escHtml(key)}" style="gap:6px">
-                    <span>${this.STATUS_ICONS[key]}</span>
-                    <span>${escHtml(info.label)}</span>
-                    ${isActive ? this.ICONS.check : ''}
-                </div>`;
-        }
-        menu.innerHTML = itemsHtml;
-
-        this.positionMenu(menu, e.clientX, e.clientY);
-
-        menu.querySelectorAll('[data-status]').forEach(item => {
-            item.onclick = () => {
-                this.setProblemStatus(problemId, item.dataset.status);
-                menu.remove();
-            };
-        });
-
-        setTimeout(() => {
-            document.addEventListener('click', function close() {
-                menu.remove();
-                document.removeEventListener('click', close);
-            });
-        }, 10);
     },
 
     /**
@@ -4064,6 +4115,7 @@ const FileExplorer = {
                     this.loadCategoriesForFolder(this.currentFolder);
                     await this.refreshTree();
                     this.saveState();
+                    if (result.existed) this.reportExistingContest(name, result.added);
                     closeDialog();
                 } else {
                     alert('Failed to create contest: ' + (result.error || 'Unknown error'));
@@ -4083,6 +4135,14 @@ const FileExplorer = {
             if (e.key === 'Escape') closeDialog();
             if (e.key === 'Enter') createContest();
         };
+    },
+
+    /** A contest with that name was already there: say what happened to it. */
+    reportExistingContest(name, added) {
+        const extra = added && added.length ? `; added ${added.join(', ')}` : '; no new problems were needed';
+        const msg = `Contest "${name}" already existed: its statuses, times and approaches were kept${extra}.`;
+        if (typeof showToast === 'function') showToast(msg, 'info');
+        else alert(msg);
     },
 
     /**
@@ -4166,14 +4226,20 @@ const FileExplorer = {
             const oldName = cat.name;
             cat.name = newName.trim();
 
-            // Rename folder on disk if it exists
+            // Rename folder on disk if it exists (in place: it may not be in the open folder)
             if (cat.folderPath && this.currentFolder) {
                 const sanitizedNew = newName.trim().replace(/[<>:"/\\|?*]/g, '_');
-                const newFolderPath = `${this.currentFolder}/${sanitizedNew}`.replace(/\\/g, '/');
+                const parentDir = cat.folderPath.replace(/\\/g, '/').replace(/\/[^/]+\/?$/, '');
+                const newFolderPath = `${parentDir}/${sanitizedNew}`.replace(/\\/g, '/');
                 if (cat.folderPath !== newFolderPath) {
                     try {
                         if (window.electronAPI && window.electronAPI.moveFile) {
-                            await window.electronAPI.moveFile(cat.folderPath, newFolderPath);
+                            const moved = await window.electronAPI.moveFile(cat.folderPath, newFolderPath);
+                            if (!moved || moved.success === false) throw new Error((moved && moved.error) || 'the folder could not be renamed');
+                            // Open files inside it, and the active contest, follow the folder.
+                            if (typeof onFolderRenamed === 'function') onFolderRenamed(cat.folderPath, newFolderPath);
+                            const key = (p) => (typeof pathKey === 'function' ? pathKey(p) : String(p || '').replace(/\\/g, '/'));
+                            if (this.contestFolder && key(this.contestFolder) === key(cat.folderPath)) this.contestFolder = newFolderPath;
                             // Update all item paths
                             const oldPrefix = cat.folderPath.replace(/\\/g, '/');
                             const newPrefix = newFolderPath;
@@ -4186,7 +4252,10 @@ const FileExplorer = {
                             cat.folderPath = newFolderPath;
                         }
                     } catch (err) {
+                        // The folder kept its name, so the category does too.
+                        cat.name = oldName;
                         console.warn('[FileExplorer] Could not rename collection folder:', err);
+                        alert('Could not rename the folder: ' + (err.message || err));
                     }
                 }
             }
@@ -4214,7 +4283,20 @@ const FileExplorer = {
         if (!cat || cat.type !== 'contest') return;
 
         this.activeContestId = cat.id;
-        this.contestFolder = cat.folderPath;
+        if (this.contestFolder !== cat.folderPath) {
+            // The metadata belongs to its folder: never edit B with A's .sameko.
+            this.leaveContest();
+            this.contestFolder = cat.folderPath;
+            const folder = cat.folderPath;
+            if (folder) {
+                this.loadContestMeta(folder).then((meta) => {
+                    if (this.contestFolder !== folder || this.contestMeta) return;   // switched again meanwhile
+                    this.contestMeta = meta;
+                    if (meta) this.SessionTimer.loadFromMeta(meta);
+                    this.renderTree ? this.renderTree() : this.renderEmptyState();
+                }).catch(() => { });
+            }
+        }
 
         // Auto-expand this active contest, and collapse all other contest categories
         this.collapsedCategories.delete(cat.id);
@@ -5553,16 +5635,45 @@ const FileExplorer = {
                 template = this.newFileTemplate(baseName, fileName.trim());
             }
 
-            if (window.electronAPI && window.electronAPI.saveFile) {
-                window.electronAPI.saveFile({ path: filePath, content: template }).then(() => {
-                    this.refreshTree();
-                    this.openFile(filePath);
-                }).catch((err) => {
-                    console.error('[FileExplorer] Failed to create new file:', err);
-                    alert('Failed to create file: ' + (err?.message || err));
-                });
-            }
+            this.createFileFromTemplate(filePath, template);
         });
+    },
+
+    /** True when `dir` holds a file named `fileName` (case-insensitive, so it errs on "exists"). */
+    async fileExistsIn(dir, fileName) {
+        try {
+            const entries = await window.electronAPI.readDirectory(dir);
+            const wanted = String(fileName).toLowerCase();
+            return Array.isArray(entries) && entries.some(e => e && !e.isDirectory
+                && String(e.name || '').toLowerCase() === wanted);
+        } catch (_) {
+            return false; // folder not there yet
+        }
+    },
+
+    /**
+     * New File: write the template, but never over an existing file (saveFile
+     * replaces whatever is there). A name that is taken opens that file instead.
+     */
+    async createFileFromTemplate(filePath, template) {
+        if (!window.electronAPI || !window.electronAPI.saveFile) return;
+        const slash = filePath.lastIndexOf('/');
+        const dir = filePath.slice(0, slash);
+        const fileName = filePath.slice(slash + 1);
+        try {
+            if (await this.fileExistsIn(dir, fileName)) {
+                if (typeof showToast === 'function') showToast(`"${fileName}" already exists: opened it instead.`, 'warning');
+                this.openFile(filePath);
+                return;
+            }
+            const result = await window.electronAPI.saveFile({ path: filePath, content: template });
+            if (result && result.success === false) throw new Error(result.error || 'could not write the file');
+            await this.refreshTree();
+            this.openFile(filePath);
+        } catch (err) {
+            console.error('[FileExplorer] Failed to create file:', err);
+            alert('Failed to create file: ' + (err?.message || err));
+        }
     },
 
     /**
@@ -5600,7 +5711,15 @@ const FileExplorer = {
             if (!/\.[^.]+$/.test(fileName)) fileName += '.cpp';
 
             const filePath = `${folderPath}/${fileName}`.replace(/\\/g, '/');
-            const content = tab.content || '';
+            const content = tab.model && !tab.model.isDisposed() ? tab.model.getValue() : (tab.content || '');
+
+            // saveFile replaces whatever is there: ask before overwriting a file.
+            try {
+                const entries = await window.electronAPI.readDirectory(folderPath);
+                const taken = Array.isArray(entries) && entries.some(e => e && !e.isDirectory
+                    && String(e.name || '').toLowerCase() === fileName.toLowerCase());
+                if (taken && !confirm(`"${fileName}" already exists in "${cat.name}".\n\nReplace it?`)) return;
+            } catch (_) { /* folder not there yet */ }
 
             // Ensure folder exists
             try {
@@ -5620,10 +5739,12 @@ const FileExplorer = {
                         this.addFileToCategory(catId, filePath, baseName, 'todo');
 
                         // Update the tab to point to the saved file
+                        if (typeof closeClangdDocument === 'function') closeClangdDocument(tab.path || tab.id);
                         tab.path = filePath;
                         tab.name = fileName;
-                        tab.modified = false;
-                        if (window.App && window.App.renderTabs) window.App.renderTabs();
+                        if (typeof startFileWatch === 'function') startFileWatch(filePath);
+                        if (typeof markTabSaved === 'function') markTabSaved(tab, content);
+                        else { tab.original = content; tab.modified = false; window.App?.renderTabs?.(); }
                         if (window.App && window.App.updateTitle) window.App.updateTitle();
 
                         await this.refreshTree();
@@ -5643,7 +5764,7 @@ const FileExplorer = {
      * Used when no currentFolder is available.
      */
     async _saveUntitledViaSaveAs(catId, tab) {
-        const content = tab.content || '';
+        const content = tab.model && !tab.model.isDisposed() ? tab.model.getValue() : (tab.content || '');
         try {
             if (window.electronAPI && window.electronAPI.saveFileDialog) {
                 const result = await window.electronAPI.saveFileDialog(content);
@@ -5656,10 +5777,12 @@ const FileExplorer = {
                     this.addFileToCategory(catId, savedPath, baseName, 'todo');
 
                     // Update the tab to point to the saved file
+                    if (typeof closeClangdDocument === 'function') closeClangdDocument(tab.path || tab.id);
                     tab.path = savedPath;
                     tab.name = fileName;
-                    tab.modified = false;
-                    if (window.App && window.App.renderTabs) window.App.renderTabs();
+                    if (typeof startFileWatch === 'function') startFileWatch(savedPath);
+                    if (typeof markTabSaved === 'function') markTabSaved(tab, content);
+                    else { tab.original = content; tab.modified = false; window.App?.renderTabs?.(); }
                     if (window.App && window.App.updateTitle) window.App.updateTitle();
 
                     this.renderTree ? this.renderTree() : this.renderEmptyState();

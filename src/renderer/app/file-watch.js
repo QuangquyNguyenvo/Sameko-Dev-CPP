@@ -10,7 +10,7 @@
 // ============================================================================
 // FILE WATCHER - Detect external changes
 // ============================================================================
-let pendingReloadNotifications = new Set(); // Track which files have pending notifications
+const pendingReloadNotifications = new Set(); // pathKey of each file with a prompt on screen
 
 
 function startFileWatch(filePath) {
@@ -20,34 +20,54 @@ function startFileWatch(filePath) {
 
 
 function stopFileWatch(filePath) {
-    if (!filePath || !window.electronAPI?.unwatchFile) return;
+    if (!filePath) return;
+    // The file is no longer open under this path (closed, renamed, Save As).
+    dismissReloadNotification(filePath);
+    if (!window.electronAPI?.unwatchFile) return;
     window.electronAPI.unwatchFile(filePath);
+}
+
+/**
+ * The tab of a file, looked up when it is needed: the tab that raised a prompt
+ * may have been closed and the file reopened in a new tab since.
+ */
+function tabForPath(filePath) {
+    const key = pathKey(filePath);
+    return App.tabs.find(t => t.path && pathKey(t.path) === key) || null;
+}
+
+function dismissReloadNotification(filePath) {
+    const key = pathKey(filePath);
+    pendingReloadNotifications.delete(key);
+    for (const el of document.querySelectorAll('.reload-notification')) {
+        if (el.dataset.key === key) el.remove();
+    }
 }
 
 // Handle external file change notification
 function handleExternalFileChange(filePath) {
+    const key = pathKey(filePath);
+    if (pendingReloadNotifications.has(key)) return;   // one prompt per file is enough
 
-    if (pendingReloadNotifications.has(filePath)) return;
-
-
-    const tab = App.tabs.find(t => t.path === filePath);
+    const tab = tabForPath(filePath);
     if (!tab) return;
 
-    pendingReloadNotifications.add(filePath);
-
-
+    pendingReloadNotifications.add(key);
     showReloadNotification(tab);
 }
 
 // Show reload notification popup (similar to Dev-C++)
 function showReloadNotification(tab) {
-
-    const existingNotif = document.querySelector(`.reload-notification[data-path="${CSS.escape(tab.path)}"]`);
-    if (existingNotif) existingNotif.remove();
+    const filePath = tab.path;
+    const key = pathKey(filePath);
+    for (const el of document.querySelectorAll('.reload-notification')) {
+        if (el.dataset.key === key) el.remove();
+    }
 
     const notification = document.createElement('div');
     notification.className = 'reload-notification';
-    notification.dataset.path = tab.path;
+    notification.dataset.path = filePath;
+    notification.dataset.key = key;
 
     notification.innerHTML = `
                 <div class="reload-notification-content">
@@ -60,7 +80,7 @@ function showReloadNotification(tab) {
                     </div>
                     <div class="reload-notification-text">
                         <div class="reload-notification-title">File changed</div>
-                        <div class="reload-notification-file">${escapeHtml(tab.name)}</div>
+                        <div class="reload-notification-file">${escHtml(tab.name)}</div>
                         <div class="reload-notification-desc">File has been changed externally. Do you want to reload?</div>
                     </div>
                     <div class="reload-notification-actions">
@@ -72,8 +92,10 @@ function showReloadNotification(tab) {
 
 
     notification.querySelector('.reload-btn-yes').onclick = async () => {
+        const tab = tabForPath(filePath);
+        if (!tab) { dismissReloadNotification(filePath); return; }
         const result = await window.electronAPI?.reloadFile?.(tab.path);
-        if (result?.success) {
+        if (result?.success && App.tabs.includes(tab)) {
             const pos1 = (tab.id === App.activeTabId && App.editor) ? App.editor.getPosition() : null;
             const pos2 = (tab.id === App.splitTabId && App.editor2) ? App.editor2.getPosition() : null;
 
@@ -87,25 +109,20 @@ function showReloadNotification(tab) {
             renderTabs();
             log(`Reloaded: ${tab.name}`, 'system');
         }
-        pendingReloadNotifications.delete(tab.path);
-        notification.remove();
+        dismissReloadNotification(filePath);
     };
 
 
     notification.querySelector('.reload-btn-no').onclick = () => {
-        pendingReloadNotifications.delete(tab.path);
-        notification.remove();
-        log(`Kept local version: ${tab.name}`, 'system');
+        dismissReloadNotification(filePath);
+        log(`Kept local version: ${filePath.split(/[\\/]/).pop()}`, 'system');
     };
 
     document.body.appendChild(notification);
 
 
     setTimeout(() => {
-        if (document.body.contains(notification)) {
-            pendingReloadNotifications.delete(tab.path);
-            notification.remove();
-        }
+        if (document.body.contains(notification)) dismissReloadNotification(filePath);
     }, 30000);
 }
 

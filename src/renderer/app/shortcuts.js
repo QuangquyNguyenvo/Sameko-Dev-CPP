@@ -33,7 +33,7 @@ const ACTION_HANDLERS = {
     'newFile': () => newFile(),
     'openFile': () => openFile(),
     'newTab': () => newFile(),
-    'closeTab': () => { if (App.activeTabId) closeTab(App.activeTabId); },
+    'closeTab': () => { const id = getPreferredTabId(); if (id) closeTab(id); },
     'nextTab': () => cycleTab(1),
     'prevTab': () => cycleTab(-1),
     'toggleProblems': () => toggleProblems(),

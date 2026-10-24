@@ -11,7 +11,14 @@ window.onerror = function (msg, url, line, col, error) {
     return false;
 };
 window.onunhandledrejection = function (event) {
-    console.error('[UNHANDLED REJECTION]', event.reason);
+    const reason = event.reason;
+    // Monaco cancels pending work (a Delayer) when an editor switches models and
+    // leaves that promise unhandled. It is expected, and VS Code ignores it too.
+    if (reason && reason.name === 'Canceled' && reason.message === 'Canceled') {
+        event.preventDefault();
+        return;
+    }
+    console.error('[UNHANDLED REJECTION]', reason);
 };
 
 /**

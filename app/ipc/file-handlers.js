@@ -11,6 +11,7 @@ const path = require('path');
 const fs = require('fs');
 const fsp = fs.promises;
 const { IPC } = require('../shared/constants');
+const { writeFileAtomic } = require('../shared/fs-atomic');
 
 let mainWindow = null;
 
@@ -89,28 +90,92 @@ function decodeText(buf) {
 
 async function writeTextFile(filePath, content) {
     await fsp.mkdir(path.dirname(filePath), { recursive: true });
-    // fs.watch reports our own write while it is still in progress (on Windows
-    // before writeFile resolves), so the change would read as external and every
-    // Build & Run of a saved file asked to reload it. Ignore the watcher until the
-    // write is done and the new mtime is recorded.
-    const entry = fileWatchers.get(filePath);
-    if (entry) entry.writing = (entry.writing || 0) + 1;
+    // The save replaces the file (temp file + rename), which fs.watch reports as a
+    // change or a rename while it happens, so it would read as an external edit and
+    // ask to reload. Close the watcher for our own write and reopen it after the
+    // last overlapping write, if the file is still wanted (its tab may have closed).
+    writesInFlight.set(filePath, (writesInFlight.get(filePath) || 0) + 1);
+    cancelRewatch(filePath);
+    stopWatcher(filePath);
     try {
-        await fsp.writeFile(filePath, content, 'utf-8');
+        await writeFileAtomic(filePath, content, 'utf-8');
     } finally {
-        if (entry) entry.writing--;
-        updateFileWatcherMtime(filePath);
+        const left = writesInFlight.get(filePath) - 1;
+        if (left > 0) {
+            writesInFlight.set(filePath, left);
+        } else {
+            writesInFlight.delete(filePath);
+            if (watchWanted.has(filePath)) startWatcher(filePath);
+        }
     }
+}
+
+const fileExists = (p) => fsp.access(p).then(() => true, () => false);
+
+/**
+ * A folder moved from `src` to `dest`: move the local history of every file in
+ * it (history is keyed by file path, so it was left behind under the old paths).
+ * New keys use the separator style of `dest`, as the renderer's paths do.
+ */
+async function moveFolderHistory(src, dest) {
+    const { moveFileHistory } = require('./history-handlers');
+    const sep = dest.includes('/') && !dest.includes('\\') ? '/' : path.sep;
+    const under = (root, rel) => root.replace(/[\\/]+$/, '') + sep + rel;
+    const walk = async (dir, rel, depth) => {
+        if (depth > 32) return;
+        let entries;
+        try { entries = await fsp.readdir(dir, { withFileTypes: true }); } catch { return; }
+        for (const entry of entries) {
+            const childRel = rel ? `${rel}${sep}${entry.name}` : entry.name;
+            if (entry.isDirectory()) await walk(path.join(dir, entry.name), childRel, depth + 1);
+            else if (entry.isFile()) await moveFileHistory(under(src, childRel), under(dest, childRel)).catch(() => { });
+        }
+    };
+    await walk(dest, '', 0);
+}
+
+/** Same path on this platform (Windows and macOS ignore case). */
+function samePath(a, b) {
+    const fold = (p) => (process.platform === 'linux' ? path.resolve(p) : path.resolve(p).toLowerCase());
+    return fold(a) === fold(b);
 }
 
 /** @type {Map<string, {watcher: fs.FSWatcher, mtime: number, writing?: number}>} */
 const fileWatchers = new Map();
+/** Re-watch timers after a replace-by-rename (Linux); unwatchFile cancels them. */
+const pendingRewatch = new Map();
+/** Paths the renderer asked to watch (a write or a re-watch may close the native watcher). */
+const watchWanted = new Set();
+/** Saves in progress per path: the watcher stays closed until the last one ends. */
+const writesInFlight = new Map();
 
 function setMainWindow(window) {
     mainWindow = window;
 }
 
+/** The renderer wants changes to `filePath` reported. */
 function watchFile(filePath) {
+    if (!filePath) return;
+    watchWanted.add(filePath);
+    if (!writesInFlight.has(filePath)) startWatcher(filePath);
+}
+
+/** The renderer no longer wants `filePath` watched (tab closed, renamed). */
+function unwatchFile(filePath) {
+    watchWanted.delete(filePath);
+    cancelRewatch(filePath);
+    stopWatcher(filePath);
+}
+
+function cancelRewatch(filePath) {
+    const timer = pendingRewatch.get(filePath);
+    if (timer) {
+        clearTimeout(timer);
+        pendingRewatch.delete(filePath);
+    }
+}
+
+function startWatcher(filePath) {
     if (!filePath || fileWatchers.has(filePath)) return;
 
     try {
@@ -143,15 +208,19 @@ function watchFile(filePath) {
             // new inode, then report the change. On Windows this branch is effectively
             // unused because ReadDirectoryChangesW tracks the name, not the inode.
             const hadWatcher = fileWatchers.has(filePath);
-            unwatchFile(filePath);
-            setTimeout(() => {
+            stopWatcher(filePath);
+            cancelRewatch(filePath);
+            pendingRewatch.set(filePath, setTimeout(() => {
+                pendingRewatch.delete(filePath);
+                // Unwatched meanwhile (tab closed) or being saved by us: nothing to do.
+                if (!watchWanted.has(filePath) || writesInFlight.has(filePath)) return;
                 if (!fs.existsSync(filePath)) return;
-                watchFile(filePath);
+                startWatcher(filePath);
                 // The file was replaced wholesale, so it changed by definition.
                 if (hadWatcher && mainWindow && !mainWindow.isDestroyed()) {
                     mainWindow.webContents.send(IPC.EVENTS.FILE_CHANGED_EXTERNAL, { path: filePath });
                 }
-            }, 50);
+            }, 50));
         });
 
         fileWatchers.set(filePath, { watcher, mtime: stats.mtimeMs });
@@ -160,7 +229,7 @@ function watchFile(filePath) {
     }
 }
 
-function unwatchFile(filePath) {
+function stopWatcher(filePath) {
     const entry = fileWatchers.get(filePath);
     if (entry) {
         entry.watcher.close();
@@ -289,33 +358,54 @@ function registerHandlers() {
         if (!sameFile && await fsp.access(newPath).then(() => true, () => false)) {
             throw new Error(`"${path.basename(newPath)}" already exists`);
         }
+        let isDir = false;
+        try { isDir = (await fsp.stat(oldPath)).isDirectory(); } catch (_) { }
         try {
             await fsp.rename(oldPath, newPath);
         } catch (error) {
             throw new Error(`Cannot rename file: ${error.message}`);
         }
-        // Local history follows the file; the rename has happened even if this fails.
-        await require('./history-handlers').moveFileHistory(oldPath, newPath)
+        // Local history follows the file(s); the rename has happened even if this fails.
+        await (isDir ? moveFolderHistory(oldPath, newPath) : require('./history-handlers').moveFileHistory(oldPath, newPath))
             .catch((error) => console.warn('[rename] local history not moved:', error.message));
         return { success: true };
     });
 
-    ipcMain.handle('copy-file', async (event, { src, dest }) => {
+    // Copy and move never replace an existing file unless the renderer asked the
+    // user first and passes `overwrite`; a refusal comes back as { exists: true }.
+    ipcMain.handle('copy-file', async (event, { src, dest, overwrite }) => {
+        if (samePath(src, dest)) return { success: false, error: 'Source and destination are the same file' };
         try {
-            await fsp.copyFile(src, dest);
+            await fsp.copyFile(src, dest, overwrite ? 0 : fs.constants.COPYFILE_EXCL);
             return { success: true };
         } catch (error) {
+            if (error.code === 'EEXIST') return { success: false, exists: true, error: `"${path.basename(dest)}" already exists` };
             throw new Error(`Cannot copy file: ${error.message}`);
         }
     });
 
-    ipcMain.handle('move-file', async (event, { src, dest }) => {
+    ipcMain.handle('move-file', async (event, { src, dest, overwrite }) => {
+        // A change of case only (a.cpp -> A.cpp) is the same file on Windows/macOS.
+        if (!samePath(src, dest) && !overwrite && await fileExists(dest)) {
+            return { success: false, exists: true, error: `"${path.basename(dest)}" already exists` };
+        }
+        let isFile = false;
+        try { isFile = (await fsp.stat(src)).isFile(); } catch (_) { }
         try {
             await fsp.rename(src, dest);
-            return { success: true };
         } catch (error) {
-            throw new Error(`Cannot move file: ${error.message}`);
+            // Another drive: rename() cannot cross volumes, so copy then delete.
+            if (error.code !== 'EXDEV' || !isFile) throw new Error(`Cannot move file: ${error.message}`);
+            try {
+                await fsp.copyFile(src, dest, overwrite ? 0 : fs.constants.COPYFILE_EXCL);
+                await fsp.unlink(src);
+            } catch (copyError) {
+                throw new Error(`Cannot move file: ${copyError.message}`);
+            }
         }
+        await (isFile ? require('./history-handlers').moveFileHistory(src, dest) : moveFolderHistory(src, dest))
+            .catch((error) => console.warn('[move] local history not moved:', error.message));
+        return { success: true };
     });
 
     ipcMain.handle('delete-folder', async (event, folderPath) => {

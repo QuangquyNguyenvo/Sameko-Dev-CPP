@@ -4,6 +4,65 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+Fixes for data loss in contests, the Explorer, Save As and session restore, a lighter editor while typing, and updated libraries.
+
+### Changed
+
+- **Typing in large files is lighter**: the editor no longer copies the whole file on every keystroke (twice with the file open in both panes) to track unsaved changes.
+- **The Expected diff shows at most 2,000 lines** plus up to 200 mismatching ones, with "… lines not shown" in between; the verdict still covers every line. A run near the 8 MB output limit used to build about 44 million characters of HTML.
+- **Output and AC/WA use stdout only**, as Run All Tests does. Lines printed to `cerr` still show in the terminal but no longer count as the program's output.
+- **Build error marks stay on the built file** in whichever pane shows it, until you edit or build it again, and an error inside an included header no longer marks that line number in the `.cpp`.
+- **Live check waits for a pause in typing** after a check that new edits made outdated, instead of checking again at once.
+- **The Explorer filter reads the folder once** while you type, instead of once per keystroke.
+- **Libraries updated**: Monaco Editor 0.45 → 0.52.2 (the last release with the loader the app uses), Electron 44.5.1 → 44.9.3, DOMPurify 3.4.17, marked 18.1.1. The main process uses Node's built-in code cache instead of `v8-compile-cache`. `npm audit` reports no vulnerabilities.
+- **Smaller install**: Monaco's unused translations (renamed in 0.52), `judge-selftest.js` and `types.js` are no longer packaged.
+
+### Fixed
+
+- **F5 in split view debugs the file in the focused pane.** It saved the left editor's text into the right pane's file. Breakpoints (Ctrl+click too), the current-line arrow and Run to Cursor now work in both panes.
+- **Saving can no longer leave a half-written file**: files and `.sameko` are written to a temporary file and then swapped in, so a full disk or a crash keeps the old file. A read-only file still refuses the save.
+- **A failed save stops Build, Run and F5** instead of compiling the old file and marking the tab saved; text typed while a save runs stays unsaved.
+- **Creating a contest with an existing name keeps its statuses, times and approaches** and only adds the new problems; a damaged `.sameko` is left alone.
+- **Switching contests saves the old contest's data and loads the new one's**; status changes went into the wrong `.sameko`, and the timer kept running.
+- **Copy, cut and paste ask before replacing a file of the same name**, and refuse while that file is open in a tab. Cut and paste moves open tabs with their files, also when a folder moves.
+- **Renaming a contest folder keeps it in place**, and a failed rename keeps the old name.
+- **Moving or renaming a folder keeps the local history** of the files in it.
+- **New File with a name that is taken opens that file** instead of replacing it with the template.
+- **Save As onto a file open in another tab** closes that tab when it has no edits, or keeps its edits as an untitled copy (`a (unsaved copy).cpp`, still C++); saving the old tab used to write its outdated text back over the new file.
+- **Unsaved work from the last session survives an unanswered restore prompt.** Left open for 30 seconds, the prompt let the periodic save delete it.
+- **Competitive Companion never replaces an existing file** with a new problem's template (a file it could not read counted as free).
+- **Create .inp / .out asks before emptying an existing file.**
+- **Load Approach asks before replacing unsaved text**, and Ctrl+Z brings it back; switching approaches no longer fails with an `execCommand` error. Save and Load Approach use the problem's own tab, and approach IDs stay unique after a deletion (duplicates in older files are repaired).
+- **Restoring a checkpoint goes into the tab of its own file**, not the other pane in split view.
+- **Build & Run runs the program it built**: switching tabs while it compiles no longer runs another tab's program.
+- **A run is judged against its own tab** after switching tabs, and correct output over 5,000 lines is no longer judged WA.
+- **Run All Tests keeps each tab's tests and results apart**, and the right pane uses its own Input, Expected and tests when it has focus.
+- **A batch test stops at its time limit** even when the program starts a child that keeps its output open, and a character split between two output chunks no longer turns into `�` (also in compiler errors, the debugger and clangd).
+- **Programs get a correct `PATH`**: it was `...\bin;undefined`, so `system("chcp 65001")` or `system("ping …")` could fail with "is not recognized".
+- **Auto-save saves every edited tab** with its own text, and a failed auto-save is reported and retried every 30 seconds instead of being dropped.
+- **Clicking a problem opens the file it names** (an included header too) and moves the cursor in the pane that shows it; the error badge goes on the built tab.
+- **Enter on an empty terminal line sends an empty line** to the program (`getline`), and a pasted input keeps its last blank line.
+- **Ctrl+W closes the tab in the focused pane.**
+- **The "file changed outside the IDE" prompt** follows the file after its tab is closed and reopened, and goes away with the tab.
+- **The same file opened with different letter case** (Windows) uses one tab.
+- **Split view is restored** when the app starts again.
+- **Live check results for a file just saved as `.md` or `.txt`** are dropped, along with its old C++ marks.
+- **Changing a breakpoint condition while the program runs** takes effect at once.
+- **No more "Running" stuck on** when the program's `.exe` was deleted.
+- **The build cache rebuilds** when a header is included through a macro or `#embed`, and the g++ live check reports `fatal error`.
+- **Local history makes a checkpoint for every changed save** (some small edits had the same fingerprint as the previous text), and retries after a failed write.
+- **Reset Settings resets Local History** too, without a restart.
+- **Editing or exporting a built-in theme that is not active** uses its saved background instead of the default one, and Save waits for a background that is still loading.
+- **A downloaded update found after a restart** is offered again on Windows (the lookup always failed).
+- **The snippet editor is no longer empty** when it is opened before the editor has finished loading.
+- **Closing a tab after Save As or a rename** releases its IntelliSense document, and a Linux file watcher no longer comes back after its tab closed.
+
+### Removed
+
+- Unused code: about 41 KB of CSS from three earlier theme customizers, `color-registry.js`, an unused ANSI-to-HTML converter, a contest status bar nothing showed, four duplicate HTML escapers, and helpers nothing called in the main process.
+
 ## [1.3.2] - 2026-10-20
 
 A Markdown preview, formatting styles with format on save, new file types and tab rename from the tab bar, and search in Settings.

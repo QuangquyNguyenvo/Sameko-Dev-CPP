@@ -76,6 +76,13 @@ function createHarness(options = {}) {
         getBackgroundOverrides(id) {
             return clone(this.backgroundOverrides?.[id]);
         },
+        getEffectiveTheme(id) {
+            const theme = this.themes.get(id);
+            if (!theme || !this.builtinThemeIds.includes(id) || !this.backgroundOverrides?.[id]) return theme || null;
+            const copy = clone(theme);
+            Object.assign(copy.colors, clone(this.backgroundOverrides[id]));
+            return copy;
+        },
         _defineMonacoTheme(theme) { calls.monaco.push(theme.id); },
         _getHardcodedThemes() { return { 'kawaii-dark': clone(builtin) }; },
         getThemeList() { return Array.from(this.themes.values()); },

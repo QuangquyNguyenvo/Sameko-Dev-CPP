@@ -197,12 +197,6 @@
         revert.title = 'Revert to ' + (asString(saved, '') || 'the default');
     }
 
-    function escapeHtml(text) {
-        return String(text).replace(/[&<>"']/g, function (ch) {
-            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch];
-        });
-    }
-
     /* JSON tokens for the highlight layer under the JSON textarea.  Only spans
      * are added, never characters, so the layer lines up with the text. */
     var JSON_TOKEN = /("(?:\x5c.|[^"\x5c\n])*")(\s*:)?|\b(?:true|false|null)\b|-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|[{}\[\],:]/g;
@@ -211,14 +205,14 @@
         var out = '';
         var last = 0;
         text.replace(JSON_TOKEN, function (match, string, colon, offset) {
-            out += escapeHtml(text.slice(last, offset));
+            out += escHtml(text.slice(last, offset));
             last = offset + match.length;
             if (string && colon) {
-                out += '<span class="tcf-json-key">' + escapeHtml(string) + '</span>' + escapeHtml(colon);
+                out += '<span class="tcf-json-key">' + escHtml(string) + '</span>' + escHtml(colon);
             } else if (string) {
                 var hex = /^"(#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8}))"$/i.exec(string);
                 /* A colour value is underlined in its own colour. */
-                out += '<span class="tcf-json-string' + (hex ? ' tcf-json-color" style="text-decoration-color:' + hex[1] : '') + '">' + escapeHtml(string) + '</span>';
+                out += '<span class="tcf-json-string' + (hex ? ' tcf-json-color" style="text-decoration-color:' + hex[1] : '') + '">' + escHtml(string) + '</span>';
             } else if (/^[{}\[\],:]$/.test(match)) {
                 out += '<span class="tcf-json-punct">' + match + '</span>';
             } else {
@@ -227,7 +221,7 @@
             return match;
         });
         /* The trailing newline keeps the layer as tall as a textarea ending in one. */
-        return out + escapeHtml(text.slice(last)) + '\n';
+        return out + escHtml(text.slice(last)) + '\n';
     }
 
     function numericValue(theme, key, fallback) {

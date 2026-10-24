@@ -10,6 +10,9 @@ const { ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const competitive = require('../services/competitive');
+// Synchronous like the reads, so a read-sameko that follows a write-sameko
+// always sees it (an async write could still be pending when the read runs).
+const { writeFileAtomicSync } = require('../shared/fs-atomic');
 
 let mainWindow = null;
 
@@ -80,7 +83,7 @@ function registerHandlers() {
         try {
             const samekoPath = path.join(folderPath, '.sameko');
             const content = JSON.stringify(data, null, 2);
-            fs.writeFileSync(samekoPath, content, 'utf-8');
+            writeFileAtomicSync(samekoPath, content, 'utf-8');
             return { success: true };
         } catch (err) {
             console.error('[Competitive] Failed to write .sameko:', err);
@@ -94,6 +97,21 @@ function registerHandlers() {
     ipcMain.handle('create-contest', async (event, { parentDir, name, problemIds, platform }) => {
         try {
             const contestDir = path.join(parentDir, name);
+            const samekoPath = path.join(contestDir, '.sameko');
+
+            // A contest of this name already exists: keep its statuses, times and
+            // approaches, and only add the problems it does not have yet.
+            let existing = null;
+            if (fs.existsSync(samekoPath)) {
+                try {
+                    existing = JSON.parse(fs.readFileSync(samekoPath, 'utf-8'));
+                } catch (err) {
+                    return { success: false, error: `"${name}" already has a .sameko file that could not be read (${err.message}). It was left unchanged.` };
+                }
+                if (!existing || typeof existing !== 'object' || (existing.type && existing.type !== 'contest')) {
+                    return { success: false, error: `"${name}" already exists and is not a contest. Nothing was changed.` };
+                }
+            }
 
             // Create contest directory
             if (!fs.existsSync(contestDir)) {
@@ -114,12 +132,17 @@ int main() {
 }
 `;
 
-            const problems = [];
+            const problems = existing && Array.isArray(existing.problems) ? existing.problems : [];
+            const known = new Set(problems.map(p => p && p.id));
+            const added = [];
             for (const id of problemIds) {
                 const filePath = path.join(contestDir, `${id}.cpp`);
                 if (!fs.existsSync(filePath)) {
                     fs.writeFileSync(filePath, cppTemplate(id), 'utf-8');
                 }
+                if (known.has(id)) continue;
+                known.add(id);
+                added.push(id);
                 problems.push({
                     id,
                     label: '',
@@ -130,19 +153,21 @@ int main() {
                 });
             }
 
-            // Create .sameko metadata
-            const samekoData = {
-                type: 'contest',
-                name,
-                platform: platform || 'Other',
-                date: new Date().toISOString().split('T')[0],
-                problems
-            };
+            // Create .sameko metadata, or add the new problems to the existing one.
+            const samekoData = existing
+                ? { ...existing, type: 'contest', problems }
+                : {
+                    type: 'contest',
+                    name,
+                    platform: platform || 'Other',
+                    date: new Date().toISOString().split('T')[0],
+                    problems
+                };
+            if (!existing || added.length) {
+                writeFileAtomicSync(samekoPath, JSON.stringify(samekoData, null, 2), 'utf-8');
+            }
 
-            const samekoPath = path.join(contestDir, '.sameko');
-            fs.writeFileSync(samekoPath, JSON.stringify(samekoData, null, 2), 'utf-8');
-
-            return { success: true, contestDir: contestDir.replace(/\\/g, '/') };
+            return { success: true, contestDir: contestDir.replace(/\\/g, '/'), existed: !!existing, added };
         } catch (err) {
             console.error('[Competitive] Failed to create contest:', err);
             return { success: false, error: err.message };

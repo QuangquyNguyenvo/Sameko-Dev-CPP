@@ -202,7 +202,14 @@ function getCompilerEnv() {
     const env = { ...process.env };
     const binDir = getCompilerBinDir();
     if (binDir) {
-        env.PATH = `${binDir}${path.delimiter}${env.PATH}`;
+        // Windows calls it "Path". process.env ignores case but a copied object
+        // does not, so `env.PATH = bin + env.PATH` gave programs "bin;undefined"
+        // next to the real Path: system("chcp 65001") or system("ping …") then
+        // failed with "is not recognized". Keep exactly one PATH entry.
+        const keys = Object.keys(env).filter(k => k.toUpperCase() === 'PATH');
+        const current = keys.length ? env[keys[0]] : '';
+        for (const k of keys) delete env[k];
+        env[keys[0] || 'PATH'] = current ? `${binDir}${path.delimiter}${current}` : binDir;
     }
     return env;
 }

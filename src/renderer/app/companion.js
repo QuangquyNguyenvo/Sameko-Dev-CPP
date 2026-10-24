@@ -392,20 +392,15 @@ async function handleProblemReceived(problem) {
             }
 
             const folder = targetCategory.folderPath || FileExplorer.currentFolder;
+            // Pick a free name from the folder listing. Reading each candidate failed for
+            // files over 16 MB or unreadable ones, which then counted as free and were
+            // overwritten with the template.
             let counter = 1;
-            let checkPath = `${folder}/${fileName}`.replace(/\\/g, '/');
-            let fileExists = true;
-            while (fileExists) {
-                try {
-                    await window.electronAPI.readFile(checkPath);
-                    counter++;
-                    finalFileName = `${safeName}_${counter}.cpp`;
-                    checkPath = `${folder}/${finalFileName}`.replace(/\\/g, '/');
-                } catch (err) {
-                    fileExists = false;
-                }
+            while (await FileExplorer.fileExistsIn(folder, finalFileName)) {
+                counter++;
+                finalFileName = `${safeName}_${counter}.cpp`;
             }
-            targetPath = checkPath;
+            targetPath = `${folder}/${finalFileName}`.replace(/\\/g, '/');
 
             // Save file physically to disk
             try {

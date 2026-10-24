@@ -2,7 +2,7 @@
  * Theme Tokens - Single Source of Truth
  * 
  * Unified token definitions for the entire theming system.
- * All other modules (ThemeManager, ThemeCustomizer, ColorRegistry) 
+ * All other modules (ThemeManager, ThemeCustomizer)
  * reference this file for CSS variable mappings.
  * 
  * This eliminates sync issues between preview, save, and apply.

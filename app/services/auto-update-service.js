@@ -464,10 +464,14 @@ class AutoUpdateService {
         const os = require('os');
 
         try {
-            const pendingDirs = [
-                path.join(app.getPath('localAppData'), 'sameko-dev-cpp-updater', 'pending'),
+            // Electron has no 'localAppData' path name on any platform: app.getPath
+            // threw here and the cached installer was never found. electron-updater
+            // caches under %LOCALAPPDATA%.
+            const localAppData = process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local');
+            const pendingDirs = [...new Set([
+                path.join(localAppData, 'sameko-dev-cpp-updater', 'pending'),
                 path.join(os.homedir(), 'AppData', 'Local', 'sameko-dev-cpp-updater', 'pending')
-            ];
+            ])];
 
             const installerFiles = [];
 

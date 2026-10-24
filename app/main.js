@@ -1,6 +1,8 @@
 'use strict';
 
-require('v8-compile-cache');
+// Node's own V8 code cache for the main-process modules (Electron 44 ships Node 24);
+// it replaces the v8-compile-cache package. Cache dir: <os temp>/node-compile-cache.
+try { require('module').enableCompileCache?.(); } catch (_) { /* no cache: slower start only */ }
 
 const __T0 = process.hrtime.bigint();
 const __ms = () => Number(process.hrtime.bigint() - __T0) / 1e6;
@@ -39,8 +41,8 @@ app.whenReady().then(async () => {
     const mainWindow = createMainWindow();
     console.log(`[PERF] createMainWindow done @ ${__ms().toFixed(0)}ms`);
     
-    const registerLegacyHandlers = require('./ipc');
-    registerLegacyHandlers(mainWindow);
+    const registerAllHandlers = require('./ipc');
+    registerAllHandlers(mainWindow);
 
     // None of this is needed to show the editor: the compiler warm-up and PCH
     // build (g++ processes), and the updater and Discord RPC (~170 ms of module

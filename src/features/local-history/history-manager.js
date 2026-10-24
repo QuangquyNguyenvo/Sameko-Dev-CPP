@@ -52,36 +52,26 @@ const LocalHistory = {
     },
 
     /**
-     * Simple hash function for content comparison
+     * Fingerprint for "did the text change since the last checkpoint": length plus
+     * two independent 32-bit hashes. The single Java-style hash it replaces gave
+     * the same value for edits as small as renaming `Aa` to `BB`, so such a save
+     * got no checkpoint.
      * @param {string} str - Content to hash
-     * @returns {string} - Hash string
+     * @returns {string}
      */
     simpleHash(str) {
-        let hash = 0;
+        let h1 = 0, h2 = 0x811c9dc5;
         for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash; // Convert to 32bit integer
+            const c = str.charCodeAt(i);
+            h1 = (Math.imul(h1, 31) + c) | 0;
+            h2 = Math.imul(h2 ^ c, 16777619);
         }
-        return hash.toString(16);
+        return `${str.length}:${(h1 >>> 0).toString(16)}:${(h2 >>> 0).toString(16)}`;
     },
 
-    /**
-     * Check if content has changed since last backup
-     * @param {string} filePath - Path to file
-     * @param {string} content - Current content
-     * @returns {boolean} - True if content changed
-     */
+    /** True if `content` differs from the last checkpoint written for `filePath`. */
     hasContentChanged(filePath, content) {
-        const currentHash = this.simpleHash(content);
-        const cachedHash = this.hashCache.get(filePath);
-
-        if (cachedHash === currentHash) {
-            return false;
-        }
-
-        this.hashCache.set(filePath, currentHash);
-        return true;
+        return this.hashCache.get(filePath) !== this.simpleHash(content);
     },
 
     /**
@@ -115,6 +105,9 @@ const LocalHistory = {
                 maxVersions: this.settings.maxVersions,
                 maxAgeDays: this.settings.maxAgeDays
             });
+            // Remember the text only once it is stored: after a failed write the
+            // same text must still get its checkpoint on the next save.
+            if (result && result.success !== false) this.hashCache.set(filePath, this.simpleHash(content));
 
             return result;
         } catch (error) {
@@ -237,9 +230,11 @@ const LocalHistory = {
         if (!name || !window.electronAPI?.stateWrite) return;
 
         try {
-            await window.electronAPI.stateWrite(name, entries);
+            const result = await window.electronAPI.stateWrite(name, entries);
+            return !(result && result.success === false);
         } catch (error) {
             console.error('[LocalHistory] Failed to save untitled history:', error);
+            return false;
         }
     },
 
@@ -259,7 +254,6 @@ const LocalHistory = {
         if (this.hashCache.get(hashKey) === currentHash) {
             return { success: false, reason: 'no_changes' };
         }
-        this.hashCache.set(hashKey, currentHash);
 
         const entries = await this.getUntitledHistory(untitledKey);
         entries.unshift({
@@ -270,10 +264,14 @@ const LocalHistory = {
             size: `${Math.max(1, Math.round(sizeKB))} KB`
         });
 
-        await this.saveUntitledHistory(untitledKey, entries.slice(0, this.settings.maxVersions));
+        if (!await this.saveUntitledHistory(untitledKey, entries.slice(0, this.settings.maxVersions))) {
+            return { success: false, reason: 'error' };
+        }
+        this.hashCache.set(hashKey, currentHash);
         return { success: true };
     },
 
+    /** Back up an untitled tab 12 s after its last edit (`content` defaults to its text then). */
     scheduleUntitledBackup(tab, content) {
         if (!tab || tab.path || !this.settings.enabled) return;
 
@@ -282,7 +280,7 @@ const LocalHistory = {
         if (existing) clearTimeout(existing);
 
         const timer = setTimeout(() => {
-            this.createUntitledBackup(tab, content).catch(error => {
+            this.createUntitledBackup(tab, content ?? tab.content).catch(error => {
                 console.error('[LocalHistory] Untitled backup error:', error);
             });
             this.untitledTimers.delete(untitledKey);
@@ -486,8 +484,14 @@ const LocalHistory = {
             // Apply as one edit on the tab's model: undoable with Ctrl+Z, and the
             // tab becomes modified so the user decides whether to save it.
             if (typeof App !== 'undefined') {
+                // The checkpoint belongs to one file: restore into the tab of that
+                // file, not whichever tab the focused split pane happens to show.
+                const filePath = mode === 'file' ? modal?.dataset.filePath : '';
+                const keyOf = (p) => (typeof pathKey === 'function' ? pathKey(p) : String(p || '').replace(/\\/g, '/'));
+                const pathTab = filePath ? App.tabs.find(t => t.path && keyOf(t.path) === keyOf(filePath)) : null;
                 const activeTabId = modal?.dataset.tabId || (App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId);
-                const targetTab = App.tabs.find(t => t.id === activeTabId) || App.tabs.find(t => t.id === App.activeTabId);
+                const targetTab = pathTab
+                    || (filePath ? null : (App.tabs.find(t => t.id === activeTabId) || App.tabs.find(t => t.id === App.activeTabId)));
                 if (targetTab) {
                     const model = getTabModel(targetTab);
                     model.pushStackElement();
@@ -496,6 +500,9 @@ const LocalHistory = {
                     targetTab.content = result.content;
                     targetTab.modified = true;
                     renderTabs();
+                } else {
+                    this.showNotification('Open the file in a tab to restore this checkpoint', 'warning');
+                    return;
                 }
                 this.showNotification('File restored successfully!', 'success');
                 this.hideHistoryModal();
@@ -575,7 +582,7 @@ const LocalHistory = {
             // Fallback to pre tag if Monaco not available - use theme colors
             const bg = getComputedStyle(document.documentElement).getPropertyValue('--editor-bg').trim() || '#1a2530';
             const fg = getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim() || '#e0f0ff';
-            editorContainer.innerHTML = `<pre style="margin:0;padding:16px;overflow:auto;height:100%;background:${bg};color:${fg};font-family:'JetBrains Mono',Consolas,monospace;font-size:13px;white-space:pre-wrap;border-radius:12px;">${this.escapeHtml(content)}</pre>`;
+            editorContainer.innerHTML = `<pre style="margin:0;padding:16px;overflow:auto;height:100%;background:${bg};color:${fg};font-family:'JetBrains Mono',Consolas,monospace;font-size:13px;white-space:pre-wrap;border-radius:12px;">${escHtml(content)}</pre>`;
         }
 
         previewModal.classList.add('active');
@@ -584,11 +591,6 @@ const LocalHistory = {
     /**
      * Escape HTML for fallback display
      */
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    },
 
     /**
      * Show notification

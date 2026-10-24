@@ -62,9 +62,11 @@ function setActive(id) {
     // Monaco load now if it hasn't started. Idempotent and cheap when already loaded.
     ensureMonaco();
 
-    // Test cases travel with the tab that owns them.
-    const previousTab = App.tabs.find(t => t.id === App.activeTabId) || null;
+    // Test cases and the Input/Expected boxes belong to the focused tab, which is
+    // the right pane's when it has focus (getPreferredTabId).
+    const previousTab = App.tabs.find(t => t.id === getPreferredTabId()) || null;
     const switchingTabs = !previousTab || previousTab.id !== id;
+    if (previousTab && App.editor && App.ready) persistCurrentTabIO();
     if (previousTab && switchingTabs) saveTestStateToTab(previousTab);
 
     if (App.activeTabId && App.editor && App.ready) {
@@ -73,10 +75,11 @@ function setActive(id) {
             cur.content = App.editor.getValue();
             cur.viewState = App.editor.saveViewState();
         }
-        persistCurrentTabIO();
     }
 
     App.activeTabId = id;
+    // The tab is shown in the left editor, so that pane now has focus.
+    App.activeEditor = 1;
     if (App.editor && App.ready) {
         // Our decorations are tracked by id against the model being replaced.
         clearEditorDecorationsBeforeSwitch();
@@ -109,7 +112,6 @@ function setActive(id) {
 
     restoreTabIO(id);
     if (switchingTabs) loadTestStateFromTab(tab);
-    clearErrorDecorations();
     renderTabs();
     // Reset cursor tracker so presence shows Ln 1, Col 1 for the new tab
     _discordLastPos = { line: 1, col: 1 };
@@ -117,13 +119,23 @@ function setActive(id) {
     updateDiscordPresence(tab, 1, 1);
 }
 
-async function closeTab(id) {
+/**
+ * clangd keeps one open document (text + AST) per path, or per tab id for an
+ * untitled tab. Close the old one whenever a tab is closed or gets a new path
+ * (Save As, rename, move), or it stays in clangd until the app exits.
+ */
+function closeClangdDocument(docId) {
+    if (docId) window.electronAPI?.clangdCloseDocument?.(docId)?.catch?.(() => { });
+}
+
+/** @param {{quiet?: boolean}} [options] quiet: no prompts (the caller knows nothing is lost) */
+async function closeTab(id, { quiet = false } = {}) {
     const idx = App.tabs.findIndex(t => t.id === id);
     if (idx === -1) return;
 
     const tab = App.tabs[idx];
 
-    if (App.isRunning) {
+    if (App.isRunning && !quiet) {
         const confirmed = await showConfirmDialog({
             title: 'Process Running',
             message: `A process is running. Stop it and close "${tab.name}"?`,
@@ -134,7 +146,7 @@ async function closeTab(id) {
         stop();
     }
 
-    if (tab.modified) {
+    if (tab.modified && !quiet) {
         const confirmed = await showConfirmDialog({
             title: 'Unsaved Changes',
             message: `"${tab.name}" has unsaved changes. Close without saving?`,
@@ -148,7 +160,7 @@ async function closeTab(id) {
     if (tab.path) stopFileWatch(tab.path);
     // Let clangd drop this document, and do not keep 20 full copies of an
     // untitled tab in localStorage after the tab itself is gone.
-    window.electronAPI?.clangdCloseDocument?.(tab.path || tab.id)?.catch?.(() => { });
+    closeClangdDocument(tab.path || tab.id);
     if (!tab.path && typeof LocalHistory !== 'undefined') {
         try { LocalHistory.clearUntitledHistory(tab); } catch (_) { }
     }
@@ -157,6 +169,8 @@ async function closeTab(id) {
 
     App.tabs.splice(idx, 1);
     delete App.ioByTab[id];
+    delete App.outputByTab[id];
+    releaseRunCapture(id);
 
 
     if (App.splitTabId === id) closeSplit();
@@ -190,11 +204,11 @@ async function closeTab(id) {
 async function openFileFromPath(filePath) {
     if (!filePath) return;
 
-    // Normalize path for comparison
-    const normalizedPath = filePath.replace(/\\/g, '/');
+    // Windows and macOS ignore case: main.cpp and Main.cpp are one file and one tab.
+    const normalizedPath = pathKey(filePath);
 
     // Check if file is already open
-    const existingTab = App.tabs.find(t => t.path && t.path.replace(/\\/g, '/') === normalizedPath);
+    const existingTab = App.tabs.find(t => t.path && pathKey(t.path) === normalizedPath);
     if (existingTab) {
         setActive(existingTab.id);
         return;
@@ -213,7 +227,7 @@ async function openFileFromPath(filePath) {
             }
 
             // Another opening route may have added the tab while the read was pending.
-            const openedTab = App.tabs.find(t => t.path && t.path.replace(/\\/g, '/') === normalizedPath);
+            const openedTab = App.tabs.find(t => t.path && pathKey(t.path) === normalizedPath);
             if (openedTab) {
                 setActive(openedTab.id);
                 return;
@@ -309,16 +323,13 @@ function renderTabs() {
         const diagnosticsBadge = diagnostics && (diagnostics.errors || diagnostics.warnings)
             ? `<span class="tab-diagnostics ${tabHasErrors ? 'error' : 'warning'}" title="${diagnostics.errors || 0} errors, ${diagnostics.warnings || 0} warnings">${tabHasErrors ? diagnostics.errors : diagnostics.warnings}${tabHasErrors ? 'E' : 'W'}</span>`
             : '';
-        el.innerHTML = `<span class="tab-name">${escapeHtml(t.name)}</span>${diagnosticsBadge}<span class="tab-dot"></span><span class="tab-x">×</span>`;
+        el.innerHTML = `<span class="tab-name">${escHtml(t.name)}</span>${diagnosticsBadge}<span class="tab-dot"></span><span class="tab-x">×</span>`;
         el.onclick = e => {
             if (!e.target.classList.contains('tab-x')) {
                 if (App.isSplit && isSplitTab) {
-
-                    App.activeEditor = 2;
-                    renderTabs();
+                    focusEditorPane(2);
                 } else {
                     setActive(t.id);
-                    App.activeEditor = 1;
                 }
             }
         };
@@ -465,9 +476,51 @@ async function save() {
             );
         }
 
-        const r = await window.electronAPI.saveFile({ path: tab.path, content: tab.content });
-        if (r.success) { tab.original = tab.content; tab.modified = false; renderTabs(); setStatus(`Saved ${tab.name}`, 'success'); scheduleSessionSave(); }
+        const text = tab.content;
+        const r = await window.electronAPI.saveFile({ path: tab.path, content: text });
+        if (r && r.success) { markTabSaved(tab, text); setStatus(`Saved ${tab.name}`, 'success'); scheduleSessionSave(); }
+        else {
+            const reason = (r && r.error) || 'unknown error';
+            setStatus(`Save failed: ${reason}`, 'error');
+            log(`Could not save ${tab.name}: ${reason}`, 'error');
+        }
     } else await saveAs(tabId);
+}
+
+/**
+ * The text that was written becomes the tab's baseline. Typing that happened
+ * while the save was in flight was not written, so the tab stays modified.
+ */
+function markTabSaved(tab, savedText) {
+    tab.original = savedText;
+    const current = tab.model && !tab.model.isDisposed() ? tab.model.getValue() : tab.content;
+    tab.modified = current !== savedText;
+    renderTabs();
+}
+
+/**
+ * Save As onto a file that another tab has open: that tab still holds the old
+ * text in its own model and would write it back on its next save. An unchanged
+ * tab is closed (this one now shows the file); one with unsaved edits keeps
+ * them as an untitled copy.
+ */
+async function releaseOtherTabsOfPath(keepTab, filePath) {
+    const key = pathKey(filePath);
+    const others = App.tabs.filter(t => t !== keepTab && t.path && pathKey(t.path) === key);
+    for (const other of others) {
+        if (other.modified) {
+            closeClangdDocument(other.path);
+            other.path = null;
+            // a.cpp -> "a (unsaved copy).cpp": the extension picks the language and tools.
+            const dot = other.name.lastIndexOf('.');
+            other.name = dot > 0
+                ? `${other.name.slice(0, dot)} (unsaved copy)${other.name.slice(dot)}`
+                : `${other.name} (unsaved copy)`;
+        } else {
+            await closeTab(other.id, { quiet: true });
+        }
+    }
+    if (others.length) renderTabs();
 }
 
 async function saveAs(tabIdOverride = null) {
@@ -477,19 +530,21 @@ async function saveAs(tabIdOverride = null) {
     const tab = App.tabs.find(t => t.id === tabId);
     if (!tab) return;
     tab.content = getTabModel(tab).getValue();
+    const text = tab.content;
     const oldPath = tab.path;
     const r = await window.electronAPI.saveFileDialog({
-        content: tab.content,
+        content: text,
         defaultPath: tab.path || tab.name || 'untitled.cpp'
     });
     if (r.success) {
+        const oldDocId = tab.path || tab.id;
         tab.path = r.path;
         tab.name = r.path.split(/[/\\]/).pop();
-        tab.original = tab.content;
-        tab.modified = false;
+        if (oldDocId !== tab.path) closeClangdDocument(oldDocId);
         if (oldPath && oldPath !== r.path) stopFileWatch(oldPath);
+        await releaseOtherTabsOfPath(tab, r.path);
         startFileWatch(r.path);
-        renderTabs();
+        markTabSaved(tab, text);
         setStatus(`Saved ${tab.name}`, 'success');
         scheduleSessionSave();
     }
@@ -533,6 +588,7 @@ function onFileRenamed(oldPath, newPath) {
     for (const tab of App.tabs) {
         if (!tab.path || key(tab.path) !== key(oldPath)) continue;
         stopFileWatch(tab.path);
+        if (tab.path !== newPath) closeClangdDocument(tab.path);
         tab.path = newPath;
         tab.name = newPath.split(/[/\\]/).pop();
         startFileWatch(newPath);
@@ -543,6 +599,16 @@ function onFileRenamed(oldPath, newPath) {
     if (changed) {
         renderTabs();
         scheduleSessionSave();
+    }
+}
+
+/** A folder was renamed or moved on disk: every open tab inside it follows. */
+function onFolderRenamed(oldDir, newDir) {
+    const prefix = pathKey(oldDir).replace(/\/+$/, '') + '/';
+    const target = String(newDir).replace(/\\/g, '/').replace(/\/+$/, '') + '/';
+    for (const tab of App.tabs.slice()) {
+        if (!tab.path || !pathKey(tab.path).startsWith(prefix)) continue;
+        onFileRenamed(tab.path, target + tab.path.replace(/\\/g, '/').slice(prefix.length));
     }
 }
 

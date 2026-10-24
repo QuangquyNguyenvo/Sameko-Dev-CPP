@@ -12,7 +12,7 @@
 // ============================================================================
 if (window.electronAPI) {
     window.electronAPI.onFileOpened?.(data => {
-        const exists = App.tabs.find(t => t.path === data.path);
+        const exists = App.tabs.find(t => t.path && pathKey(t.path) === pathKey(data.path));
         if (exists) setActive(exists.id);
         else {
 
@@ -65,7 +65,7 @@ if (window.electronAPI) {
             setStatus('Done', 'success');
         }
     });
-    window.electronAPI.onProcessOutput?.(d => logProgram(d, false));
+    window.electronAPI.onProcessOutput?.(d => { captureRunOutput(d); logProgram(d, false); });
     window.electronAPI.onProcessError?.(d => logProgram(d, true));
     window.electronAPI.onProcessExit?.(data => {
         if (App.runTimeout) {
@@ -113,17 +113,19 @@ if (window.electronAPI) {
         setRunning(false);
         showRunStats(timeStr, memStr);
 
-        // Refresh diff for the latest run if expected panel is present.
+        // Judge the run that just ended against ITS tab, even if another tab has
+        // focus now; output still in flight is picked up by the second pass.
+        const run = currentRun;
         if (document.getElementById('expected-area')) {
-            compareOutput();
+            compareOutput(run);
         }
 
         // Time and memory have their own status bar item (showRunStats).
         setStatus(code === 0 ? 'Done' : `Exit: ${code}`, code === 0 ? 'success' : '');
-        if (code === 0) setTimeout(compareOutput, 100);
+        if (code === 0) setTimeout(() => compareOutput(run), 100);
 
         // Notify explorer: run finished
-        const _exitTab = App.tabs.find(t => t.id === (App.activeEditor === 2 && App.splitTabId ? App.splitTabId : App.activeTabId));
+        const _exitTab = App.tabs.find(t => t.id === (run ? run.tabId : getPreferredTabId()));
         if (window.FileExplorer && _exitTab) window.FileExplorer.notifyBuildEvent(_exitTab.path, code === 0 ? 'run-exit-0' : 'run-exit-fail');
     });
     window.electronAPI.onProcessStopped?.(() => {
@@ -132,7 +134,7 @@ if (window.electronAPI) {
             App.runTimeout = null;
         }
         log('\n--- Stopped ---', 'warning');
-        setTabOutput(getPreferredTabId(), { text: latestRunOutput(), state: 'stopped' });
+        if (currentRun) setTabOutput(currentRun.tabId, { text: runOutputText(currentRun), state: 'stopped' });
         setRunning(false);
         setStatus('Stopped', '');
     });

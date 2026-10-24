@@ -31,9 +31,10 @@ const BUILTIN_FONT_FAMILIES = new Set([
 let sessionSaveTimer = null;
 let sessionPeriodicTimer = null;
 let sessionRestored = false;
+let sessionRestorePending = false;   // the restore prompt is waiting for an answer
 
 function normalizeTabPath(filePath) {
-    return filePath ? filePath.replace(/\\/g, '/') : null;
+    return filePath ? pathKey(filePath) : null;
 }
 
 function createRestoredTabId() {
@@ -171,6 +172,16 @@ async function reopenSessionTabs(session, { includeUnsaved }) {
         setActive(preferredActiveId);
     }
 
+    // Split view comes back too, once the editor exists (Monaco loads late).
+    const splitTab = session.isSplit ? App.tabs.find(t => t.id === restoredIds.get(session.splitTabId)) : null;
+    if (splitTab) {
+        ensureMonaco().then(() => {
+            if (App.isSplit || !App.tabs.includes(splitTab)) return;
+            openSplit();
+            if (App.isSplit && App.splitTabId !== splitTab.id) showInSplitPane(splitTab);
+        }).catch(() => { });
+    }
+
     updateUI();
     return restoredIds.size;
 }
@@ -181,6 +192,10 @@ async function reopenSessionTabs(session, { includeUnsaved }) {
  * This keeps saved files and real unsaved work, but ignores untouched generated untitled tabs.
  */
 function saveSession(sync = false) {
+    // Until the restore prompt is answered the stored session is the only copy
+    // of the last run's unsaved work: do not replace it, and do not clear it
+    // because no tab is open yet (the 30 s checkpoint used to do exactly that).
+    if (sessionRestorePending) return;
     try {
         if (App.tabs.length === 0) {
             clearSession();
@@ -198,7 +213,7 @@ function saveSession(sync = false) {
         }
 
         // Test cases are edited in place; make sure the active tab carries them.
-        saveTestStateToTab(App.tabs.find(t => t.id === App.activeTabId));
+        saveTestStateToTab(App.tabs.find(t => t.id === getPreferredTabId()));
 
         const tabsForSession = App.tabs.filter(t => t.path || t.modified || ((t.content || '') !== (t.original || '')));
         if (tabsForSession.length === 0) {
@@ -314,7 +329,15 @@ function showSessionRestoreNotification(summary) {
 async function restoreSession() {
     if (sessionRestored) return;
     sessionRestored = true;
+    sessionRestorePending = true;
+    try {
+        await restoreStoredSession();
+    } finally {
+        sessionRestorePending = false;
+    }
+}
 
+async function restoreStoredSession() {
     const behavior = getStartupBehavior();
     const session = await getStoredSession();
 

@@ -10,7 +10,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { execFileSync } = require('child_process');
+const { execFileSync, execFile } = require('child_process');
 
 const IS_WIN = process.platform === 'win32';
 const IS_MAC = process.platform === 'darwin';
@@ -151,6 +151,26 @@ function killPosixTree(pid) {
 }
 
 /**
+ * Stop a process we spawned and everything it started, by PID while we still
+ * hold its handle (so the PID cannot have been reused).
+ * - Windows: `taskkill /T` on the PID (never by image name), then the handle.
+ * - POSIX: the process group (spawned with `detached: true`), else the process.
+ * @param {import('child_process').ChildProcess} child
+ */
+function killProcessTree(child) {
+    const pid = child && child.pid;
+    if (!pid) return;
+    if (IS_WIN) {
+        if (child.exitCode === null && child.signalCode === null) {
+            execFile('taskkill', ['/pid', String(pid), '/f', '/t'], { windowsHide: true }, () => { });
+        }
+        try { child.kill(); } catch (_) { }
+        return;
+    }
+    killPosixTree(pid);
+}
+
+/**
  * mkdir -p với quyền chặt trên POSIX.
  * Trên Linux `app.getPath('temp')` là `/tmp` **dùng chung cho mọi user**, nên thư mục do app
  * tạo ở đó nên là 0o700 để tránh va chạm/ghi đè giữa các user trên cùng máy.
@@ -188,6 +208,7 @@ module.exports = {
     commandExists,
     readProcMemoryKB,
     killPosixTree,
+    killProcessTree,
     ensurePrivateDir,
     appTempDir,
 };

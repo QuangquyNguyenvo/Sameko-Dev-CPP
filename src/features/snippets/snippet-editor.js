@@ -29,6 +29,22 @@ function initSnippetEditor() {
     });
 }
 
+/**
+ * Put `text` in the snippet editor. Monaco loads lazily: opened before it was
+ * ready, the dialog used to stay without an editor for good.
+ */
+let snippetTextRequest = 0;
+function showSnippetText(text) {
+    const request = ++snippetTextRequest;
+    const apply = () => {
+        if (request !== snippetTextRequest) return; // another snippet was opened since
+        if (!snippetEditor) initSnippetEditor();
+        if (snippetEditor) snippetEditor.setValue(text);
+    };
+    if (typeof monaco !== 'undefined') apply();
+    else if (typeof ensureMonaco === 'function') ensureMonaco().then(apply);
+}
+
 window.editSnippet = function (index) {
     if (!App.settings.snippets[index]) return;
 
@@ -38,8 +54,7 @@ window.editSnippet = function (index) {
     document.getElementById('snippet-editor-title').textContent = 'Edit Snippet';
     document.getElementById('snippet-trigger-input').value = snippet.trigger;
 
-    if (!snippetEditor) initSnippetEditor();
-    if (snippetEditor) snippetEditor.setValue(snippet.content);
+    showSnippetText(snippet.content);
 
     document.getElementById('snippet-editor-modal').classList.add('active');
 };
@@ -50,8 +65,7 @@ window.addNewSnippet = function () {
     document.getElementById('snippet-editor-title').textContent = 'Add New Snippet';
     document.getElementById('snippet-trigger-input').value = '';
 
-    if (!snippetEditor) initSnippetEditor();
-    if (snippetEditor) snippetEditor.setValue('');
+    showSnippetText('');
 
     document.getElementById('snippet-editor-modal').classList.add('active');
 };
@@ -83,9 +97,9 @@ window.renderSnippetsList = function () {
 
     listContainer.innerHTML = App.settings.snippets.map((s, idx) => `
         <div class="snippet-item ${s.isBuiltin ? 'builtin' : ''}">
-            <div class="snippet-trigger">${escapeHtml(s.trigger)}</div>
-            <div class="snippet-preview" title="${escapeHtml(s.content)}">
-                ${escapeHtml(s.content.split('\n')[0].substring(0, 50))}${s.content.length > 50 || s.content.includes('\n') ? '...' : ''}
+            <div class="snippet-trigger">${escHtml(s.trigger)}</div>
+            <div class="snippet-preview" title="${escHtml(s.content)}">
+                ${escHtml(s.content.split('\n')[0].substring(0, 50))}${s.content.length > 50 || s.content.includes('\n') ? '...' : ''}
             </div>
             <div class="snippet-actions">
                 <button class="btn-edit" data-snippet-edit="${idx}" title="Edit">

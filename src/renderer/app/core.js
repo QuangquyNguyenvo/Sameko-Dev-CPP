@@ -168,10 +168,9 @@ const App = {
     showProblems: false,
     problems: [],
     tabDiagnostics: {},
-    inputLines: [],
-    inputIndex: 0,
     settings: JSON.parse(JSON.stringify(DEFAULT_SETTINGS)),
     errorDecorations: [],
+    problemsTabId: null,        // tab that App.problems were reported for
     runTimeout: null,
     ioByTab: {},
     isSettingValue: false
@@ -383,7 +382,11 @@ function syncTabLanguage(tab) {
     if (!tab?.model || tab.model.isDisposed()) return;
     registerTextLanguage();
     const language = languageForFile(tab.path || tab.name);
-    if (tab.model.getLanguageId() !== language) monaco.editor.setModelLanguage(tab.model, language);
+    if (tab.model.getLanguageId() !== language) {
+        monaco.editor.setModelLanguage(tab.model, language);
+        // C++ diagnostics do not apply to a write-up or to test data.
+        if (language !== 'cpp') monaco.editor.setModelMarkers(tab.model, 'live-check', []);
+    }
     for (const editor of [App.editor, App.editor2]) {
         if (editor?.getModel() === tab.model) applyFileTypeOptions(editor);
     }
@@ -411,8 +414,27 @@ function getTabModel(tab) {
     if (!tab.model || tab.model.isDisposed()) {
         registerTextLanguage();
         tab.model = monaco.editor.createModel(tab.content || '', languageForFile(tab.path || tab.name));
+        bindTabContent(tab);
     }
     return tab.model;
+}
+
+/**
+ * While a tab has a live model, tab.content is the model's text, built only
+ * when something reads it. It used to be a copy refreshed on every keystroke
+ * (the whole document, twice when both panes showed the file). Writes keep a
+ * fallback copy that is used once the model is gone.
+ */
+function bindTabContent(tab) {
+    const desc = Object.getOwnPropertyDescriptor(tab, 'content');
+    if (desc && desc.get) return;
+    let stored = tab.content;
+    Object.defineProperty(tab, 'content', {
+        configurable: true,
+        enumerable: true,
+        get() { return tab.model && !tab.model.isDisposed() ? tab.model.getValue() : stored; },
+        set(value) { stored = value; }
+    });
 }
 
 /** The tab a model belongs to (null for the placeholder/empty model). */
@@ -455,15 +477,15 @@ function setTabText(tab, text) {
 function disposeTabModel(tab) {
     const model = tab.model;
     if (!model) return;
+    if (!model.isDisposed()) tab.content = model.getValue(); // keep the last text
     tab.model = null;
     if (App.editor && App.editor.getModel() === model) showEmptyModel(App.editor);
     if (App.editor2 && App.editor2.getModel() === model) showEmptyModel(App.editor2);
     if (!model.isDisposed()) model.dispose();
 }
 
-/** Decorations live on a model: clear ours before another model is attached. */
+/** Editor-owned decorations live on a model: clear ours before another model is attached. */
 function clearEditorDecorationsBeforeSwitch() {
-    clearErrorDecorations();
     if (window.Debugger && typeof window.Debugger.onFileHidden === 'function') {
         try { window.Debugger.onFileHidden(); } catch (_) { }
     }
@@ -682,8 +704,7 @@ function initMonaco(onReady) {
             // Rebuilding every tab on each click in the editor was pure waste;
             // the tab strip only changes when focus moves between panes.
             if (App.activeEditor === 1) return;
-            App.activeEditor = 1;
-            renderTabs();
+            focusEditorPane(1);
         });
 
 
@@ -900,29 +921,32 @@ function createEditor(containerId) {
     });
 
     editor.onDidChangeModelContent(() => {
+        const model = editor.getModel();
         // With the same tab open in both panes they share a model and both
-        // editors report the change; the model identifies the tab either way.
-        const tab = getTabForModel(editor.getModel());
-        {
-            if (tab) {
-                tab.content = editor.getValue();
-                const modified = tab.content !== tab.original;
-                if (tab.modified !== modified) {
-                    tab.modified = modified;
-                    renderTabs();
-                }
-                if (!App.isSettingValue && tab.path && window.FileExplorer?.notifyBuildEvent) {
-                    window.FileExplorer.notifyBuildEvent(tab.path, 'edit');
-                }
-                if (!tab.path && typeof LocalHistory !== 'undefined') {
-                    LocalHistory.scheduleUntitledBackup(tab, tab.content);
-                }
+        // editors report the change: the left editor handles it once.
+        if (editor === App.editor2 && App.editor && App.editor.getModel() === model) return;
+        const tab = getTabForModel(model);
+        if (tab) {
+            // tab.content reads the model on demand (bindTabContent). A length
+            // check settles most keystrokes; equal lengths compare the text.
+            const original = tab.original;
+            const modified = typeof original !== 'string'
+                || model.getValueLength() !== original.length
+                || model.getValue() !== original;
+            if (tab.modified !== modified) {
+                tab.modified = modified;
+                renderTabs();
+            }
+            if (!App.isSettingValue && tab.path && window.FileExplorer?.notifyBuildEvent) {
+                window.FileExplorer.notifyBuildEvent(tab.path, 'edit');
+            }
+            if (!tab.path && typeof LocalHistory !== 'undefined') {
+                LocalHistory.scheduleUntitledBackup(tab);
             }
         }
-        clearErrorDecorations();
+        clearErrorDecorations(model);
 
-
-        scheduleAutoSave();
+        if (tab) scheduleAutoSave(tab);
         scheduleSessionSave();
 
 

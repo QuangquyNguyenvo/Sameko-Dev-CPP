@@ -21,7 +21,7 @@ primary target; Linux is supported.
 └─────────────────────────────┘                └──────────────────────────────┘
 ```
 
-Startup (`app/main.js`): `v8-compile-cache` → single-instance lock → `setupAppEvents()` →
+Startup (`app/main.js`): Node compile cache (`module.enableCompileCache`) → single-instance lock → `setupAppEvents()` →
 `app.whenReady()` → splash window → `initializeApp()` (dirs, compiler detection) →
 `createMainWindow()` → register all IPC handlers (`app/ipc/index.js`) → the main window is
 revealed on `ready-to-show` (10 s fallback) and the splash closes. Only after the page's
@@ -38,7 +38,6 @@ packaged. Navigation away from it and `window.open` are denied in `app/windows/m
 |---|---|
 | `main.js` | Entry point: lifecycle, splash, IPC registration, service init. |
 | `core/app-lifecycle.js` | `initializeApp()` (creates user-data and temp dirs), `setupAppEvents()`. |
-| `core/window-manager.js` | Core window management. |
 | `windows/main-window.js` | The frameless `BrowserWindow`, navigation guards, saved window bounds. |
 | `windows/splash-window.js` | Splash shown while the main window loads (`src/splash.html`). |
 
@@ -47,7 +46,7 @@ packaged. Navigation away from it and `window.open` are denied in `app/windows/m
 
 | File | Handles |
 |---|---|
-| `file-handlers.js` | Open/save/read/delete/rename, directory listing, external-change watcher. |
+| `file-handlers.js` | Open/save/read/delete/rename, directory listing, external-change watcher. Saves are atomic (`fs-atomic.js`); `watchWanted` (what the renderer asked to watch) is kept apart from the native watcher, which a save closes until its last overlapping write ends. |
 | `compiler-handlers.js` | Compile, run, stop, stdin, compiler info. |
 | `debug-handlers.js` | GDB session control: breakpoints, stepping, frames, variable objects. |
 | `format-handlers.js` | AStyle formatting, syntax check, suggestions, clangd completions/hover. |
@@ -80,7 +79,8 @@ packaged. Navigation away from it and `window.open` are denied in `app/windows/m
 | File | Contents |
 |---|---|
 | `constants.js` | IPC channel names (`IPC.<GROUP>`), path names, window defaults. `LIMITS`, `COMPILER` and `COMPETITIVE_COMPANION` are declared but not read by the code that does the work. |
-| `platform.js` | OS helpers: `IS_WIN`/`IS_LINUX`, `binName`, `NULL_DEVICE`, `which`, `appTempDir`, `killPosixTree`, system compiler paths. |
+| `platform.js` | OS helpers: `IS_WIN`/`IS_LINUX`, `binName`, `NULL_DEVICE`, `which`, `appTempDir`, `killPosixTree`, `killProcessTree` (a child and everything it started, by PID), system compiler paths. |
+| `fs-atomic.js` | `writeFileAtomic` / `writeFileAtomicSync`: write a temp file next to the target, then rename over it (in-place fallback where rename cannot replace). Used for saves and `.sameko`. |
 | `settings-store.js` | The only reader/writer of `settings.json`: atomic write, `.bak` fallback, keeps main-owned keys (`windowBounds`) when the renderer saves. |
 | `settings-reader.js` | Compiler settings for main-process services, read through the store. |
 | `judge.js` | `normalizeOutput()`, `compareOutputs()`; also loaded by `preload.js` so both sides judge alike. |
@@ -99,13 +99,13 @@ syntax/clangd, local history, Discord RPC.
 | `splash.html` | Splash screen. |
 | `renderer/app/*.js` | The application itself, 17 files loaded in a fixed order (formerly one 7,900-line `app.js`). File index in §9. |
 | `renderer/boot.js` | Loaded first: error hooks, Monaco loader config, shared `escHtml`. |
-| `renderer/ui/` | `theme-manager.js`, `theme-tokens.js`, `theme-customizer.js` (draft/history/save), `theme-customizer-view.js` (controls/scoped IDE preview), `theme-marketplace.js`, `color-registry.js`, `confirm-dialog.js`, `motion.js`. |
+| `renderer/ui/` | `theme-manager.js`, `theme-tokens.js`, `theme-customizer.js` (draft/history/save), `theme-customizer-view.js` (controls/scoped IDE preview), `theme-marketplace.js`, `confirm-dialog.js`, `motion.js`. |
 | `styles/` | `base.css` (imports `animations.css` and fonts), `components/*.css`, `themes/{theme,themes}.css`. `components/toolbar.css` and `components/islands.css` load after `themes.css`: the header buttons, and the floating-card layout (header islands, editor / bottom panel / status bar cards, Run split button, collapsed bottom panel) for every theme. |
 | `assets/` | Fonts, icons, backgrounds (five looping `.webm` + one `.jpg`), screenshots (README only). |
 
 ### Loaded scripts, in order (`index.html`)
 `renderer/boot.js` (error hooks, Monaco loader config, shared `escHtml`) → Monaco loader → `features/suggestions/cpp-suggestions.js` →
-`features/snippets/snippet-editor.js` → `renderer/ui/theme-tokens.js` → `color-registry.js` →
+`features/snippets/snippet-editor.js` → `renderer/ui/theme-tokens.js` →
 `theme-manager.js` → `theme-marketplace.js` → `theme-customizer-view.js` → `theme-customizer.js` → `confirm-dialog.js` → `motion.js` →
 `features/local-history/history-manager.js` → `features/file-explorer/file-explorer.js` →
 `features/terminal/terminal-manager.js` → `features/debugger/debugger-ui.js` → `renderer/app/*.js` in
@@ -230,7 +230,12 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   launcher writes `{wallMs, cpuMs, peakKB}` that `process-exit` reports. If the launcher is not
   built yet (first seconds after the first launch) or on Linux, the program is spawned directly and
   time comes from Node, memory from `tasklist` / `/proc`.
-- The INPUT panel is sent as one block 20 ms after start; the terminal input box sends line by line.
+- The INPUT panel is sent as one block 20 ms after start; the terminal input box sends its whole
+  text in one IPC (Enter on an empty box sends an empty line).
+- Judging uses only the program's stdout, captured per run in `build.js` (`beginRunCapture` /
+  `captureRunOutput`, capped at 8 MiB, tied to the tab that ran). The terminal keeps no copy of
+  its lines (`TerminalManager.getLines()` reads xterm's buffer on demand, for probes). The
+  Expected diff draws at most `DIFF_MAX_ROWS` lines plus `DIFF_MAX_MISMATCHES` mismatches.
 - External terminal: `start /wait cmd` on Windows, a runner script plus a terminal emulator on Linux.
 - Stop is `executor.stopProcess()`: it kills only the child it spawned (`taskkill /pid /t` on
   Windows) while holding its handle. Never kill by image name.
@@ -254,6 +259,8 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
 **Debug** (`Debugger.start` → `compile` with `-g -O0` and its own PCH → `debug:start`)
 - `GdbSession` drives `gdb --interpreter=mi3`; program I/O is redirected to temp files and polled
   every 120 ms; stdin comes from the INPUT panel only.
+- `debugger-ui.js` keeps decoration state per editor (`paneState`): breakpoints, the current line
+  and gutter clicks work in both split panes, and F5 debugs the focused pane's tab.
 - Every stop sends frames and locals in one `debug:stopped` event; the UI then creates the GDB
   variable objects of the frame in one batched call (`debug:varCreateMany`) and patches values with
   `-var-update` on later stops in the same frame.
@@ -282,11 +289,15 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   **Each tab owns a Monaco model** (`getTabModel`); showing a tab is `editor.setModel`, so undo
   history, markers and scroll state stay with the file, and one tab shown in both split panes is one
   live document. Use `showTabInEditor`, `setTabText` (replace text from outside) and
-  `disposeTabModel`; do not call `editor.setValue()` to switch files. `tab.content` is kept in
-  sync by the editor's change handler, which finds the tab with `getTabForModel`.
-- Decorations made with `deltaDecorations` are tracked by id per model:
-  `clearEditorDecorationsBeforeSwitch()` (error lines + `Debugger.onFileHidden()`) runs before a
-  model is swapped and `Debugger.onFileShown()` after.
+  `disposeTabModel`; do not call `editor.setValue()` to switch files. Once a tab has a model,
+  `tab.content` is an accessor that returns the model's text on demand (`bindTabContent`); the
+  change handler only updates `tab.modified` (a length check first, then a text compare), once
+  per change even when both panes show the file.
+- Editor-owned decorations (`deltaDecorations` on an editor) live on the model it shows:
+  `clearEditorDecorationsBeforeSwitch()` (`Debugger.onFileHidden()`) runs before a model is
+  swapped and `Debugger.onFileShown()` after. Build error lines are model decorations on the built
+  tab (`highlightErrorLines(tab)`, only problems whose file is that tab's), cleared by an edit of
+  that file or the next build. `App.problemsTabId` names the tab `App.problems` belong to.
 - Each editor has an owned placeholder model (`editor.__emptyModel`) shown when no tab is open.
 - Keyboard shortcuts: one capture-phase `document` keydown handler (`initShortcuts`) maps combos
   through `currentShortcutMap` to `ACTION_HANDLERS` and stops propagation when it handles a key,
@@ -336,8 +347,11 @@ function from a later file. Search for the function name to find the exact spot.
 | `updates.js` | 341 | About tab, update status, portable detection, compiler check at startup, `showToast` |
 | `tab-menu.js` | 218 | Tab context menu, local-history settings fields |
 
-Test cases (`ccProblem`, `ccTestIndex`, `batchTestResults`) describe the **active tab**;
-`setActive()` saves them to `tab.testState` and loads the next tab's.
+Test cases (`ccProblem`, `ccTestIndex`, `batchTestResults`) and the Input/Expected boxes describe
+the **focused tab** (`getPreferredTabId()`: the right pane's tab when it has focus). `setActive()`
+and `focusEditorPane()` save them to `tab.testState` / `App.ioByTab` and load the next tab's.
+Build & Run, Run All Tests and auto-save capture their tab when they start, so switching tabs
+meanwhile cannot mix two files.
 
 ## 10. Where to change what
 

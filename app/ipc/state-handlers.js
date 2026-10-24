@@ -85,8 +85,13 @@ function writeStateSync(name, data) {
     commitState(file, tmp, seq);
 }
 
-async function deleteState(name) {
-    await fsp.rm(fileFor(name), { force: true });
+// A delete is ordered like a write: an older write still in flight is dropped
+// when it lands, and a newer write recreates the document. Synchronous, so a
+// pending delete can never remove a save made after it.
+function deleteState(name) {
+    const file = fileFor(name);
+    committedSeq.set(file, ++writeSeq);
+    fs.rmSync(file, { force: true });
 }
 
 /**

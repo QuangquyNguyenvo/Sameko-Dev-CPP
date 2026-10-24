@@ -29,6 +29,7 @@
 
 const { spawn, execFile } = require('child_process');
 const { EventEmitter } = require('events');
+const { StringDecoder } = require('string_decoder');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -87,8 +88,11 @@ class GdbSession extends EventEmitter {
             windowsHide: true,
         });
 
+        // A multi-byte character can be split between two chunks.
+        this.proc.stdout.setEncoding('utf8');
+        this.proc.stderr.setEncoding('utf8');
         this.proc.stdout.on('data', (d) => this._onStdout(d));
-        this.proc.stderr.on('data', (d) => this.emit('log', d.toString()));
+        this.proc.stderr.on('data', (d) => this.emit('log', d));
         this.proc.on('error', (err) => {
             this.emit('error', err);
             this._failAllPending(err);
@@ -323,6 +327,10 @@ class GdbSession extends EventEmitter {
         fs.writeFileSync(this._stderrFile, '');
         this._outOffset = 0;
         this._errOffset = 0;
+        // The files are read in pieces as they grow; a character whose bytes
+        // arrive in two polls must be decoded as one.
+        this._outDecoder = new StringDecoder('utf8');
+        this._errDecoder = new StringDecoder('utf8');
         redirs.push(`> ${quote(this._stdoutFile)}`, `2> ${quote(this._stderrFile)}`);
 
         await this.send(`-exec-arguments ${redirs.join(' ')}`);
@@ -337,6 +345,11 @@ class GdbSession extends EventEmitter {
     _stopPump() {
         if (this._pumpTimer) { clearInterval(this._pumpTimer); this._pumpTimer = null; }
         this._pump(); // final flush
+        for (const key of ['_outDecoder', '_errDecoder']) {
+            const rest = this[key] ? this[key].end() : '';
+            this[key] = null;
+            if (rest) this.emit('programOut', rest);
+        }
     }
     _pump() {
         this._readDelta(this._stdoutFile, 'out');
@@ -353,7 +366,9 @@ class GdbSession extends EventEmitter {
             const fd = fs.openSync(file, 'r');
             try { fs.readSync(fd, buf, 0, len, off); } finally { fs.closeSync(fd); }
             if (which === 'out') this._outOffset = size; else this._errOffset = size;
-            this.emit('programOut', buf.toString());
+            const decoder = which === 'out' ? this._outDecoder : this._errDecoder;
+            const text = decoder ? decoder.write(buf) : buf.toString();
+            if (text) this.emit('programOut', text);
         } catch (_) { /* file not ready / race — next tick */ }
     }
 

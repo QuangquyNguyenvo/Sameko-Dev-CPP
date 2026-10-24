@@ -360,12 +360,73 @@ async function partC() {
     }
 }
 
+// A loop whose breakpoint condition is changed while the program runs.
+const COND_SAMPLE = [
+    'int main(){',                       // 1
+    '    volatile long long x = 0;',     // 2
+    '    while (x >= 0) {',              // 3
+    '        x++;',                      // 4  <- breakpoint
+    '    }',                             // 5
+    '    return 0;',                     // 6
+    '}',                                 // 7
+    '',
+].join('\n');
+
+async function partD() {
+    console.log('\nPart D — breakpoint condition changed while running');
+    const tc = locateToolchain();
+    if (!tc) { skip('condition E2E', 'no gdb/g++ found'); return; }
+
+    const { GdbSession } = require(path.join(ROOT, 'app/services/debugger/gdb-session'));
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-dbgcond-'));
+    const src = path.join(tmp, 'cond.cpp');
+    const exe = path.join(tmp, process.platform === 'win32' ? 'cond.exe' : 'cond');
+    fs.writeFileSync(src, COND_SAMPLE, 'utf8');
+    const env = { ...process.env, PATH: tc.bin + path.delimiter + process.env.PATH };
+
+    try {
+        execFileSync(tc.gpp, ['-g', '-O0', src, '-o', exe], { env, timeout: 60000, stdio: 'pipe' });
+    } catch (err) {
+        check('compile cond -g', () => { throw new Error('compile failed: ' + (err.message || err)); });
+        try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) { }
+        return;
+    }
+
+    const session = new GdbSession({ gdbPath: tc.gdb, exePath: exe, printerPythonDir: tc.printerDir, cwd: tmp, env });
+    session.on('programOut', () => { });
+    session.on('error', () => { });
+    try {
+        await session.start();
+        const bp = await session.setBreakpoint(src, 4, 'x == -5');   // never true
+        const runningP = waitForEvent(session, 'running', 10000);
+        await session.run();
+        await runningP;
+        await new Promise((r) => setTimeout(r, 300));
+        const stoppedP = waitForEvent(session, 'stopped', 8000);
+        stoppedP.catch(() => { });
+        let accepted = false;
+        try { await session.setCondition(bp.id, 'x >= 1'); accepted = true; } catch (_) { }
+        let stop = null;
+        try { stop = await stoppedP; } catch (_) { }
+        check('-break-condition is accepted while running', () => assert.ok(accepted));
+        check('the new condition stops the program', () => {
+            assert.ok(stop && stop.reason === 'breakpoint-hit', 'no breakpoint stop after the condition changed');
+        });
+    } catch (err) {
+        check('condition E2E completes', () => { throw err; });
+    } finally {
+        try { await session.dispose(); } catch (_) { }
+        try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) { }
+    }
+}
+
 // ===========================================================================
 (async function main() {
     console.log('Sameko debugger regression tests');
     try { partA(); } catch (err) { console.error('Part A crashed:', err); failed++; }
     try { await partB(); } catch (err) { console.error('Part B crashed:', err); failed++; }
     try { await partC(); } catch (err) { console.error('Part C crashed:', err); failed++; }
+    try { await partD(); } catch (err) { console.error('Part D crashed:', err); failed++; }
 
     console.log('\n----------------------------------------');
     console.log(`PASSED ${passed} / FAILED ${failed} / SKIPPED ${skipped}`);

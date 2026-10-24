@@ -5300,6 +5300,11 @@ body.split-active .editor-pane {
 }
 
 /* Mismatch case */
+.diff-line.diff-skip {
+    opacity: 0.6;
+    font-style: italic;
+}
+
 .diff-line.mismatch-compact {
     background: rgba(231, 76, 60, 0.10);
     border-left: 2px solid var(--danger);
@@ -6148,74 +6153,6 @@ body.split-active .editor-pane {
     color: var(--bg-ocean-dark, #3a7ca5);
 }
 
-/* Quick Status Bar */
-.cp-status-bar {
-    display: flex;
-    gap: 4px;
-    padding: 8px 10px;
-    border-bottom: 1px solid var(--border, #e0f0ff);
-    overflow-x: auto;
-    flex-shrink: 0;
-    flex-wrap: wrap;
-}
-
-.cp-problem-chip {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    padding: 4px 7px;
-    border-radius: 8px;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: background 0.15s, border-color 0.2s, transform 0.1s;
-    min-width: 34px;
-    max-width: 56px;
-    flex-shrink: 0;
-}
-
-.cp-problem-chip:hover {
-    background: var(--bg-ocean-light, rgba(188, 226, 245, 0.3));
-    transform: translateY(-1px);
-}
-
-.cp-problem-chip.active {
-    border-color: var(--accent, #88c9ea);
-    background: var(--bg-ocean-light, rgba(188, 226, 245, 0.5));
-}
-
-.cp-problem-chip.cp-chip-selected {
-    border-color: var(--cp-status-wa) !important;
-    background: rgba(239, 83, 80, 0.12) !important;
-}
-
-.cp-chip-label {
-    font-family: 'Fredoka', sans-serif;
-    font-weight: 700;
-    font-size: 12px;
-    color: var(--text-primary, #2a5a75);
-    max-width: 48px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.cp-chip-sublabel {
-    font-size: 9px;
-    opacity: 0.65;
-    max-width: 52px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    line-height: 1;
-}
-
-.cp-chip-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
 /* Selection action bar */
 .cp-chip-selbar {
     display: flex;
@@ -6266,31 +6203,6 @@ body.split-active .editor-pane {
 
 .cp-chip-clear-btn:hover {
     opacity: 1;
-}
-
-/* Status-specific chip backgrounds */
-.cp-problem-chip.cp-status-ac {
-    background: rgba(102, 187, 106, 0.1);
-}
-
-.cp-problem-chip.cp-status-wa {
-    background: rgba(239, 83, 80, 0.1);
-}
-
-.cp-problem-chip.cp-status-tle {
-    background: rgba(255, 167, 38, 0.1);
-}
-
-.cp-problem-chip.cp-status-re {
-    background: rgba(171, 71, 188, 0.1);
-}
-
-.cp-problem-chip.cp-status-coding {
-    background: rgba(100, 181, 246, 0.1);
-}
-
-.cp-problem-chip.cp-status-testing {
-    background: rgba(255, 183, 77, 0.1);
 }
 
 /* Progress Section */
@@ -6808,23 +6720,6 @@ body.split-active .editor-pane {
 }
 
 [data-theme-variant="dark"] .cp-contest-name {
-    color: var(--text-primary, #e0e0e0);
-}
-
-[data-theme-variant="dark"] .cp-status-bar {
-    border-color: var(--border, rgba(255, 255, 255, 0.1));
-}
-
-[data-theme-variant="dark"] .cp-problem-chip:hover {
-    background: rgba(255, 255, 255, 0.08);
-}
-
-[data-theme-variant="dark"] .cp-problem-chip.active {
-    border-color: var(--accent, #88c9ea);
-    background: rgba(255, 255, 255, 0.12);
-}
-
-[data-theme-variant="dark"] .cp-chip-label {
     color: var(--text-primary, #e0e0e0);
 }
 

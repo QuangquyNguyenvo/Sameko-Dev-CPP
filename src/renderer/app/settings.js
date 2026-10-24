@@ -620,10 +620,10 @@ function populateThemeCarousel(themeList) {
         pill.className = 'theme-pill' + (t.id === selected ? ' active' : '');
         pill.dataset.themeId = t.id;
         pill.innerHTML = `
-            <div class="theme-pill-swatch" style="background:${escapeHtml(bg)}; border-color:${escapeHtml(accent)}"></div>
+            <div class="theme-pill-swatch" style="background:${escHtml(bg)}; border-color:${escHtml(accent)}"></div>
             <div class="theme-pill-title">
-                <div class="theme-pill-name">${escapeHtml(t.name)}</div>
-                <div class="theme-pill-meta">${t.isBuiltin ? 'Built-in' : 'Custom'} • ${escapeHtml(t.type || '')}</div>
+                <div class="theme-pill-name">${escHtml(t.name)}</div>
+                <div class="theme-pill-meta">${t.isBuiltin ? 'Built-in' : 'Custom'} • ${escHtml(t.type || '')}</div>
             </div>
         `;
 
@@ -1078,6 +1078,9 @@ async function resetSettings() {
             // Re-apply theme to load hardcoded backgrounds
             ThemeManager.setTheme(DEFAULT_SETTINGS.appearance.theme);
         }
+        // Local History keeps its own copy (read once at startup and by its own
+        // controls): without this a reset left it as it was until a restart.
+        if (typeof LocalHistory !== 'undefined' && LocalHistory.loadSettings) LocalHistory.loadSettings();
         applySettings();
         saveSettings();
         openSettings();
@@ -1130,9 +1133,9 @@ function renderKeybindings() {
     const keybindings = App.settings.keybindings || DEFAULT_SETTINGS.keybindings;
 
     container.innerHTML = Object.entries(keybindings).map(([key, value]) => `
-        <div class="keybinding-item" data-action="${escapeHtml(key)}">
-            <span class="keybinding-name">${escapeHtml(KEYBINDING_LABELS[key] || key)}</span>
-            <button class="keybinding-key" data-action="${escapeHtml(key)}">${escapeHtml(value)}</button>
+        <div class="keybinding-item" data-action="${escHtml(key)}">
+            <span class="keybinding-name">${escHtml(KEYBINDING_LABELS[key] || key)}</span>
+            <button class="keybinding-key" data-action="${escHtml(key)}">${escHtml(value)}</button>
         </div>
     `).join('');
 
@@ -1290,44 +1293,77 @@ async function importTemplateFromFile() {
 // AUTO-SAVE
 // ============================================================================
 let autoSaveTimer = null;
+// Tabs edited since the last auto-save. The timer saves each of them, not just
+// the tab that happens to be focused when it fires.
+const autoSavePendingTabs = new Set();
 
-function scheduleAutoSave() {
+/** @param {object} [tab] the tab that was edited (defaults to the focused one) */
+function scheduleAutoSave(tab) {
     if (!App.settings.editor.autoSave) return;
 
+    const tabId = tab?.id || getPreferredTabId();
+    if (tabId) autoSavePendingTabs.add(tabId);
 
     if (autoSaveTimer) {
         clearTimeout(autoSaveTimer);
     }
 
-
     const delay = (App.settings.editor.autoSaveDelay || 3) * 1000;
     autoSaveTimer = setTimeout(() => {
-        autoSaveCurrentFile();
+        autoSaveTimer = null;
+        autoSavePendingFiles();
     }, delay);
 }
 
-async function autoSaveCurrentFile() {
-    const tabId = App.activeEditor === 2 ? App.splitTabId : App.activeTabId;
-    if (!tabId) return;
+async function autoSavePendingFiles() {
+    const ids = [...autoSavePendingTabs];
+    autoSavePendingTabs.clear();
+    for (const id of ids) {
+        await autoSaveTab(App.tabs.find(t => t.id === id));
+    }
+}
 
-    const tab = App.tabs.find(t => t.id === tabId);
+async function autoSaveTab(tab) {
     if (!tab || !tab.path || !tab.modified) return;
 
-
-    const editor = App.activeEditor === 2 ? App.editor2 : App.editor;
-    if (!editor) return;
-
-    const content = editor.getValue();
+    // The tab's own model, whichever pane (if any) shows it.
+    const readText = () => (tab.model && !tab.model.isDisposed() ? tab.model.getValue() : (tab.content || ''));
+    const content = readText();
 
     try {
         const result = await window.electronAPI.saveFile({ path: tab.path, content });
-        if (result.success) {
+        if (result && result.success) {
             tab.original = content;
-            tab.modified = false;
+            // Typing during the save keeps the tab modified (and the next edit
+            // schedules another save).
+            tab.modified = readText() !== content;
+            autoSaveFailedTabs.delete(tab.id);
             renderTabs();
             // Silent save - no log message
+        } else {
+            autoSaveFailed(tab, result && result.error);
         }
     } catch (e) {
-        console.log('Auto-save failed:', e);
+        autoSaveFailed(tab, e && e.message);
+    }
+}
+
+// Tabs whose last auto-save failed (told once, retried every 30 s). A failed
+// save used to be dropped silently: the file stayed unsaved until the next edit.
+const autoSaveFailedTabs = new Set();
+const AUTO_SAVE_RETRY_MS = 30000;
+
+function autoSaveFailed(tab, reason) {
+    setStatus(`Auto-save failed: ${tab.name}`, 'error');
+    if (!autoSaveFailedTabs.has(tab.id)) {
+        autoSaveFailedTabs.add(tab.id);
+        log(`Auto-save could not write ${tab.name}: ${reason || 'unknown error'}. It retries every 30 s; Ctrl+S saves now.`, 'warning');
+    }
+    autoSavePendingTabs.add(tab.id);
+    if (!autoSaveTimer) {
+        autoSaveTimer = setTimeout(() => {
+            autoSaveTimer = null;
+            if (App.settings.editor.autoSave) autoSavePendingFiles();
+        }, AUTO_SAVE_RETRY_MS);
     }
 }

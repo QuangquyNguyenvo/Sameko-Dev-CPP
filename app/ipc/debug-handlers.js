@@ -74,6 +74,11 @@ function registerHandlers() {
     ipcMain.handle(IPC.DEBUG.DISABLE_BREAKPOINT, async (event, { id }) =>
         guard(() => dbg.disableBreakpoint(id)));
 
+    // Works while the program runs (mi-async), so a new condition applies at once.
+    // The condition is one MI line: drop any line breaks.
+    ipcMain.handle(IPC.DEBUG.SET_BREAKPOINT_CONDITION, async (event, { id, condition }) =>
+        guard(() => dbg.setCondition(id, String(condition || '').replace(/[\r\n]+/g, ' ').trim())));
+
     ipcMain.handle(IPC.DEBUG.RUN_TO_LINE, async (event, { file, line }) =>
         guard(() => dbg.runToLine(file, line)));
 

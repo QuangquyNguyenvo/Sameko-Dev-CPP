@@ -12,7 +12,7 @@ const crypto = require('crypto');
 const { spawn, exec } = require('child_process');
 const { getCompilerEnv } = require('../compiler/detector');
 const { normalizeOutput, compareOutputs } = require('../../shared/judge');
-const { IS_WIN, IS_LINUX, readProcMemoryKB } = require('../../shared/platform');
+const { IS_WIN, IS_LINUX, readProcMemoryKB, killProcessTree } = require('../../shared/platform');
 const { getLauncherIfReady, newStatsFile, readStats } = require('../compiler/run-launcher');
 
 /**
@@ -24,7 +24,7 @@ const { getLauncherIfReady, newStatsFile, readStats } = require('../compiler/run
  * @param {string} [options.expectedOutput] - Expected output for comparison
  * @param {number} [options.timeLimit=3000] - Time limit in ms
  * @param {string} [options.cwd] - Working directory
- * @returns {Promise<import('../../../shared/types').BatchTestResult>}
+ * @returns {Promise<import('../../shared/types').BatchTestResult>}
  */
 async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, debug = false, testMeta = null }) {
     return new Promise((resolve) => {
@@ -58,11 +58,12 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
 
         // Create test process. On Windows it goes through the native launcher,
         // which measures the program's own wall time and peak memory exactly.
+        // POSIX: its own process group, so a timeout can stop whatever it started.
         const launcher = getLauncherIfReady();
         const statsFile = launcher ? newStatsFile() : null;
         const testProcess = launcher
             ? spawn(launcher, [statsFile, exePath], { cwd: workingDir, env: getCompilerEnv(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
-            : spawn(exePath, [], { cwd: workingDir, env: getCompilerEnv(), stdio: ['pipe', 'pipe', 'pipe'] });
+            : spawn(exePath, [], { cwd: workingDir, env: getCompilerEnv(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN });
 
         const pid = testProcess.pid;
         debugInfo.pid = pid || null;
@@ -96,18 +97,19 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
             memoryPollInterval = setInterval(pollMemory, IS_WIN ? 500 : 100);
         }
 
-        // Set timeout
+        // 'close' waits until every copy of the output pipe is closed, so a process
+        // the program started (system(), a forgotten child) could hold the test
+        // open long past its limit, or forever. The whole tree is killed on
+        // timeout, and the result no longer waits for the pipe once the program
+        // itself has exited.
+        let settled = false;
+        let exitGrace = null;
+        let forceFinish = null;
         const timeout = setTimeout(() => {
             killed = true;
             debugInfo.timeoutKilled = true;
-            testProcess.kill();
-            // POSIX: kill() is SIGTERM, which a program can trap/ignore. Escalate to
-            // SIGKILL shortly after so one bad submission can't hang the whole batch.
-            if (!IS_WIN) {
-                setTimeout(() => {
-                    try { if (testProcess.exitCode === null && testProcess.signalCode === null) process.kill(testProcess.pid, 'SIGKILL'); } catch (_) { }
-                }, 200);
-            }
+            killProcessTree(testProcess);
+            forceFinish = setTimeout(() => settle(testProcess.exitCode, testProcess.signalCode || 'SIGKILL'), 1000);
         }, timeLimit);
 
         // Send input and start timing
@@ -126,18 +128,40 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
         const MAX_CAPTURE_CHARS = 16 * 1024 * 1024;
         let outputTruncated = false;
 
+        // Decoded as a stream: a character split between two chunks (😀 is four
+        // bytes) must not turn into two replacement characters and a false WA.
+        testProcess.stdout.setEncoding('utf8');
+        testProcess.stderr.setEncoding('utf8');
         testProcess.stdout.on('data', (data) => {
-            if (output.length < MAX_CAPTURE_CHARS) output += data.toString();
+            if (output.length < MAX_CAPTURE_CHARS) output += data;
             else outputTruncated = true;
         });
 
         testProcess.stderr.on('data', (data) => {
-            if (errorOutput.length < MAX_CAPTURE_CHARS) errorOutput += data.toString();
+            if (errorOutput.length < MAX_CAPTURE_CHARS) errorOutput += data;
         });
 
-        testProcess.on('close', (code, signal) => {
+        testProcess.on('exit', (code, signal) => {
+            if (settled) return;
+            // Output still in the pipe arrives before 'close'; a process left
+            // running may keep the pipe open, so stop waiting after a moment.
+            exitGrace = setTimeout(() => settle(code, signal), 500);
+        });
+
+        testProcess.on('close', (code, signal) => settle(code, signal));
+
+        function settle(code, signal) {
+            if (settled) return;
+            settled = true;
             clearTimeout(timeout);
+            if (exitGrace) clearTimeout(exitGrace);
+            if (forceFinish) clearTimeout(forceFinish);
             if (memoryPollInterval) clearInterval(memoryPollInterval);
+            // Release pipes another process may still hold, and stop that process
+            // (POSIX: the group; the program itself has already exited).
+            try { testProcess.stdout.destroy(); } catch (_) { }
+            try { testProcess.stderr.destroy(); } catch (_) { }
+            if (!IS_WIN) killProcessTree(testProcess);
 
             const stats = readStats(statsFile); // also removes the file
             const executionTime = stats ? Math.round(stats.wallMs) : Date.now() - startTime;
@@ -204,10 +228,14 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
             }
 
             resolve(response);
-        });
+        }
 
         testProcess.on('error', (err) => {
+            if (settled) return;
+            settled = true;
             clearTimeout(timeout);
+            if (exitGrace) clearTimeout(exitGrace);
+            if (forceFinish) clearTimeout(forceFinish);
             if (memoryPollInterval) clearInterval(memoryPollInterval);
             readStats(statsFile);
 
@@ -233,7 +261,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
  * @param {number} [options.timeLimit=3000] - Time limit per test
  * @param {string} [options.cwd] - Working directory
  * @param {Function} [options.onProgress] - Progress callback
- * @returns {Promise<import('../../../shared/types').BatchTestResult[]>}
+ * @returns {Promise<import('../../shared/types').BatchTestResult[]>}
  */
 async function runBatchTests({ exePath, tests, timeLimit = 3000, cwd, onProgress, debug = false }) {
     const results = [];

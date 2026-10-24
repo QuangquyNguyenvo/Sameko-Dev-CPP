@@ -23,7 +23,7 @@ let activeChecker = null;
  * 
  * @param {string} content - Source code
  * @param {string} [filePath] - Original file path (for include resolution)
- * @returns {Promise<import('../../../shared/types').SyntaxError[]>}
+ * @returns {Promise<import('../../shared/types').SyntaxError[]>}
  */
 async function checkSyntax(content, filePath = null) {
     const compilerExe = getDetectedCompiler() || 'g++';
@@ -89,8 +89,9 @@ async function checkSyntax(content, filePath = null) {
         activeChecker = spawn(compilerExe, args, { cwd: tempDir });
         let stderr = '';
 
+        activeChecker.stderr.setEncoding('utf8');
         activeChecker.stderr.on('data', (data) => {
-            stderr += data.toString();
+            stderr += data;
         });
 
         activeChecker.on('close', (code) => {
@@ -100,6 +101,12 @@ async function checkSyntax(content, filePath = null) {
                 return;
             }
             const diagnostics = parseGccOutput(stderr);
+            // g++ failed without a file:line message (bad flag, missing tool):
+            // report it instead of calling the file clean.
+            if (code !== 0 && !diagnostics.some(d => d.severity === 'error')) {
+                const first = stderr.split(/\r?\n/).map(s => s.trim()).find(Boolean);
+                if (first) diagnostics.push({ line: 1, column: 1, severity: 'error', message: first, source: 'gcc' });
+            }
             resolve(diagnostics);
         });
 
@@ -122,7 +129,7 @@ function cancelSyntaxCheck() {
 /**
  * Parse GCC error output into structured diagnostics
  * @param {string} output - GCC stderr output
- * @returns {import('../../../shared/types').SyntaxError[]}
+ * @returns {import('../../shared/types').SyntaxError[]}
  */
 function parseGccOutput(output) {
     const diagnostics = [];
@@ -130,12 +137,12 @@ function parseGccOutput(output) {
 
     for (const line of lines) {
         // Pattern: /path/file.cpp:10:5: error: message
-        const match = line.match(/^(?:[A-Za-z]:)?[^:]*:(\d+):(\d+):\s*(error|warning|note):\s*(.+)$/);
+        const match = line.match(/^(?:[A-Za-z]:)?[^:]*:(\d+):(\d+):\s*(fatal error|error|warning|note):\s*(.+)$/);
         if (match) {
             diagnostics.push({
                 line: parseInt(match[1], 10),
                 column: parseInt(match[2], 10),
-                severity: match[3],
+                severity: match[3] === 'fatal error' ? 'error' : match[3],
                 message: match[4],
                 source: 'gcc'
             });

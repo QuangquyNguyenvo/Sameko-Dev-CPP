@@ -95,12 +95,7 @@ function closeSplashWindow() {
     splashWindow = null;
 }
 
-function getSplashWindow() {
-    return splashWindow;
-}
-
 module.exports = {
     createSplashWindow,
     closeSplashWindow,
-    getSplashWindow,
 };

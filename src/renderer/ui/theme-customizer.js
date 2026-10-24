@@ -44,7 +44,7 @@ const ThemeCustomizer = {
         this._assetRequests = {};
         this.sourceThemeId = id;
         this.baseThemeId = id;
-        this.workingTheme = this._draft(ThemeManager.themes.get(id));
+        this.workingTheme = this._draft(ThemeManager.getEffectiveTheme(id));
         this._baseline = this._clone(this.workingTheme);
         this.historyStack = [this._clone(this.workingTheme)];
         this.historyIndex = 0;
@@ -243,7 +243,16 @@ const ThemeCustomizer = {
         }, { force: true });
     },
 
-    async setBackgroundFile(file, key) {
+    /** Read and store a chosen background; Save waits for the ones still in flight. */
+    setBackgroundFile(file, key) {
+        const pending = (this._pendingAssets ||= new Set());
+        const job = this._setBackgroundFileNow(file, key);
+        pending.add(job);
+        job.finally(() => pending.delete(job));
+        return job;
+    },
+
+    async _setBackgroundFileNow(file, key) {
         if (!file || !ThemeManager.ASSET_KEYS.includes(key) || this.busy) return;
         if (file.size > 64 * 1024 * 1024) { this.notify('Background files must be smaller than 64 MB.', 'error'); return; }
         if (!['image/png','image/jpeg','image/gif','image/webp','image/svg+xml','image/avif','image/bmp','video/webm','video/mp4'].includes(file.type)) {
@@ -273,7 +282,7 @@ const ThemeCustomizer = {
         if (this._hasJsonEdits() && !this.applyJson()) return;
         const name = this.workingTheme.name;
         const identity = this.sourceThemeId;
-        const next = this._draft(ThemeManager.themes.get(id));
+        const next = this._draft(ThemeManager.getEffectiveTheme(id));
         next.id = identity;
         next.name = name;
         this.workingTheme = next;
@@ -344,6 +353,12 @@ const ThemeCustomizer = {
 
     async save({ asNew = false, backgroundOnly = false } = {}) {
         if (this.busy || !this.workingTheme) return false;
+        // A background still being read or stored lands after Save snapshots the
+        // theme, and is then refused while Save is busy: let it finish first.
+        if (this._pendingAssets?.size) {
+            await Promise.allSettled([...this._pendingAssets]);
+            if (this.busy || !this.workingTheme) return false;
+        }
         if (this._hasJsonEdits() && !this.applyJson()) return false;
         const validation = ThemeTokens.validateTheme(this.workingTheme);
         if (!validation.valid || !this.workingTheme.name.trim()) {

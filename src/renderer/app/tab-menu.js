@@ -94,8 +94,8 @@ function openContextMenu(e, items) {
 
         const menuItem = document.createElement('div');
         menuItem.className = 'tab-context-item' + (item.disabled ? ' disabled' : '');
-        menuItem.innerHTML = `<span class="tab-context-icon">${item.icon}</span><span>${escapeHtml(item.label)}</span>`
-            + (item.hint ? `<span class="tab-context-hint">${escapeHtml(item.hint)}</span>` : '');
+        menuItem.innerHTML = `<span class="tab-context-icon">${item.icon}</span><span>${escHtml(item.label)}</span>`
+            + (item.hint ? `<span class="tab-context-hint">${escHtml(item.hint)}</span>` : '');
 
         if (!item.disabled) {
             menuItem.onclick = () => {

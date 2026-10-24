@@ -81,6 +81,9 @@ const UNCACHEABLE_FLAG = /^(-I|-iquote|-isystem|-idirafter|-include|-imacros|-L|
  */
 function buildCacheKey(compilerExe, args, content, dir) {
     if (/#\s*include\s*"/.test(content)) return null;
+    // `#include MACRO`, `#include_next`, `#import` and `#embed` read files whose
+    // name or content the key cannot follow.
+    if (/#\s*(?:include\s*[^\s<"]|include_next\b|import\b|embed\b)/.test(content)) return null;
     const angleIncludes = content.match(/#\s*include\s*<[^>]+>/g) || [];
     for (const inc of angleIncludes) {
         const name = inc.slice(inc.indexOf('<') + 1, -1).trim();
@@ -176,7 +179,7 @@ function sendToRenderer(channel, data) {
  * @param {string|null} options.filePath - Source file path (null for unsaved)
  * @param {string} options.content - Source code content
  * @param {string} [options.flags] - Compiler flags
- * @returns {Promise<import('../../../shared/types').CompileResult>}
+ * @returns {Promise<import('../../shared/types').CompileResult>}
  */
 async function compile({ filePath, content, flags, useLLD, noBuildCache = false, singleFileMode = false, realtimeOutput = true }) {
     const startTime = Date.now();
@@ -419,8 +422,10 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
 
         let stderr = '';
 
+        // GCC quotes names with ‘ ’ (UTF-8): decode across chunk boundaries.
+        compiler.stderr.setEncoding('utf8');
         compiler.stderr.on('data', (data) => {
-            stderr += data.toString();
+            stderr += data;
         });
 
         compiler.on('close', (code) => {
@@ -493,7 +498,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
  * @param {Object} options
  * @param {string} options.exePath - Path to executable
  * @param {string} [options.cwd] - Working directory
- * @returns {Promise<import('../../../shared/types').RunResult>}
+ * @returns {Promise<import('../../shared/types').RunResult>}
  */
 async function runExternal({ exePath, cwd }) {
     if (!exePath || !fs.existsSync(exePath)) {
@@ -511,7 +516,7 @@ async function runExternal({ exePath, cwd }) {
 
 /**
  * Windows implementation — unchanged behaviour, just moved out of runExternal().
- * @returns {Promise<import('../../../shared/types').RunResult>}
+ * @returns {Promise<import('../../shared/types').RunResult>}
  */
 async function runExternalWindows({ exePath, workingDir, env, startTime }) {
     const exeName = path.basename(exePath);
@@ -666,7 +671,7 @@ function findLinuxTerminal() {
 /**
  * Linux implementation — write a runner script to tmp, hand it to whichever
  * terminal emulator is installed.
- * @returns {Promise<import('../../../shared/types').RunResult>}
+ * @returns {Promise<import('../../shared/types').RunResult>}
  */
 async function runExternalLinux({ exePath, workingDir, env, startTime }) {
     sweepStaleRunnerScripts();
@@ -727,7 +732,7 @@ async function runExternalLinux({ exePath, workingDir, env, startTime }) {
 /**
  * macOS implementation — hand a .command script to Terminal.app. `open` returns
  * immediately, so there is no reliable exit signal.
- * @returns {Promise<import('../../../shared/types').RunResult>}
+ * @returns {Promise<import('../../shared/types').RunResult>}
  */
 async function runExternalMac({ exePath, workingDir, env, startTime }) {
     sweepStaleRunnerScripts();
@@ -751,7 +756,7 @@ async function runExternalMac({ exePath, workingDir, env, startTime }) {
  * @param {Object} options
  * @param {string} options.exePath - Path to executable
  * @param {string} [options.cwd] - Working directory
- * @returns {Promise<import('../../../shared/types').RunResult>}
+ * @returns {Promise<import('../../shared/types').RunResult>}
  */
 async function run({ exePath, cwd }) {
     if (!exePath || !fs.existsSync(exePath)) {
@@ -921,8 +926,13 @@ async function run({ exePath, cwd }) {
         });
     });
 
-    child.on('error', () => {
-        finish();
+    child.on('error', (err) => {
+        // A failed spawn emits no usable 'close': report an exit so the UI
+        // does not stay in "Running".
+        if (!finish()) return;
+        readStats(statsFile);
+        sendToRenderer('process-error', `Could not start the program: ${err && err.message ? err.message : err}\n`);
+        sendToRenderer('process-exit', { code: -1, executionTime: Date.now() - runStartTime, cpuTime: null, peakMemoryKB: 0 });
     });
 
     // Send initial signal

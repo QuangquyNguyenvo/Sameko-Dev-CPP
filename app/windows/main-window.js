@@ -375,16 +375,6 @@ function closeWindow() {
     }
 }
 
-function isWindowAvailable() {
-    return mainWindow !== null && !mainWindow.isDestroyed();
-}
-
-function sendToRenderer(channel, data) {
-    if (isWindowAvailable()) {
-        mainWindow.webContents.send(channel, data);
-    }
-}
-
 module.exports = {
     createMainWindow,
     getMainWindow,
@@ -394,7 +384,5 @@ module.exports = {
     minimizeWindow,
     toggleMaximize,
     closeWindow,
-    isWindowAvailable,
-    sendToRenderer,
     applyUiScale,
 };

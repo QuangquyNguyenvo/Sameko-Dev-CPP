@@ -37,15 +37,16 @@ function initBatchTesting() {
     }
 }
 
-function syncProblemStatusWithExplorer() {
-    if (!window.FileExplorer || !App.activeTabId) return;
-    const tab = App.tabs.find(t => t.id === App.activeTabId);
+function syncProblemStatusWithExplorer(tab = App.tabs.find(t => t.id === getPreferredTabId()), problem = ccProblem, results = batchTestResults) {
+    if (!window.FileExplorer) return;
     if (!tab || !tab.path) return;
 
-    if (!ccProblem || !ccProblem.tests || ccProblem.tests.length === 0) return;
+    if (!problem || !problem.tests || problem.tests.length === 0) return;
 
     // Check if we have results
-    if (batchTestResults.length === 0) return;
+    if (!results || results.length === 0) return;
+    const ccProblem = problem;
+    const batchTestResults = results;
 
     // Determine overall status
     let overallEvent = null;
@@ -76,6 +77,28 @@ function syncProblemStatusWithExplorer() {
     }
 }
 
+/** The current text of a tab, read from its own model (whichever pane shows it). */
+function tabSourceText(tab) {
+    return tab.model && !tab.model.isDisposed() ? tab.model.getValue() : (tab.content || '');
+}
+
+/**
+ * Results of a test run belong to the tab that was tested. If that tab is still
+ * focused they go to the live list; otherwise into the state it saved when the
+ * user switched away, so they never land on another tab's tests.
+ * @returns {boolean} true when the live list was updated
+ */
+function storeTestResults(tab, problem, results) {
+    if (getPreferredTabId() === tab.id && ccProblem === problem) {
+        batchTestResults = results;
+        return true;
+    }
+    if (tab.testState && tab.testState.problem === problem) {
+        tab.testState.results = results;
+    }
+    return false;
+}
+
 async function runAllTests() {
     if (!ccProblem || !ccProblem.tests || ccProblem.tests.length === 0) {
         log('No test cases to run. Get test cases from OJ first!', 'warning');
@@ -88,6 +111,17 @@ async function runAllTests() {
     }
 
     if (blockedByDebugSession('Running tests')) return;
+
+    // Everything a run depends on is taken now: the user may switch tabs while
+    // g++ is busy, and the program must be judged with its own tests.
+    const tab = App.tabs.find(t => t.id === getPreferredTabId());
+    if (!tab) {
+        log('No file is currently open!', 'error');
+        return;
+    }
+    const problem = ccProblem;
+    const tests = problem.tests.slice();
+    const content = tabSourceText(tab);
 
     const runAllBtn = document.getElementById('btn-run-all-tests');
     if (runAllBtn) {
@@ -121,13 +155,6 @@ async function runAllTests() {
     setStatus('Compiling...', '');
 
     try {
-        const tab = App.tabs.find(t => t.id === App.activeTabId);
-        if (!tab) {
-            log('No file is currently open!', 'error');
-            return;
-        }
-
-        const content = App.editor ? App.editor.getValue() : tab.content;
         const compileFlags = buildCompileFlags();
 
         const compileResult = await window.electronAPI.compile({
@@ -150,10 +177,10 @@ async function runAllTests() {
         tab.exePath = compileResult.outputPath;
         log(compileResult.cached ? 'Source unchanged: reused the last build' : `Compiled in ${compileResult.time}ms`, 'success');
 
-        const timeLimit = ccProblem.timeLimit || (App.settings.execution.timeLimitSeconds * 1000) || 3000;
+        const timeLimit = problem.timeLimit || (App.settings.execution.timeLimitSeconds * 1000) || 3000;
 
 
-        const totalTests = ccProblem.tests.length;
+        const totalTests = tests.length;
         let passedCount = 0;
 
         const lastSlash = tab.path ? Math.max(tab.path.lastIndexOf('/'), tab.path.lastIndexOf('\\')) : -1;
@@ -164,9 +191,9 @@ async function runAllTests() {
         if (totalTests > 0) {
             try {
                 setStatus('Warming up...', '');
-                const warmupTest = ccProblem.tests[0] || { input: '' };
+                const warmupTest = tests[0] || { input: '' };
                 await window.electronAPI.runTest({
-                    exePath: App.exePath,
+                    exePath: tab.exePath,
                     input: warmupTest.input || '',
                     expectedOutput: null,
                     timeLimit: timeLimit,
@@ -181,8 +208,7 @@ async function runAllTests() {
         // other. Each test is its own process and measures its own time, so
         // running a few side by side changes the total, not the per-test
         // numbers — as long as the pool stays well below the core count.
-        const tests = ccProblem.tests.slice();
-        const exePath = App.exePath;
+        const exePath = tab.exePath;
         const poolSize = App.settings.execution.parallelTests === false
             ? 1
             : Math.max(1, Math.min(4, totalTests, Math.floor((navigator.hardwareConcurrency || 2) / 2)));
@@ -239,9 +265,10 @@ async function runAllTests() {
         }
 
         // Report in test order, whatever order they finished in.
+        const finalResults = [];
         for (let i = 0; i < totalTests; i++) {
             const result = results[i];
-            batchTestResults.push(result);
+            finalResults.push(result);
 
             if (result.status === 'AC') {
                 passedCount++;
@@ -268,15 +295,17 @@ async function runAllTests() {
 
 
         const allPassed = passedCount === totalTests;
-        log(`\n=== ${passedCount}/${totalTests} AC ===`, allPassed ? 'success' : 'warning');
+        log(`\n=== ${tab.name}: ${passedCount}/${totalTests} AC ===`, allPassed ? 'success' : 'warning');
         setStatus(`${passedCount}/${totalTests} AC`, allPassed ? 'success' : '');
 
         // Update UI
-        renderTestResults();
-        if (typeof showTestsTab === 'function') showTestsTab();
+        if (storeTestResults(tab, problem, finalResults)) {
+            renderTestResults();
+            if (typeof showTestsTab === 'function') showTestsTab();
+        }
 
         // Sync status with explorer
-        syncProblemStatusWithExplorer();
+        syncProblemStatusWithExplorer(tab, problem, finalResults);
 
     } catch (e) {
         log(`Error running tests: ${e.message}`, 'error');
@@ -298,8 +327,9 @@ async function runSingleTestByIndex(testIndex) {
         return;
     }
 
-    const test = ccProblem.tests[testIndex];
-    const tab = App.tabs.find(t => t.id === App.activeTabId);
+    const problem = ccProblem;
+    const test = problem.tests[testIndex];
+    const tab = App.tabs.find(t => t.id === getPreferredTabId());
     if (!tab) {
         log('No file is currently open!', 'error');
         return;
@@ -310,7 +340,7 @@ async function runSingleTestByIndex(testIndex) {
 
     try {
         setStatus(`Single test ${testIndex + 1}: compiling...`, '');
-        const content = App.editor ? App.editor.getValue() : tab.content;
+        const content = tabSourceText(tab);
         const compileFlags = buildCompileFlags();
         const compileResult = await window.electronAPI.compile({
             filePath: tab.path,
@@ -331,13 +361,13 @@ async function runSingleTestByIndex(testIndex) {
         App.exePath = compileResult.outputPath;
         tab.exePath = compileResult.outputPath;
 
-        const timeLimit = ccProblem.timeLimit || (App.settings.execution.timeLimitSeconds * 1000) || 3000;
+        const timeLimit = problem.timeLimit || (App.settings.execution.timeLimitSeconds * 1000) || 3000;
         const lastSlash = tab.path ? Math.max(tab.path.lastIndexOf('/'), tab.path.lastIndexOf('\\')) : -1;
         const sourceDir = lastSlash !== -1 ? tab.path.substring(0, lastSlash) : null;
 
         setStatus(`Running test ${testIndex + 1}...`, '');
         const result = await window.electronAPI.runTest({
-            exePath: App.exePath,
+            exePath: tab.exePath,
             input: test.input || '',
             expectedOutput: test.output || '',
             timeLimit: timeLimit,
@@ -350,12 +380,17 @@ async function runSingleTestByIndex(testIndex) {
         result.testName = `Test ${testIndex + 1}`;
         result.actualOutput = result.output ?? '';
 
-        const existingIdx = batchTestResults.findIndex(r => r.testIndex === testIndex);
-        if (existingIdx >= 0) batchTestResults.splice(existingIdx, 1, result);
-        else batchTestResults.push(result);
+        const live = getPreferredTabId() === tab.id && ccProblem === problem;
+        const owned = live ? batchTestResults : (tab.testState && tab.testState.problem === problem ? tab.testState.results : null);
+        const list = Array.isArray(owned) ? owned.slice() : [];
+        const existingIdx = list.findIndex(r => r.testIndex === testIndex);
+        if (existingIdx >= 0) list.splice(existingIdx, 1, result);
+        else list.push(result);
 
-        renderTestResults();
-        switchTestCase(testIndex);
+        if (storeTestResults(tab, problem, list)) {
+            renderTestResults();
+            switchTestCase(testIndex);
+        }
 
         const timeStr = result.executionTime >= 1000
             ? (result.executionTime / 1000).toFixed(2) + 's'
@@ -370,7 +405,7 @@ async function runSingleTestByIndex(testIndex) {
         }
 
         // Sync status with explorer
-        syncProblemStatusWithExplorer();
+        syncProblemStatusWithExplorer(tab, problem, list);
     } catch (e) {
         log(`Single test error: ${e.message}`, 'error');
         setStatus('Single Test Error', 'error');
@@ -458,14 +493,14 @@ function renderTestResults() {
         }
 
         const isAC = result && result.status === 'AC';
-        const itemClass = `test-result-item status-${escapeHtml(statusClass)}${isAC ? ' item-ac' : ''}`;
+        const itemClass = `test-result-item status-${escHtml(statusClass)}${isAC ? ' item-ac' : ''}`;
 
         html += `
                 <div class="${itemClass}" data-index="${idx}">
-                    <span class="test-result-status ${escapeHtml(statusClass)}">${escapeHtml(status)}</span>
+                    <span class="test-result-status ${escHtml(statusClass)}">${escHtml(status)}</span>
                     <div class="test-result-info">
                         <span class="test-result-title">Test ${idx + 1}</span>
-                        <span class="test-result-details">${escapeHtml(details)}</span>
+                        <span class="test-result-details">${escHtml(details)}</span>
                     </div>
                     <span class="test-result-time">${timeStr}</span>
                     <button class="test-run-btn" data-run-index="${idx}" title="Run this test case">
