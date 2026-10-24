@@ -149,9 +149,16 @@ function applyBackgroundSettings() {
 // (--app-bg-blurred). Done when the page is idle: it takes ~30 ms. Without a background image or
 // video the variable is removed and the glass shows the theme's gradient through its tint.
 let fakeBlurJob = 0;
+let fakeBlurSource = null;
 function updateFakeBlur() {
     const job = ++fakeBlurJob;
     const root = document.documentElement;
+    // A different picture: drop the old copy now, so the glass never shows the previous
+    // background while the new one loads (or if it fails to).
+    const forget = (source) => {
+        if (source !== fakeBlurSource) root.style.removeProperty('--app-bg-blurred');
+        fakeBlurSource = source;
+    };
     const draw = (src, width, height, opacity) => {
         if (job !== fakeBlurJob || !width || !height) return;
         const cs = getComputedStyle(root);
@@ -176,8 +183,27 @@ function updateFakeBlur() {
 
     const video = document.getElementById('app-bg-video');
     if (video && video.style.display !== 'none' && video.getAttribute('src')) {
-        const fromVideo = () => whenIdle(() => draw(video, video.videoWidth, video.videoHeight,
-            parseFloat(getComputedStyle(video).opacity) || 1));
+        forget('video:' + video.getAttribute('src'));
+        // A cached video reports its data loaded before the first frame can be drawn; drawn
+        // then, the copy is only the fill colour. Wait (up to ~3 s) until a frame has pixels.
+        const hasFrame = () => {
+            try {
+                const c = document.createElement('canvas');
+                c.width = c.height = 4;
+                const g = c.getContext('2d', { willReadFrequently: true });
+                g.drawImage(video, 0, 0, 4, 4);
+                const d = g.getImageData(0, 0, 4, 4).data;
+                for (let i = 3; i < d.length; i += 4) if (d[i]) return true;
+            } catch (_) { return true; }   // unreadable: let draw() decide
+            return false;
+        };
+        let tries = 0;
+        const fromVideo = () => {
+            if (job !== fakeBlurJob) return;
+            if (!hasFrame() && ++tries < 30) { setTimeout(fromVideo, 100); return; }
+            whenIdle(() => draw(video, video.videoWidth, video.videoHeight,
+                parseFloat(getComputedStyle(video).opacity) || 1));
+        };
         if (video.readyState >= 2) fromVideo();
         else video.addEventListener('loadeddata', fromVideo, { once: true });
         return;
@@ -186,8 +212,10 @@ function updateFakeBlur() {
         || getComputedStyle(root).getPropertyValue('--app-bg-image').trim());
     if (!url) {
         root.style.removeProperty('--app-bg-blurred');
+        fakeBlurSource = null;
         return;
     }
+    forget('image:' + url[1]);
     const img = new Image();
     img.src = url[1];
     img.decode().then(() => whenIdle(() => draw(img, img.naturalWidth, img.naturalHeight,

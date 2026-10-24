@@ -1135,6 +1135,9 @@ const ThemeManager = {
         document.documentElement.setAttribute('data-theme-variant', theme.type || 'dark');
         this._applyCSSVariables(theme);
         this._updateBackground(theme);
+        // The glass surfaces paint a blurred copy of the background; every theme change must
+        // redo it (deleting or re-saving the active theme reaches here without applyTheme()).
+        if (typeof updateFakeBlur === 'function') updateFakeBlur();
 
         // Monaco: an explicit editor color scheme overrides the UI theme; otherwise
         // the editor follows the UI theme. This is the single place that decides the
