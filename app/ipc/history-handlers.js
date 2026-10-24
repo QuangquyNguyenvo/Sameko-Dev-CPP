@@ -1,7 +1,10 @@
 /**
  * Sameko Dev C++ IDE - History IPC Handlers
  * Local history: a snapshot of a file is stored before every save, under
- * userData/local-history/<sha256 of the path>/<timestamp>.snapshot.
+ * userData/local-history/<sha256 of the canonical path>/<timestamp>.snapshot.
+ * The canonical path is resolved and, except on Linux, lower-cased, so C:\x,
+ * C:/x and c:\x share one history. Folders keyed by an older spelling are
+ * merged into it the first time the file is used.
  * @module app/ipc/history-handlers
  */
 
@@ -11,16 +14,76 @@ const { ipcMain, app } = require('electron');
 const path = require('path');
 const crypto = require('crypto');
 const fsp = require('fs').promises;
+const { IS_LINUX } = require('../shared/platform');
 
 const historyDir = path.join(app.getPath('userData'), 'local-history');
 
+/** The spelling every history key is made from (case-insensitive file systems ignore case). */
+function canonicalPath(filePath) {
+    const p = path.resolve(filePath);
+    return IS_LINUX ? p : p.toLowerCase();
+}
+
+function dirForKey(key) {
+    return path.join(historyDir, crypto.createHash('sha256').update(key).digest('hex'));
+}
+
+/** Spellings older versions may have keyed the same file by: as given, resolved, either slash, drive letter in either case. */
+function legacyKeys(filePath) {
+    const keys = new Set();
+    for (const s of [filePath, path.resolve(filePath)]) {
+        for (const t of [s, s.replace(/\\/g, '/'), s.replace(/\//g, '\\')]) {
+            keys.add(t);
+            if (/^[a-zA-Z]:/.test(t)) {
+                keys.add(t[0].toUpperCase() + t.slice(1));
+                keys.add(t[0].toLowerCase() + t.slice(1));
+            }
+        }
+    }
+    return keys;
+}
+
+/** Move the snapshots in `from` into `to`; a name already present in `to` stays where it is. */
+async function moveSnapshots(from, to) {
+    let names;
+    try {
+        names = await fsp.readdir(from);
+    } catch {
+        return;
+    }
+    await fsp.mkdir(to, { recursive: true });
+    for (const name of names) {
+        if (!name.endsWith('.snapshot')) continue;
+        const target = path.join(to, name);
+        if (await fsp.access(target).then(() => true, () => false)) continue;
+        await fsp.rename(path.join(from, name), target).catch(() => {});
+    }
+    await fsp.rmdir(from).catch(() => {});  // only once empty
+}
+
+// Canonical key -> promise of its merge, so each file's old folders are merged once per run.
+const merges = new Map();
+
 /**
+ * History folder for a file, after merging folders keyed by older spellings of its path.
  * @param {string} filePath - Absolute file path
- * @returns {string} History folder for the file
+ * @returns {Promise<string>}
  */
 function getHistoryDirForFile(filePath) {
-    const hash = crypto.createHash('sha256').update(filePath).digest('hex');
-    return path.join(historyDir, hash);
+    const key = canonicalPath(filePath);
+    let pending = merges.get(key);
+    if (!pending) {
+        const to = dirForKey(key);
+        pending = (async () => {
+            for (const legacy of legacyKeys(filePath)) {
+                const from = dirForKey(legacy);
+                if (from !== to) await moveSnapshots(from, to);
+            }
+            return to;
+        })().catch(() => to);
+        merges.set(key, pending);
+    }
+    return pending;
 }
 
 /**
@@ -29,7 +92,7 @@ function getHistoryDirForFile(filePath) {
  * @returns {Promise<Array<{timestamp: string, filename: string, path: string, size: number}>>}
  */
 async function getFileHistory(filePath) {
-    const dir = getHistoryDirForFile(filePath);
+    const dir = await getHistoryDirForFile(filePath);
     let names;
     try {
         names = await fsp.readdir(dir);
@@ -116,7 +179,7 @@ function registerHistoryHandlers() {
         try {
             if (Number.isFinite(maxAgeDays) && maxAgeDays > 0) retentionDays = maxAgeDays;
             const ts = Date.now().toString();
-            const dir = getHistoryDirForFile(filePath);
+            const dir = await getHistoryDirForFile(filePath);
             const backupPath = path.join(dir, `${ts}.snapshot`);
             await fsp.mkdir(dir, { recursive: true });
             await fsp.writeFile(backupPath, content, 'utf-8');
@@ -162,7 +225,7 @@ function registerHistoryHandlers() {
 
     ipcMain.handle('clear-file-history', async (event, filePath) => {
         try {
-            await fsp.rm(getHistoryDirForFile(filePath), { recursive: true, force: true });
+            await fsp.rm(await getHistoryDirForFile(filePath), { recursive: true, force: true });
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
@@ -171,29 +234,15 @@ function registerHistoryHandlers() {
 }
 
 /**
- * A file was renamed: its snapshots move to the new path's folder. The folder is keyed by the
- * path string the renderer saved with, so both slash styles of the old path are tried.
+ * A file was renamed: its snapshots move to the new path's folder. A rename that only changes
+ * letter case keeps the same folder on a case-insensitive file system.
  * @param {string} oldPath
  * @param {string} newPath
  */
 async function moveFileHistory(oldPath, newPath) {
-    const to = getHistoryDirForFile(newPath);
-    const variants = new Set([oldPath, oldPath.replace(/\\/g, '/'), oldPath.replace(/\//g, '\\')]);
-    for (const variant of variants) {
-        const from = getHistoryDirForFile(variant);
-        if (from === to) continue;
-        let names;
-        try {
-            names = await fsp.readdir(from);
-        } catch {
-            continue;
-        }
-        await fsp.mkdir(to, { recursive: true });
-        for (const name of names) {
-            if (name.endsWith('.snapshot')) await fsp.rename(path.join(from, name), path.join(to, name)).catch(() => {});
-        }
-        await fsp.rmdir(from).catch(() => {});  // only once empty: a snapshot that did not move stays
-    }
+    const from = await getHistoryDirForFile(oldPath);
+    const to = await getHistoryDirForFile(newPath);
+    if (from !== to) await moveSnapshots(from, to);
 }
 
 module.exports = {

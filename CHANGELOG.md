@@ -32,6 +32,7 @@ Fixes for data loss in contests, the Explorer, Save As and session restore, a li
 - **Copy, cut and paste ask before replacing a file of the same name**, and refuse while that file is open in a tab. Cut and paste moves open tabs with their files, also when a folder moves.
 - **Renaming a contest folder keeps it in place**, and a failed rename keeps the old name.
 - **Moving or renaming a folder keeps the local history** of the files in it.
+- **A file has one local history however its path is written.** `C:\x.cpp`, `C:/x.cpp` and `c:\x.cpp` kept separate checkpoint lists (letter case is ignored except on Linux); existing lists are merged the first time the file is opened in history, and a rename that only changes letter case keeps them.
 - **New File with a name that is taken opens that file** instead of replacing it with the template.
 - **Save As onto a file open in another tab** closes that tab when it has no edits, or keeps its edits as an untitled copy (`a (unsaved copy).cpp`, still C++); saving the old tab used to write its outdated text back over the new file.
 - **Unsaved work from the last session survives an unanswered restore prompt.** Left open for 30 seconds, the prompt let the periodic save delete it.
