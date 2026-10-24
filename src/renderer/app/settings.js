@@ -290,7 +290,7 @@ function initSettings() {
         };
     }
 
-    // Lắng nghe thay đổi Performance Mode để khóa/mở khóa Cursor Trail
+    // Listen for Performance Mode changes to lock/unlock Cursor Trail
     const perfSwitch = document.getElementById('set-performanceMode');
     if (perfSwitch) {
         perfSwitch.addEventListener('change', updateCursorTrailLockState);
