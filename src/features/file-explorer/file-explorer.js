@@ -688,6 +688,7 @@ const FileExplorer = {
                 const id = item.name.charAt(0).toUpperCase();
                 problems.push({
                     id,
+                    fileName: item.name,   // A.c / B.cc: not always <id>.cpp
                     label: '',
                     status: 'todo',
                     timeSpentMs: 0,
@@ -886,6 +887,30 @@ const FileExplorer = {
         return this.contestMeta.problems.find(p => p.id === problemId);
     },
 
+    /** The source file of a contest problem (its recorded name, else <id>.cpp). */
+    problemFilePath(problemId) {
+        const prob = this.getProblemMeta(problemId);
+        const name = (prob && prob.fileName) || `${problemId}.cpp`;
+        return `${this.contestFolder}/${name}`.replace(/\\/g, '/');
+    },
+
+    /**
+     * Delete one problem's file. True when it is gone (also when it was already
+     * missing); a failure is reported and keeps the problem's data.
+     */
+    async deleteProblemFile(problemId) {
+        if (!window.electronAPI || !window.electronAPI.deleteFile) return true;
+        try {
+            await window.electronAPI.deleteFile(this.problemFilePath(problemId));
+            return true;
+        } catch (err) {
+            const message = String(err && err.message || err);
+            if (/ENOENT/.test(message)) return true;
+            alert(`Could not delete problem ${problemId}: ${message.replace(/^Error invoking remote method '[^']*': (Error: )?/, '')}`);
+            return false;
+        }
+    },
+
     /**
      * Set problem status in contestMeta and save
      */
@@ -952,8 +977,12 @@ const FileExplorer = {
 
         let changed = false;
 
-        // 1) Update contest problem (main contest mode)
-        if (this.contestMeta && this.contestMeta.problems) {
+        // 1) Update contest problem (main contest mode), only for a file in the
+        // contest's own folder: another folder's A.cpp is not this contest's A.
+        const key = (p) => (typeof pathKey === 'function' ? pathKey(p) : String(p || '').replace(/\\/g, '/'));
+        const inContest = !!this.contestFolder
+            && key(normalizedPath.slice(0, normalizedPath.lastIndexOf('/'))) === key(this.contestFolder).replace(/\/+$/, '');
+        if (inContest && this.contestMeta && this.contestMeta.problems) {
             const prob = this.contestMeta.problems.find(p => p.id === problemId || p.id === problemId.toLowerCase());
             if (prob) {
                 const ns = getNewStatus(prob.status);
@@ -1514,7 +1543,7 @@ const FileExplorer = {
             const icon = this.STATUS_ICONS[prob.status] || this.STATUS_ICONS.todo;
             const isActive = this.isActiveProblem(prob.id);
             const isSelected = this.selectedChips.has(prob.id);
-            const filePath = `${this.contestFolder}/${prob.id}.cpp`.replace(/\\/g, '/');
+            const filePath = this.problemFilePath(prob.id);
             const timeStr = this.SessionTimer.getDisplay(prob.id);
             const tooltip = `Click to open · Right-click for options\nCtrl+click to select · Shift+click for range`;
 
@@ -2598,6 +2627,33 @@ const FileExplorer = {
                 if (item.name === oldBase.replace(/\.[^.]+$/, '')) item.name = newBase.replace(/\.[^.]+$/, '');
                 item.filePath = to;
                 item.fileName = newBase;
+            }
+        }
+        this.saveState();
+    },
+
+    /**
+     * A folder was renamed or moved on disk: the state of every file inside it
+     * moves too, including files with no open tab (their approaches and pins
+     * were left under the old path).
+     */
+    moveFolderState(oldDir, newDir) {
+        const prefix = pathKey(oldDir).replace(/\/+$/, '') + '/';
+        const target = String(newDir).replace(/\\/g, '/').replace(/\/+$/, '') + '/';
+        const paths = new Set([
+            ...Object.keys(this.fileStatuses || {}), ...Object.keys(this.fileNotes || {}),
+            ...Object.keys(this.fileApproaches || {}), ...(this.pinnedItems || []),
+            ...(this.recentFiles || []), ...this.expandedFiles,
+            ...(this.categories || []).flatMap(c => (c.items || []).map(i => i.filePath)),
+        ]);
+        for (const p of paths) {
+            if (typeof p !== 'string' || !pathKey(p).startsWith(prefix)) continue;
+            this.movePathState(p, target + p.replace(/\\/g, '/').slice(prefix.length));
+        }
+        for (const cat of this.categories || []) {
+            if (Array.isArray(cat.excluded)) {
+                cat.excluded = cat.excluded.map(p => pathKey(p).startsWith(prefix)
+                    ? target + p.replace(/\\/g, '/').slice(prefix.length) : p);
             }
         }
         this.saveState();
@@ -3942,11 +3998,8 @@ const FileExplorer = {
         const label = prob?.label ? ` "${prob.label}"` : '';
         if (!confirm(`Delete problem ${problemId}${label} and its .cpp file?`)) return;
 
-        // Remove the .cpp file
-        const filePath = `${this.contestFolder}/${problemId}.cpp`.replace(/\\/g, '/');
-        if (window.electronAPI && window.electronAPI.deleteFile) {
-            try { await window.electronAPI.deleteFile(filePath); } catch (_) { }
-        }
+        // Remove the source file; a file that could not be deleted keeps its data.
+        if (!await this.deleteProblemFile(problemId)) return;
         // Remove from .sameko
         this.contestMeta.problems = this.contestMeta.problems.filter(p => p.id !== problemId);
         this.selectedChips.delete(problemId);
@@ -3962,13 +4015,11 @@ const FileExplorer = {
         const ids = [...this.selectedChips];
         if (!confirm(`Delete ${ids.length} problem(s): ${ids.join(', ')}? This will remove the .cpp files.`)) return;
 
+        const deleted = [];
         for (const problemId of ids) {
-            const filePath = `${this.contestFolder}/${problemId}.cpp`.replace(/\\/g, '/');
-            if (window.electronAPI && window.electronAPI.deleteFile) {
-                try { await window.electronAPI.deleteFile(filePath); } catch (_) { }
-            }
+            if (await this.deleteProblemFile(problemId)) deleted.push(problemId);
         }
-        this.contestMeta.problems = this.contestMeta.problems.filter(p => !ids.includes(p.id));
+        this.contestMeta.problems = this.contestMeta.problems.filter(p => !deleted.includes(p.id));
         this.selectedChips.clear();
         this.lastChipClickIdx = -1;
         await this.saveContestMeta(this.contestFolder, this.contestMeta);
@@ -4327,6 +4378,7 @@ const FileExplorer = {
 
         // Don't add duplicates
         if (cat.items.some(i => i.filePath === filePath)) return;
+        if (cat.excluded) cat.excluded = cat.excluded.filter(p => p !== filePath);
 
         const fileName = filePath.split(/[/\\]/).pop();
         cat.items.push({
@@ -4371,6 +4423,15 @@ const FileExplorer = {
         const baseName = fileName.replace(/\.[^.]+$/, '');
         const template = this.newFileTemplate(baseName);
 
+        // A name that is taken opens that file: writing the template replaced
+        // a finished solution.
+        if (await this.fileExistsIn(folderPath, fileName)) {
+            this.addFileToCategory(catId, filePath, baseName, 'todo');
+            await this.refreshTree();
+            this.openFile(filePath);
+            return;
+        }
+
         // Create file
         if (window.electronAPI && window.electronAPI.saveFile) {
             const result = await window.electronAPI.saveFile({ path: filePath, content: template });
@@ -4396,13 +4457,16 @@ const FileExplorer = {
             const entries = await window.electronAPI.readDirectory(cat.folderPath);
             if (!entries || !Array.isArray(entries) || entries.length === 0) return;
 
+            const key = (p) => (typeof pathKey === 'function' ? pathKey(p) : String(p || '').replace(/\\/g, '/'));
             const files = entries.filter(e => e.isFile && /\.(cpp|c|cc|cxx|h|hpp|py|java)$/i.test(e.name));
-            const existingPaths = new Set(cat.items.map(i => i.filePath.replace(/\\/g, '/')));
+            const existingPaths = new Set(cat.items.map(i => key(i.filePath)));
+            // Files moved to another collection or removed from this one stay out.
+            const excluded = new Set((cat.excluded || []).map(key));
 
             let changed = false;
             for (const file of files) {
                 const filePath = `${cat.folderPath}/${file.name}`.replace(/\\/g, '/');
-                if (!existingPaths.has(filePath)) {
+                if (!existingPaths.has(key(filePath)) && !excluded.has(key(filePath))) {
                     const baseName = file.name.replace(/\.[^.]+$/, '');
                     cat.items.push({
                         filePath,
@@ -4415,16 +4479,18 @@ const FileExplorer = {
                 }
             }
 
-            // Remove items whose files no longer exist on disk
-            const diskPaths = new Set(files.map(f => `${cat.folderPath}/${f.name}`.replace(/\\/g, '/')));
+            // Remove items whose files no longer exist on disk. Only files directly
+            // in this folder were listed: a sibling folder that shares the prefix
+            // (A vs AB) or a subfolder is not checked here, so its items stay.
+            const diskPaths = new Set(files.map(f => key(`${cat.folderPath}/${f.name}`)));
+            const folderKey = key(cat.folderPath).replace(/\/+$/, '');
             const before = cat.items.length;
             cat.items = cat.items.filter(item => {
-                const normalPath = item.filePath.replace(/\\/g, '/');
-                // Only remove if the file was in this category's folder (not external files)
-                if (normalPath.startsWith(cat.folderPath.replace(/\\/g, '/'))) {
+                const normalPath = key(item.filePath);
+                if (normalPath.slice(0, normalPath.lastIndexOf('/')) === folderKey) {
                     return diskPaths.has(normalPath);
                 }
-                return true; // keep external files
+                return true; // keep external and nested files
             });
             if (cat.items.length !== before) changed = true;
 
@@ -4452,6 +4518,12 @@ const FileExplorer = {
         const cat = this.categories.find(c => c.id === catId);
         if (!cat) return;
         cat.items = cat.items.filter(i => i.filePath !== filePath);
+        // Refresh must not add it back from the folder (a move to another
+        // collection, or Remove from Collection).
+        if (cat.folderPath) {
+            cat.excluded = cat.excluded || [];
+            if (!cat.excluded.includes(filePath)) cat.excluded.push(filePath);
+        }
         this.saveState();
     },
 

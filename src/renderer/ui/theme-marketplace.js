@@ -390,8 +390,18 @@ const ThemeMarketplace = {
 
             const gist = await response.json();
             for (const [filename, file] of Object.entries(gist.files)) {
-                if (filename.endsWith('.json') && file.content) {
-                    const result = ThemeManager.importTheme(file.content);
+                if (!filename.endsWith('.json')) continue;
+                let content = file.content;
+                // GitHub cuts content over 1 MB (an embedded background) and gives
+                // the whole file at raw_url instead.
+                if (file.truncated && /^https:\/\/gist\.githubusercontent\.com\//.test(file.raw_url || '')) {
+                    if (file.size > 64 * 1024 * 1024) continue;
+                    const raw = await fetch(file.raw_url);
+                    if (!raw.ok) throw new Error(`HTTP ${raw.status}`);
+                    content = await raw.text();
+                }
+                if (content) {
+                    const result = ThemeManager.importTheme(content);
                     if (result.success) {
                         await result.persistence;
                         this.renderCarousel();

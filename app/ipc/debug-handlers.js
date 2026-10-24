@@ -47,7 +47,7 @@ function registerHandlers() {
                     if (bp.enabled === false) await dbg.disableBreakpoint(r.id);
                     // r.line is gdb's *resolved* line (it may relocate a bp off a
                     // blank/comment line); pass it so the UI can move the glyph.
-                    registered.push({ file: bp.file, line: bp.line, id: r.id, resolvedLine: r.line });
+                    registered.push({ file: bp.file, line: bp.line, id: r.id, resolvedLine: r.line, enabled: bp.enabled !== false });
                 } catch (_) { /* skip an unresolvable breakpoint, keep going */ }
             }
             // Auto dry run needs the program to pause on its first line even with

@@ -42,7 +42,8 @@ async function danglingLinkTarget(filePath) {
         let st;
         try { st = await fsp.lstat(current); } catch (_) { return current; }
         if (!st.isSymbolicLink()) return current;
-        current = path.resolve(path.dirname(current), await fsp.readlink(current));
+        const dir = await fsp.realpath(path.dirname(current)).catch(() => path.dirname(current));
+        current = path.resolve(dir, await fsp.readlink(current));
     }
     const err = new Error(`Too many symbolic links: ${filePath}`);
     err.code = 'ELOOP';
@@ -55,7 +56,9 @@ function danglingLinkTargetSync(filePath) {
         let st;
         try { st = fs.lstatSync(current); } catch (_) { return current; }
         if (!st.isSymbolicLink()) return current;
-        current = path.resolve(path.dirname(current), fs.readlinkSync(current));
+        let dir = path.dirname(current);
+        try { dir = fs.realpathSync(dir); } catch (_) { }
+        current = path.resolve(dir, fs.readlinkSync(current));
     }
     const err = new Error(`Too many symbolic links: ${filePath}`);
     err.code = 'ELOOP';

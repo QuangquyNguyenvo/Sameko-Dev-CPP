@@ -57,8 +57,15 @@ const ACTION_HANDLERS = {
 /** Ctrl+Tab / Ctrl+Shift+Tab: the next or previous tab in the tab bar, wrapping around. */
 function cycleTab(step) {
     if (App.tabs.length < 2) return;
-    const i = App.tabs.findIndex(t => t.id === App.activeTabId);
-    setActive(App.tabs[(i + step + App.tabs.length) % App.tabs.length].id);
+    const right = App.activeEditor === 2 && App.isSplit && !!App.splitTabId;
+    const i = App.tabs.findIndex(t => t.id === (right ? App.splitTabId : App.activeTabId));
+    const next = App.tabs[(i + step + App.tabs.length) % App.tabs.length];
+    if (right && typeof showInSplitPane === 'function') {
+        showInSplitPane(next);
+        focusEditorPane(2);
+    } else {
+        setActive(next.id);
+    }
 }
 
 // Interface Scale (Settings › Appearance). Saving the setting is enough: the

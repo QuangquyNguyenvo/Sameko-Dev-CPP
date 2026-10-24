@@ -614,6 +614,8 @@ function onFolderRenamed(oldDir, newDir) {
         if (!tab.path || !pathKey(tab.path).startsWith(prefix)) continue;
         onFileRenamed(tab.path, target + tab.path.replace(/\\/g, '/').slice(prefix.length));
     }
+    // Files inside it that have no tab keep their approaches, pins and statuses.
+    if (typeof FileExplorer !== 'undefined' && FileExplorer.moveFolderState) FileExplorer.moveFolderState(oldDir, newDir);
 }
 
 /** Turns the tab's name into a text box; Enter or clicking away renames, Esc cancels. */

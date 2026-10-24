@@ -196,13 +196,37 @@ async function buildActiveTab({ runAfter }) {
 function compileOnly() { return buildActiveTab({ runAfter: false }); }
 function buildRun() { return buildActiveTab({ runAfter: true }); }
 
+// A run being started (stopping the previous program, launching the new one).
+// A second Run pressed meanwhile is ignored: two launches racing each other let
+// the replaced program's "stopped" event end the newest run.
+let runStarting = false;
+
 async function run(clearTerminal = true) {
+    if (runStarting) return;
+    runStarting = true;
+    try {
+        await runNow(clearTerminal);
+    } finally {
+        runStarting = false;
+    }
+}
+
+async function runNow(clearTerminal) {
     if (blockedByDebugSession('Run')) return;
     // Run the executable built from THIS tab, not whichever tab was built last.
     const exeTab = App.tabs.find(t => t.id === getPreferredTabId());
     const exePath = exeTab ? exeTab.exePath : null;
     if (!exePath) { log('Build first (F11)', 'warning'); return; }
     const tabId = exeTab.id;
+
+    // This tab's input, read now: the user may switch tabs while we wait below.
+    // An attached input file replaces the Input box (#49). The box is sent as
+    // typed (leading spaces and blank lines matter to getline); the main process
+    // adds the final newline, so one trailing newline is dropped here.
+    const inputFile = getTabInputFile(tabId);
+    const inputValue = inputFile ? '' : document.getElementById('input-area').value;
+    const inputText = inputValue.replace(/\r?\n$/, '');
+    const hasInput = !inputFile && inputValue.length > 0;
 
     // Run Only while a program runs: stop it first, so its "stopped" event and
     // its time limit cannot end the new run.
@@ -220,13 +244,6 @@ async function run(clearTerminal = true) {
 
 
     if (clearTerminal) clearTerm();
-
-    // An attached input file replaces the Input box (#49).
-    const inputFile = getTabInputFile(getPreferredTabId());
-    // Sent as typed (leading spaces and blank lines matter to getline); the main
-    // process adds the final newline, so one trailing newline is dropped here.
-    const inputText = inputFile ? '' : document.getElementById('input-area').value.replace(/\r?\n$/, '');
-    const hasInput = !inputFile && document.getElementById('input-area').value.length > 0;
 
     log('--- Running ---', 'system');
     setStatus('Running...', '');
@@ -587,12 +604,14 @@ async function sendInput() {
         // sends an empty line (getline), and a pasted "a\n\n" keeps its blank line.
         const text = inp.value.replace(/\r\n/g, '\n').replace(/\n$/, '');
         log(text, 'input');
-        await window.electronAPI.sendInput(text);
+        // Cleared before the round trip: the next input typed while it is in
+        // flight must not be erased when it returns.
         inp.value = '';
         // drop the inline sizing the auto-grow left behind (see initTerminalUX)
         inp.style.height = '';
         inp.style.maxHeight = '';
         inp.scrollTop = 0;
+        await window.electronAPI.sendInput(text);
     }
 }
 

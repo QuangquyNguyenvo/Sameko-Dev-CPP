@@ -1322,6 +1322,7 @@ async function autoSavePendingFiles() {
     // Auto-save turned off after this save was scheduled.
     if (!App.settings.editor.autoSave) return;
     for (const id of ids) {
+        if (!App.settings.editor.autoSave) return;   // turned off during the saves
         await autoSaveTab(App.tabs.find(t => t.id === id));
     }
 }

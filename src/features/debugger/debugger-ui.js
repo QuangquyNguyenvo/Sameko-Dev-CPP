@@ -1383,6 +1383,11 @@
                     m.delete(b.line);
                     m.set(b.resolvedLine, bp);
                 }
+                // Toggled while gdb was starting (it had no id to send then).
+                const want = bp.enabled !== false;
+                if (b.enabled !== undefined && want !== b.enabled) {
+                    try { await (want ? api().debugEnableBreakpoint(bp.id) : api().debugDisableBreakpoint(bp.id)); } catch (_) { }
+                }
             }
             renderBreakpoints();
         }

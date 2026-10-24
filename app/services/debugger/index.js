@@ -22,6 +22,8 @@ const {
 
 /** @type {GdbSession|null} */
 let session = null;
+/** Bumped by every start() and stop(): an older start() that resumes gives up. */
+let lifecycle = 0;
 let sendToRendererCallback = null;
 
 function setSendToRendererCallback(cb) { sendToRendererCallback = cb; }
@@ -39,7 +41,11 @@ function isActive() {
  * @param {{exePath:string, cwd?:string}} opts
  */
 async function start({ exePath, cwd }) {
-    await stop(); // ensure single session
+    const mine = ++lifecycle;
+    await disposeSession(); // ensure single session
+    // Disposing waits for the old gdb; meanwhile Stop or another start may have
+    // run. The newest one owns the debugger.
+    if (mine !== lifecycle) throw new Error('Debug start cancelled');
 
     session = new GdbSession({
         gdbPath: getDebuggerPath(),
@@ -98,6 +104,11 @@ function normFrame(fr) {
 }
 
 async function stop() {
+    lifecycle++;   // a start() still disposing the previous gdb gives up
+    await disposeSession();
+}
+
+async function disposeSession() {
     if (session) {
         const s = session;
         session = null;

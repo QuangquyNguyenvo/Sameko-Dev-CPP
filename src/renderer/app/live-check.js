@@ -356,7 +356,10 @@ function applySettings() {
         if (liveCheckTimer) { clearTimeout(liveCheckTimer); liveCheckTimer = null; }
         liveCheckRevision += 1;
         liveCheckQueued = false;
-        if (typeof monaco !== 'undefined') clearLiveCheckMarkers();
+        if (typeof monaco !== 'undefined') {
+            clearLiveCheckMarkers();
+            for (const t of App.tabs) if (t.model) clearLiveCheckMarkers(t.model);
+        }
     }
     setLiveCheckUIState(App.settings.editor.liveCheck ? (App.problems.length > 0 ? 'issues' : 'idle') : 'disabled');
 }

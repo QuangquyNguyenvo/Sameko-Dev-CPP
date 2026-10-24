@@ -75,6 +75,17 @@ Fixes for data loss in contests, the Explorer, Save As and session restore, a li
 - **Recursive calls show the right locals**: stepping from `f(2)` into `f(1)` used to keep showing `f(2)`'s values.
 - **The editor loads again after a failed first attempt** instead of staying blank until a restart.
 - **Competitive Companion** keeps a problem it could not save as an unsaved tab, so its text and tests are not lost.
+- **Closing a tab while another close is still asking** removes the right tab; another unsaved tab could disappear without a question.
+- **New Problem in a collection** opens a file of the same name instead of replacing it with the template.
+- **Collections**: Refresh keeps items from subfolders and other folders, a problem dragged to another collection stays there, and renaming a collection moves the approaches, pins and statuses of files that are not open.
+- **Contests**: deleting a problem whose file cannot be deleted keeps its status and approaches and says why; a contest of `.c`/`.cc` files opens those files; building or judging an `A.cpp` in another folder no longer changes the contest's problem A.
+- **Text typed in the terminal box while the previous line is being sent** is kept.
+- **Ctrl+Tab in the right pane** moves through the tabs in that pane.
+- **Theme author names are shown as text** in the marketplace; HTML in an imported theme's author field is no longer rendered.
+- **Importing a theme from a Gist larger than 1 MB** (an embedded background) works.
+- **Run Only pressed twice quickly** starts one program, and uses the input of the tab it was pressed in.
+- **Debugger**: a breakpoint toggled while gdb starts keeps that state, and Stop followed quickly by another F5 no longer leaves a stray gdb running.
+- **Turning Live Check off** also clears the marks of tabs that are not shown, and Auto-save turned off stops before the next queued file.
 
 ### Removed
 
