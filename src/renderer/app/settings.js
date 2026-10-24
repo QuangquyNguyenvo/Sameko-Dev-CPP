@@ -545,7 +545,7 @@ function showTemplateEditor() {
         initTemplateEditor();
         if (templateEditor) templateEditor.layout();
         fitTemplateEditor();
-    });
+    }).catch(() => { });
 }
 
 // Theme color palettes for preview and settings
@@ -1082,6 +1082,7 @@ async function resetSettings() {
         // controls): without this a reset left it as it was until a restart.
         if (typeof LocalHistory !== 'undefined' && LocalHistory.loadSettings) LocalHistory.loadSettings();
         applySettings();
+        updateShortcutMap();   // the shortcuts shown are the defaults; dispatch must match
         saveSettings();
         openSettings();
         log('Settings reset to defaults', 'info');
@@ -1318,6 +1319,8 @@ function scheduleAutoSave(tab) {
 async function autoSavePendingFiles() {
     const ids = [...autoSavePendingTabs];
     autoSavePendingTabs.clear();
+    // Auto-save turned off after this save was scheduled.
+    if (!App.settings.editor.autoSave) return;
     for (const id of ids) {
         await autoSaveTab(App.tabs.find(t => t.id === id));
     }

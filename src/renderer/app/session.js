@@ -106,6 +106,24 @@ async function reopenSessionTabs(session, { includeUnsaved }) {
             const existing = App.tabs.find(t => normalizeTabPath(t.path) === normalizedPath);
             if (existing) {
                 restoredIds.set(tabData.id, existing.id);
+                // Opened again before Restore was accepted: the tab shows the file
+                // on disk, so its unsaved text from the last session goes into a
+                // copy (the session file is deleted after this).
+                const current = existing.model && !existing.model.isDisposed() ? existing.model.getValue() : existing.content;
+                if (includeUnsaved && tabData.modified && tabData.content != null && tabData.content !== current) {
+                    const name = tabData.name || existing.name;
+                    const dot = name.lastIndexOf('.');
+                    App.tabs.push({
+                        id: createRestoredTabId(),
+                        name: dot > 0 ? `${name.slice(0, dot)} (recovered)${name.slice(dot)}` : `${name} (recovered)`,
+                        path: null,
+                        untitledHistoryKey: createUntitledHistoryKey(),
+                        content: tabData.content,
+                        original: '',
+                        modified: true,
+                        testState: restoredTestState(tabData),
+                    });
+                }
                 continue;
             }
 

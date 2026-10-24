@@ -251,9 +251,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // fallback so Monaco-embedding panels (settings template, snippets, theme
     // customizer, checkpoint preview) still work even if no file is opened.
     if (typeof window.requestIdleCallback === 'function') {
-        window.requestIdleCallback(() => ensureMonaco(), { timeout: 1500 });
+        window.requestIdleCallback(() => ensureMonaco().catch(() => { }), { timeout: 1500 });
     } else {
-        setTimeout(() => ensureMonaco(), 800);
+        setTimeout(() => ensureMonaco().catch(() => { }), 800);
     }
     initHeader();
     initMenus();
@@ -320,7 +320,9 @@ let __monacoLoadPromise = null;
 // the same promise, which resolves once the editor exists and App.ready is true.
 function ensureMonaco() {
     if (!__monacoLoadPromise) {
-        __monacoLoadPromise = new Promise((resolve) => initMonaco(resolve));
+        // A bundle that failed to load is tried again by the next call.
+        __monacoLoadPromise = new Promise((resolve, reject) => initMonaco(resolve, reject))
+            .catch((err) => { __monacoLoadPromise = null; throw err; });
     }
     return __monacoLoadPromise;
 }
@@ -509,7 +511,7 @@ function syncEditorToActiveTab() {
     }
 }
 
-function initMonaco(onReady) {
+function initMonaco(onReady, onLoadError) {
     // The Monaco bundle (scripts/build-monaco.js) sets window.monaco when it runs.
     loadScript('vendor/monaco/editor.js', { module: true }).then(async function () {
 
@@ -719,7 +721,10 @@ function initMonaco(onReady) {
         }
 
         if (typeof onReady === 'function') onReady();
-    }).catch((err) => console.error('[Monaco] failed to load the editor:', err));
+    }, (err) => {
+        console.error('[Monaco] failed to load the editor:', err);
+        if (typeof onLoadError === 'function') onLoadError(err);
+    }).catch((err) => console.error('[Monaco] editor setup failed:', err));
 }
 
 function initCtrlWheelZoom() {

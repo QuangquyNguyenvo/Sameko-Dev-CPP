@@ -66,6 +66,15 @@ Fixes for data loss in contests, the Explorer, Save As and session restore, a li
 - **A clean live check of one pane keeps the other pane's error marks**, and turning Live Check off drops a check still in progress.
 - **Clear (or Undo) in the theme editor wins over a background file** that is still being read.
 - **Saving through a symlink whose target was deleted** recreates the target instead of replacing the link with a file.
+- **Restoring a session keeps unsaved text of a file you already reopened**: it opens as `name (recovered).cpp` instead of being dropped.
+- **Turning Auto-save off** cancels a save that was already scheduled.
+- **Close Others** asks about each unsaved tab in turn and closes all of them; one of the questions used to be lost and its tab stayed open.
+- **Reset Settings** also resets the keyboard shortcuts that are in effect, not only the ones shown.
+- **Clear History of an untitled tab** is no longer undone by a checkpoint that was being written.
+- **F5 builds with your compiler settings** (`-D`, `-I`, extra flags), only with debug info and no optimisation; a breakpoint disabled before F5 stays disabled; Stop while the debug build compiles no longer starts the program afterwards, nor brings a stopped session back.
+- **Recursive calls show the right locals**: stepping from `f(2)` into `f(1)` used to keep showing `f(2)`'s values.
+- **The editor loads again after a failed first attempt** instead of staying blank until a restart.
+- **Competitive Companion** keeps a problem it could not save as an unsaved tab, so its text and tests are not lost.
 
 ### Removed
 

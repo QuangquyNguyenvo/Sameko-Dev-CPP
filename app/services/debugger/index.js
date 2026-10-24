@@ -60,6 +60,7 @@ async function start({ exePath, cwd }) {
     // On every stop, eagerly fetch call stack + top-frame locals so the UI can
     // render in one shot (fewer round-trips). Guarded so a failed sub-query
     // never swallows the stop event itself.
+    const owner = session;
     session.on('stopped', async (s) => {
         const payload = {
             reason: s.reason,
@@ -76,6 +77,9 @@ async function start({ exePath, cwd }) {
             const l = await session.listLocals();
             payload.locals = l.variables || [];
         } catch (_) { }
+        // Stopped (or replaced) while the stack was being read: the renderer
+        // already ended the session, and this stop must not bring it back.
+        if (session !== owner) return;
         send('debug:stopped', payload);
     });
 

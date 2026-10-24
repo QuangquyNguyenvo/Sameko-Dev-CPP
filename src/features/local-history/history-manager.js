@@ -255,7 +255,14 @@ const LocalHistory = {
             return { success: false, reason: 'no_changes' };
         }
 
+        // Clear History during the read below must win: the entries read before
+        // it would otherwise be written back.
+        const clears = (this.untitledClears ||= new Map());
+        const generation = clears.get(untitledKey) || 0;
         const entries = await this.getUntitledHistory(untitledKey);
+        if ((clears.get(untitledKey) || 0) !== generation) {
+            return { success: false, reason: 'cleared' };
+        }
         entries.unshift({
             id: 'backup_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
             content,
@@ -302,6 +309,8 @@ const LocalHistory = {
                     this.untitledTimers.delete(untitledKey);
                 }
                 this.hashCache.delete(`untitled:${untitledKey}`);
+                const clears = (this.untitledClears ||= new Map());
+                clears.set(untitledKey, (clears.get(untitledKey) || 0) + 1);
             }
             const legacyKey = this.getLegacyUntitledStorageKey(tabOrKey);
             if (legacyKey) localStorage.removeItem(legacyKey);

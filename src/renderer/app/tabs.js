@@ -60,7 +60,7 @@ function setActive(id) {
 
     // Any tab being shown means we need the editor — kick off the (deferred)
     // Monaco load now if it hasn't started. Idempotent and cheap when already loaded.
-    ensureMonaco();
+    ensureMonaco().catch(() => { });   // logged in initMonaco; the next call retries
 
     // Test cases and the Input/Expected boxes belong to the focused tab, which is
     // the right pane's when it has focus (getPreferredTabId).

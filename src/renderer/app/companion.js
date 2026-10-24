@@ -419,6 +419,11 @@ async function handleProblemReceived(problem) {
                     if (typeof FileExplorer.refreshTree === 'function') {
                         await FileExplorer.refreshTree();
                     }
+                } else {
+                    // Not written: keep the problem as an unsaved tab instead of
+                    // pointing it at a file that does not exist.
+                    console.error('Failed to auto-save fetched problem:', r && r.error);
+                    targetPath = null;
                 }
             } catch (err) {
                 console.error('Failed to auto-save fetched problem:', err);

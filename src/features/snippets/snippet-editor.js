@@ -42,7 +42,7 @@ function showSnippetText(text) {
         if (snippetEditor) snippetEditor.setValue(text);
     };
     if (typeof monaco !== 'undefined') apply();
-    else if (typeof ensureMonaco === 'function') ensureMonaco().then(apply);
+    else if (typeof ensureMonaco === 'function') ensureMonaco().then(apply).catch(() => { });
 }
 
 window.editSnippet = function (index) {

@@ -34,6 +34,7 @@
 
     // ---- state -------------------------------------------------------------
     let state = 'idle';                 // idle | starting | running | stopped
+    let startGen = 0;                   // bumped by Stop: a start still compiling gives up
     let inited = false;
     const bpByFile = new Map();         // normPath -> Map(line -> {condition, id})
     const realPathByKey = new Map();    // normPath -> original-case path (survives tab close)
@@ -1291,6 +1292,10 @@
         // no breakpoints set — Auto dry run needs somewhere to begin.
         const breakAtMain = !!(opts && opts.breakAtMain === true);
         if (isSessionLive()) { return continueExec(); }
+        // Stop pressed while saving or compiling bumps startGen: this start
+        // then gives up instead of launching gdb afterwards.
+        const gen = ++startGen;
+        const cancelled = () => gen !== startGen;
         let tab = activeTab();
         if (!tab) { sys('⚠ Open a C++ file before debugging.', 'error'); return; }
         if (typeof isCppTab === 'function' && !isCppTab(tab)) {
@@ -1310,6 +1315,7 @@
         let saved = null;
         try { saved = await api().saveFile({ path: tab.path, content: text }); }
         catch (e) { saved = { success: false, error: e && e.message ? e.message : String(e) }; }
+        if (cancelled()) return;
         if (!saved || saved.success === false) {
             sys('Could not save ' + tab.name + ': ' + ((saved && saved.error) || 'unknown error') + '. Debugging needs the file on disk.', 'error');
             return;
@@ -1331,8 +1337,7 @@
         }
         sys('Compiling with -g …', 'info');
 
-        const std = (window.App.settings && window.App.settings.compiler && window.App.settings.compiler.cppStandard) || '';
-        const flags = '-g -O0' + (std ? ' -std=' + std : '');
+        const flags = debugCompileFlags();
         const r = await api().compile({
             filePath: tab.path, content: tab.content, flags,
             singleFileMode: (window.App.settings?.compiler?.singleFileMode !== false),
@@ -1340,6 +1345,7 @@
             // build gets its own and no longer has to parse bits/stdc++.h.
             useLLD: false, realtimeOutput: false,
         });
+        if (cancelled()) return;
         if (!r || !r.success) {
             sys('Debug build failed.', 'error');
             if (r && r.error) sys(r.error, 'error');
@@ -1354,6 +1360,11 @@
         const bps = collectBreakpoints();
         const dir = tab.path.replace(/[\\/][^\\/]*$/, '');
         const res = await api().debugStart({ exePath: r.outputPath, cwd: dir, breakpoints: bps, stdin, stdinPath, breakAtMain });
+        if (cancelled()) {
+            // Stopped while gdb was starting: end the session it just began.
+            if (res && res.ok) { try { await api().debugStop(); } catch (_) { } }
+            return;
+        }
         if (!res || !res.ok) {
             sys('Debugger failed to start: ' + ((res && res.error) || 'unknown'), 'error');
             setStatus('idle');
@@ -1372,13 +1383,20 @@
                     m.delete(b.line);
                     m.set(b.resolvedLine, bp);
                 }
-                // Breakpoints toggled off before the session started: insert then
-                // disable so gdb won't stop on them.
-                if (bp.enabled === false) { try { await api().debugDisableBreakpoint(bp.id); } catch (_) { } }
             }
             renderBreakpoints();
         }
         sys('Debug session started.', 'success');
+    }
+
+    /**
+     * The build's own settings (standard, -D/-I/-l, extra flags) with debug
+     * information and no optimisation: a source needing -DLOCAL failed under F5.
+     */
+    function debugCompileFlags() {
+        const base = typeof buildCompileFlags === 'function' ? buildCompileFlags() : '';
+        const kept = base.split(/\s+/).filter((f) => f && !/^-(O|g)/.test(f) && f !== '-s' && !/^-flto/.test(f));
+        return ['-g', '-O0', ...kept].join(' ');
     }
 
     function collectBreakpoints() {
@@ -1387,7 +1405,7 @@
         for (const [key, m] of bpByFile.entries()) {
             const realPath = resolveRealPath(key);
             for (const [line, bp] of m.entries()) {
-                out.push({ file: realPath || key, line, condition: bp.condition });
+                out.push({ file: realPath || key, line, condition: bp.condition, enabled: bp.enabled !== false });
             }
         }
         return out;
@@ -1460,6 +1478,7 @@
     async function stepOut() { if (state === 'stopped') { await api().debugStepOut(); } }
 
     async function stop() {
+        startGen++;   // a start still saving/compiling gives up
         try { await api().debugStop(); } catch (_) { }
         endSession(undefined, true);
     }
@@ -1560,7 +1579,12 @@
     }
 
     /** Frame identity used to decide "same place" (incremental) vs "rebuild". */
-    function frameKey(f) { return f ? ((f.func || '') + '@' + (f.file || '')) : ''; }
+    /**
+     * A frame's identity across stops. The stack depth tells two calls of the same
+     * function apart (recursion): their variable objects are bound to one frame,
+     * so f(1) must not reuse the trees built for f(2).
+     */
+    function frameKey(f, depth) { return f ? ((f.func || '') + '@' + (f.file || '') + '#' + (depth || 0)) : ''; }
     function localNamesSig(locals) { return (locals || []).map(l => l.name).sort().join(','); }
 
     let stopToken = 0;
@@ -1612,7 +1636,7 @@
         // scope changed, so rebuild. This preserves expanded subtrees and lets
         // -var-update highlight only the values that actually changed.
         const frame0 = stopFrames[0] || d.frame || null;
-        const key = frameKey(frame0);
+        const key = frameKey(frame0, stopFrames.length);
         const names = localNamesSig(d.locals);
         if (varNodes.size === 0 || key !== lastFrameKey || names !== lastLocalNames) {
             lastFrameKey = key;
@@ -1671,7 +1695,7 @@
         if (r && r.ok) {
             // Trees now reflect this frame; record its identity so the next stop
             // (which resets to frame 0) sees a mismatch and rebuilds correctly.
-            lastFrameKey = frameKey(stopFrames[i]);
+            lastFrameKey = frameKey(stopFrames[i], stopFrames.length - i);
             lastLocalNames = localNamesSig(r.locals);
             await refreshTrees(r.locals);
         }

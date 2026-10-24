@@ -50,7 +50,11 @@ function showTabContextMenu(e, tab) {
         {
             icon: MENU_ICON('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="11" x2="23" y2="11"/>'),
             label: 'Close Others',
-            action: () => App.tabs.filter(t => t.id !== tab.id).forEach(t => closeTab(t.id)),
+            // One at a time: each may ask about unsaved changes, and the confirm
+            // dialog shows one question at a time.
+            action: async () => {
+                for (const other of App.tabs.filter(t => t.id !== tab.id)) await closeTab(other.id);
+            },
             disabled: App.tabs.length <= 1
         }
     ]);

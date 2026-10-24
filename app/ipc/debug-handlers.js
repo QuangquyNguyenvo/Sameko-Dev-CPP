@@ -44,6 +44,7 @@ function registerHandlers() {
             for (const bp of (breakpoints || [])) {
                 try {
                     const r = await dbg.setBreakpoint(bp.file, bp.line, bp.condition);
+                    if (bp.enabled === false) await dbg.disableBreakpoint(r.id);
                     // r.line is gdb's *resolved* line (it may relocate a bp off a
                     // blank/comment line); pass it so the UI can move the glyph.
                     registered.push({ file: bp.file, line: bp.line, id: r.id, resolvedLine: r.line });
