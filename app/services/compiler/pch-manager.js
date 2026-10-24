@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { getDetectedCompiler, getCompilerEnv } = require('./detector');
 const { ensurePrivateDir, appTempDir } = require('../../shared/platform');
+const { splitFlags } = require('../../shared/validators');
 
 const pchDir = appTempDir('cpp-ide-pch');
 
@@ -40,7 +41,7 @@ const IRRELEVANT_F = /^-f(?:max-errors|diagnostics|no-diagnostics|message-length
  * @returns {string[]} flags in their original order
  */
 function getPCHFlags(flags = '') {
-    const tokens = String(flags).split(/\s+/).filter(Boolean);
+    const tokens = splitFlags(flags);
     const out = [];
     for (let i = 0; i < tokens.length; i++) {
         const t = tokens[i];

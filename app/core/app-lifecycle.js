@@ -111,6 +111,13 @@ function startDeferredCompilerWork() {
 }
 
 function setupAppEvents() {
+    // macOS delivers files opened from Finder / the Dock as events, not argv. It can fire
+    // before 'ready' (the launch file itself), so this listener is added first.
+    app.on('open-file', (event, filePath) => {
+        event.preventDefault();
+        require('../services/launch-files').addPath(filePath);
+    });
+
     app.on('second-instance', (event, commandLine, workingDirectory) => {
         const { getMainWindow, restoreAndFocusWindow } = require('../windows/main-window');
         const mainWindow = getMainWindow();
@@ -131,8 +138,21 @@ function setupAppEvents() {
     app.on('activate', () => {
         const { BrowserWindow } = require('electron');
         if (BrowserWindow.getAllWindows().length === 0) {
+            // macOS: the Dock icon after the last window was closed. The new window is
+            // created hidden like the first one; show it once it has loaded, and point
+            // the IPC handlers at it (they still held the destroyed window).
             const { createMainWindow } = require('../windows/main-window');
-            createMainWindow();
+            const win = createMainWindow();
+            require('../ipc').bindWindow(win);
+            let shown = false;
+            const reveal = () => {
+                if (shown || win.isDestroyed()) return;
+                shown = true;
+                win.show();
+                win.focus();
+            };
+            win.webContents.once('did-finish-load', reveal);
+            setTimeout(reveal, 10000);
         }
     });
 }

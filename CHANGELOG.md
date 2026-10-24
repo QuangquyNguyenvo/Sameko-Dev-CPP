@@ -86,6 +86,14 @@ Fixes for data loss in contests, the Explorer, Save As and session restore, a li
 - **Run Only pressed twice quickly** starts one program, and uses the input of the tab it was pressed in.
 - **Debugger**: a breakpoint toggled while gdb starts keeps that state, and Stop followed quickly by another F5 no longer leaves a stray gdb running.
 - **Turning Live Check off** also clears the marks of tabs that are not shown, and Auto-save turned off stops before the next queued file.
+- **Contests**: a problem file name in `.sameko` can no longer point outside the contest folder, so deleting that problem cannot delete another file; renaming a problem's source (`A.c` → `A.cpp`) keeps the problem linked to it.
+- **Unsaved work done while the "Restore previous session" prompt is still open** is checkpointed together with the old session instead of being lost on quit.
+- **Delete on a folder in the Explorer** deletes the folder (after a confirmation) instead of failing with a file error.
+- **Additional Compile Flags with quoted paths** (`-I"C:/My Headers"`) are passed as one argument to g++, the live check and clangd.
+- **Build cache**: a build whose flags name another source or object file (`helper.cpp`, `lib.a`) is always rebuilt, so a change in that file is not missed.
+- **Linux**: two files whose paths differ only in letter case no longer share one executable.
+- **Saving state at startup** can no longer fail because the cleanup of old temporary files removed the file being saved.
+- **macOS**: files opened from Finder or the Dock open in the app, and clicking the Dock icon after closing the window shows a working window.
 
 ### Removed
 

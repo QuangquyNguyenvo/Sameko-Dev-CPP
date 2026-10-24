@@ -13,12 +13,17 @@ const discordHandlers = require('./discord-handlers');
 const debugHandlers = require('./debug-handlers');
 const stateHandlers = require('./state-handlers');
 
-function registerAllHandlers(mainWindow) {
+/** Point the handlers that talk to the window at this one (also a recreated window). */
+function bindWindow(mainWindow) {
     fileHandlers.setMainWindow(mainWindow);
     compilerHandlers.setMainWindow(mainWindow);
     dialogHandlers.setMainWindow(mainWindow);
     competitiveHandlers.setMainWindow(mainWindow);
     debugHandlers.setMainWindow(mainWindow);
+}
+
+function registerAllHandlers(mainWindow) {
+    bindWindow(mainWindow);
 
     // compile() writes the editor's text to the source file when it differs from
     // disk; record that as our own write so the watcher does not offer a reload.
@@ -39,4 +44,5 @@ function registerAllHandlers(mainWindow) {
 }
 
 module.exports = registerAllHandlers;
+module.exports.bindWindow = bindWindow;
 

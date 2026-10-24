@@ -12,7 +12,7 @@ const { spawn } = require('child_process');
 const { getDetectedCompiler } = require('../compiler/detector');
 const { ensurePCH } = require('../compiler/pch-manager');
 const { getCompilerSettings } = require('../../shared/settings-reader');
-const { validateCompilerFlags } = require('../../shared/validators');
+const { validateCompilerFlags, splitFlags } = require('../../shared/validators');
 const { ensurePrivateDir, appTempDir } = require('../../shared/platform');
 
 let activeChecker = null;
@@ -63,7 +63,7 @@ async function checkSyntax(content, filePath = null) {
 
     const usableExtra = (extraFlags && validateCompilerFlags(extraFlags).valid) ? extraFlags : '';
     if (usableExtra) {
-        args.push(...usableExtra.split(/\s+/).filter(Boolean));
+        args.push(...splitFlags(usableExtra));
     }
 
     // Use the PCH only for sources that include the header themselves —

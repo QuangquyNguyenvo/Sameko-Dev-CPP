@@ -15,6 +15,7 @@ const { app } = require('electron');
 const { getCompilerBinDir, getBasePath, getWritableBasePath, getDetectedCompiler } = require('../compiler/detector');
 const { getCompilerSettings } = require('../../shared/settings-reader');
 const { binName, NULL_DEVICE, IS_WIN, IS_MAC } = require('../../shared/platform');
+const { splitFlags } = require('../../shared/validators');
 
 /**
  * Working directory for the tools we spawn (g++, clangd).
@@ -552,7 +553,7 @@ function buildClangdFlagsList(includePaths, opts = {}) {
     flags.push('-Wall', '-Wextra', '-Wno-unknown-warning-option', '-Wno-vla-cxx-extension', '-Wno-vla-extension');
     flags.push(...includePaths.flatMap(p => ['-I', toPath(p)]));
     if (extraFlags) {
-        flags.push(...extraFlags.split(/\s+/).filter(Boolean));
+        flags.push(...splitFlags(extraFlags));
     }
     return flags;
 }

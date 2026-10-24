@@ -42,6 +42,16 @@ function add(argv, cwd) {
     return files.length;
 }
 
+/** One absolute path from the OS (macOS `open-file`: Finder, Dock, `open -a`). */
+function addPath(filePath) {
+    try {
+        if (!filePath || !path.isAbsolute(filePath) || !fs.statSync(filePath).isFile()) return 0;
+    } catch (_) { return 0; }
+    if (deliver) deliver(filePath);
+    else if (!pending.includes(filePath)) pending.push(filePath);
+    return 1;
+}
+
 /**
  * Hands over the queued files and routes later launches to `send`.
  * @param {(filePath: string) => void} send
@@ -53,4 +63,4 @@ function take(send) {
     return files;
 }
 
-module.exports = { add, take, filesFromArgv };
+module.exports = { add, addPath, take, filesFromArgv };

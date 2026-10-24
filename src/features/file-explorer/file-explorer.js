@@ -890,7 +890,11 @@ const FileExplorer = {
     /** The source file of a contest problem (its recorded name, else <id>.cpp). */
     problemFilePath(problemId) {
         const prob = this.getProblemMeta(problemId);
-        const name = (prob && prob.fileName) || `${problemId}.cpp`;
+        // .sameko is untrusted: only a plain file name inside the contest folder
+        // (no separators, no "..") is used, so delete cannot reach outside it.
+        const recorded = prob && typeof prob.fileName === 'string' ? prob.fileName : '';
+        const safe = recorded && !/[\\/:]/.test(recorded) && recorded !== '.' && recorded !== '..';
+        const name = safe ? recorded : `${String(problemId).replace(/[\\/:]|\.\./g, '_')}.cpp`;
         return `${this.contestFolder}/${name}`.replace(/\\/g, '/');
     },
 
@@ -2629,6 +2633,22 @@ const FileExplorer = {
                 item.fileName = newBase;
             }
         }
+        // A contest problem's recorded source name follows a rename inside the contest folder.
+        if (this.contestMeta && this.contestFolder && Array.isArray(this.contestMeta.problems)) {
+            const folderKey = pathKey(this.contestFolder).replace(/\/+$/, '');
+            const parentKey = (p) => pathKey(p).replace(/\/[^/]*$/, '');
+            let metaChanged = false;
+            for (const prob of this.contestMeta.problems) {
+                if (!same(this.problemFilePath(prob.id))) continue;
+                if (parentKey(to) !== folderKey || prob.fileName === newBase) continue;
+                prob.fileName = newBase;
+                metaChanged = true;
+            }
+            if (metaChanged) {
+                Promise.resolve(this.saveContestMeta(this.contestFolder, this.contestMeta)).catch(() => {});
+                this.renderTree();
+            }
+        }
         this.saveState();
     },
 
@@ -2667,6 +2687,29 @@ const FileExplorer = {
         if (confirm(`Delete "${fileName}"?`)) {
             this.deleteFile(filePath);
         }
+    },
+
+    /**
+     * Delete an ordinary folder and everything in it (Delete key on a folder).
+     * The opened root and the contest folder have their own commands.
+     */
+    async confirmDeleteFolder(folderPath) {
+        const key = pathKey(folderPath).replace(/\/+$/, '');
+        const protectedRoots = [this.currentFolder, this.contestFolder].filter(Boolean)
+            .map(p => pathKey(p).replace(/\/+$/, ''));
+        if (protectedRoots.includes(key)) return;
+        const name = folderPath.split(/[/\\]/).pop();
+        if (!confirm(`Delete folder "${name}" and ALL its contents? This cannot be undone.`)) return;
+        if (!window.electronAPI || !window.electronAPI.deleteFolder) return;
+        try {
+            await window.electronAPI.deleteFolder(folderPath);
+        } catch (err) {
+            alert('Failed to delete folder: ' + String(err && err.message || err).replace(/^Error invoking remote method '[^']*': (Error: )?/, ''));
+            return;
+        }
+        this.expandedFolders.delete(folderPath);
+        if (this.selectedFilePath === folderPath) this.selectedFilePath = null;
+        this.refreshTree();
     },
 
     /**
@@ -3919,7 +3962,10 @@ const FileExplorer = {
         if (e.key === 'Delete' && !e.ctrlKey) {
             e.preventDefault();
             e.stopImmediatePropagation();
-            this.confirmDelete(this.selectedFilePath);
+            const selected = [...this.elements.tree.querySelectorAll('.explorer-item.selected')]
+                .find(el => el.dataset.path === this.selectedFilePath);
+            if (selected && selected.classList.contains('folder')) this.confirmDeleteFolder(this.selectedFilePath);
+            else this.confirmDelete(this.selectedFilePath);
 
         } else if (e.key === 'c' && e.ctrlKey && !e.shiftKey) {
             e.preventDefault();

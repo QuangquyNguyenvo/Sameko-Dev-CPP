@@ -44,6 +44,45 @@ function validateCompilerFlags(flags) {
     return { valid: true, sanitized: sanitized.trim() };
 }
 
+/**
+ * Split a flags string on whitespace, keeping "..." or '...' as part of one
+ * argument (-I"C:/My Headers" -> -IC:/My Headers). Backslashes stay as they
+ * are, so Windows paths survive.
+ * @param {string} flags
+ * @returns {string[]}
+ */
+function splitFlags(flags) {
+    const out = [];
+    let cur = '';
+    let quote = '';
+    let started = false;
+    for (const ch of String(flags || '')) {
+        if (quote) {
+            if (ch === quote) quote = '';
+            else cur += ch;
+        } else if (ch === '"' || ch === "'") {
+            quote = ch;
+            started = true;
+        } else if (/\s/.test(ch)) {
+            if (started) out.push(cur);
+            cur = '';
+            started = false;
+        } else {
+            cur += ch;
+            started = true;
+        }
+    }
+    if (started) out.push(cur);
+    return out;
+}
+
+/** Inverse of splitFlags for arguments that contain spaces. */
+function joinFlags(tokens) {
+    return tokens.map((t) => (/\s/.test(t) ? `"${t}"` : t)).join(' ');
+}
+
 module.exports = {
     validateCompilerFlags,
+    splitFlags,
+    joinFlags,
 };

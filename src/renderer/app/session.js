@@ -32,6 +32,7 @@ let sessionSaveTimer = null;
 let sessionPeriodicTimer = null;
 let sessionRestored = false;
 let sessionRestorePending = false;   // the restore prompt is waiting for an answer
+let pendingStoredSession = null;     // the last run's session while that prompt waits
 
 function normalizeTabPath(filePath) {
     return filePath ? pathKey(filePath) : null;
@@ -223,11 +224,12 @@ async function reopenSessionTabs(session, { includeUnsaved }) {
  */
 function saveSession(sync = false) {
     // Until the restore prompt is answered the stored session is the only copy
-    // of the last run's unsaved work: do not replace it, and do not clear it
-    // because no tab is open yet (the 30 s checkpoint used to do exactly that).
-    if (sessionRestorePending) return;
+    // of the last run's unsaved work: never clear it (the 30 s checkpoint used
+    // to). New work done meanwhile is saved together with it, not dropped.
+    if (sessionRestorePending && !pendingStoredSession) return;
     try {
         if (App.tabs.length === 0) {
+            if (sessionRestorePending) return;
             clearSession();
             return;
         }
@@ -247,7 +249,7 @@ function saveSession(sync = false) {
 
         const tabsForSession = App.tabs.filter(t => t.path || t.modified || ((t.content || '') !== (t.original || '')));
         if (tabsForSession.length === 0) {
-            clearSession();
+            if (!sessionRestorePending) clearSession();
             return;
         }
 
@@ -272,6 +274,14 @@ function saveSession(sync = false) {
             isSplit: App.isSplit,
             timestamp: Date.now(),
         };
+        if (sessionRestorePending && pendingStoredSession) {
+            // Keep the unanswered session's tabs first, minus any now open again.
+            const ids = new Set(session.tabs.map(t => t.id));
+            const paths = new Set(session.tabs.filter(t => t.path).map(t => normalizeTabPath(t.path)));
+            const kept = (pendingStoredSession.tabs || []).filter(t => t && !ids.has(t.id)
+                && !(t.path && paths.has(normalizeTabPath(t.path))));
+            session.tabs = kept.concat(session.tabs);
+        }
 
         if (sync && window.electronAPI?.stateWriteSync) {
             window.electronAPI.stateWriteSync('session', session);
@@ -364,7 +374,10 @@ async function restoreSession() {
         await restoreStoredSession();
     } finally {
         sessionRestorePending = false;
+        pendingStoredSession = null;
     }
+    // The answer cleared the stored session: checkpoint what is open now.
+    if (App.tabs.length) scheduleSessionSave();
 }
 
 async function restoreStoredSession() {
@@ -372,6 +385,7 @@ async function restoreStoredSession() {
     const session = await getStoredSession();
 
     if (!session) return;
+    pendingStoredSession = session;
 
     if (behavior === STARTUP_BEHAVIORS.EMPTY) {
         clearSession();

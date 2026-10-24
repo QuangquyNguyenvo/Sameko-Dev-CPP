@@ -15,7 +15,7 @@ const { StringDecoder } = require('string_decoder');
 const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getWritableBasePath, getUnbufferObjectPath } = require('./detector');
 const { ensurePCH } = require('./pch-manager');
 const { getLauncherIfReady, newStatsFile, readStats } = require('./run-launcher');
-const { validateCompilerFlags } = require('../../shared/validators');
+const { validateCompilerFlags, splitFlags, joinFlags } = require('../../shared/validators');
 const { EXE_SUFFIX, IS_WIN, IS_MAC, IS_LINUX, ensurePrivateDir, readProcMemoryKB, which, appTempDir } = require('../../shared/platform');
 
 let runningProcess = null;
@@ -79,7 +79,7 @@ const UNCACHEABLE_FLAG = /^(-I|-iquote|-isystem|-idirafter|-include|-imacros|-L|
  * or `<x.h>` found next to the source through `-I <dir>`), or a user flag that
  * adds include/library paths, linker scripts or response files.
  */
-function buildCacheKey(compilerExe, args, content, dir) {
+function buildCacheKey(compilerExe, args, content, dir, extraInputs = []) {
     if (/#\s*include\s*"/.test(content)) return null;
     // `#include MACRO`, `#include_next`, `#import` and `#embed` read files whose
     // name or content the key cannot follow.
@@ -92,6 +92,10 @@ function buildCacheKey(compilerExe, args, content, dir) {
     // args holds `-I <dir>` itself; only flags after it come from the user.
     const userArgs = args.slice(args.indexOf('-pipe') + 1);
     if (userArgs.some((a) => UNCACHEABLE_FLAG.test(a))) return null;
+    // A bare operand (helper.cpp, lib.o, libx.a, -x/-o values) is another input
+    // whose content the key does not see: no cache. The shim object is ours.
+    const known = new Set(extraInputs);
+    if (userArgs.some((a) => a && !a.startsWith('-') && !known.has(a))) return null;
     let compilerStamp = '';
     try {
         const st = fs.statSync(compilerExe);
@@ -122,7 +126,7 @@ function rememberBuild(outputPath, key, warnings) {
 }
 
 function sanitizeUserFlags(flags, content) {
-    const tokens = (flags || '').split(' ').filter((f) => f.trim());
+    const tokens = splitFlags(flags);
     const hasMain = /\b(?:int\s+)?main\s*\(/.test(content);
     const hasWinMain = /\b(?:w)?WinMain\s*\(/.test(content);
 
@@ -130,13 +134,13 @@ function sanitizeUserFlags(flags, content) {
         const hadMwindows = tokens.includes('-mwindows');
         const sanitized = tokens.filter((f) => f !== '-mwindows');
         return {
-            flags: sanitized.join(' '),
+            flags: joinFlags(sanitized),
             removedMwindows: hadMwindows
         };
     }
 
     return {
-        flags: tokens.join(' '),
+        flags: joinFlags(tokens),
         removedMwindows: false
     };
 }
@@ -262,7 +266,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
     // an A.cpp, and two of them used to share (and overwrite) one A.exe.
     const outputTag = usingTempFile
         ? ''
-        : '-' + crypto.createHash('sha1').update(path.resolve(actualFilePath).toLowerCase()).digest('hex').slice(0, 8);
+        : '-' + crypto.createHash('sha1').update(IS_LINUX ? path.resolve(actualFilePath) : path.resolve(actualFilePath).toLowerCase()).digest('hex').slice(0, 8);
     const outputPath = path.join(buildsDir, baseName + outputTag + EXE_SUFFIX);
 
     // ===== MULTI-FILE PROJECT SUPPORT (fast lookup) =====
@@ -318,7 +322,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
             });
         }
 
-        const flagsArr = resolvedFlags.split(' ').filter(f => f.trim());
+        const flagsArr = splitFlags(resolvedFlags);
         const hasStdFlag = flagsArr.some(f => f.startsWith('-std='));
         if (!hasStdFlag) {
             // Inject default standard so PCH and compilation match
@@ -345,7 +349,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
     }
 
     // Apply resolved flags
-    args.push(...resolvedFlags.split(' ').filter(f => f.trim()));
+    args.push(...splitFlags(resolvedFlags));
 
     // Link libstdc++exp for C++23/C++26 experimental stdlib features (such as std::print, std::println, <stacktrace>)
     const isCpp23Or26 = /-std=(c\+\+|gnu\+\+)(23|26|2b|2c)/.test(resolvedFlags) || /#include\s*<print>|#include\s*<stacktrace>/.test(content);
@@ -369,7 +373,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
 
     // Nothing that decides the output changed since the last good build of this
     // file: reuse the executable instead of spending ~0.7 s on an identical one.
-    const cacheKey = noBuildCache ? null : buildCacheKey(compilerExe, args, content, dir);
+    const cacheKey = noBuildCache ? null : buildCacheKey(compilerExe, args, content, dir, unbufferObj ? [unbufferObj] : []);
     const cached = cacheKey && reusableBuild(outputPath, cacheKey);
     if (cached) {
         console.log(`[Compile] Unchanged, reusing ${outputPath}`);

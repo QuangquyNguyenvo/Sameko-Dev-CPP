@@ -56,6 +56,9 @@ async function readState(name) {
 // one made while the window closes.
 let writeSeq = 0;
 const committedSeq = new Map();
+// Temp files carry a tag unique to this run: the startup sweep removes only
+// other runs' (a crash's leftovers), never a save of this run still in flight.
+const RUN_TAG = `${process.pid}-${crypto.randomBytes(3).toString('hex')}`;
 
 function commitState(file, tmp, seq) {
     if ((committedSeq.get(file) || 0) > seq) {
@@ -69,7 +72,7 @@ function commitState(file, tmp, seq) {
 async function writeState(name, data) {
     const file = fileFor(name);
     const seq = ++writeSeq;
-    const tmp = `${file}.${seq}.tmp`;
+    const tmp = `${file}.${RUN_TAG}.${seq}.tmp`;
     const json = JSON.stringify(data);
     await fsp.mkdir(path.dirname(file), { recursive: true });
     await fsp.writeFile(tmp, json, 'utf-8');
@@ -79,7 +82,7 @@ async function writeState(name, data) {
 function writeStateSync(name, data) {
     const file = fileFor(name);
     const seq = ++writeSeq;
-    const tmp = `${file}.${seq}.tmp`;
+    const tmp = `${file}.${RUN_TAG}.${seq}.tmp`;
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(tmp, JSON.stringify(data), 'utf-8');
     commitState(file, tmp, seq);
@@ -123,7 +126,10 @@ async function sweepStaleState() {
     const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
     for (const name of names) {
         const full = path.join(dir, name);
-        if (name.endsWith('.tmp')) { await fsp.rm(full, { force: true }).catch(() => { }); continue; }
+        if (name.endsWith('.tmp')) {
+            if (!name.includes(`.${RUN_TAG}.`)) await fsp.rm(full, { force: true }).catch(() => { });
+            continue;
+        }
         if (!/^untitled-.*\.json$/.test(name)) continue;
         try { if ((await fsp.stat(full)).mtimeMs < cutoff) await fsp.unlink(full); } catch (_) { }
     }
