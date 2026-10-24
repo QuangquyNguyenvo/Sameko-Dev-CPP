@@ -269,11 +269,29 @@ const MarkdownPreview = {
             }
         };
         const base = tab.path ? this.fileUrl(tab.path) : null;
-        each('img[src]', (img) => {
-            const src = img.getAttribute('src');
-            if (base && !/^[a-z][a-z0-9+.-]*:/i.test(src)) {
-                try { img.src = new URL(src, base).href; } catch (_) { }
+        // Pictures and videos next to the file (or anywhere on disk) load through
+        // localUrl(): the page is app://, which cannot load file:// URLs.
+        // A network share is refused: a file that opens with <img src="//host/x.png">
+        // would make Windows connect to that host over SMB just by previewing it.
+        const resolve = (src) => {
+            // The file's own app:// URL could carry any path (app://app/@local?p=\\srv\...).
+            if (/^\s*app:/i.test(src)) return '';
+            let abs = src;
+            if (base && !/^[a-z][a-z0-9+.-]*:/i.test(src) && !/^[\\/]{2}/.test(src)) {
+                try { abs = new URL(src, base).href; } catch (_) { return src; }
             }
+            return isNetworkPath(abs) ? '' : localUrl(abs);   // an absolute path in an untitled tab too
+        };
+        each('img[src], video[src], audio[src], source[src], track[src]', (n) => {
+            n.setAttribute('src', resolve(n.getAttribute('src')));
+        });
+        each('video[poster]', (n) => { n.setAttribute('poster', resolve(n.getAttribute('poster'))); });
+        each('img[srcset], source[srcset]', (n) => {
+            const out = this.parseSrcset(n.getAttribute('srcset')).map(({ url, descriptors }) => {
+                const r = resolve(url);
+                return r ? (descriptors ? r + ' ' + descriptors : r) : '';
+            }).filter(Boolean);
+            n.setAttribute('srcset', out.join(', '));
         });
 
         // Task-list boxes stay (read-only); any other input from the file goes.
@@ -317,6 +335,44 @@ const MarkdownPreview = {
             this.langCache.set(key, known ? known.id : null);
         }
         return this.langCache.get(key);
+    },
+
+    /**
+     * Split a srcset into candidates as the HTML spec does: a URL may itself
+     * contain commas (a,b.png); a candidate ends at whitespace + descriptors + ",",
+     * or at a comma right after the URL.
+     * @param {string} value
+     * @returns {{url: string, descriptors: string}[]}
+     */
+    parseSrcset(value) {
+        const out = [];
+        const s = String(value || '');
+        const ws = /[\t\n\f\r ]/;   // ASCII whitespace only: a no-break space is part of a URL
+        let i = 0;
+        while (i < s.length) {
+            while (i < s.length && (ws.test(s[i]) || s[i] === ',')) i++;
+            if (i >= s.length) break;
+            let j = i;
+            while (j < s.length && !ws.test(s[j])) j++;
+            let url = s.slice(i, j);
+            let descriptors = '';
+            if (/,+$/.test(url)) {
+                url = url.replace(/,+$/, '');
+            } else {
+                // "(" opens a parenthesised part that the first ")" closes (no nesting).
+                let k = j, inParens = false;
+                while (k < s.length && !(s[k] === ',' && !inParens)) {
+                    if (s[k] === '(') inParens = true;
+                    else if (s[k] === ')') inParens = false;
+                    k++;
+                }
+                descriptors = s.slice(j, k).trim();
+                j = k + 1;
+            }
+            if (url) out.push({ url, descriptors });
+            i = j;
+        }
+        return out;
     },
 
     fileUrl(filePath) {

@@ -36,6 +36,40 @@ function escHtml(value) {
 }
 
 /**
+ * The page is served from app:// (for Chromium's code cache), and such a page
+ * may not load file:// URLs. Pictures, videos and audio on disk are fetched
+ * through app://app/@local?u=<file URL> or ?p=<path> instead; the main process
+ * (app/core/app-protocol.js) turns that back into a file. Accepts a file:// URL
+ * or an absolute path (C:\x, \\server\share\x, /home/x); anything else is
+ * returned unchanged. Stored settings and themes keep file:// URLs, so convert
+ * where a URL goes into the DOM or fetch().
+ * @param {string} url
+ * @returns {string}
+ */
+function localUrl(url) {
+    if (typeof url !== 'string') return url;
+    const u = url.trim();
+    if (/^file:/i.test(u)) {
+        // A fragment (sprite.svg#icon, clip.mp4#t=10) stays on the outer URL.
+        const at = u.indexOf('#');
+        return at < 0 ? 'app://app/@local?u=' + encodeURIComponent(u)
+            : 'app://app/@local?u=' + encodeURIComponent(u.slice(0, at)) + u.slice(at);
+    }
+    if (/^[a-zA-Z]:[\\/]|^[\\/]{2}[^\\/]|^\/(?!\/)/.test(u)) return 'app://app/@local?p=' + encodeURIComponent(u);
+    return url;
+}
+
+/** True for \\server\share\x, //server/x or file://server/x (a network share). */
+function isNetworkPath(url) {
+    if (typeof url !== 'string') return false;
+    const u = url.trim();
+    if (/^[\\/]{2}/.test(u)) return true;
+    if (!/^file:/i.test(u)) return false;
+    // The URL parser also canonicalises file://C:/x to a local drive.
+    try { const h = new URL(u).hostname; return !!h && h !== 'localhost'; } catch (_) { return false; }
+}
+
+/**
  * Loads a script once and resolves when it has run. `module` loads an ES module
  * (Monaco's bundle); plain UMD libraries (xterm, marked, DOMPurify, gsap) set
  * their window global since no AMD loader is present.

@@ -23,6 +23,7 @@ if (!gotTheLock) {
 }
 
 setupAppEvents();
+require('./core/app-protocol').registerScheme();
 
 // Files from "Open with" / the command line; the renderer asks for them after its session restore.
 require('./services/launch-files').add(process.argv, process.cwd());
@@ -37,7 +38,9 @@ app.whenReady().then(async () => {
     console.log(`[PERF] initializeApp done @ ${__ms().toFixed(0)}ms`);
     
     // Lazy load window & handlers
-    const { createMainWindow } = require('./windows/main-window');
+    const { createMainWindow, getAppRoot } = require('./windows/main-window');
+    // Once, after updating from a version that ran the page from file://.
+    await require('./core/app-protocol').migrateFileOriginStorage(getAppRoot());
     const mainWindow = createMainWindow();
     console.log(`[PERF] createMainWindow done @ ${__ms().toFixed(0)}ms`);
     

@@ -29,8 +29,14 @@ revealed on `ready-to-show` (10 s fallback) and the splash closes. Only after th
 builds, and 1.5 s later auto-update and Discord RPC. `electron-updater`, `electron-log` and
 `discord-rpc` are required on first use, not at startup (they were ~170 ms of module loading).
 
-The main window always loads `src/index.html` from disk (`loadFile`), in development and when
-packaged. Navigation away from it and `window.open` are denied in `app/windows/main-window.js`.
+The main window loads `app://app/src/index.html`, in development and when packaged
+(`app/core/app-protocol.js` serves the app root; Chromium keeps a V8 code cache only for http(s)
+and custom schemes with `codeCache`, not for file://). Such a page may not load `file://` URLs:
+pictures, video and audio on disk (theme backgrounds, Markdown media) go through
+`app://app/@local?u=<file URL>` / `?p=<path>` — wrap a stored `file://` URL or path in
+`localUrl()` (`boot.js`) where it enters the DOM or `fetch`. The Markdown preview drops
+network-share sources (`isNetworkPath()`), so opening a file never connects to an SMB host. The splash window still uses `loadFile`. Navigation away from the page
+and `window.open` are denied in `app/windows/main-window.js`.
 
 ## 2. Main process — `app/`
 
@@ -250,7 +256,8 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
 - Results become Monaco markers (owner `live-check`) and the Problems list. Off by default.
 
 **IntelliSense** (`cpp-suggestions.js` → `get-clangd-completions` / `get-clangd-hover`)
-- One clangd process, started when `app/ipc/format-handlers.js` is first required. A request
+- One clangd process, started by the first completion, hover or live-check request (the first
+  C++ tab shown asks for completions); with no C++ tab it never runs. A request
   carries the full document; it is forwarded (`didOpen`, then `didChange`) only when the text
   differs from what clangd has, and `clangd-close-document` sends `didClose` when a tab closes.
   Flags (standard, MinGW target, include paths, `-Wall -Wextra`, extra flags) are sent as

@@ -1419,7 +1419,7 @@
         this._previewApp.style.setProperty(selected.cssVar, 'none');
         if (this._previewVideoKey !== selected.key || this._previewVideoUrl !== selected.url) {
             try { this._previewVideo.pause(); } catch (_) { }
-            this._previewVideo.src = selected.url;
+            this._previewVideo.src = localUrl(selected.url);
             this._previewVideoUrl = selected.url;
             this._previewVideoKey = selected.key;
             try { this._previewVideo.load(); } catch (_) { }

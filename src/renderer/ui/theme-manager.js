@@ -1335,7 +1335,7 @@ const ThemeManager = {
         if (typeof fetch !== 'function') {
             throw new Error('Theme asset export requires fetch or electronAPI.readThemeAsset');
         }
-        const response = await fetch(assetUrl);
+        const response = await fetch(typeof localUrl === 'function' ? localUrl(assetUrl) : assetUrl);
         if (!response || response.ok === false) {
             throw new Error(`Could not read theme asset (${response?.status || 'unknown status'})`);
         }
@@ -1430,7 +1430,8 @@ const ThemeManager = {
         )) {
             // Re-assigning the same src restarts the video and shows a blank frame; the theme
             // is applied twice at startup (settings, then once Monaco has loaded).
-            if (bgVideo.getAttribute('src') !== bgPath) bgVideo.src = bgPath;
+            const src = typeof localUrl === 'function' ? localUrl(bgPath) : bgPath;
+            if (bgVideo.getAttribute('src') !== src) bgVideo.src = src;
             bgVideo.style.display = 'block';
             document.documentElement.style.setProperty('--app-bg-image', 'none');
             this.syncBackgroundVideo();

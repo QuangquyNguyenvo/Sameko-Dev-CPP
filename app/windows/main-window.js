@@ -272,10 +272,11 @@ function createMainWindow() {
         mainWindow.maximize();
     }
 
-    // (A dev-only static HTTP server used to be started here. It returned its
-    // port before listen() had assigned one, so the window always fell through
-    // to loadFile() and the server just sat on an open port, unused.)
-    mainWindow.loadFile(path.join(appRoot, 'src', 'index.html'));
+    // Served from app:// rather than file:// so Chromium keeps a V8 code cache
+    // for the page's scripts (see app/core/app-protocol.js).
+    const appProtocol = require('../core/app-protocol');
+    appProtocol.ensureHandled(appRoot);
+    mainWindow.loadURL(appProtocol.urlFor(appRoot, path.join(appRoot, 'src', 'index.html')));
     applyUiScale(mainWindow);
     // Chromium resets the zoom of a new document; re-apply before the app lays out.
     mainWindow.webContents.on('dom-ready', () => applyUiScale(mainWindow));

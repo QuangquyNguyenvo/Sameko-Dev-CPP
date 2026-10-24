@@ -670,12 +670,30 @@ async function init() {
     spawnProcess();
 }
 
+let startPromise = null;
+
+/**
+ * Start clangd on first use. It used to start when the IPC handlers were
+ * registered, before the page had loaded, and kept ~70 MB even when no C++
+ * file was ever opened. The first C++ tab shown asks for completions, which
+ * lands here.
+ * @returns {Promise<void>}
+ */
+function start() {
+    if (!startPromise && !isShuttingDown) startPromise = init();
+    return startPromise || Promise.resolve();
+}
+
 /**
  * Ensure clangd is initialized and ready to accept requests
  * @returns {Promise<boolean>}
  */
 async function ensureReady() {
-    if (!isEnabled || isPermanentlyDisabled) {
+    if (isPermanentlyDisabled || isShuttingDown) return false;
+    // Every caller waits for the same start: a second request arriving while the
+    // first is still querying g++ would otherwise see "not initializing" and give up.
+    await start();
+    if (!isEnabled || isPermanentlyDisabled || isShuttingDown) {
         return false;
     }
     if (isInitialized) {
@@ -783,7 +801,14 @@ function closeDocument(filePath) {
 async function getDiagnostics(filePath, content, timeoutMs = 6000) {
     const fileUri = getFileUri(filePath);
     const gen = closeGen(fileUri);
-    const ready = await ensureReady();
+    // The live check falls back to g++ rather than wait out a slow clangd start
+    // (initialize may take up to 15 s); clangd keeps starting in the background.
+    let readyTimer;
+    const ready = await Promise.race([
+        ensureReady(),
+        new Promise((resolve) => { readyTimer = setTimeout(() => resolve(false), 3000); }),
+    ]);
+    clearTimeout(readyTimer);
     if (!ready || closeGen(fileUri) !== gen) return null;
 
     syncDocument(fileUri, content);
@@ -945,7 +970,7 @@ if (app) {
 }
 
 module.exports = {
-    init,
+    init: start,
     getCompletions,
     getHover,
     getDiagnostics,

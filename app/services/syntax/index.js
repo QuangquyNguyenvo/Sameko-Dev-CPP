@@ -9,9 +9,6 @@
 const gccChecker = require('./gcc-checker');
 const clangdService = require('./clangd-service');
 
-// Initialize Clangd IntelliSense service at startup
-clangdService.init();
-
 /**
  * Diagnostics for the live check.
  *
@@ -23,8 +20,9 @@ clangdService.init();
 async function checkSyntax(content, filePath = null, docId = null) {
     // Preferred: clangd already parses the open document for completions, so
     // its diagnostics are free. Fall back to g++ -fsyntax-only only when
-    // clangd is not running or does not answer.
-    if (clangdService.isAvailable()) {
+    // clangd is not running or does not answer. getDiagnostics starts clangd
+    // on first use and resolves null when it is missing or disabled.
+    {
         try {
             const diagnostics = await clangdService.getDiagnostics(filePath || docId || 'live-check', content);
             if (diagnostics) {

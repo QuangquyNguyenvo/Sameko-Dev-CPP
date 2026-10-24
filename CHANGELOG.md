@@ -17,6 +17,8 @@ Fixes for data loss in contests, the Explorer, Save As and session restore, a li
 - **Live check waits for a pause in typing** after a check that new edits made outdated, instead of checking again at once.
 - **The Explorer filter reads the folder once** while you type, instead of once per keystroke.
 - **Libraries updated**: Monaco Editor 0.45 → 0.57, now bundled with esbuild (only the editor parts the IDE uses; `npm start` builds it), Electron 44.5.1 → 44.9.3, DOMPurify 3.4.17, marked 18.1.1. The main process uses Node's built-in code cache instead of `v8-compile-cache`. `npm audit` reports no vulnerabilities.
+- **Faster start after the first launch**: the window is served from an `app://` address instead of `file://`, so Chromium keeps a compiled copy of the editor's and the IDE's JavaScript (~2.5 MB) instead of compiling it again on every launch. Pictures, videos and audio from disk (theme backgrounds, Markdown media) load through the same address; settings stored by earlier versions in the page's storage are carried over once. The Markdown preview no longer loads pictures from network shares (`\\server\…`), so opening a file cannot make Windows connect to another computer.
+- **clangd starts with the first C++ tab** instead of while the window is still loading, and does not run at all (~70 MB) when no C++ file is open.
 - **Smaller install**: Monaco's unused translations (renamed in 0.52), `judge-selftest.js` and `types.js` are no longer packaged.
 
 ### Fixed

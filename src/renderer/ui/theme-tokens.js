@@ -521,6 +521,11 @@ const ThemeTokens = {
         switch (type) {
             case 'image':
                 if (typeof value !== 'string') return;
+                // url("file:///...") from an older theme: the page (app://) cannot load file://.
+                if (value.startsWith('url(')) {
+                    const inner = /^url\(\s*(['"]?)(.*?)\1\s*\)$/i.exec(value);
+                    if (inner && typeof localUrl === 'function' && localUrl(inner[2]) !== inner[2]) value = inner[2];
+                }
                 if (value && value !== 'none' && !value.startsWith('url(')) {
                     if (value.startsWith('data:')) {
                         element.style.setProperty(cssVar, `url("${value}")`);
@@ -529,7 +534,8 @@ const ThemeTokens = {
                         // resolves against the stylesheet that uses it (styles/base.css), not the
                         // page, so it pointed at styles/assets/... and the image never loaded.
                         const isRelative = !/^([a-z][a-z0-9+.-]*:|[\\/])/i.test(value);
-                        const url = isRelative ? new URL(value, document.baseURI).href : value;
+                        const url = isRelative ? new URL(value, document.baseURI).href
+                            : (typeof localUrl === 'function' ? localUrl(value) : value);
                         const escaped = url.replace(/'/g, "\\'");
                         element.style.setProperty(cssVar, `url('${escaped}')`);
                     }
