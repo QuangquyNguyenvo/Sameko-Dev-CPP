@@ -19,30 +19,21 @@ let isProcessRunning = false;
 // startup: initTerminal() only records where it goes, and the library is
 // loaded once the editor is up and the page is idle, or on the first write
 // after start-up. Writes made before then are queued and replayed in order.
-const XTERM_PATHS = {
-    xterm: '../node_modules/@xterm/xterm/lib/xterm',
-    'xterm-addon-fit': '../node_modules/@xterm/addon-fit/lib/addon-fit',
-};
+const XTERM_SCRIPTS = [
+    '../node_modules/@xterm/xterm/lib/xterm.js',          // sets window.Terminal
+    '../node_modules/@xterm/addon-fit/lib/addon-fit.js',  // sets window.FitAddon
+];
 let mountTarget = null;  // { el, opts } recorded by initTerminal
 let queued = [];         // (term) => void calls waiting for the terminal
 let xtermLoading = null;
 
-// Monaco's AMD loader is on the page by now, so xterm's UMD bundles would register
-// as anonymous AMD modules instead of setting window.Terminal / window.FitAddon.
-// Load them through that loader and publish the globals the code below uses.
+// xterm's UMD bundles set window.Terminal / window.FitAddon (no AMD loader on the page).
 function loadXterm() {
     if (window.Terminal) return Promise.resolve();
     if (!xtermLoading) {
-        xtermLoading = new Promise((resolve) => {
-            window.require.config({ paths: XTERM_PATHS });
-            window.require(['xterm', 'xterm-addon-fit'], (xterm, fit) => {
-                window.Terminal = xterm.Terminal;
-                window.FitAddon = fit;
-                resolve();
-            }, (err) => {
-                console.error('[Terminal] Failed to load xterm.js:', err && err.message ? err.message : err);
-                resolve();
-            });
+        xtermLoading = Promise.all(XTERM_SCRIPTS.map((src) => loadScript(src))).catch((err) => {
+            console.error('[Terminal] Failed to load xterm.js:', err && err.message ? err.message : err);
+            xtermLoading = null;   // a later write may retry
         });
     }
     return xtermLoading;

@@ -3,9 +3,8 @@
  * GSAP effects that CSS transitions handle poorly: menu items that cascade in, the Settings
  * popup springing open, and the Run button reacting to a build result.
  *
- * GSAP is not part of startup. It is loaded through Monaco's AMD loader (a UMD bundle loaded
- * after loader.js registers as an anonymous AMD module, so a <script> tag would not set
- * window.gsap) once the editor is up and the page is idle. Until then, and while Performance
+ * GSAP is not part of startup. Its UMD bundle (which sets window.gsap) is loaded once the
+ * editor is up and the page is idle. Until then, and while Performance
  * Mode or the OS "reduce motion" setting is on, every call does nothing and the UI simply
  * appears in its final state.
  *
@@ -13,22 +12,17 @@
  */
 
 const Motion = (() => {
-    const GSAP_PATH = '../node_modules/gsap/dist/gsap.min';
+    const GSAP_PATH = '../node_modules/gsap/dist/gsap.min.js';
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     let gsap = null;
     let loading = null;
 
     function load() {
         if (!loading) {
-            loading = new Promise((resolve) => {
-                window.require.config({ paths: { gsap: GSAP_PATH } });
-                window.require(['gsap'], (mod) => {
-                    gsap = mod.gsap || mod.default || null;
-                    resolve();
-                }, (err) => {
-                    console.warn('[Motion] GSAP failed to load:', err && err.message ? err.message : err);
-                    resolve();
-                });
+            loading = loadScript(GSAP_PATH).then(() => {
+                gsap = window.gsap || null;
+            }, (err) => {
+                console.warn('[Motion] GSAP failed to load:', err && err.message ? err.message : err);
             });
         }
         return loading;

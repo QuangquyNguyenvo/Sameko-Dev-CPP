@@ -26,7 +26,7 @@
     <link rel="stylesheet" href="styles/components/discord-preview.css">
     <link rel="stylesheet" href="styles/components/markdown-preview.css">
     <link rel="stylesheet" href="styles/themes/theme-customizer.css">
-    <link rel="stylesheet" href="../node_modules/monaco-editor/min/vs/editor/editor.main.css">
+    <link rel="stylesheet" href="vendor/monaco/editor.css">
     <link rel="stylesheet" href="../node_modules/@xterm/xterm/css/xterm.css">
 </head>
 
@@ -1243,12 +1243,10 @@
 
     </div>
 
-    <!-- boot.js must load before Monaco's AMD loader: it defines the `require`
-         config global. xterm is not loaded here: TerminalManager loads it through
-         the AMD loader when the page is idle or on the first output.
+    <!-- boot.js defines loadScript(), which loads the Monaco bundle (vendor/monaco,
+         built by scripts/build-monaco.js) and, on first use, xterm, marked and gsap.
          No inline <script> anywhere - the CSP forbids it. -->
     <script src="renderer/boot.js"></script>
-    <script src="../node_modules/monaco-editor/min/vs/loader.js"></script>
     <script src="features/suggestions/cpp-suggestions.js"></script>
     <script src="features/snippets/snippet-editor.js"></script>
     <script src="renderer/ui/theme-tokens.js"></script>

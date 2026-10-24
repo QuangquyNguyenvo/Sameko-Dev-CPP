@@ -35,7 +35,29 @@ function escHtml(value) {
     ));
 }
 
-// Monaco's AMD loader reads this global when vs/loader.js runs. It must be a
-// `var` at script top level so it becomes window.require.
-// eslint-disable-next-line no-var
-var require = { paths: { vs: '../node_modules/monaco-editor/min/vs' } };
+/**
+ * Loads a script once and resolves when it has run. `module` loads an ES module
+ * (Monaco's bundle); plain UMD libraries (xterm, marked, DOMPurify, gsap) set
+ * their window global since no AMD loader is present.
+ * @param {string} src
+ * @param {{ module?: boolean }} [opts]
+ * @returns {Promise<void>}
+ */
+const __scriptLoads = new Map();
+function loadScript(src, opts = {}) {
+    if (!__scriptLoads.has(src)) {
+        __scriptLoads.set(src, new Promise((resolve, reject) => {
+            const el = document.createElement('script');
+            if (opts.module) el.type = 'module';
+            el.src = src;
+            el.onload = () => resolve();
+            el.onerror = () => {
+                __scriptLoads.delete(src);   // let a later call retry
+                el.remove();
+                reject(new Error(`failed to load ${src}`));
+            };
+            document.head.appendChild(el);
+        }));
+    }
+    return __scriptLoads.get(src);
+}

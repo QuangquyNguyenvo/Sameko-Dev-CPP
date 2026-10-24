@@ -16,11 +16,12 @@ Fixes for data loss in contests, the Explorer, Save As and session restore, a li
 - **Build error marks stay on the built file** in whichever pane shows it, until you edit or build it again, and an error inside an included header no longer marks that line number in the `.cpp`.
 - **Live check waits for a pause in typing** after a check that new edits made outdated, instead of checking again at once.
 - **The Explorer filter reads the folder once** while you type, instead of once per keystroke.
-- **Libraries updated**: Monaco Editor 0.45 → 0.52.2 (the last release with the loader the app uses), Electron 44.5.1 → 44.9.3, DOMPurify 3.4.17, marked 18.1.1. The main process uses Node's built-in code cache instead of `v8-compile-cache`. `npm audit` reports no vulnerabilities.
+- **Libraries updated**: Monaco Editor 0.45 → 0.57, now bundled with esbuild (only the editor parts the IDE uses; `npm start` builds it), Electron 44.5.1 → 44.9.3, DOMPurify 3.4.17, marked 18.1.1. The main process uses Node's built-in code cache instead of `v8-compile-cache`. `npm audit` reports no vulnerabilities.
 - **Smaller install**: Monaco's unused translations (renamed in 0.52), `judge-selftest.js` and `types.js` are no longer packaged.
 
 ### Fixed
 
+- **The installed app runs Monaco's background worker again.** It failed to load from the packaged app, so word suggestions, link detection and similar work ran on the UI thread while you typed.
 - **F5 in split view debugs the file in the focused pane.** It saved the left editor's text into the right pane's file. Breakpoints (Ctrl+click too), the current-line arrow and Run to Cursor now work in both panes.
 - **Saving can no longer leave a half-written file**: files and `.sameko` are written to a temporary file and then swapped in, so a full disk or a crash keeps the old file. A read-only file still refuses the save.
 - **A failed save stops Build, Run and F5** instead of compiling the old file and marking the tab saved; text typed while a save runs stays unsaved.

@@ -508,7 +508,8 @@ function syncEditorToActiveTab() {
 }
 
 function initMonaco(onReady) {
-    require(['vs/editor/editor.main'], async function () {
+    // The Monaco bundle (scripts/build-monaco.js) sets window.monaco when it runs.
+    loadScript('vendor/monaco/editor.js', { module: true }).then(async function () {
 
         // Register enhanced C++ tokenizer with escape sequence highlighting
         monaco.languages.setMonarchTokensProvider('cpp', {
@@ -716,7 +717,7 @@ function initMonaco(onReady) {
         }
 
         if (typeof onReady === 'function') onReady();
-    });
+    }).catch((err) => console.error('[Monaco] failed to load the editor:', err));
 }
 
 function initCtrlWheelZoom() {

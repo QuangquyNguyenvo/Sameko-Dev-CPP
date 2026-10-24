@@ -95,16 +95,17 @@ syntax/clangd, local history, Discord RPC.
 
 | Path | Responsibility |
 |---|---|
-| `index.html` | Root page. Loads Monaco, then every script in order with plain `<script>` tags. |
+| `index.html` | Root page. Loads every script in order with plain `<script>` tags; `core.js` then loads the Monaco bundle. |
 | `splash.html` | Splash screen. |
 | `renderer/app/*.js` | The application itself, 17 files loaded in a fixed order (formerly one 7,900-line `app.js`). File index in §9. |
-| `renderer/boot.js` | Loaded first: error hooks, Monaco loader config, shared `escHtml`. |
+| `renderer/boot.js` | Loaded first: error hooks, `loadScript()` (one-time script/module loader), shared `escHtml`. |
+| `vendor/monaco/` | Generated, gitignored: the Monaco ESM bundle built by `scripts/build-monaco.js` (`npm start`, the `test:*` GUI scripts and every `build:*` run it). |
 | `renderer/ui/` | `theme-manager.js`, `theme-tokens.js`, `theme-customizer.js` (draft/history/save), `theme-customizer-view.js` (controls/scoped IDE preview), `theme-marketplace.js`, `confirm-dialog.js`, `motion.js`. |
 | `styles/` | `base.css` (imports `animations.css` and fonts), `components/*.css`, `themes/{theme,themes}.css`. `components/toolbar.css` and `components/islands.css` load after `themes.css`: the header buttons, and the floating-card layout (header islands, editor / bottom panel / status bar cards, Run split button, collapsed bottom panel) for every theme. |
 | `assets/` | Fonts, icons, backgrounds (five looping `.webm` + one `.jpg`), screenshots (README only). |
 
 ### Loaded scripts, in order (`index.html`)
-`renderer/boot.js` (error hooks, Monaco loader config, shared `escHtml`) → Monaco loader → `features/suggestions/cpp-suggestions.js` →
+`renderer/boot.js` (error hooks, `loadScript`, shared `escHtml`) → `features/suggestions/cpp-suggestions.js` →
 `features/snippets/snippet-editor.js` → `renderer/ui/theme-tokens.js` →
 `theme-manager.js` → `theme-marketplace.js` → `theme-customizer-view.js` → `theme-customizer.js` → `confirm-dialog.js` → `motion.js` →
 `features/local-history/history-manager.js` → `features/file-explorer/file-explorer.js` →
@@ -117,9 +118,9 @@ the order of §9.
 | Snippet settings list | `features/snippets/snippet-editor.js` | `renderSnippetsList`, `editSnippet` |
 | Local history / checkpoints | `features/local-history/history-manager.js` | `LocalHistory` |
 | Explorer, categories, contest mode | `features/file-explorer/file-explorer.js` | `FileExplorer` |
-| Terminal output (xterm, display only; xterm.js is loaded through the AMD loader when the page is idle or on the first write, earlier writes are queued) | `features/terminal/terminal-manager.js` | `TerminalManager` |
+| Terminal output (xterm, display only; xterm.js is loaded with `loadScript` when the page is idle or on the first write, earlier writes are queued) | `features/terminal/terminal-manager.js` | `TerminalManager` |
 | Debugger panel, breakpoints, variables | `features/debugger/debugger-ui.js` | `Debugger` |
-| GSAP effects (menu cascade, Settings pop-in, Run result); GSAP is loaded through the AMD loader once the editor is ready, and every call is a no-op in Performance Mode or with reduced motion | `renderer/ui/motion.js` | `Motion` |
+| GSAP effects (menu cascade, Settings pop-in, Run result); GSAP is loaded with `loadScript` once the editor is ready, and every call is a no-op in Performance Mode or with reduced motion | `renderer/ui/motion.js` | `Motion` |
 
 **Icons** are Phosphor (MIT) symbols in a sprite inside `index.html`, between the `icons:start` /
 `icons:end` comments. Write `<svg class="ico" data-icon="gear-six" data-weight="duo" data-alt="fill"></svg>`
@@ -162,9 +163,10 @@ in October 2026.)
 ## 6. Packaging (`package.json` › `build`)
 - electron-builder, `asar: true`, output `samekodevcpp/`, appId `com.quangquy.cppide`.
 - Packaged files: `app/`, `preload.js`, `src/`, `node_modules/` (trimmed by the exclusion list:
-  Monaco ships only `min/vs` without the TypeScript/CSS/HTML language services and non-English
-  strings — every tab is `cpp`, the theme editor uses `json`). `electronLanguages: ["en-US"]` keeps
-  one Chromium locale.
+  Monaco is not packaged from `node_modules` (it is a devDependency); `src/vendor/monaco/` holds
+  the esbuild bundle, without the TypeScript/JSON/CSS/HTML language services, the LSP client and
+  the diff editor. Basic-language tokenizers are lazy chunks (the Markdown preview colours code
+  blocks with them). `electronLanguages: ["en-US"]` keeps one Chromium locale.
 - Windows: NSIS installer + zip, x64, with `Sameko-GCC/` as an extra resource. Its `filter` drops
   what the IDE never runs (Fortran/Objective-C compilers, `ld.lld`, WinLibs extras such as ccache,
   nasm, ninja, the `wl-*` package manager, the DLLs only they import, Python's test suite,
@@ -281,8 +283,8 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   letters. `renderTabs()` re-syncs the language after a rename or Save As.
 - Markdown preview (`src/features/markdown/markdown-preview.js`): `createEditor` attaches one
   `.md-preview` element per editor pane; it follows the pane's model (`onDidChangeModel`), so a
-  `markdown` tab shows it unless `tab.mdPreview === false`. marked + DOMPurify load through the
-  AMD loader on first use; the two sides scroll independently (by request). A re-render sanitizes
+  `markdown` tab shows it unless `tab.mdPreview === false`. marked + DOMPurify load with
+  `loadScript` on first use; the two sides scroll independently (by request). A re-render sanitizes
   only changed top-level blocks (`state.cache`) and `patch()` swaps only those DOM nodes. Links
   go to `electronAPI.openExternalLink` (http/https/mailto only) or open a tab.
 - `App.tabs[]` holds `{id, name, path, content, original, modified, viewState, exePath, model}`.

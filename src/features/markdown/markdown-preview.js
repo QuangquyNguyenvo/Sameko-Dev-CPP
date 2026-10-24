@@ -6,11 +6,11 @@
  */
 
 const MarkdownPreview = {
-    // UMD bundles after Monaco's loader register as AMD modules (see AGENTS.md).
-    LIB_PATHS: {
-        marked: '../node_modules/marked/lib/marked.umd',
-        dompurify: '../node_modules/dompurify/dist/purify.min',
-    },
+    // UMD bundles: they set window.marked and window.DOMPurify.
+    LIB_SCRIPTS: [
+        '../node_modules/marked/lib/marked.umd.js',
+        '../node_modules/dompurify/dist/purify.min.js',
+    ],
     LANG_ALIASES: { 'c++': 'cpp', cc: 'cpp', cxx: 'cpp', h: 'cpp', hpp: 'cpp', c: 'cpp', js: 'javascript', ts: 'typescript', py: 'python', sh: 'shell', bash: 'shell', ps1: 'powershell', yml: 'yaml', md: 'markdown', 'c#': 'csharp', cs: 'csharp' },
     RENDER_DELAY: 120,
     ID_PREFIX: 'md-',  // on every id in the preview (fixUp)
@@ -21,16 +21,12 @@ const MarkdownPreview = {
 
     loadLibs() {
         if (!this.libs) {
-            this.libs = new Promise((resolve) => {
-                window.require.config({ paths: this.LIB_PATHS });
-                window.require(['marked', 'dompurify'], (markedLib, purify) => {
-                    resolve({ marked: markedLib, DOMPurify: purify });
-                }, (err) => {
+            this.libs = Promise.all(this.LIB_SCRIPTS.map((src) => loadScript(src)))
+                .then(() => ({ marked: window.marked, DOMPurify: window.DOMPurify }), (err) => {
                     console.error('[MarkdownPreview] Failed to load marked/DOMPurify:', err && err.message ? err.message : err);
                     this.libs = null;
-                    resolve(null);
+                    return null;
                 });
-            });
         }
         return this.libs;
     },

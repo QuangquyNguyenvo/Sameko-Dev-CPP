@@ -73,3 +73,7 @@ compile_flags.txt
 
 # Installer art previews (scripts/build-installer-art.js)
 installer/*.preview.png
+
+# ===== Generated =====
+# Monaco bundle, rebuilt by scripts/build-monaco.js (npm start / build run it)
+src/vendor/
