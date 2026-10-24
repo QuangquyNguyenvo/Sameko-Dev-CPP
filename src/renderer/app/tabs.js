@@ -167,7 +167,11 @@ async function closeTab(id, { quiet = false } = {}) {
 
     delete App.tabDiagnostics[id];
 
-    App.tabs.splice(idx, 1);
+    // Other tabs may have closed while the confirmation was open: the index
+    // found before it may now name another (unsaved) tab.
+    const at = App.tabs.indexOf(tab);
+    if (at === -1) return;   // already closed by another close
+    App.tabs.splice(at, 1);
     delete App.ioByTab[id];
     delete App.outputByTab[id];
     releaseRunCapture(id);
@@ -180,7 +184,7 @@ async function closeTab(id, { quiet = false } = {}) {
         // to save state into it; clear our decorations off its model here.
         App.activeTabId = null;
         if (App.editor && App.ready) clearEditorDecorationsBeforeSwitch();
-        if (App.tabs.length) setActive(App.tabs[Math.min(idx, App.tabs.length - 1)].id);
+        if (App.tabs.length) setActive(App.tabs[Math.min(at, App.tabs.length - 1)].id);
         else {
             if (App.editor) showEmptyModel(App.editor);
             loadTestStateFromTab(null);

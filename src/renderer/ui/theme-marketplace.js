@@ -252,7 +252,7 @@ const ThemeMarketplace = {
                     ${desc ? `<div class="mp-card-desc">${escHtml(desc)}</div>` : ''}
                     <div class="mp-card-meta">
                         <span>${escHtml(theme.type)}</span>
-                        <span>by ${theme.author || 'Unknown'}</span>
+                        <span>by ${escHtml(theme.author || 'Unknown')}</span>
                     </div>
                     <div class="mp-card-actions">
                         <button class="mp-btn mp-btn-apply ${isActive ? 'disabled' : ''}" ${isActive ? 'disabled' : ''}>
