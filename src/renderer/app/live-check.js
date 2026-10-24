@@ -148,7 +148,7 @@ function scheduleLiveCheck() {
 }
 
 async function doLiveCheck(targetRevision = liveCheckRevision) {
-    if (isBuilding || !App.editor) return;
+    if (isBuilding || !App.editor || !App.settings.editor.liveCheck) return;
     if (isLiveChecking) {
         liveCheckQueued = true;
         return;
@@ -162,14 +162,14 @@ async function doLiveCheck(targetRevision = liveCheckRevision) {
     if (!tab || !isCppTab(tab)) {
         // No tab (the last one closed while a check was pending), write-ups and
         // test data: nothing to check.
-        clearLiveCheckMarkers();
+        clearLiveCheckMarkers(model);
         setLiveCheckUIState('idle');
         return;
     }
 
     const code = editor.getValue();
     if (!code || !code.trim()) {
-        clearLiveCheckMarkers();
+        clearLiveCheckMarkers(model);
         if (!hasBuildProblems) clearProblems(tab.id);
         setLiveCheckUIState('idle');
         if (!isBuilding && !App.isRunning) {
@@ -197,6 +197,11 @@ async function doLiveCheck(targetRevision = liveCheckRevision) {
             else if (tab.model && !tab.model.isDisposed()) monaco.editor.setModelMarkers(tab.model, 'live-check', []);
             return;
         }
+        // Live check was turned off while this one ran.
+        if (!App.settings.editor.liveCheck) {
+            clearLiveCheckMarkers(model);
+            return;
+        }
         const isStale = targetRevision !== liveCheckRevision || editor.getModel() !== model;
         if (isStale) {
             liveCheckQueued = true;
@@ -206,8 +211,8 @@ async function doLiveCheck(targetRevision = liveCheckRevision) {
         if (result && result.diagnostics && result.diagnostics.length > 0) {
             applyLiveCheckMarkers(editor, result.diagnostics);
         } else if (result && result.success) {
-            // No errors - clear markers silently
-            clearLiveCheckMarkers();
+            // No errors: clear this file's marks only (the other pane keeps its own).
+            clearLiveCheckMarkers(model);
             if (!hasBuildProblems) clearProblems(tab ? tab.id : null);
             setLiveCheckUIState('clean');
             if (!isBuilding && !App.isRunning) {
@@ -278,7 +283,12 @@ function applyLiveCheckMarkers(editor, diagnostics) {
     }
 }
 
-function clearLiveCheckMarkers() {
+/** Clears live-check marks on `model`, or on both panes' models when none is given. */
+function clearLiveCheckMarkers(model = null) {
+    if (model) {
+        if (!model.isDisposed()) monaco.editor.setModelMarkers(model, 'live-check', []);
+        return;
+    }
     if (App.editor) {
         const model1 = App.editor.getModel();
         if (model1) monaco.editor.setModelMarkers(model1, 'live-check', []);
@@ -341,6 +351,13 @@ function applySettings() {
     // Apply Discord RPC enabled/disabled state
     applyDiscordSetting();
     updateProblemSummaryUI();
+    if (!App.settings.editor.liveCheck) {
+        // Turned off: drop a pending check, outdate a running one, remove its marks.
+        if (liveCheckTimer) { clearTimeout(liveCheckTimer); liveCheckTimer = null; }
+        liveCheckRevision += 1;
+        liveCheckQueued = false;
+        if (typeof monaco !== 'undefined') clearLiveCheckMarkers();
+    }
     setLiveCheckUIState(App.settings.editor.liveCheck ? (App.problems.length > 0 ? 'issues' : 'idle') : 'disabled');
 }
 

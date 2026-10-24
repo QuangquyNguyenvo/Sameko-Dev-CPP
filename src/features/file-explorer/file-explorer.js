@@ -5742,6 +5742,8 @@ const FileExplorer = {
                         if (typeof closeClangdDocument === 'function') closeClangdDocument(tab.path || tab.id);
                         tab.path = filePath;
                         tab.name = fileName;
+                        // Another tab with the old text of this file would write it back on its next save.
+                        if (typeof releaseOtherTabsOfPath === 'function') await releaseOtherTabsOfPath(tab, filePath);
                         if (typeof startFileWatch === 'function') startFileWatch(filePath);
                         if (typeof markTabSaved === 'function') markTabSaved(tab, content);
                         else { tab.original = content; tab.modified = false; window.App?.renderTabs?.(); }
@@ -5780,6 +5782,8 @@ const FileExplorer = {
                     if (typeof closeClangdDocument === 'function') closeClangdDocument(tab.path || tab.id);
                     tab.path = savedPath;
                     tab.name = fileName;
+                    // Another tab with the old text of this file would write it back on its next save.
+                    if (typeof releaseOtherTabsOfPath === 'function') await releaseOtherTabsOfPath(tab, savedPath);
                     if (typeof startFileWatch === 'function') startFileWatch(savedPath);
                     if (typeof markTabSaved === 'function') markTabSaved(tab, content);
                     else { tab.original = content; tab.modified = false; window.App?.renderTabs?.(); }

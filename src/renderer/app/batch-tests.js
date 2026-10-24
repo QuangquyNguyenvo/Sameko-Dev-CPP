@@ -159,6 +159,7 @@ async function runAllTests() {
 
         const compileResult = await window.electronAPI.compile({
             filePath: tab.path,
+            untitledId: tab.path ? '' : tab.id,
             content: content,
             flags: compileFlags,
             singleFileMode: App.settings.compiler.singleFileMode !== false,
@@ -344,6 +345,7 @@ async function runSingleTestByIndex(testIndex) {
         const compileFlags = buildCompileFlags();
         const compileResult = await window.electronAPI.compile({
             filePath: tab.path,
+            untitledId: tab.path ? '' : tab.id,
             content: content,
             flags: compileFlags,
             singleFileMode: App.settings.compiler.singleFileMode !== false,

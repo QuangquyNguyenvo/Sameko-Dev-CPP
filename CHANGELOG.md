@@ -58,7 +58,14 @@ Fixes for data loss in contests, the Explorer, Save As and session restore, a li
 - **Editing or exporting a built-in theme that is not active** uses its saved background instead of the default one, and Save waits for a background that is still loading.
 - **A downloaded update found after a restart** is offered again on Windows (the lookup always failed).
 - **The snippet editor is no longer empty** when it is opened before the editor has finished loading.
-- **Closing a tab after Save As or a rename** releases its IntelliSense document, and a Linux file watcher no longer comes back after its tab closed.
+- **Closing a tab after Save As or a rename** releases its IntelliSense document, and a Linux file watcher no longer comes back after its tab closed. A tab closed while IntelliSense is still starting no longer stays open in clangd.
+- **Each untitled tab builds its own program**: building a second untitled tab no longer replaces the first one's, so Run Only runs the right code.
+- **Run Only while a program is running** stops it first; the old program's "Stopped" and its time limit no longer end the new run, its auto-sent input goes to the right run, and its last output no longer shows up in the new run.
+- **The Input box is sent as typed**: leading spaces, trailing spaces and blank lines reach `getline`.
+- **Saving an untitled tab into a contest problem** over a file open in another tab handles that tab as Save As does.
+- **A clean live check of one pane keeps the other pane's error marks**, and turning Live Check off drops a check still in progress.
+- **Clear (or Undo) in the theme editor wins over a background file** that is still being read.
+- **Saving through a symlink whose target was deleted** recreates the target instead of replacing the link with a file.
 
 ### Removed
 

@@ -29,6 +29,39 @@ function tempNameFor(target) {
     return path.join(path.dirname(target), `.${path.basename(target)}.${tag}.tmp`);
 }
 
+const MAX_LINK_HOPS = 40;
+
+/**
+ * A path that does not resolve: a new file, or a symlink whose target is gone.
+ * For the link, the file it points to is what gets written (as writeFile() would
+ * do), so renaming over the link does not turn it into a regular file.
+ */
+async function danglingLinkTarget(filePath) {
+    let current = filePath;
+    for (let hop = 0; hop < MAX_LINK_HOPS; hop++) {
+        let st;
+        try { st = await fsp.lstat(current); } catch (_) { return current; }
+        if (!st.isSymbolicLink()) return current;
+        current = path.resolve(path.dirname(current), await fsp.readlink(current));
+    }
+    const err = new Error(`Too many symbolic links: ${filePath}`);
+    err.code = 'ELOOP';
+    throw err;
+}
+
+function danglingLinkTargetSync(filePath) {
+    let current = filePath;
+    for (let hop = 0; hop < MAX_LINK_HOPS; hop++) {
+        let st;
+        try { st = fs.lstatSync(current); } catch (_) { return current; }
+        if (!st.isSymbolicLink()) return current;
+        current = path.resolve(path.dirname(current), fs.readlinkSync(current));
+    }
+    const err = new Error(`Too many symbolic links: ${filePath}`);
+    err.code = 'ELOOP';
+    throw err;
+}
+
 /**
  * The real file behind a path, its POSIX mode (undefined on Windows) and whether
  * it exists. An existing file must be writable: rename() would replace a
@@ -41,7 +74,7 @@ async function resolveTarget(filePath) {
         target = await fsp.realpath(filePath);
         st = await fsp.stat(target);
     } catch (_) {
-        return { target: filePath, mode: undefined };
+        return { target: await danglingLinkTarget(filePath), mode: undefined };
     }
     await fsp.access(target, fs.constants.W_OK);
     return { target, mode: IS_WIN ? undefined : (st.mode & 0o7777) };
@@ -53,7 +86,7 @@ function resolveTargetSync(filePath) {
         target = fs.realpathSync(filePath);
         st = fs.statSync(target);
     } catch (_) {
-        return { target: filePath, mode: undefined };
+        return { target: danglingLinkTargetSync(filePath), mode: undefined };
     }
     fs.accessSync(target, fs.constants.W_OK);
     return { target, mode: IS_WIN ? undefined : (st.mode & 0o7777) };

@@ -189,8 +189,15 @@ const ThemeCustomizer = {
         this.activePanel = panel;
         this._render({ force: true, syncJson: panel === 'advanced' && !wasJson });
     },
+    /** A background file still being read must not overwrite a later change to `key` (all keys when omitted). */
+    _invalidateAssetRequests(key = null) {
+        for (const k of key ? [key] : ThemeManager.ASSET_KEYS) {
+            this._assetRequests[k] = (this._assetRequests[k] || 0) + 1;
+        }
+    },
     setToken(key, value, options = {}) {
         if (!ThemeTokens.definitions[key]) return false;
+        if (!options.fromUpload && ThemeManager.ASSET_KEYS.includes(key)) this._invalidateAssetRequests(key);
         if (key.startsWith('syntax')) return this.setSyntax(key.slice(6).toLowerCase(), value, options);
         return this._change(theme => {
             theme.colors[key] = value;
@@ -225,6 +232,7 @@ const ThemeCustomizer = {
     // the keys derived from it, so those are restored with it.
     revertToken(key) {
         if (!this._baseline || !ThemeTokens.definitions[key]) return false;
+        if (ThemeManager.ASSET_KEYS.includes(key)) this._invalidateAssetRequests(key);
         const syntax = /^syntax[A-Z]/.test(key) ? key[6].toLowerCase() + key.slice(7) : null;
         const derived = { bgHeader: ['bgHeader-main', 'bgHeader-statusbar'],
             bgPanel: ['bgPanel-problems', 'bgPanel-input', 'bgPanel-expected'] }[key] || [];
@@ -272,7 +280,7 @@ const ThemeCustomizer = {
             const assets = { [key]: url };
             await ThemeManager.externalizeAssets(assets);
             if (generation === this._generation && request === this._assetRequests[key]) {
-                this.setToken(key, assets[key], { force: true });
+                this.setToken(key, assets[key], { force: true, fromUpload: true });
             }
         } catch (error) { if (generation === this._generation) this.notify(error.message, 'error'); }
     },
@@ -287,6 +295,7 @@ const ThemeCustomizer = {
         next.name = name;
         this.workingTheme = next;
         this.baseThemeId = id;
+        this._invalidateAssetRequests();
         this._record();
         this._render({ force: true, syncJson: true });
     },
@@ -294,6 +303,7 @@ const ThemeCustomizer = {
         if (this.busy || this.historyIndex <= 0) return;
         if (this._hasJsonEdits() && !this.applyJson()) return;
         this.historyIndex--;
+        this._invalidateAssetRequests();
         this.workingTheme = this._clone(this.historyStack[this.historyIndex]);
         this._render({ force: true, syncJson: true });
     },
@@ -301,6 +311,7 @@ const ThemeCustomizer = {
         if (this.busy || this.historyIndex >= this.historyStack.length - 1) return;
         if (this._hasJsonEdits() && !this.applyJson()) return;
         this.historyIndex++;
+        this._invalidateAssetRequests();
         this.workingTheme = this._clone(this.historyStack[this.historyIndex]);
         this._render({ force: true, syncJson: true });
     },
@@ -310,6 +321,7 @@ const ThemeCustomizer = {
             ? this._draft(ThemeManager._getHardcodedThemes()[this.sourceThemeId])
             : this._clone(this._baseline);
         this.workingTheme = next;
+        this._invalidateAssetRequests();
         this._record();
         this._render({ force: true, syncJson: true });
     },
@@ -325,6 +337,7 @@ const ThemeCustomizer = {
             const next = this._draft(raw);
             next.id = this.sourceThemeId;
             this.workingTheme = next;
+            this._invalidateAssetRequests();
             this._record();
             this._render({ force: true, syncJson: true });
             this.notify('JSON applied to preview.', 'success');

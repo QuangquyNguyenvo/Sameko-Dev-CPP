@@ -60,6 +60,9 @@ let nextRequestId = 1;
 const pendingRequests = new Map(); // id -> { resolve, reject, timeout }
 
 const openedDocuments = new Set();
+/** Bumped by closeDocument: a request that was waiting for clangd to start must not reopen the file. */
+const closeGeneration = new Map();
+const closeGen = (uri) => closeGeneration.get(uri) || 0;
 const documentVersions = {}; // uri -> version
 const documentText = new Map(); // uri -> text clangd currently has
 
@@ -753,8 +756,11 @@ function syncDocument(fileUri, content) {
  * @param {string} filePath - same identifier that was used for completions
  */
 function closeDocument(filePath) {
-    if (!isEnabled || !isInitialized) return;
     const fileUri = getFileUri(filePath);
+    // Even before clangd is ready: a completion waiting in ensureReady() would
+    // otherwise open the closed tab's document once initialization finishes.
+    closeGeneration.set(fileUri, closeGen(fileUri) + 1);
+    if (!isEnabled || !isInitialized) return;
     if (!openedDocuments.has(fileUri)) return;
     sendNotification('textDocument/didClose', { textDocument: { uri: fileUri } });
     openedDocuments.delete(fileUri);
@@ -774,10 +780,11 @@ function closeDocument(filePath) {
  * @returns {Promise<Array<{line:number,column:number,endLine:number,endColumn:number,severity:string,message:string,source:string}>|null>}
  */
 async function getDiagnostics(filePath, content, timeoutMs = 6000) {
-    const ready = await ensureReady();
-    if (!ready) return null;
-
     const fileUri = getFileUri(filePath);
+    const gen = closeGen(fileUri);
+    const ready = await ensureReady();
+    if (!ready || closeGen(fileUri) !== gen) return null;
+
     syncDocument(fileUri, content);
     const wanted = documentVersions[fileUri] || 1;
 
@@ -823,13 +830,15 @@ async function getDiagnostics(filePath, content, timeoutMs = 6000) {
  * @returns {Promise<any[]>}
  */
 async function getCompletions(filePath, content, line, character) {
+    const fileUri = getFileUri(filePath);
+    const gen = closeGen(fileUri);
     const ready = await ensureReady();
     if (!ready) {
         console.warn('[Clangd-DBG] getCompletions: not ready, returning []');
         return [];
     }
+    if (closeGen(fileUri) !== gen) return [];   // its tab closed meanwhile
 
-    const fileUri = getFileUri(filePath);
     syncDocument(fileUri, content);
 
     const completionParams = {
@@ -865,12 +874,13 @@ async function getCompletions(filePath, content, line, character) {
  * @returns {Promise<object|null>}
  */
 async function getHover(filePath, content, line, character) {
+    const fileUri = getFileUri(filePath);
+    const gen = closeGen(fileUri);
     const ready = await ensureReady();
-    if (!ready) {
+    if (!ready || closeGen(fileUri) !== gen) {
         return null;
     }
 
-    const fileUri = getFileUri(filePath);
     syncDocument(fileUri, content);
 
     const hoverParams = {

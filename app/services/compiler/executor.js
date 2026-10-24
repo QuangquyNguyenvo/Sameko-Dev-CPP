@@ -181,7 +181,7 @@ function sendToRenderer(channel, data) {
  * @param {string} [options.flags] - Compiler flags
  * @returns {Promise<import('../../shared/types').CompileResult>}
  */
-async function compile({ filePath, content, flags, useLLD, noBuildCache = false, singleFileMode = false, realtimeOutput = true }) {
+async function compile({ filePath, content, flags, useLLD, noBuildCache = false, singleFileMode = false, realtimeOutput = true, untitledId = '' }) {
     const startTime = Date.now();
 
     const flagsCheck = validateCompilerFlags(flags);
@@ -221,7 +221,10 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
         if (!fs.existsSync(tempDir)) {
             ensurePrivateDir(tempDir);
         }
-        actualFilePath = path.join(tempDir, 'temp_code.cpp');
+        // One source (and so one .exe) per untitled tab: building another untitled
+        // tab must not replace the program Run Only starts for this one.
+        const tag = String(untitledId || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+        actualFilePath = path.join(tempDir, tag ? `temp_code-${tag}.cpp` : 'temp_code.cpp');
         usingTempFile = true;
     }
 
@@ -855,6 +858,13 @@ async function run({ exePath, cwd }) {
         if (flushTimer) {
             clearTimeout(flushTimer);
             flushTimer = null;
+        }
+        // Stopped (or replaced by a newer run): its backlog must not reach the
+        // terminal of the next program.
+        if (runningProcess !== child) {
+            pendingOut = '';
+            pendingErr = '';
+            return;
         }
         if (pendingOut) {
             const part = pendingOut.length > budget ? pendingOut.slice(0, budget) : pendingOut;

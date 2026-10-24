@@ -122,6 +122,7 @@ async function buildActiveTab({ runAfter }) {
         const t0 = Date.now();
         const r = await window.electronAPI.compile({
             filePath: tab.path,
+            untitledId: tab.path ? '' : tab.id,
             content: tab.content,
             flags: buildCompileFlags(),
             singleFileMode: App.settings.compiler.singleFileMode !== false,
@@ -203,6 +204,11 @@ async function run(clearTerminal = true) {
     if (!exePath) { log('Build first (F11)', 'warning'); return; }
     const tabId = exeTab.id;
 
+    // Run Only while a program runs: stop it first, so its "stopped" event and
+    // its time limit cannot end the new run.
+    if (App.isRunning) await stop();
+    const runSeq = ++App.runSeq;
+
     if (!App.showTerm) {
         App.showTerm = true;
         updateUI();
@@ -217,7 +223,10 @@ async function run(clearTerminal = true) {
 
     // An attached input file replaces the Input box (#49).
     const inputFile = getTabInputFile(getPreferredTabId());
-    const inputText = inputFile ? '' : document.getElementById('input-area').value.trim();
+    // Sent as typed (leading spaces and blank lines matter to getline); the main
+    // process adds the final newline, so one trailing newline is dropped here.
+    const inputText = inputFile ? '' : document.getElementById('input-area').value.replace(/\r?\n$/, '');
+    const hasInput = !inputFile && document.getElementById('input-area').value.length > 0;
 
     log('--- Running ---', 'system');
     setStatus('Running...', '');
@@ -241,7 +250,8 @@ async function run(clearTerminal = true) {
 
     if (App.settings.execution.timeLimitEnabled && App.settings.execution.timeLimitSeconds > 0) {
         App.runTimeout = setTimeout(() => {
-            if (App.isRunning) {
+            App.runTimeout = null;
+            if (App.isRunning && App.runSeq === runSeq) {
                 log('\nTime limit exceeded!', 'error');
                 stop();
             }
@@ -297,9 +307,10 @@ async function run(clearTerminal = true) {
     }
 
     // Send all input at once (like freopen) for maximum speed
-    if (inputText && App.settings.execution.autoSendInput) {
-        setTimeout(() => {
-            if (App.isRunning) {
+    if (hasInput && App.settings.execution.autoSendInput) {
+        App.autoInputTimer = setTimeout(() => {
+            App.autoInputTimer = null;
+            if (App.isRunning && App.runSeq === runSeq) {
                 // Echo the input as a single block. Splitting huge input into one
                 // log() (and one DOM node) per line froze the UI for minutes before
                 // any program output appeared. (#48)
@@ -326,6 +337,10 @@ async function stop() {
     if (App.runTimeout) {
         clearTimeout(App.runTimeout);
         App.runTimeout = null;
+    }
+    if (App.autoInputTimer) {
+        clearTimeout(App.autoInputTimer);
+        App.autoInputTimer = null;
     }
 
     setRunning(false);
@@ -397,7 +412,7 @@ function clearProblems(tabId = null) {
 async function revealProblem(p) {
     const key = p.file ? pathKey(p.file) : '';
     let tab = key ? App.tabs.find(t => t.path && pathKey(t.path) === key) : null;
-    if (!tab && p.file && /^(?:[a-zA-Z]:[\\/]|[\\/])/.test(p.file) && !/[\\/]temp_code\.cpp$/i.test(p.file)) {
+    if (!tab && p.file && /^(?:[a-zA-Z]:[\\/]|[\\/])/.test(p.file) && !/[\\/]temp_code(?:-[\w-]+)?\.cpp$/i.test(p.file)) {
         // A header the problem is in, not open yet.
         await openFileFromPath(p.file);
         tab = App.tabs.find(t => t.path && pathKey(t.path) === key) || null;
