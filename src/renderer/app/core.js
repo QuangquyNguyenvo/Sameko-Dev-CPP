@@ -1063,26 +1063,29 @@ function createEditor(containerId) {
  * four corners of the editor cursor using damped spring physics.
  */
 function enableNeovideCursorTrail() {
-    // Ensure the cursor trail canvas and loop are initialized only once
     if (window.__neovideTrailInitialized) return;
     window.__neovideTrailInitialized = true;
 
-    // Create a full-screen overlay canvas for drawing the elastic trail
-    const canvas = document.createElement("canvas");
-    canvas.id = "sameko-cursor-canvas";
-    canvas.style.cssText = "pointer-events: none; position: fixed; top: 0; left: 0; z-index: 999999; transition: opacity 0.075s ease-out;";
+    const canvas = document.createElement('canvas');
+    canvas.id = 'sameko-cursor-canvas';
+    Object.assign(canvas.style, {
+        pointerEvents: 'none',
+        position: 'fixed',
+        top: '0',
+        left: '0',
+        zIndex: '999999',
+        transition: 'opacity 0.075s ease-out'
+    });
     document.body.appendChild(canvas);
-    const context = canvas.getContext("2d");
+    const context = canvas.getContext('2d');
 
-    // Resizes the canvas to match the window dimensions.
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
     }
-    window.addEventListener("resize", resizeCanvas);
+    window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
-    // Damped spring physics solver to simulate organic cursor responsiveness.
     class DampedSpring {
         constructor(animationLength) {
             this.position = 0;
@@ -1091,7 +1094,7 @@ function enableNeovideCursorTrail() {
         }
 
         /**
-         * Updates the spring simulation over delta time.
+         * Update the spring simulation over delta time.
          * @param {number} deltaTime - Time step in seconds.
          * @returns {boolean} True if the spring is still active.
          */
@@ -1106,7 +1109,9 @@ function enableNeovideCursorTrail() {
             const decayFactor = Math.exp(-omega * deltaTime);
 
             this.position = (currentPosition + initialSlope * deltaTime) * decayFactor;
-            this.velocity = decayFactor * (-currentPosition * omega - initialSlope * deltaTime * omega + initialSlope);
+            this.velocity = decayFactor * (
+                -currentPosition * omega - initialSlope * deltaTime * omega + initialSlope
+            );
             return Math.abs(this.position) >= 0.01;
         }
 
@@ -1116,15 +1121,13 @@ function enableNeovideCursorTrail() {
         }
     }
 
-    // Relative corner offset coordinates centered at (0, 0)
     const relativeCornerPositions = [
-        { x: -0.5, y: -0.5 }, // Top-Left
-        { x: 0.5, y: -0.5 },  // Top-Right
-        { x: 0.5, y: 0.5 },   // Bottom-Right
-        { x: -0.5, y: 0.5 }   // Bottom-Left
+        { x: -0.5, y: -0.5 },
+        { x: 0.5, y: -0.5 },
+        { x: 0.5, y: 0.5 },
+        { x: -0.5, y: 0.5 }
     ];
 
-    // Manages a single corner of the cursor using independent spring solvers.
     class CursorCorner {
         constructor(relativePosition) {
             this.relativePosition = relativePosition;
@@ -1134,7 +1137,6 @@ function enableNeovideCursorTrail() {
             this.springY = new DampedSpring(0.125);
         }
 
-        // Calculates target screen coordinates for this corner.
         getDestination(centerX, centerY, width, height) {
             return {
                 x: centerX + this.relativePosition.x * width,
@@ -1142,23 +1144,27 @@ function enableNeovideCursorTrail() {
             };
         }
 
-        // Adjusts spring stiffness and lag factors based on movement direction and rank.
         jump(centerX, centerY, width, height, rank) {
             const destination = this.getDestination(centerX, centerY, width, height);
             const jumpVelocityX = (destination.x - this.previousDestination.x) / (width || 1);
             const jumpVelocityY = (destination.y - this.previousDestination.y) / (height || 1);
             const travelLength = Math.hypot(jumpVelocityX, jumpVelocityY);
-            const travelDirection = travelLength ? { x: jumpVelocityX / travelLength, y: jumpVelocityY / travelLength } : { x: 0, y: 0 };
+            const travelDirection = travelLength
+                ? { x: jumpVelocityX / travelLength, y: jumpVelocityY / travelLength }
+                : { x: 0, y: 0 };
 
             const cornerLength = Math.hypot(this.relativePosition.x, this.relativePosition.y);
-            const cornerDirection = { x: this.relativePosition.x / cornerLength, y: this.relativePosition.y / cornerLength };
+            const cornerDirection = {
+                x: this.relativePosition.x / cornerLength,
+                y: this.relativePosition.y / cornerLength
+            };
             const alignment = travelDirection.x * cornerDirection.x + travelDirection.y * cornerDirection.y;
 
-            // Assign responsiveness based on directional rank (Leading corners move faster than trailing ones)
+            // Leading corners move faster than trailing corners.
             const trailFactors = [1.0, 0.9, 0.5, 0.3];
-            let animationDuration = 0.125 * (trailFactors[rank] || 1.0);
+            let animationDuration = 0.125 * (trailFactors[rank] || 1);
 
-            // Leading edges snap immediately to maintain structural stability
+            // Snap leading edges immediately to maintain structural stability.
             if (alignment > 0.5) animationDuration = 0.02;
 
             this.springX.animationLength = animationDuration;
@@ -1170,7 +1176,6 @@ function enableNeovideCursorTrail() {
             }
         }
 
-        // Updates physical position of the corner for the current frame.
         update(centerX, centerY, width, height, deltaTime) {
             const destination = this.getDestination(centerX, centerY, width, height);
             if (destination.x !== this.previousDestination.x || destination.y !== this.previousDestination.y) {
@@ -1187,22 +1192,39 @@ function enableNeovideCursorTrail() {
         }
     }
 
-    const corners = relativeCornerPositions.map(relativePos => new CursorCorner(relativePos));
+    const corners = relativeCornerPositions.map(
+        relativePosition => new CursorCorner(relativePosition)
+    );
     let lastTime = performance.now();
     let previousCenterX = null;
     let previousCenterY = null;
 
-    
-    // Main animation loop rendering the trail polygon.
+    function clearTrail(activeCursors, resetPosition = false) {
+        if (canvas.style.opacity !== '0') {
+            context.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        canvas.style.opacity = '0';
+        activeCursors.forEach(cursor => cursor.style.opacity = '1');
+        corners.forEach(corner => {
+            corner.springX.reset();
+            corner.springY.reset();
+        });
+        if (resetPosition) {
+            previousCenterX = null;
+            previousCenterY = null;
+        }
+    }
+
     function animate() {
         requestAnimationFrame(animate);
 
         const activeCursors = document.querySelectorAll('.monaco-editor .cursors-layer .cursor');
 
-        // Honor performance mode or user setting to disable the trail
-        if (App.settings?.appearance?.performanceMode || App.settings?.appearance?.cursorTrail === false) {
-            canvas.style.opacity = '0';
-            activeCursors.forEach(cursor => cursor.style.opacity = '1');
+        if (
+            App.settings?.appearance?.performanceMode
+            || App.settings?.appearance?.cursorTrail === false
+        ) {
+            clearTrail(activeCursors, true);
             return;
         }
 
@@ -1213,58 +1235,118 @@ function enableNeovideCursorTrail() {
         let primaryCursor = null;
         for (const cursor of activeCursors) {
             const style = getComputedStyle(cursor);
-            if (style.display !== 'none' && style.visibility !== 'hidden' && !style.transform.includes('-10000px')) {
+            if (
+                style.display !== 'none'
+                && style.visibility !== 'hidden'
+                && !style.transform.includes('-10000px')
+            ) {
                 primaryCursor = cursor;
                 break;
             }
         }
 
-        if (!primaryCursor) return;
+        if (!primaryCursor) {
+            clearTrail(activeCursors);
+            return;
+        }
 
         const cursorRect = primaryCursor.getBoundingClientRect();
-        if (cursorRect.width === 0 || cursorRect.height === 0) return;
+        if (cursorRect.width === 0 || cursorRect.height === 0) {
+            clearTrail(activeCursors);
+            return;
+        }
 
         const centerX = cursorRect.left + cursorRect.width / 2;
         const centerY = cursorRect.top + cursorRect.height / 2;
 
-        // Recalculate corner rank weights when cursor changes position
-        if (previousCenterX !== null && (centerX !== previousCenterX || centerY !== previousCenterY)) {
+        // Seed corner state after a reset; otherwise, rank corners by movement direction.
+        if (previousCenterX === null) {
+            corners.forEach(corner => {
+                const destination = corner.getDestination(
+                    centerX,
+                    centerY,
+                    cursorRect.width,
+                    cursorRect.height
+                );
+                corner.currentPosition = destination;
+                corner.previousDestination = destination;
+                corner.springX.reset();
+                corner.springY.reset();
+            });
+        } else if (centerX !== previousCenterX || centerY !== previousCenterY) {
             const ranks = corners.map((corner, index) => {
-                const destination = corner.getDestination(centerX, centerY, cursorRect.width, cursorRect.height);
+                const destination = corner.getDestination(
+                    centerX,
+                    centerY,
+                    cursorRect.width,
+                    cursorRect.height
+                );
                 const velocityX = destination.x - corner.previousDestination.x;
                 const velocityY = destination.y - corner.previousDestination.y;
                 const velocityLength = Math.hypot(velocityX, velocityY);
-                const direction = velocityLength ? { x: velocityX / velocityLength, y: velocityY / velocityLength } : { x: 0, y: 0 };
-                const cornerLength = Math.hypot(corner.relativePosition.x, corner.relativePosition.y);
-                const alignment = direction.x * (corner.relativePosition.x / cornerLength) + direction.y * (corner.relativePosition.y / cornerLength);
+                const direction = velocityLength
+                    ? { x: velocityX / velocityLength, y: velocityY / velocityLength }
+                    : { x: 0, y: 0 };
+                const cornerLength = Math.hypot(
+                    corner.relativePosition.x,
+                    corner.relativePosition.y
+                );
+                const alignment = direction.x * (corner.relativePosition.x / cornerLength)
+                    + direction.y * (corner.relativePosition.y / cornerLength);
                 return { index, alignment };
-            }).sort((a, b) => a.alignment - b.alignment)
-              .map((item, rank) => ({ index: item.index, rank }))
-              .reduce((accumulator, current) => { accumulator[current.index] = current.rank; return accumulator; }, []);
+            })
+                .sort((a, b) => a.alignment - b.alignment)
+                .map((item, cornerRank) => ({ index: item.index, rank: cornerRank }))
+                .reduce((accumulator, current) => {
+                    accumulator[current.index] = current.rank;
+                    return accumulator;
+                }, []);
 
-            corners.forEach((corner, index) => corner.jump(centerX, centerY, cursorRect.width, cursorRect.height, ranks[index]));
+            corners.forEach((corner, index) => {
+                corner.jump(
+                    centerX,
+                    centerY,
+                    cursorRect.width,
+                    cursorRect.height,
+                    ranks[index]
+                );
+            });
         }
         previousCenterX = centerX;
         previousCenterY = centerY;
 
         let isMoving = false;
         corners.forEach(corner => {
-            if (corner.update(centerX, centerY, cursorRect.width, cursorRect.height, deltaTime)) {
+            if (
+                corner.update(
+                    centerX,
+                    centerY,
+                    cursorRect.width,
+                    cursorRect.height,
+                    deltaTime
+                )
+            ) {
                 isMoving = true;
             }
         });
 
         if (isMoving) {
-            // Draw polygon trail connecting physical corner coordinates
             context.clearRect(0, 0, canvas.width, canvas.height);
             context.beginPath();
-            context.moveTo(corners[0].currentPosition.x, corners[0].currentPosition.y);
-            for (let i = 1; i < 4; i++) {
-                context.lineTo(corners[i].currentPosition.x, corners[i].currentPosition.y);
+            context.moveTo(
+                corners[0].currentPosition.x,
+                corners[0].currentPosition.y
+            );
+            for (let cornerIndex = 1; cornerIndex < 4; cornerIndex++) {
+                context.lineTo(
+                    corners[cornerIndex].currentPosition.x,
+                    corners[cornerIndex].currentPosition.y
+                );
             }
             context.closePath();
 
-            context.fillStyle = getComputedStyle(primaryCursor).backgroundColor || 'var(--accent, #eb6b9d)';
+            context.fillStyle = getComputedStyle(primaryCursor).backgroundColor
+                || 'var(--accent, #eb6b9d)';
             context.fill();
 
             canvas.style.opacity = '1';

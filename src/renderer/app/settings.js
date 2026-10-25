@@ -290,7 +290,6 @@ function initSettings() {
         };
     }
 
-    // Listen for Performance Mode changes to lock/unlock Cursor Trail
     const perfSwitch = document.getElementById('set-performanceMode');
     if (perfSwitch) {
         perfSwitch.addEventListener('change', updateCursorTrailLockState);
@@ -827,10 +826,6 @@ function getSelectedFontFamily() {
     return normalizeFontFamilyInput(selectEl.value);
 }
 
-/**
- * Updates the UI state and lock status of the Cursor Trail setting row
- * based on the active Performance Mode toggle.
- */
 function updateCursorTrailLockState() {
     const performanceSwitch = document.getElementById('set-performanceMode');
     const cursorTrailSwitch = document.getElementById('set-cursorTrail');
@@ -838,10 +833,8 @@ function updateCursorTrailLockState() {
 
     const isPerformanceModeActive = performanceSwitch.checked;
     
-    // Disable checkbox interaction when performance mode is active
     cursorTrailSwitch.disabled = isPerformanceModeActive;
 
-    // Dim setting row and prevent pointer events
     const settingRow = cursorTrailSwitch.closest('.setting-row');
     if (settingRow) {
         settingRow.style.opacity = isPerformanceModeActive ? '0.5' : '1';
@@ -921,10 +914,8 @@ function openSettings() {
     const performanceSwitch = document.getElementById('set-performanceMode');
     if (performanceSwitch) {
         performanceSwitch.checked = App.settings.appearance.performanceMode || false;
-        // Dynamically update cursor trail lock state on toggle
         performanceSwitch.onchange = updateCursorTrailLockState;
     }
-    // Load saved cursor trail setting and reflect lock state
     const cursorTrailInput = document.getElementById('set-cursorTrail');
     if (cursorTrailInput) cursorTrailInput.checked = App.settings.appearance.cursorTrail !== false;
     updateCursorTrailLockState();
@@ -1037,7 +1028,6 @@ async function saveSettingsAndClose() {
         App.settings.appearance.theme = document.getElementById('set-theme').value;
         App.settings.appearance.performanceMode = document.getElementById('set-performanceMode').checked;
 
-        // Persist cursor trail setting
         const cursorTrailInput = document.getElementById('set-cursorTrail');
         if (cursorTrailInput) App.settings.appearance.cursorTrail = cursorTrailInput.checked;
 
