@@ -155,6 +155,35 @@ async function main() {
         assert.deepEqual(enabled, [false, false]);
     });
 
+    await check('Scroll Beyond Last Line is configurable, applied to both editors, and persisted', async () => {
+        const values = await page.evaluate(async () => {
+            openSettings();
+            const toggle = document.getElementById('set-scrollBeyondLastLine');
+            const isImmediatelyAfterTabSize = toggle.closest('.setting-row').previousElementSibling
+                .querySelector('#set-tabSize') !== null;
+            toggle.checked = true;
+            await saveSettingsAndClose();
+            openSplit();
+            const enabled = [App.editor, App.editor2].map(editor =>
+                editor.getOption(monaco.editor.EditorOption.scrollBeyondLastLine));
+            openSettings();
+            const checkedAfterReopen = toggle.checked;
+            toggle.checked = false;
+            await saveSettingsAndClose();
+            const disabled = [App.editor, App.editor2].map(editor =>
+                editor.getOption(monaco.editor.EditorOption.scrollBeyondLastLine));
+            return { isImmediatelyAfterTabSize, enabled, checkedAfterReopen, disabled };
+        });
+        assert.deepEqual(values, {
+            isImmediatelyAfterTabSize: true,
+            enabled: [true, true],
+            checkedAfterReopen: true,
+            disabled: [false, false]
+        });
+        const settings = JSON.parse(fs.readFileSync(path.join(profile, 'settings.json'), 'utf8'));
+        assert.equal(settings.editor.scrollBeyondLastLine, false);
+    });
+
     await check('closing split respects Performance Mode and the minimap preference', async () => {
         const values = await page.evaluate(() => {
             const enabled = () => App.editor.getOption(monaco.editor.EditorOption.minimap).enabled;

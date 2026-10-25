@@ -835,6 +835,7 @@ function openSettings() {
     document.getElementById('val-fontSize').textContent = App.settings.editor.fontSize + 'px';
     setFontFamilyInputs(App.settings.editor.fontFamily);
     document.getElementById('set-tabSize').value = App.settings.editor.tabSize;
+    document.getElementById('set-scrollBeyondLastLine').checked = !!App.settings.editor.scrollBeyondLastLine;
     document.getElementById('set-minimap').checked = App.settings.editor.minimap;
     document.getElementById('set-wordWrap').checked = App.settings.editor.wordWrap;
     document.getElementById('set-startupBehavior').value = App.settings.startup?.behavior || DEFAULT_SETTINGS.startup.behavior;
@@ -949,6 +950,7 @@ async function saveSettingsAndClose() {
         App.settings.editor.fontSize = parseInt(document.getElementById('set-fontSize').value);
         App.settings.editor.fontFamily = normalizeFontFamilyInput(getSelectedFontFamily());
         App.settings.editor.tabSize = parseInt(document.getElementById('set-tabSize').value);
+        App.settings.editor.scrollBeyondLastLine = document.getElementById('set-scrollBeyondLastLine').checked;
         App.settings.editor.minimap = document.getElementById('set-minimap').checked;
         App.settings.editor.wordWrap = document.getElementById('set-wordWrap').checked;
         if (!App.settings.startup) App.settings.startup = {};

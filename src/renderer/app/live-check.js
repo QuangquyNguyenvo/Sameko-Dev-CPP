@@ -283,6 +283,7 @@ function applySettings() {
         fontSize: App.settings.editor.fontSize,
         fontFamily: App.settings.editor.fontFamily,
         tabSize: App.settings.editor.tabSize,
+        scrollBeyondLastLine: !!App.settings.editor.scrollBeyondLastLine,
         insertSpaces: true,
         detectIndentation: false,
         emptySelectionClipboard: false,
