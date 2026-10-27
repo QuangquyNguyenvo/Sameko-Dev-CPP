@@ -62,7 +62,7 @@ const DEFAULT_SETTINGS = {
         bgUrl: '',
         performanceMode: true,
         animatedBackground: true,  // play a theme's background video (only while the window has focus)
-        cursorTrail: true,         // Neovide-style cursor trail; never drawn in performance mode
+        cursorTrail: true,         // Neovide-style cursor trail (independent of performance mode)
         uiScale: 'auto'   // 'auto' or a percentage; applied by the main process as the page zoom
     },
     startup: {
@@ -1091,45 +1091,54 @@ function createEditor(containerId) {
 
 
 /**
- * Neovide-like elastic damped spring cursor trail. A full-window canvas overlay draws a polygon
- * between the four corners of the editor cursor; each corner follows on a damped spring.
- * The overlay is created once; each editor's cursor, scroll and layout events wake the
- * animation, which stops again when the cursor settles.
+ * Neovide-like elastic damped spring cursor trail. A canvas draws a polygon between the four
+ * corners of the editor cursor; each corner follows on a damped spring. The trail is created
+ * once; each editor's cursor moves wake the animation, which stops again when the cursor settles.
  */
-let _cursorTrailWake = null;
+let _cursorTrail = null;
 function enableNeovideCursorTrail(editor) {
-    if (!_cursorTrailWake) _cursorTrailWake = createCursorTrail();
-    editor.onDidChangeCursorPosition(_cursorTrailWake);
-    editor.onDidScrollChange(_cursorTrailWake);
-    editor.onDidLayoutChange(_cursorTrailWake);
+    if (!_cursorTrail) _cursorTrail = createCursorTrail();
+    editor.onDidChangeCursorPosition(_cursorTrail.cursorMoved);
+    editor.onDidScrollChange(_cursorTrail.viewMoved);
+    editor.onDidLayoutChange(_cursorTrail.viewMoved);
 }
 
 function createCursorTrail() {
-
+    // The canvas sits inside the focused editor's .overflow-guard, so the editor clips it and
+    // Monaco's widgets (find 35, parameter hints 39, suggest 40) and the app's dialogs stay above.
     const canvas = document.createElement('canvas');
     canvas.id = 'sameko-cursor-canvas';
     Object.assign(canvas.style, {
         pointerEvents: 'none',
-        position: 'fixed',
+        position: 'absolute',
         top: '0',
         left: '0',
-        zIndex: '999999',
-        transition: 'opacity 0.075s ease-out'
+        zIndex: '30'
     });
-    document.body.appendChild(canvas);
     const context = canvas.getContext('2d');
+    // Seconds the slowest (trailing) corner takes to catch up with the cursor.
+    const TRAIL_LENGTH = 0.1;
+    let canvasWidth = 0;
+    let canvasHeight = 0;
+    let canvasRatio = 0;
 
-    // Backing store at device pixels so the trail is not blurry on scaled displays.
-    function resizeCanvas() {
+    // Moves the canvas into `guard` and sizes its backing store at device pixels, so the trail
+    // is not blurry on scaled displays.
+    function fitCanvas(guard) {
+        if (canvas.parentNode !== guard) guard.appendChild(canvas);
         const ratio = window.devicePixelRatio || 1;
-        canvas.width = Math.round(window.innerWidth * ratio);
-        canvas.height = Math.round(window.innerHeight * ratio);
-        canvas.style.width = window.innerWidth + 'px';
-        canvas.style.height = window.innerHeight + 'px';
+        const width = guard.clientWidth;
+        const height = guard.clientHeight;
+        if (width === canvasWidth && height === canvasHeight && ratio === canvasRatio) return;
+        canvasWidth = width;
+        canvasHeight = height;
+        canvasRatio = ratio;
+        canvas.width = Math.round(width * ratio);
+        canvas.height = Math.round(height * ratio);
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
         context.setTransform(ratio, 0, 0, ratio, 0, 0);
     }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
 
     class DampedSpring {
         constructor(animationLength) {
@@ -1178,8 +1187,8 @@ function createCursorTrail() {
             this.relativePosition = relativePosition;
             this.currentPosition = { x: 0, y: 0 };
             this.previousDestination = { x: -1e5, y: -1e5 };
-            this.springX = new DampedSpring(0.125);
-            this.springY = new DampedSpring(0.125);
+            this.springX = new DampedSpring(TRAIL_LENGTH);
+            this.springY = new DampedSpring(TRAIL_LENGTH);
         }
 
         getDestination(centerX, centerY, width, height) {
@@ -1207,7 +1216,7 @@ function createCursorTrail() {
 
             // Leading corners move faster than trailing corners.
             const trailFactors = [1.0, 0.9, 0.5, 0.3];
-            let animationDuration = 0.125 * (trailFactors[rank] || 1);
+            let animationDuration = TRAIL_LENGTH * (trailFactors[rank] || 1);
 
             // Snap leading edges immediately to maintain structural stability.
             if (alignment > 0.5) animationDuration = 0.02;
@@ -1215,7 +1224,7 @@ function createCursorTrail() {
             this.springX.animationLength = animationDuration;
             this.springY.animationLength = animationDuration;
 
-            if (animationDuration > 0.075) {
+            if (animationDuration > TRAIL_LENGTH * 0.6) {
                 this.springX.reset();
                 this.springY.reset();
             }
@@ -1246,10 +1255,18 @@ function createCursorTrail() {
     let hiddenCursor = null;   // the Monaco cursor hidden while the trail draws over it
     let running = false;
     let idleFrames = 0;
+    let snapFrames = 0;
+    let lastCursorMove = -Infinity;
 
     // Monaco moves its cursor element in its own animation frame, which can run after ours, so
     // the loop stays alive for a few frames after the last movement before it stops.
     const IDLE_FRAMES_BEFORE_STOP = 4;
+    // Frames that follow the cursor without a trail after a scroll or resize, until Monaco
+    // has drawn it at its new place on screen.
+    const SNAP_FRAMES = 3;
+    // A scroll this soon after a cursor move is the editor revealing the cursor (Ctrl+End,
+    // typing past the bottom): part of that move, so it keeps its trail.
+    const REVEAL_WINDOW_MS = 100;
 
     function showHiddenCursor() {
         if (hiddenCursor) hiddenCursor.style.opacity = '';
@@ -1258,7 +1275,7 @@ function createCursorTrail() {
 
     function clearTrail(resetPosition = false) {
         if (canvas.style.opacity !== '0') {
-            context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            context.clearRect(0, 0, canvasWidth, canvasHeight);
         }
         canvas.style.opacity = '0';
         showHiddenCursor();
@@ -1278,8 +1295,20 @@ function createCursorTrail() {
     }
 
     function trailDisabled() {
-        return App.settings?.appearance?.performanceMode
-            || App.settings?.appearance?.cursorTrail === false;
+        return App.settings?.appearance?.cursorTrail === false;
+    }
+
+    function cursorMoved() {
+        lastCursorMove = performance.now();
+        wake();
+    }
+
+    // Scrolling or resizing moves the cursor on screen but not in the text: the trail jumps
+    // there instead of smearing across the editor.
+    function viewMoved() {
+        if (performance.now() - lastCursorMove < REVEAL_WINDOW_MS) return;
+        snapFrames = SNAP_FRAMES;
+        wake();
     }
 
     // Starts the loop on editor activity; it stops itself once the cursor settles, so an idle
@@ -1316,14 +1345,22 @@ function createCursorTrail() {
         }
 
         const cursorRect = primaryCursor && primaryCursor.getBoundingClientRect();
-        if (!cursorRect || cursorRect.width === 0 || cursorRect.height === 0) {
+        const guard = primaryCursor && primaryCursor.closest('.overflow-guard');
+        if (!cursorRect || !guard || cursorRect.width === 0 || cursorRect.height === 0) {
             stop(true);
             return;
         }
         if (hiddenCursor && hiddenCursor !== primaryCursor) showHiddenCursor();
+        fitCanvas(guard);
+        const guardRect = guard.getBoundingClientRect();
 
         const centerX = cursorRect.left + cursorRect.width / 2;
         const centerY = cursorRect.top + cursorRect.height / 2;
+
+        if (snapFrames > 0) {
+            snapFrames--;
+            previousCenterX = null;   // re-seed at the cursor's new place, no trail
+        }
 
         // Seed corner state after a reset; otherwise, rank corners by movement direction.
         if (previousCenterX === null) {
@@ -1398,16 +1435,17 @@ function createCursorTrail() {
 
         if (isMoving) {
             idleFrames = 0;
-            context.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            // Corners are in viewport coordinates; the canvas starts at the guard's corner.
+            context.clearRect(0, 0, canvasWidth, canvasHeight);
             context.beginPath();
             context.moveTo(
-                corners[0].currentPosition.x,
-                corners[0].currentPosition.y
+                corners[0].currentPosition.x - guardRect.left,
+                corners[0].currentPosition.y - guardRect.top
             );
             for (let cornerIndex = 1; cornerIndex < 4; cornerIndex++) {
                 context.lineTo(
-                    corners[cornerIndex].currentPosition.x,
-                    corners[cornerIndex].currentPosition.y
+                    corners[cornerIndex].currentPosition.x - guardRect.left,
+                    corners[cornerIndex].currentPosition.y - guardRect.top
                 );
             }
             context.closePath();
@@ -1429,5 +1467,5 @@ function createCursorTrail() {
         requestAnimationFrame(animate);
     }
 
-    return wake;
+    return { cursorMoved, viewMoved };
 }

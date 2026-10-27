@@ -821,22 +821,6 @@ function getSelectedFontFamily() {
     return normalizeFontFamilyInput(selectEl.value);
 }
 
-function updateCursorTrailLockState() {
-    const performanceSwitch = document.getElementById('set-performanceMode');
-    const cursorTrailSwitch = document.getElementById('set-cursorTrail');
-    if (!performanceSwitch || !cursorTrailSwitch) return;
-
-    const isPerformanceModeActive = performanceSwitch.checked;
-    
-    cursorTrailSwitch.disabled = isPerformanceModeActive;
-
-    const settingRow = cursorTrailSwitch.closest('.setting-row');
-    if (settingRow) {
-        settingRow.style.opacity = isPerformanceModeActive ? '0.5' : '1';
-        settingRow.style.pointerEvents = isPerformanceModeActive ? 'none' : 'auto';
-    }
-}
-
 function openSettings() {
     // Populate theme dropdowns dynamically from ThemeManager first
     populateThemeDropdowns();
@@ -905,15 +889,8 @@ function openSettings() {
     // Sync carousel selection to saved theme
     selectThemeFromCarousel(App.settings.appearance.theme, true);
     document.getElementById('set-editorColorScheme').value = App.settings.editor.colorScheme || 'auto';
-
-    const performanceSwitch = document.getElementById('set-performanceMode');
-    if (performanceSwitch) {
-        performanceSwitch.checked = App.settings.appearance.performanceMode || false;
-        performanceSwitch.onchange = updateCursorTrailLockState;
-    }
-    const cursorTrailInput = document.getElementById('set-cursorTrail');
-    if (cursorTrailInput) cursorTrailInput.checked = App.settings.appearance.cursorTrail !== false;
-    updateCursorTrailLockState();
+    document.getElementById('set-performanceMode').checked = App.settings.appearance.performanceMode || false;
+    document.getElementById('set-cursorTrail').checked = App.settings.appearance.cursorTrail !== false;
 
     document.getElementById('set-animatedBackground').checked = App.settings.appearance.animatedBackground !== false;
     document.getElementById('set-uiScale').value = String(App.settings.appearance.uiScale ?? 'auto');
@@ -1022,9 +999,7 @@ async function saveSettingsAndClose() {
 
         App.settings.appearance.theme = document.getElementById('set-theme').value;
         App.settings.appearance.performanceMode = document.getElementById('set-performanceMode').checked;
-
-        const cursorTrailInput = document.getElementById('set-cursorTrail');
-        if (cursorTrailInput) App.settings.appearance.cursorTrail = cursorTrailInput.checked;
+        App.settings.appearance.cursorTrail = document.getElementById('set-cursorTrail').checked;
 
         App.settings.appearance.animatedBackground = document.getElementById('set-animatedBackground').checked;
         const uiScale = document.getElementById('set-uiScale').value;
