@@ -66,45 +66,11 @@
 }
 
 
-/* --- LIGHT THEME OVERRIDES --- */
-body[data-theme="kawaii-light"] .suggest-widget {
-    background-color: var(--bg-input, #f3f3f3) !important;
-    border-color: var(--border, #c0c0c0) !important;
-    box-shadow: var(--shadow-card, 0 4px 12px rgba(0, 0, 0, 0.15)) !important;
-}
-
-body[data-theme="kawaii-light"] .suggest-widget .monaco-list .monaco-list-row .label-name {
-    color: var(--text-primary, #333333) !important;
-}
-
-body[data-theme="kawaii-light"] .suggest-widget .monaco-list .monaco-list-row.focused {
-    background-color: var(--accent, #0060c0) !important;
-}
-
-body[data-theme="kawaii-light"] .suggest-widget .monaco-list .monaco-list-row.focused .label-name {
-    color: var(--bg-input, #ffffff) !important;
-}
-
-body[data-theme="kawaii-light"] .suggest-widget .monaco-list .monaco-list-row .monaco-highlighted-label .highlight {
-    color: var(--accent, #005cc5) !important;
-}
-
-body[data-theme="kawaii-light"] .suggest-widget .monaco-list .monaco-list-row.focused .monaco-highlighted-label .highlight {
-    color: var(--bg-input, #ffffff) !important;
-    text-decoration: underline;
-}
-
 /* Details Widget (Documentation) */
 .suggest-details,
 .monaco-editor .suggest-details {
     background-color: var(--bg-panel, #1e1e1e) !important;
     border: 1px solid var(--border, #454545) !important;
-}
-
-body[data-theme="kawaii-light"] .suggest-details {
-    background-color: var(--bg-input, #f3f3f3) !important;
-    border-color: var(--border, #c0c0c0) !important;
-    color: var(--text-primary, #333) !important;
 }
 
 /* =========================================

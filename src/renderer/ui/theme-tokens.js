@@ -187,6 +187,11 @@ const ThemeTokens = {
         folderIconOpen: { cssVar: '--folder-icon-open', type: 'color' },
         borderGlassEdge: { cssVar: '--border-glass-edge', type: 'color' },
         terminalText: { cssVar: '--terminal-text', type: 'color' },
+        terminalPlaceholder: { cssVar: '--terminal-placeholder', type: 'color', group: 'terminal' },
+        // Opt-in component style: rules written for one theme's look are wrapped in
+        // @container style(--component-style: <name>) in the CSS, so any theme (and every copy of
+        // a builtin) that sets the same value gets that look; the rest are untouched.
+        componentStyle: { cssVar: '--component-style', type: 'raw' },
 
         // Terminal line-type colors (success/error/warning/info/system/input).
         // Previously hardcoded in theme.css/.themes.css → now token-driven so

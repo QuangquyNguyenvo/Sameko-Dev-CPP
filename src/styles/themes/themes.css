@@ -19,15 +19,19 @@
 
 
 /* Custom Toggle for Sakura (True Pastel) */
-[data-theme="sakura"] .switch input:checked+.slider {
-    background: #ffc2d1; /* sakura-only pastel; no semantic token */
-    border-color: var(--bg-ocean-deep);
+@container style(--component-style: sakura) {
+    :root .switch input:checked+.slider {
+        background: #ffc2d1; /* sakura-only pastel; no semantic token */
+        border-color: var(--bg-ocean-deep);
+    }
+
+
+    :root .switch input:checked+.slider::before {
+        background: white;
+        filter: drop-shadow(0 0 4px var(--bg-ocean-deep));
+    }
 }
 
-[data-theme="sakura"] .switch input:checked+.slider::before {
-    background: white;
-    filter: drop-shadow(0 0 4px var(--bg-ocean-deep));
-}
 
 
 
@@ -193,16 +197,16 @@
 }
 
 /* Editor section - Light themes */
-[data-theme="kawaii-light"] .editor-section {
+[data-theme-variant="light"] .editor-section {
     background: var(--bg-panel);
     border: 2px solid var(--border) !important;
 }
 
-[data-theme="kawaii-light"] .editor-pane {
+[data-theme-variant="light"] .editor-pane {
     background: var(--bg-panel);
 }
 
-[data-theme="kawaii-light"] .editor-area {
+[data-theme-variant="light"] .editor-area {
     background-color: var(--editor-bg);
     background-image: var(--editor-bg-image, none);
     background-size: cover;
@@ -211,35 +215,35 @@
 }
 
 /* Terminal section - kawaii-light (needs light text on dark terminal bg) */
-[data-theme="kawaii-light"] .terminal-section {
+[data-theme-variant="light"] .terminal-section {
     background: var(--bg-panel);
     border: 2px solid var(--border);
 }
 
-[data-theme="kawaii-light"] .terminal-body {
+[data-theme-variant="light"] .terminal-body {
     background: var(--terminal-bg);
     color: var(--terminal-text, #e0f0ff);
     opacity: var(--terminal-opacity, 1);
-    backdrop-filter: blur(var(--terminal-bg-blur, 0px));
-    -webkit-backdrop-filter: blur(var(--terminal-bg-blur, 0px));
+}
+
+@container style(--component-style: kawaii-light) {
+    :root .terminal-body {
+        backdrop-filter: blur(var(--terminal-bg-blur, 0px));
+        -webkit-backdrop-filter: blur(var(--terminal-bg-blur, 0px));
+    }
 }
 
 /* kawaii-light terminal line colors are now token-driven via --term-line-*
    (set in ThemeManager); the per-theme override rules were removed here. */
 
-[data-theme="kawaii-light"] .terminal-input {
+[data-theme-variant="light"] .terminal-input {
     background: var(--terminal-bg);
     border-top-color: var(--border);
 }
 
-[data-theme="kawaii-light"] .terminal-input input,
-[data-theme="kawaii-light"] .terminal-input textarea {
+[data-theme-variant="light"] .terminal-input input,
+[data-theme-variant="light"] .terminal-input textarea {
     color: var(--terminal-text, #e0f0ff);
-}
-
-[data-theme="kawaii-light"] .terminal-input input::placeholder,
-[data-theme="kawaii-light"] .terminal-input textarea::placeholder {
-    color: #6a8a9a;
 }
 
 /* Terminal section */
@@ -269,7 +273,7 @@
 
 [data-theme-variant="dark"] .terminal-input input::placeholder,
 [data-theme-variant="dark"] .terminal-input textarea::placeholder {
-    color: var(--text-muted);
+    color: var(--terminal-placeholder, var(--text-muted));
 }
 
 /* IO Panels */
@@ -338,16 +342,10 @@
     border-color: var(--border);
 }
 
-[data-theme="kawaii-dark"] .dropdown-item,
-[data-theme="dracula"] .dropdown-item,
-[data-theme="monokai"] .dropdown-item,
 [data-theme-variant="dark"] .dropdown-item {
     color: var(--text-primary);
 }
 
-[data-theme="kawaii-dark"] .dropdown-item:hover,
-[data-theme="dracula"] .dropdown-item:hover,
-[data-theme="monokai"] .dropdown-item:hover,
 [data-theme-variant="dark"] .dropdown-item:hover {
     background: var(--bg-button-hover);
 }
@@ -390,18 +388,9 @@
 }
 
 /* Form controls */
-[data-theme="kawaii-dark"] select,
-[data-theme="kawaii-dark"] input[type="text"],
-[data-theme="kawaii-dark"] input[type="number"],
-[data-theme="dracula"] select,
-[data-theme="dracula"] input[type="text"],
-[data-theme="dracula"] input[type="number"],
-[data-theme="monokai"] select,
-[data-theme="monokai"] input[type="text"],
-[data-theme="monokai"] input[type="number"],
-[data-theme="nord"] select,
-[data-theme="nord"] input[type="text"],
-[data-theme="nord"] input[type="number"] {
+[data-theme-variant="dark"] select,
+[data-theme-variant="dark"] input[type="text"],
+[data-theme-variant="dark"] input[type="number"] {
     background: var(--bg-input);
     border-color: var(--border);
     color: var(--text-primary);
@@ -466,35 +455,7 @@
 /* Scrollbar: theme.css draws one thin pill for every theme. */
 
 /* Welcome screen */
-[data-theme="kawaii-dark"] .welcome-box {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    background: var(--welcome-box-bg, rgba(37, 64, 90, 0.4));
-    border-color: var(--border-strong, var(--border));
-    box-shadow:
-        0 16px 48px rgba(0, 0, 0, 0.5),
-        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-}
-
-[data-theme="dracula"] .welcome-box {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-color: var(--border-strong, var(--border));
-    box-shadow:
-        0 16px 48px rgba(0, 0, 0, 0.5),
-        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-}
-
-[data-theme="monokai"] .welcome-box {
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border-color: var(--border-strong, var(--border));
-    box-shadow:
-        0 16px 48px rgba(0, 0, 0, 0.5),
-        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
-}
-
-[data-theme="nord"] .welcome-box {
+[data-theme-variant="dark"] .welcome-box {
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     border-color: var(--border-strong, var(--border));
@@ -538,25 +499,12 @@
 }
 
 /* Resizers */
-[data-theme="kawaii-dark"] .resizer:hover,
-[data-theme="kawaii-dark"] .resizer.dragging,
-[data-theme="kawaii-dark"] .resizer-h:hover,
-[data-theme="kawaii-dark"] .resizer-h.dragging,
-[data-theme="kawaii-dark"] .resizer-split:hover,
-[data-theme="kawaii-dark"] .resizer-split.dragging,
-[data-theme="dracula"] .resizer:hover,
-[data-theme="dracula"] .resizer.dragging,
-[data-theme="dracula"] .resizer-h:hover,
-[data-theme="dracula"] .resizer-h.dragging,
-[data-theme="dracula"] .resizer-split:hover,
-[data-theme="dracula"] .resizer-split.dragging,
-[data-theme="monokai"] .resizer:hover,
-[data-theme="monokai"] .resizer.dragging,
-[data-theme="monokai"] .resizer-h:hover,
-[data-theme="monokai"] .resizer-h.dragging,
-[data-theme="monokai"] .resizer-split:hover,
-[data-theme="monokai"] .resizer-split.dragging,
-[data-theme="nord"] .resizer-split.dragging {
+[data-theme-variant="dark"] .resizer:hover,
+[data-theme-variant="dark"] .resizer.dragging,
+[data-theme-variant="dark"] .resizer-h:hover,
+[data-theme-variant="dark"] .resizer-h.dragging,
+[data-theme-variant="dark"] .resizer-split:hover,
+[data-theme-variant="dark"] .resizer-split.dragging {
     background: var(--bg-ocean-deep);
 }
 
@@ -867,66 +815,106 @@
     color: var(--error);
 }
 
-[data-theme-variant="dark"] .diff-actual,
-[data-theme="sakura"] .diff-actual {
+[data-theme-variant="dark"] .diff-actual {
     color: var(--error);
     background: rgba(255, 85, 85, 0.15);
 }
 
+@container style(--component-style: sakura) {
+    :root .diff-actual {
+        color: var(--error);
+        background: rgba(255, 85, 85, 0.15);
+    }
+}
+
+
 /* Character-level diff for dark themes */
-[data-theme-variant="dark"] .char-correct,
-[data-theme="sakura"] .char-correct {
+[data-theme-variant="dark"] .char-correct {
     background: rgba(80, 250, 123, 0.3);
     color: var(--success);
 }
 
-[data-theme-variant="dark"] .char-incorrect,
-[data-theme="sakura"] .char-incorrect {
+@container style(--component-style: sakura) {
+    :root .char-correct {
+        background: rgba(80, 250, 123, 0.3);
+        color: var(--success);
+    }
+}
+
+
+[data-theme-variant="dark"] .char-incorrect {
     background: rgba(255, 85, 85, 0.35);
     color: var(--error);
 }
 
+@container style(--component-style: sakura) {
+    :root .char-incorrect {
+        background: rgba(255, 85, 85, 0.35);
+        color: var(--error);
+    }
+}
+
+
 /* Line-level diff for dark themes */
-[data-theme-variant="dark"] .line-correct,
-[data-theme="sakura"] .line-correct {
+[data-theme-variant="dark"] .line-correct {
     background: rgba(80, 250, 123, 0.25);
     color: var(--success);
 }
 
-[data-theme-variant="dark"] .line-incorrect,
-[data-theme="sakura"] .line-incorrect {
+@container style(--component-style: sakura) {
+    :root .line-correct {
+        background: rgba(80, 250, 123, 0.25);
+        color: var(--success);
+    }
+}
+
+
+[data-theme-variant="dark"] .line-incorrect {
     background: rgba(255, 85, 85, 0.3);
     color: var(--error);
 }
 
-/* ===== SAKURA TEST RESULTS - Darker text for light background =====
-   Now token-driven: summary passed/failed and status.pending are handled by the
-   base rules reading --test-pass/--test-fail/--test-pending (set for sakura in
-   ThemeManager), so those per-theme overrides were removed. The translucent AC/WA
-   chips keep sakura's distinct light-chip style but reference the tokens. */
-[data-theme="sakura"] .test-result-status.AC {
-    background: rgba(45, 138, 45, 0.15);
-    color: var(--test-pass);
+@container style(--component-style: sakura) {
+    :root .line-incorrect {
+        background: rgba(255, 85, 85, 0.3);
+        color: var(--error);
+    }
+
+
+    /* ===== SAKURA TEST RESULTS - Darker text for light background =====
+       Now token-driven: summary passed/failed and status.pending are handled by the
+       base rules reading --test-pass/--test-fail/--test-pending (set for sakura in
+       ThemeManager), so those per-theme overrides were removed. The translucent AC/WA
+       chips keep sakura's distinct light-chip style but reference the tokens. */
+    :root .test-result-status.AC {
+        background: rgba(45, 138, 45, 0.15);
+        color: var(--test-pass);
+    }
+
+
+    :root .test-result-status.WA {
+        background: rgba(192, 57, 43, 0.15);
+        color: var(--test-fail);
+    }
+
+
+    :root .test-result-item.item-ac {
+        background: rgba(45, 138, 45, 0.08);
+        border-left: 3px solid var(--test-pass);
+    }
+
+
+    :root .run-all-btn {
+        color: var(--text-primary);
+    }
+
+
+    :root .run-all-btn.danger {
+        background: var(--test-fail);
+        color: white;
+    }
 }
 
-[data-theme="sakura"] .test-result-status.WA {
-    background: rgba(192, 57, 43, 0.15);
-    color: var(--test-fail);
-}
-
-[data-theme="sakura"] .test-result-item.item-ac {
-    background: rgba(45, 138, 45, 0.08);
-    border-left: 3px solid var(--test-pass);
-}
-
-[data-theme="sakura"] .run-all-btn {
-    color: var(--text-primary);
-}
-
-[data-theme="sakura"] .run-all-btn.danger {
-    background: var(--test-fail);
-    color: white;
-}
 
 /* ===== DOCK TABS - Dark Theme ===== */
 [data-theme-variant="dark"] .dock-tabs {
@@ -1002,9 +990,12 @@
 }
 
 /* Fix Nord sidebar text color contrast (nord's --text-primary = #eceff4) */
-[data-theme="nord"] .settings-tab {
-    color: var(--text-primary) !important;
+@container style(--component-style: nord) {
+    :root .settings-tab {
+        color: var(--text-primary) !important;
+    }
 }
+
 
 /* ============================================================================
    SAKURA THEME COMPONENT OVERRIDES
@@ -1013,355 +1004,424 @@
 
 /* Sakura Header - already covered by [data-theme] rule above */
 
-[data-theme="sakura"] .logo {
-    background: var(--bg-ocean-deep);
-    border: 2px solid var(--border);
-    color: white;
-}
+@container style(--component-style: sakura) {
+    :root .logo {
+        background: var(--bg-ocean-deep);
+        border: 2px solid var(--border);
+        color: white;
+    }
 
-[data-theme="sakura"] .menu-group {
-    background: var(--bg-button);
-    border: 1px solid var(--border);
-}
 
-[data-theme="sakura"] .menu-btn {
-    color: var(--text-secondary);
-}
+    :root .menu-group {
+        background: var(--bg-button);
+        border: 1px solid var(--border);
+    }
 
-[data-theme="sakura"] .menu-btn:hover {
-    background: var(--bg-button-hover);
-    color: var(--text-primary);
-}
 
-[data-theme="sakura"] .menu-btn.active {
-    background: var(--bg-ocean-deep);
-    color: white;
-}
+    :root .menu-btn {
+        color: var(--text-secondary);
+    }
 
-/* Sakura Tabs */
-[data-theme="sakura"] .tab {
-    background: var(--bg-button);
-    border: 2px solid var(--border);
-    color: var(--text-secondary);
-}
 
-[data-theme="sakura"] .tab:hover {
-    border-color: var(--accent);
-    color: var(--text-primary);
-}
+    :root .menu-btn:hover {
+        background: var(--bg-button-hover);
+        color: var(--text-primary);
+    }
 
-[data-theme="sakura"] .tab.active {
-    background: var(--bg-ocean-medium);
-    border-color: var(--accent);
-    color: var(--text-primary);
-}
 
-[data-theme="sakura"] .tab-add {
-    background: var(--bg-button);
-    border-color: var(--border);
-    color: var(--accent);
-}
+    :root .menu-btn.active {
+        background: var(--bg-ocean-deep);
+        color: white;
+    }
 
-/* Sakura Toggle & Action buttons */
-[data-theme="sakura"] .toggle-btn {
-    background: var(--bg-button);
-    color: var(--accent);
-    border: 1px solid var(--border);
-}
 
-[data-theme="sakura"] .toggle-btn:hover {
-    background: var(--bg-button-hover);
-}
+    /* Sakura Tabs */
+    :root .tab {
+        background: var(--bg-button);
+        border: 2px solid var(--border);
+        color: var(--text-secondary);
+    }
 
-[data-theme="sakura"] .toggle-btn.active {
-    background: var(--accent);
-    color: white;
-}
 
-[data-theme="sakura"] .action-btn {
-    background: var(--bg-button);
-    border-color: var(--border);
-    color: var(--text-primary);
-}
+    :root .tab:hover {
+        border-color: var(--accent);
+        color: var(--text-primary);
+    }
 
-[data-theme="sakura"] .action-btn.primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: white;
-}
 
-/* Sakura Editor & Panels */
-[data-theme="sakura"] .editor-section {
-    background: var(--editor-bg);
-    border: 2px solid var(--border) !important;
-}
+    :root .tab.active {
+        background: var(--bg-ocean-medium);
+        border-color: var(--accent);
+        color: var(--text-primary);
+    }
 
-[data-theme="sakura"] .editor-pane {
-    background: var(--editor-bg);
-}
 
-[data-theme="sakura"] .editor-area {
-    background-color: var(--editor-bg);
-    background-image: var(--editor-bg-image, none);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    border: none !important;
-}
+    :root .tab-add {
+        background: var(--bg-button);
+        border-color: var(--border);
+        color: var(--accent);
+    }
 
-[data-theme="sakura"] .terminal-section {
-    background: var(--bg-panel);
-    border: 2px solid var(--border);
-}
 
-[data-theme="sakura"] .terminal-body {
-    background: var(--terminal-bg);
-    color: var(--terminal-text);
-}
+    /* Sakura Toggle & Action buttons */
+    :root .toggle-btn {
+        background: var(--bg-button);
+        color: var(--accent);
+        border: 1px solid var(--border);
+    }
 
-[data-theme="sakura"] .terminal-input {
-    background: var(--terminal-bg);
-    border-top-color: var(--border);
-}
 
-[data-theme="sakura"] .terminal-input input,
-[data-theme="sakura"] .terminal-input textarea {
-    color: var(--terminal-text);
-}
+    :root .toggle-btn:hover {
+        background: var(--bg-button-hover);
+    }
 
-/* Sakura IO Panels */
-[data-theme="sakura"] .io-panel {
-    background: var(--bg-panel);
-    border: 2px solid var(--border);
-}
 
-/* Sakura Expected Panel - Use correct background variable */
-[data-theme="sakura"] .io-panel.io-panel-expected {
-    background: var(--editor-bg) !important;
-    color: var(--terminal-text);
-}
+    :root .toggle-btn.active {
+        background: var(--accent);
+        color: white;
+    }
 
-[data-theme="sakura"] .io-panel.io-panel-expected .diff-display {
-    background: transparent;
-    color: var(--terminal-text);
-}
 
-[data-theme="sakura"] .io-section {
-    border-color: var(--border);
-}
+    :root .action-btn {
+        background: var(--bg-button);
+        border-color: var(--border);
+        color: var(--text-primary);
+    }
 
-/* Custom Diff Overrides for Sakura */
-[data-theme="sakura"] .diff-line.match-compact {
-    background: rgba(163, 217, 165, 0.25) !important;
-}
 
-[data-theme="sakura"] .diff-line.mismatch-compact {
-    background: rgba(255, 120, 150, 0.25) !important;
-}
+    :root .action-btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+    }
 
-[data-theme="sakura"] .panel-head {
-    background: var(--bg-glass-heavy);
-    border-bottom: 2px solid var(--border);
-}
 
-[data-theme="sakura"] .panel-title {
-    color: var(--text-secondary);
-}
+    /* Sakura Editor & Panels */
+    :root .editor-section {
+        background: var(--editor-bg);
+        border: 2px solid var(--border) !important;
+    }
 
-[data-theme="sakura"] .panel-textarea {
-    background: var(--editor-bg);
-    color: var(--terminal-text);
-}
 
-/* Sakura Problems Panel */
-[data-theme="sakura"] .problems-panel {
-    background: var(--bg-panel);
-    border-top: 2px solid var(--border);
-}
+    :root .editor-pane {
+        background: var(--editor-bg);
+    }
 
-/* Sakura Status Bar */
-[data-theme="sakura"] .status-bar {
-    background: var(--bg-header-statusbar);
-    border-top-color: var(--border);
-    color: var(--text-secondary);
-}
 
-/* Sakura Dropdowns */
-[data-theme="sakura"] .dropdown {
-    background: var(--bg-panel);
-    border-color: var(--border);
-}
+    :root .editor-area {
+        background-color: var(--editor-bg);
+        background-image: var(--editor-bg-image, none);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        border: none !important;
+    }
 
-[data-theme="sakura"] .dropdown-item {
-    color: var(--text-primary);
-}
 
-[data-theme="sakura"] .dropdown-item:hover {
-    background: var(--bg-button-hover);
-}
+    :root .terminal-section {
+        background: var(--bg-panel);
+        border: 2px solid var(--border);
+    }
 
-/* Sakura Settings Popup */
-[data-theme="sakura"] .settings-popup {
-    background: var(--bg-panel);
-    border-color: var(--border);
-}
 
-[data-theme="sakura"] .settings-header {
-    background: var(--bg-ocean-medium);
-    border-bottom-color: var(--border);
-}
+    :root .terminal-body {
+        background: var(--terminal-bg);
+        color: var(--terminal-text);
+    }
 
-[data-theme="sakura"] .settings-header h2 {
-    color: var(--text-primary);
-}
 
-[data-theme="sakura"] .settings-sidebar {
-    background: var(--bg-button);
-    border-color: var(--border);
-}
+    :root .terminal-input {
+        background: var(--terminal-bg);
+        border-top-color: var(--border);
+    }
 
-[data-theme="sakura"] .settings-content {
-    background: var(--bg-panel);
-}
 
-[data-theme="sakura"] .settings-tab {
-    color: var(--text-secondary);
-}
+    :root .terminal-input input,
+    :root .terminal-input textarea {
+        color: var(--terminal-text);
+    }
 
-/* Sakura Preview Window - Make it more solid to avoid blur effect */
-[data-theme="sakura"] .preview-window {
-    background: linear-gradient(135deg, #fff5f8 0%, #fff0f5 100%) !important;
-    /* Use solid colors instead of transparent rgba */
-    position: relative;
-    z-index: 10;
-    /* Ensure it's not affected by backdrop-filter */
-    isolation: isolate;
-}
 
-/* Remove backdrop blur completely for sakura theme to make preview crystal clear */
-[data-theme="sakura"] .settings-overlay {
-    backdrop-filter: none !important;
-    /* Lighter overlay for sakura */
-    background: rgba(255, 182, 193, 0.3) !important;
-}
+    /* Sakura IO Panels */
+    :root .io-panel {
+        background: var(--bg-panel);
+        border: 2px solid var(--border);
+    }
 
-[data-theme="sakura"] .settings-tab.active {
-    background: var(--accent);
-    color: white;
-}
 
-[data-theme="sakura"] .settings-tab.active svg {
-    color: white;
-}
+    /* Sakura Expected Panel - Use correct background variable */
+    :root .io-panel.io-panel-expected {
+        background: var(--editor-bg) !important;
+        color: var(--terminal-text);
+    }
 
-[data-theme="sakura"] .settings-section h3 {
-    color: var(--accent);
-    border-bottom-color: var(--border);
-}
 
-[data-theme="sakura"] .settings-footer {
-    background: var(--bg-ocean-medium);
-    border-top-color: var(--border);
-}
+    :root .io-panel.io-panel-expected .diff-display {
+        background: transparent;
+        color: var(--terminal-text);
+    }
 
-[data-theme="sakura"] .setting-row {
-    background: var(--bg-button);
-    border-color: var(--border);
-}
 
-[data-theme="sakura"] .setting-row label {
-    color: var(--text-secondary);
-}
+    :root .io-section {
+        border-color: var(--border);
+    }
 
-/* Sakura Form Controls */
-[data-theme="sakura"] select,
-[data-theme="sakura"] input[type="text"],
-[data-theme="sakura"] input[type="number"] {
-    background: var(--bg-input);
-    border-color: var(--border);
-    color: var(--text-primary);
-}
 
-[data-theme="sakura"] select:focus,
-[data-theme="sakura"] input:focus {
-    border-color: var(--accent);
-}
+    /* Custom Diff Overrides for Sakura */
+    :root .diff-line.match-compact {
+        background: rgba(163, 217, 165, 0.25) !important;
+    }
 
-/* Sakura Docked Views */
-[data-theme="sakura"] .docked-io-view {
-    background: var(--terminal-bg);
-}
 
-[data-theme="sakura"] .docked-io-header-bar {
-    background: rgba(45, 31, 47, 0.9);
-    border-bottom-color: rgba(255, 105, 180, 0.3);
-}
+    :root .diff-line.mismatch-compact {
+        background: rgba(255, 120, 150, 0.25) !important;
+    }
 
-[data-theme="sakura"] .docked-io-title {
-    color: var(--terminal-text);
-}
 
-[data-theme="sakura"] .docked-test-nav .docked-nav-btn {
-    background: rgba(255, 105, 180, 0.2);
-    color: var(--accent);
-}
+    :root .panel-head {
+        background: var(--bg-glass-heavy);
+        border-bottom: 2px solid var(--border);
+    }
 
-[data-theme="sakura"] .docked-test-nav .docked-nav-btn:hover {
-    background: var(--accent);
-    color: white;
-}
 
-[data-theme="sakura"] .docked-test-label {
-    background: rgba(255, 105, 180, 0.2);
-    color: var(--terminal-text);
-}
+    :root .panel-title {
+        color: var(--text-secondary);
+    }
 
-[data-theme="sakura"] .docked-io-header {
-    color: var(--accent);
-    background: rgba(45, 31, 47, 0.8);
-    border-bottom-color: rgba(255, 105, 180, 0.2);
-}
 
-[data-theme="sakura"] .docked-io-textarea {
-    color: var(--terminal-text);
-    background: var(--editor-bg);
-}
+    :root .panel-textarea {
+        background: var(--editor-bg);
+        color: var(--terminal-text);
+    }
 
-[data-theme="sakura"] .docked-io-textarea::placeholder {
-    color: rgba(248, 232, 240, 0.4);
-}
 
-[data-theme="sakura"] .docked-io-divider {
-    background: rgba(255, 105, 180, 0.3);
-}
+    /* Sakura Problems Panel */
+    :root .problems-panel {
+        background: var(--bg-panel);
+        border-top: 2px solid var(--border);
+    }
 
-[data-theme="sakura"] .problems-panel .terminal-body {
-    background: var(--terminal-bg);
-    color: var(--terminal-text);
-}
 
-/* Sakura CC Popup */
-[data-theme="sakura"] .cc-step-num {
-    background: var(--accent);
-    color: #fff;
-}
+    /* Sakura Status Bar */
+    :root .status-bar {
+        background: var(--bg-header-statusbar);
+        border-top-color: var(--border);
+        color: var(--text-secondary);
+    }
 
-[data-theme="sakura"] .cc-step-text {
-    color: var(--text-primary);
-}
 
-[data-theme="sakura"] .cc-step-text strong {
-    color: var(--accent);
-}
+    /* Sakura Dropdowns */
+    :root .dropdown {
+        background: var(--bg-panel);
+        border-color: var(--border);
+    }
 
-/* Sakura Scrollbars */
-[data-theme="sakura"] ::-webkit-scrollbar-thumb {
-    background-color: rgba(255, 105, 180, 0.4);
-}
 
-[data-theme="sakura"] ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--accent);
+    :root .dropdown-item {
+        color: var(--text-primary);
+    }
+
+
+    :root .dropdown-item:hover {
+        background: var(--bg-button-hover);
+    }
+
+
+    /* Sakura Settings Popup */
+    :root .settings-popup {
+        background: var(--bg-panel);
+        border-color: var(--border);
+    }
+
+
+    :root .settings-header {
+        background: var(--bg-ocean-medium);
+        border-bottom-color: var(--border);
+    }
+
+
+    :root .settings-header h2 {
+        color: var(--text-primary);
+    }
+
+
+    :root .settings-sidebar {
+        background: var(--bg-button);
+        border-color: var(--border);
+    }
+
+
+    :root .settings-content {
+        background: var(--bg-panel);
+    }
+
+
+    :root .settings-tab {
+        color: var(--text-secondary);
+    }
+
+
+    /* Sakura Preview Window - Make it more solid to avoid blur effect */
+    :root .preview-window {
+        background: linear-gradient(135deg, #fff5f8 0%, #fff0f5 100%) !important;
+        /* Use solid colors instead of transparent rgba */
+        position: relative;
+        z-index: 10;
+        /* Ensure it's not affected by backdrop-filter */
+        isolation: isolate;
+    }
+
+
+    /* Remove backdrop blur completely for sakura theme to make preview crystal clear */
+    :root .settings-overlay {
+        backdrop-filter: none !important;
+        /* Lighter overlay for sakura */
+        background: rgba(255, 182, 193, 0.3) !important;
+    }
+
+
+    :root .settings-tab.active {
+        background: var(--accent);
+        color: white;
+    }
+
+
+    :root .settings-tab.active svg {
+        color: white;
+    }
+
+
+    :root .settings-section h3 {
+        color: var(--accent);
+        border-bottom-color: var(--border);
+    }
+
+
+    :root .settings-footer {
+        background: var(--bg-ocean-medium);
+        border-top-color: var(--border);
+    }
+
+
+    :root .setting-row {
+        background: var(--bg-button);
+        border-color: var(--border);
+    }
+
+
+    :root .setting-row label {
+        color: var(--text-secondary);
+    }
+
+
+    /* Sakura Form Controls */
+    :root select,
+    :root input[type="text"],
+    :root input[type="number"] {
+        background: var(--bg-input);
+        border-color: var(--border);
+        color: var(--text-primary);
+    }
+
+
+    :root select:focus,
+    :root input:focus {
+        border-color: var(--accent);
+    }
+
+
+    /* Sakura Docked Views */
+    :root .docked-io-view {
+        background: var(--terminal-bg);
+    }
+
+
+    :root .docked-io-header-bar {
+        background: rgba(45, 31, 47, 0.9);
+        border-bottom-color: rgba(255, 105, 180, 0.3);
+    }
+
+
+    :root .docked-io-title {
+        color: var(--terminal-text);
+    }
+
+
+    :root .docked-test-nav .docked-nav-btn {
+        background: rgba(255, 105, 180, 0.2);
+        color: var(--accent);
+    }
+
+
+    :root .docked-test-nav .docked-nav-btn:hover {
+        background: var(--accent);
+        color: white;
+    }
+
+
+    :root .docked-test-label {
+        background: rgba(255, 105, 180, 0.2);
+        color: var(--terminal-text);
+    }
+
+
+    :root .docked-io-header {
+        color: var(--accent);
+        background: rgba(45, 31, 47, 0.8);
+        border-bottom-color: rgba(255, 105, 180, 0.2);
+    }
+
+
+    :root .docked-io-textarea {
+        color: var(--terminal-text);
+        background: var(--editor-bg);
+    }
+
+
+    :root .docked-io-textarea::placeholder {
+        color: rgba(248, 232, 240, 0.4);
+    }
+
+
+    :root .docked-io-divider {
+        background: rgba(255, 105, 180, 0.3);
+    }
+
+
+    :root .problems-panel .terminal-body {
+        background: var(--terminal-bg);
+        color: var(--terminal-text);
+    }
+
+
+    /* Sakura CC Popup */
+    :root .cc-step-num {
+        background: var(--accent);
+        color: #fff;
+    }
+
+
+    :root .cc-step-text {
+        color: var(--text-primary);
+    }
+
+
+    :root .cc-step-text strong {
+        color: var(--accent);
+    }
+
+
+    /* Sakura Scrollbars */
+    :root ::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 105, 180, 0.4);
+    }
+
+
+    :root ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--accent);
+    }
 }
+
 
 /* ============================================================================
    THEME CAROUSEL (Horizontal Theme Selector)

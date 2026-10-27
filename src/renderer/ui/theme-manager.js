@@ -164,6 +164,7 @@ const ThemeManager = {
             'kawaii-light': {
                 meta: { id: 'kawaii-light', name: 'Kawaii Light', type: 'light' },
                 colors: {
+                    componentStyle: 'kawaii-light',
                     appBackground: 'assets/backgrounds/background.jpg',
                     appOverlay: '255, 255, 255',
                     bgOceanLight: '#e8f4fc',
@@ -196,6 +197,7 @@ const ThemeManager = {
                     editorBg: '#fbfdff',
                     terminalBg: '#f3f9fe',
                     terminalText: '#2a4a5a',
+                    terminalPlaceholder: '#6a8a9a',
                     settingsLabelColor: '#4a6a7a',
                     settingsSectionColor: '#4a9bc9',
                     buttonTextOnAccent: '#ffffff',
@@ -242,6 +244,7 @@ const ThemeManager = {
             'sakura': {
                 meta: { id: 'sakura', name: 'Sakura', type: 'light' },
                 colors: {
+                    componentStyle: 'sakura',
                     appBackground: 'assets/backgrounds/pink.webm',
                     appOverlay: '255, 240, 245',
                     bgOceanLight: '#fff5f8',
@@ -454,6 +457,7 @@ const ThemeManager = {
             'nord': {
                 meta: { id: 'nord', name: 'Nord', type: 'dark' },
                 colors: {
+                    componentStyle: 'nord',
                     appBackground: 'assets/backgrounds/nord.webm',
                     appOverlay: '46, 52, 64',
                     bgOceanLight: '#3b4252',

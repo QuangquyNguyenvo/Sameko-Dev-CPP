@@ -1310,10 +1310,15 @@ body.customizer-open::before {
 
 /* Light theme (default/kawaii-light) label color */
 html:not([data-theme]) .setting-row label:first-child,
-html:not([data-theme]) .setting-row>label:not(.switch),
-html[data-theme="kawaii-light"] .setting-row label:first-child,
-html[data-theme="kawaii-light"] .setting-row>label:not(.switch) {
+html:not([data-theme]) .setting-row>label:not(.switch) {
     color: #5a9fc8;
+}
+
+@container style(--component-style: kawaii-light) {
+    html:root .setting-row label:first-child,
+    html:root .setting-row>label:not(.switch) {
+        color: #5a9fc8;
+    }
 }
 
 /* Appearance Tab Layout */
@@ -2006,7 +2011,7 @@ input[type="color"] {
 
 .terminal-input input::placeholder,
 .terminal-input textarea::placeholder {
-    color: var(--text-muted, #5a6a7a);
+    color: var(--terminal-placeholder, var(--text-muted, #5a6a7a));
 }
 
 .send-btn {
@@ -3506,7 +3511,7 @@ body.split-active .editor-pane {
 
 .problems-panel .terminal-input input::placeholder,
 .problems-panel .terminal-input textarea::placeholder {
-    color: rgba(255, 255, 255, 0.3);
+    color: var(--terminal-placeholder, rgba(255, 255, 255, 0.3));
 }
 
 /* Hide send button for cleaner look */
