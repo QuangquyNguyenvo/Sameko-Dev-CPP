@@ -290,11 +290,6 @@ function initSettings() {
         };
     }
 
-    const perfSwitch = document.getElementById('set-performanceMode');
-    if (perfSwitch) {
-        perfSwitch.addEventListener('change', updateCursorTrailLockState);
-    }
-
     document.getElementById('btn-save-settings').onclick = saveSettingsAndClose;
     document.getElementById('btn-reset-settings').onclick = resetSettings;
 

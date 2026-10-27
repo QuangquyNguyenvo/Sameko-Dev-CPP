@@ -62,6 +62,7 @@ const DEFAULT_SETTINGS = {
         bgUrl: '',
         performanceMode: true,
         animatedBackground: true,  // play a theme's background video (only while the window has focus)
+        cursorTrail: true,         // Neovide-style cursor trail; never drawn in performance mode
         uiScale: 'auto'   // 'auto' or a percentage; applied by the main process as the page zoom
     },
     startup: {
@@ -1082,21 +1083,28 @@ function createEditor(containerId) {
     }
 
     if (window.MarkdownPreview) MarkdownPreview.attach(editor);
-    
-    enableNeovideCursorTrail();
+
+    enableNeovideCursorTrail(editor);
 
     return editor;
 }
 
 
 /**
- * Initializes and manages the Neovide-like elastic damped spring cursor trail.
- * Uses a full-screen canvas overlay to render a dynamic polygon between the
- * four corners of the editor cursor using damped spring physics.
+ * Neovide-like elastic damped spring cursor trail. A full-window canvas overlay draws a polygon
+ * between the four corners of the editor cursor; each corner follows on a damped spring.
+ * The overlay is created once; each editor's cursor, scroll and layout events wake the
+ * animation, which stops again when the cursor settles.
  */
-function enableNeovideCursorTrail() {
-    if (window.__neovideTrailInitialized) return;
-    window.__neovideTrailInitialized = true;
+let _cursorTrailWake = null;
+function enableNeovideCursorTrail(editor) {
+    if (!_cursorTrailWake) _cursorTrailWake = createCursorTrail();
+    editor.onDidChangeCursorPosition(_cursorTrailWake);
+    editor.onDidScrollChange(_cursorTrailWake);
+    editor.onDidLayoutChange(_cursorTrailWake);
+}
+
+function createCursorTrail() {
 
     const canvas = document.createElement('canvas');
     canvas.id = 'sameko-cursor-canvas';
@@ -1111,9 +1119,14 @@ function enableNeovideCursorTrail() {
     document.body.appendChild(canvas);
     const context = canvas.getContext('2d');
 
+    // Backing store at device pixels so the trail is not blurry on scaled displays.
     function resizeCanvas() {
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        const ratio = window.devicePixelRatio || 1;
+        canvas.width = Math.round(window.innerWidth * ratio);
+        canvas.height = Math.round(window.innerHeight * ratio);
+        canvas.style.width = window.innerWidth + 'px';
+        canvas.style.height = window.innerHeight + 'px';
+        context.setTransform(ratio, 0, 0, ratio, 0, 0);
     }
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
@@ -1227,16 +1240,28 @@ function enableNeovideCursorTrail() {
     const corners = relativeCornerPositions.map(
         relativePosition => new CursorCorner(relativePosition)
     );
-    let lastTime = performance.now();
+    let lastTime = 0;
     let previousCenterX = null;
     let previousCenterY = null;
+    let hiddenCursor = null;   // the Monaco cursor hidden while the trail draws over it
+    let running = false;
+    let idleFrames = 0;
 
-    function clearTrail(activeCursors, resetPosition = false) {
+    // Monaco moves its cursor element in its own animation frame, which can run after ours, so
+    // the loop stays alive for a few frames after the last movement before it stops.
+    const IDLE_FRAMES_BEFORE_STOP = 4;
+
+    function showHiddenCursor() {
+        if (hiddenCursor) hiddenCursor.style.opacity = '';
+        hiddenCursor = null;
+    }
+
+    function clearTrail(resetPosition = false) {
         if (canvas.style.opacity !== '0') {
-            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.clearRect(0, 0, window.innerWidth, window.innerHeight);
         }
         canvas.style.opacity = '0';
-        activeCursors.forEach(cursor => cursor.style.opacity = '1');
+        showHiddenCursor();
         corners.forEach(corner => {
             corner.springX.reset();
             corner.springY.reset();
@@ -1247,16 +1272,29 @@ function enableNeovideCursorTrail() {
         }
     }
 
-    function animate() {
+    function stop(resetPosition) {
+        clearTrail(resetPosition);
+        running = false;
+    }
+
+    function trailDisabled() {
+        return App.settings?.appearance?.performanceMode
+            || App.settings?.appearance?.cursorTrail === false;
+    }
+
+    // Starts the loop on editor activity; it stops itself once the cursor settles, so an idle
+    // editor costs no per-frame layout reads.
+    function wake() {
+        idleFrames = 0;
+        if (running || trailDisabled()) return;
+        running = true;
+        lastTime = performance.now();
         requestAnimationFrame(animate);
+    }
 
-        const activeCursors = document.querySelectorAll('.monaco-editor .cursors-layer .cursor');
-
-        if (
-            App.settings?.appearance?.performanceMode
-            || App.settings?.appearance?.cursorTrail === false
-        ) {
-            clearTrail(activeCursors, true);
+    function animate() {
+        if (trailDisabled()) {
+            stop(true);
             return;
         }
 
@@ -1265,7 +1303,7 @@ function enableNeovideCursorTrail() {
         lastTime = currentTime;
 
         let primaryCursor = null;
-        for (const cursor of activeCursors) {
+        for (const cursor of document.querySelectorAll('.monaco-editor.focused .cursors-layer .cursor')) {
             const style = getComputedStyle(cursor);
             if (
                 style.display !== 'none'
@@ -1277,16 +1315,12 @@ function enableNeovideCursorTrail() {
             }
         }
 
-        if (!primaryCursor) {
-            clearTrail(activeCursors);
+        const cursorRect = primaryCursor && primaryCursor.getBoundingClientRect();
+        if (!cursorRect || cursorRect.width === 0 || cursorRect.height === 0) {
+            stop(true);
             return;
         }
-
-        const cursorRect = primaryCursor.getBoundingClientRect();
-        if (cursorRect.width === 0 || cursorRect.height === 0) {
-            clearTrail(activeCursors);
-            return;
-        }
+        if (hiddenCursor && hiddenCursor !== primaryCursor) showHiddenCursor();
 
         const centerX = cursorRect.left + cursorRect.width / 2;
         const centerY = cursorRect.top + cursorRect.height / 2;
@@ -1363,7 +1397,8 @@ function enableNeovideCursorTrail() {
         });
 
         if (isMoving) {
-            context.clearRect(0, 0, canvas.width, canvas.height);
+            idleFrames = 0;
+            context.clearRect(0, 0, window.innerWidth, window.innerHeight);
             context.beginPath();
             context.moveTo(
                 corners[0].currentPosition.x,
@@ -1377,17 +1412,22 @@ function enableNeovideCursorTrail() {
             }
             context.closePath();
 
-            context.fillStyle = getComputedStyle(primaryCursor).backgroundColor
-                || 'var(--accent, #eb6b9d)';
+            context.fillStyle = getComputedStyle(primaryCursor).backgroundColor || '#eb6b9d';
             context.fill();
 
             canvas.style.opacity = '1';
             primaryCursor.style.opacity = '0';
+            hiddenCursor = primaryCursor;
         } else {
             canvas.style.opacity = '0';
-            primaryCursor.style.opacity = '1';
+            showHiddenCursor();
+            if (++idleFrames >= IDLE_FRAMES_BEFORE_STOP) {
+                running = false;
+                return;
+            }
         }
+        requestAnimationFrame(animate);
     }
 
-    animate();
+    return wake;
 }
