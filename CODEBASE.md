@@ -103,9 +103,9 @@ syntax/clangd, local history, Discord RPC.
 |---|---|
 | `index.html` | Root page. Loads every script in order with plain `<script>` tags; `core.js` then loads the Monaco bundle. |
 | `splash.html` | Splash screen. |
-| `renderer/app/*.js` | The application itself, 17 files loaded in a fixed order (formerly one 7,900-line `app.js`). File index in §9. |
+| `renderer/app/*.js` | The application itself, 18 files loaded in a fixed order (formerly one 7,900-line `app.js`). File index in §9. |
 | `renderer/boot.js` | Loaded first: error hooks, `loadScript()` (one-time script/module loader), shared `escHtml`. |
-| `vendor/monaco/` | Generated, gitignored: the Monaco ESM bundle built by `scripts/build-monaco.js` (`npm start`, the `test:*` GUI scripts and every `build:*` run it). |
+| `vendor/monaco/` | Generated, gitignored: the Monaco ESM bundle built by `scripts/build-monaco.js` (`npm start`, the `test:*` GUI scripts and every `build:*` run it). `vim.js` (monaco-vim) is a second entry sharing its chunks, imported only when Vim Mode is on. |
 | `renderer/ui/` | `theme-manager.js`, `theme-tokens.js`, `theme-customizer.js` (draft/history/save), `theme-customizer-view.js` (controls/scoped IDE preview), `theme-marketplace.js`, `confirm-dialog.js`, `motion.js`. |
 | `styles/` | `base.css` (imports `animations.css` and fonts), `components/*.css`, `themes/{theme,themes}.css`. `components/toolbar.css` and `components/islands.css` load after `themes.css`: the header buttons, and the floating-card layout (header islands, editor / bottom panel / status bar cards, Run split button, collapsed bottom panel) for every theme. |
 | `assets/` | Fonts, icons, backgrounds (five looping `.webm` + one `.jpg`), screenshots (README only). |
@@ -311,6 +311,9 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
 - Keyboard shortcuts: one capture-phase `document` keydown handler (`initShortcuts`) maps combos
   through `currentShortcutMap` to `ACTION_HANDLERS` and stops propagation when it handles a key,
   so the table in Settings wins over Monaco's built-ins. Do not add `editor.addCommand` bindings.
+  Vim Mode (`settings.editor.vimMode`) switches the table to its own profile,
+  `settings.keybindingsVim` (`keybindingProfile()`), which moves Ctrl+D/O/W/E/T/J off so Vim gets
+  them; Settings › Keybindings edits the profile the Vim Mode switch selects.
 
 **Batch tests** (`runAllTests` → `run-test` IPC → `batch-tester.runTest`)
 - One warm-up run, then the tests run on a pool of up to 4 workers
@@ -344,7 +347,8 @@ function from a later file. Search for the function name to find the exact spot.
 | `session.js` | 375 | Session checkpoint: save, restore prompt, reopening tabs |
 | `live-check.js` | 329 | Live check, problem summary in the status bar, `applySettings` |
 | `appearance.js` | 110 | `applyTheme`, `applyBackgroundSettings` |
-| `shortcuts.js` | 253 | `ACTION_HANDLERS`, the capture-phase key handler, `formatCode` |
+| `shortcuts.js` | 253 | `ACTION_HANDLERS`, the capture-phase key handler, keybinding profiles, `formatCode` |
+| `vim-mode.js` | 112 | Vim Mode: loads `vendor/monaco/vim.js`, attaches monaco-vim per editor, status bar, `:w` / `:q` |
 | `layout.js` | 971 | `updateUI`, header buttons, docking Terminal and I/O into Problems, resizers, Discord presence |
 | `tabs.js` | 420 | `newFile`, `setActive`, `closeTab`, `openFileFromPath`, `renderTabs`, menus, `save` / `saveAs` |
 | `build.js` | 805 | `buildActiveTab` (compile / build & run), `run`, `stop`, Problems panel, `log`, `setStatus`, output diff |

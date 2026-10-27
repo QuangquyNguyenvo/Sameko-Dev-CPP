@@ -382,6 +382,14 @@
                                 </label>
                             </div>
                             <div class="setting-row">
+                                <label>Vim Mode <span class="tooltip"
+                                        title="Vim keybindings in the editor. Uses its own keyboard shortcut profile (Settings › Keybindings), which leaves Ctrl+D, Ctrl+O, Ctrl+W, Ctrl+E, Ctrl+T and Ctrl+J to Vim. :w saves, :q closes the tab.">?</span></label>
+                                <label class="switch">
+                                    <input type="checkbox" id="set-vimMode">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-row">
                                 <label>Minimap</label>
                                 <label class="switch">
                                     <input type="checkbox" id="set-minimap">
@@ -762,6 +770,7 @@
                         <div class="settings-panel" id="panel-keybindings">
                             <h3>Keyboard Shortcuts</h3>
                             <p class="setting-desc">Click on a shortcut to change it. Press Escape to cancel.</p>
+                            <p class="setting-desc" id="keybindings-profile"></p>
                             <div class="keybindings-list" id="keybindings-list">
                                 <!-- Keybindings will be rendered by JS -->
                             </div>
@@ -1239,6 +1248,7 @@
         <div class="status-bar" id="status-bar">
             <div class="status-left">
                 <span class="status-item" id="status"><span class="dot"></span>Ready</span>
+                <span class="status-item vim-status hidden" id="vim-status" title="Vim Mode (Settings › Editor)"></span>
             </div>
             <div class="status-right">
                 <span class="status-item diagnostics-summary" id="status-diagnostics" title="Errors and warnings">
@@ -1284,6 +1294,7 @@
     <script src="renderer/app/live-check.js"></script>
     <script src="renderer/app/appearance.js"></script>
     <script src="renderer/app/shortcuts.js"></script>
+    <script src="renderer/app/vim-mode.js"></script>
     <script src="renderer/app/layout.js"></script>
     <script src="renderer/app/tabs.js"></script>
     <script src="renderer/app/build.js"></script>

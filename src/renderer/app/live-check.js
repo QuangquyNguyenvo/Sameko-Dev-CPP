@@ -315,7 +315,8 @@ function applySettings() {
             renderCharacters: !performanceMode
         },
         bracketPairColorization: { enabled: !performanceMode },
-        cursorBlinking: performanceMode ? 'solid' : 'smooth',
+        // Vim Mode sets its own cursor per mode (vim-mode.js restores this one when it goes off).
+        ...(isVimModeOn() ? {} : { cursorBlinking: performanceMode ? 'solid' : 'smooth' }),
         wordWrap: App.settings.editor.wordWrap ? 'on' : 'off',
         multiCursorModifier: resolveMultiCursorModifier(),
         quickSuggestions: buildQuickSuggestions(),
@@ -351,6 +352,7 @@ function applySettings() {
 
     // Apply Discord RPC enabled/disabled state
     applyDiscordSetting();
+    applyVimMode();
     updateProblemSummaryUI();
     if (!App.settings.editor.liveCheck) {
         // Turned off: drop a pending check, outdate a running one, remove its marks.

@@ -36,6 +36,7 @@ function loadSettings() {
                 oj: { ...DEFAULT_SETTINGS.oj, ...saved.oj },
                 template: { ...DEFAULT_SETTINGS.template, ...saved.template },
                 keybindings: { ...DEFAULT_SETTINGS.keybindings, ...saved.keybindings },
+                keybindingsVim: { ...DEFAULT_SETTINGS.keybindingsVim, ...saved.keybindingsVim },
                 snippets: saved.snippets || DEFAULT_SETTINGS.snippets,
                 localHistory: { ...DEFAULT_SETTINGS.localHistory, ...saved.localHistory },
                 discord: { ...DEFAULT_SETTINGS.discord, ...saved.discord },
@@ -836,6 +837,9 @@ function openSettings() {
     setFontFamilyInputs(App.settings.editor.fontFamily);
     document.getElementById('set-tabSize').value = App.settings.editor.tabSize;
     document.getElementById('set-scrollBeyondLastLine').checked = !!App.settings.editor.scrollBeyondLastLine;
+    const vimSwitch = document.getElementById('set-vimMode');
+    vimSwitch.checked = !!App.settings.editor.vimMode;
+    vimSwitch.onchange = renderKeybindings;   // Keybindings shows the profile the switch selects
     document.getElementById('set-minimap').checked = App.settings.editor.minimap;
     document.getElementById('set-wordWrap').checked = App.settings.editor.wordWrap;
     document.getElementById('set-startupBehavior').value = App.settings.startup?.behavior || DEFAULT_SETTINGS.startup.behavior;
@@ -953,6 +957,7 @@ async function saveSettingsAndClose() {
         App.settings.editor.fontFamily = normalizeFontFamilyInput(getSelectedFontFamily());
         App.settings.editor.tabSize = parseInt(document.getElementById('set-tabSize').value);
         App.settings.editor.scrollBeyondLastLine = document.getElementById('set-scrollBeyondLastLine').checked;
+        App.settings.editor.vimMode = document.getElementById('set-vimMode').checked;
         App.settings.editor.minimap = document.getElementById('set-minimap').checked;
         App.settings.editor.wordWrap = document.getElementById('set-wordWrap').checked;
         if (!App.settings.startup) App.settings.startup = {};
@@ -1133,11 +1138,25 @@ const KEYBINDING_LABELS = {
 
 let editingKeybinding = null;
 
+// The profile Settings › Keybindings shows and edits: Vim's while the Vim Mode switch is on,
+// so its shortcuts can be set up before the setting is saved.
+function settingsKeybindingProfile() {
+    const vimSwitch = document.getElementById('set-vimMode');
+    return keybindingProfile(vimSwitch ? vimSwitch.checked : undefined);
+}
+
 function renderKeybindings() {
     const container = document.getElementById('keybindings-list');
     if (!container) return;
 
-    const keybindings = App.settings.keybindings || DEFAULT_SETTINGS.keybindings;
+    const profile = settingsKeybindingProfile();
+    const keybindings = getEffectiveKeybindings(profile);
+    const note = document.getElementById('keybindings-profile');
+    if (note) {
+        note.textContent = profile === 'keybindingsVim'
+            ? 'Vim profile, used while Vim Mode is on (Settings › Editor). Ctrl+D, Ctrl+O, Ctrl+W, Ctrl+E, Ctrl+T and Ctrl+J are left to Vim.'
+            : 'Default profile. Vim Mode (Settings › Editor) has its own.';
+    }
 
     container.innerHTML = Object.entries(keybindings).map(([key, value]) => `
         <div class="keybinding-item" data-action="${escHtml(key)}">
@@ -1200,11 +1219,9 @@ function captureKeybinding(e) {
 
     const keyCombo = parts.join('+');
 
-    // Save the new keybinding
-    if (!App.settings.keybindings) {
-        App.settings.keybindings = { ...DEFAULT_SETTINGS.keybindings };
-    }
-    App.settings.keybindings[editingKeybinding] = keyCombo;
+    // Save the new keybinding in the profile being shown
+    const profile = settingsKeybindingProfile();
+    App.settings[profile] = { ...getEffectiveKeybindings(profile), [editingKeybinding]: keyCombo };
 
     // Update ShortcutsManager binding
     if (window.ShortcutsManager?.setKeybinding) {
@@ -1230,7 +1247,7 @@ function captureKeybinding(e) {
 function cancelEditingKeybinding() {
     if (!editingKeybinding) return;
 
-    const keybindings = App.settings.keybindings || DEFAULT_SETTINGS.keybindings;
+    const keybindings = getEffectiveKeybindings(settingsKeybindingProfile());
     const btn = document.querySelector(`.keybinding-key[data-action="${editingKeybinding}"]`);
     if (btn) {
         btn.textContent = keybindings[editingKeybinding];
@@ -1242,14 +1259,17 @@ function cancelEditingKeybinding() {
 }
 
 async function resetKeybindings() {
+    const profile = settingsKeybindingProfile();
     const confirmed = await showConfirmDialog({
         title: 'Reset Keybindings',
-        message: 'Reset all keybindings to defaults?',
+        message: profile === 'keybindingsVim'
+            ? 'Reset the Vim profile keybindings to defaults?'
+            : 'Reset all keybindings to defaults?',
         confirmText: 'Reset',
         danger: true
     });
     if (confirmed) {
-        App.settings.keybindings = { ...DEFAULT_SETTINGS.keybindings };
+        App.settings[profile] = { ...DEFAULT_SETTINGS[profile] };
         renderKeybindings();
         saveSettings();
         updateShortcutMap();

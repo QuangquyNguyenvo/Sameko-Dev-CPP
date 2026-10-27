@@ -102,6 +102,7 @@
         "electron-builder": "^26.15.3",
         "esbuild": "^0.28.2",
         "monaco-editor": "^0.57.0",
+        "monaco-vim": "0.4.4",
         "playwright-core": "^1.64.1",
         "sharp": "^0.35.5"
     },

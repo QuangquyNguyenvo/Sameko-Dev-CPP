@@ -111,8 +111,13 @@ function normalizeKeyCombo(e) {
     return parts.join('+');
 }
 
-function getEffectiveKeybindings() {
-    return { ...DEFAULT_SETTINGS.keybindings, ...(App.settings.keybindings || {}) };
+/** The settings key of a keybinding profile: Vim Mode has its own ('keybindingsVim'). */
+function keybindingProfile(vim = !!App.settings.editor?.vimMode) {
+    return vim ? 'keybindingsVim' : 'keybindings';
+}
+
+function getEffectiveKeybindings(profile = keybindingProfile()) {
+    return { ...DEFAULT_SETTINGS[profile], ...(App.settings[profile] || {}) };
 }
 
 function updateShortcutMap() {

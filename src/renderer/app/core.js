@@ -21,6 +21,7 @@ const DEFAULT_SETTINGS = {
         fontFamily: "'JetBrains Mono', monospace",
         tabSize: 4,
         scrollBeyondLastLine: false,
+        vimMode: false,     // Vim keybindings (vim-mode.js); switches to the keybindingsVim profile
         minimap: true,
         wordWrap: false,
         multiCursorModifier: 'ctrlCmd',
@@ -149,6 +150,20 @@ int main() {
     updates: {
         prerelease: false
     }
+};
+
+// The keybinding profile used while Vim Mode is on: the app's Ctrl shortcuts that Vim needs
+// itself (Ctrl+D half page, Ctrl+O jump back, Ctrl+W window, Ctrl+E scroll, Ctrl+T, Ctrl+J)
+// move to Ctrl+Shift so Vim receives them (Open File to Ctrl+Alt+O: Ctrl+Shift+O is Monaco's
+// Go to Symbol). Edited separately in Settings › Keybindings.
+DEFAULT_SETTINGS.keybindingsVim = {
+    ...DEFAULT_SETTINGS.keybindings,
+    openFile: 'Ctrl+Alt+O',
+    newTab: 'Ctrl+Shift+T',
+    closeTab: 'Ctrl+Shift+W',
+    toggleProblems: 'Ctrl+Shift+J',
+    toggleExplorer: 'Ctrl+Shift+E',
+    selectNextOccurrence: 'Ctrl+Shift+D'
 };
 
 // ============================================================================
@@ -1086,6 +1101,7 @@ function createEditor(containerId) {
     if (window.MarkdownPreview) MarkdownPreview.attach(editor);
 
     enableNeovideCursorTrail(editor);
+    applyVimMode(editor);
 
     return editor;
 }
@@ -1102,6 +1118,9 @@ function enableNeovideCursorTrail(editor) {
     editor.onDidChangeCursorPosition(_cursorTrail.cursorMoved);
     editor.onDidScrollChange(_cursorTrail.viewMoved);
     editor.onDidLayoutChange(_cursorTrail.viewMoved);
+    // Learn where the cursor is on focus, so the first jump after it (Vim's :w prompt, another
+    // panel) has a trail instead of starting there.
+    editor.onDidFocusEditorText(_cursorTrail.viewMoved);
 }
 
 function createCursorTrail() {
@@ -1301,7 +1320,37 @@ function createCursorTrail() {
 
     function cursorMoved() {
         lastCursorMove = performance.now();
+        // Monaco draws the moved cursor in its next frame, so the element still shows where the
+        // cursor was: if the trail lost track of it (blur, Vim's : prompt), start from there.
+        if (previousCenterX === null && snapFrames === 0 && !trailDisabled()) {
+            const cursor = findPrimaryCursor();
+            if (cursor) seedAt(cursor.getBoundingClientRect());
+        }
         wake();
+    }
+
+    // Not filtered on visibility: Monaco's "blink" style (Vim's insert mode) hides the cursor
+    // with visibility: hidden every other half second, and it still has its place.
+    function findPrimaryCursor() {
+        for (const cursor of document.querySelectorAll('.monaco-editor.focused .cursors-layer .cursor')) {
+            const style = getComputedStyle(cursor);
+            if (style.display !== 'none' && !style.transform.includes('-10000px')) return cursor;
+        }
+        return null;
+    }
+
+    function seedAt(rect) {
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        corners.forEach(corner => {
+            const destination = corner.getDestination(centerX, centerY, rect.width, rect.height);
+            corner.currentPosition = destination;
+            corner.previousDestination = destination;
+            corner.springX.reset();
+            corner.springY.reset();
+        });
+        previousCenterX = centerX;
+        previousCenterY = centerY;
     }
 
     // Scrolling or resizing moves the cursor on screen but not in the text: the trail jumps
@@ -1332,22 +1381,16 @@ function createCursorTrail() {
         const deltaTime = Math.min((currentTime - lastTime) / 1000, 1 / 30);
         lastTime = currentTime;
 
-        let primaryCursor = null;
-        for (const cursor of document.querySelectorAll('.monaco-editor.focused .cursors-layer .cursor')) {
-            const style = getComputedStyle(cursor);
-            if (
-                style.display !== 'none'
-                && style.visibility !== 'hidden'
-                && !style.transform.includes('-10000px')
-            ) {
-                primaryCursor = cursor;
-                break;
-            }
-        }
-
+        const primaryCursor = findPrimaryCursor();
         const cursorRect = primaryCursor && primaryCursor.getBoundingClientRect();
         const guard = primaryCursor && primaryCursor.closest('.overflow-guard');
         if (!cursorRect || !guard || cursorRect.width === 0 || cursorRect.height === 0) {
+            // Right after focus Monaco has not drawn the cursor yet: wait for it while snapping.
+            if (snapFrames > 0) {
+                snapFrames--;
+                requestAnimationFrame(animate);
+                return;
+            }
             stop(true);
             return;
         }
@@ -1365,18 +1408,7 @@ function createCursorTrail() {
 
         // Seed corner state after a reset; otherwise, rank corners by movement direction.
         if (previousCenterX === null) {
-            corners.forEach(corner => {
-                const destination = corner.getDestination(
-                    centerX,
-                    centerY,
-                    cursorRect.width,
-                    cursorRect.height
-                );
-                corner.currentPosition = destination;
-                corner.previousDestination = destination;
-                corner.springX.reset();
-                corner.springY.reset();
-            });
+            seedAt(cursorRect);
         } else if (centerX !== previousCenterX || centerY !== previousCenterY) {
             const ranks = corners.map((corner, index) => {
                 const destination = corner.getDestination(

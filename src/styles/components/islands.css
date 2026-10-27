@@ -1092,6 +1092,27 @@ body.performance-mode .main .editor-section {
     gap: 4px;
 }
 
+/* Vim Mode: mode, pending keys, and the : / search prompt (built by monaco-vim). */
+.status-bar .vim-status {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+    white-space: pre;
+}
+
+.status-bar .vim-status-pane > span + span:not(:empty) {
+    margin-left: 10px;
+}
+
+.status-bar .vim-status input {
+    width: 240px;
+    padding: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-primary);
+    font: inherit;
+}
+
 .status-bar .status-run > .ico {
     opacity: 0.75;
 }

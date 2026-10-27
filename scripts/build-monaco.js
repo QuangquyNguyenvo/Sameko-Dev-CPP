@@ -9,7 +9,8 @@
  * (the Markdown preview colours code blocks in any of them).
  *
  * The bundle sets window.monaco and dispatches nothing else; the renderer's
- * plain <script> files keep using the global as before.
+ * plain <script> files keep using the global as before. A second entry, vim.js
+ * (monaco-vim), shares its chunks and is imported only when Vim Mode is on.
  *
  *   node scripts/build-monaco.js           # minified release bundle
  *   node scripts/build-monaco.js --dev     # unminified, with source maps
@@ -43,9 +44,14 @@ function monacoVersion() {
     return JSON.parse(fs.readFileSync(path.join(MONACO, 'package.json'), 'utf8')).version;
 }
 
+function vimVersion() {
+    return JSON.parse(fs.readFileSync(path.join(ROOT, 'node_modules', 'monaco-vim', 'package.json'), 'utf8')).version;
+}
+
 function stampFor() {
     return {
         monaco: monacoVersion(),
+        vim: vimVersion(),
         script: fs.statSync(__filename).mtimeMs,
         dev,
     };
@@ -55,7 +61,7 @@ function isCurrent() {
     try {
         const old = JSON.parse(fs.readFileSync(STAMP, 'utf8'));
         const now = stampFor();
-        return old.monaco === now.monaco && old.script === now.script && old.dev === now.dev
+        return old.monaco === now.monaco && old.vim === now.vim && old.script === now.script && old.dev === now.dev
             && fs.existsSync(path.join(OUT, 'editor.js'));
     } catch (_) {
         return false;
@@ -95,6 +101,13 @@ globalThis.MonacoEnvironment = {
 };
 `;
 
+// Vim keybindings, a second entry of the same build so it reuses the editor's chunks.
+// Loaded on demand with import('vendor/monaco/vim.js'); sets window.MonacoVim.
+const VIM_ENTRY = `
+import { initVimMode, VimMode, StatusBar } from 'monaco-vim';
+globalThis.MonacoVim = { initVimMode, VimMode, StatusBar };
+`;
+
 async function main() {
     if (args.has('--if-stale') && isCurrent()) return;
     const esbuild = require('esbuild');
@@ -105,18 +118,30 @@ async function main() {
     const virtual = {
         [path.join(ESM, '__entry.js')]: buildEntry(),
         [path.join(ESM, '__env.js')]: ENV,
+        [path.join(ESM, '__vim.js')]: VIM_ENTRY,
     };
     const virtualPlugin = {
         name: 'monaco-entry',
         setup(build) {
-            build.onResolve({ filter: /__(entry|env)\.js$/ }, (a) => ({
+            build.onResolve({ filter: /__(entry|env|vim)\.js$/ }, (a) => ({
                 path: path.isAbsolute(a.path) ? a.path : path.join(a.resolveDir || ESM, a.path),
                 namespace: 'file',
             }));
-            build.onLoad({ filter: /__(entry|env)\.js$/ }, (a) => ({
+            build.onLoad({ filter: /__(entry|env|vim)\.js$/ }, (a) => ({
                 contents: virtual[a.path],
                 loader: 'js',
                 resolveDir: ESM,
+            }));
+            // monaco-vim imports 'monaco-editor/esm/vs/...' paths, which monaco-editor's
+            // exports map no longer resolves; point them at the files themselves so vim.js
+            // shares the editor's modules instead of carrying a second copy.
+            build.onResolve({ filter: /^monaco-editor\/esm\// }, (a) => ({
+                path: path.join(MONACO, a.path.slice('monaco-editor/'.length) + '.js'),
+            }));
+            // Its "browser" export is a UMD build carrying its own copy of Monaco 0.33
+            // internals; the ESM build imports them from monaco-editor instead.
+            build.onResolve({ filter: /^monaco-vim$/ }, () => ({
+                path: path.join(ROOT, 'node_modules', 'monaco-vim', 'dist', 'index.mjs'),
             }));
         },
     };
@@ -132,7 +157,7 @@ async function main() {
 
     await esbuild.build({
         ...common,
-        entryPoints: { editor: path.join(ESM, '__entry.js') },
+        entryPoints: { editor: path.join(ESM, '__entry.js'), vim: path.join(ESM, '__vim.js') },
         outdir: OUT,
         format: 'esm',
         splitting: true,
@@ -147,6 +172,7 @@ async function main() {
     for (const name of fs.readdirSync(chunks)) {
         if (name.endsWith('.css')) fs.rmSync(path.join(chunks, name));
     }
+    fs.rmSync(path.join(OUT, 'vim.css'), { force: true });   // same copy, for the vim entry
     await esbuild.build({
         ...common,
         entryPoints: { 'editor.worker': path.join(ESM, 'editor.worker.js') },

@@ -92,7 +92,7 @@ const MarkdownPreview = {
         const open = md && this.tabOf(editor).mdPreview !== false;
         state.button.hidden = !md;
         state.button.classList.toggle('active', open);
-        const key = (typeof App !== 'undefined' && App.settings?.keybindings?.markdownPreview) || 'Ctrl+Shift+V';
+        const key = (typeof getEffectiveKeybindings === 'function' && getEffectiveKeybindings().markdownPreview) || 'Ctrl+Shift+V';
         state.button.title = `${open ? 'Close' : 'Open'} the preview (${key})`;
         state.button.textContent = open ? 'Close Preview' : 'Preview';
         if (!open) this.forget(state);
