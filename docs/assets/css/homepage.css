@@ -102,6 +102,9 @@
 .sameko-home .scroll-top { left: auto; right: 20px; border: var(--bd); box-shadow: var(--pop-sm); }
 
 /* ---------- Hero ---------- */
+@media (min-width: 901px) and (prefers-reduced-motion: no-preference) {
+    .has-home-motion .sameko-home .hero-stage { padding-bottom: 75vh; }
+}
 .sameko-home .hero-band {
     position: relative; min-height: calc(100svh - 150px); display: grid; align-items: center;
     padding-block: 40px 96px; background: var(--c-page); overflow-x: clip; overflow-y: visible;
