@@ -131,7 +131,7 @@
 [data-theme="dark"] .hl__shine path { stroke: var(--c-accent); }
 
 .sameko-home .hero__visual { min-width: 0; isolation: isolate; }
-.sameko-home .hero__visual img { width: 82%; max-width: 400px; position: relative; z-index: 2; }
+.sameko-home .hero__visual img { width: 82%; max-width: 400px; height: auto; aspect-ratio: 600 / 848; position: relative; z-index: 2; }
 .hero__sun {
     position: absolute; z-index: 1; width: 22%; aspect-ratio: 1; right: 4%; top: 6%;
     border-radius: 50%; background: var(--c-accent); border: 3px solid var(--ink); box-shadow: var(--pop);

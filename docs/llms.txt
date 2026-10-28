@@ -1,0 +1,32 @@
+# Sameko Dev C++
+
+> Sameko Dev C++ is a free, open-source (MIT) C++ IDE for Windows and Linux, built on Electron and the Monaco editor. On Windows it bundles GCC 16.1.0 (MinGW), clangd and GDB, so you can write, compile, run and debug C++ without installing a compiler. The Linux AppImage uses the g++, gdb and clangd installed on the system. Current version: 1.3.2 (released 2026-10-20).
+
+It is aimed at beginners, students and competitive programmers. Key facts:
+
+- C++98 through C++26 (C++17 by default), chosen in Settings → Compiler.
+- Live diagnostics from clangd (about 100–130 ms), with g++ -fsyntax-only as fallback.
+- GDB debugger with breakpoints, variables and call stack.
+- Test cases with Output / Expected cards, parallel "Run All Tests", real wall time and peak memory.
+- Competitive Companion integration to import problems and tests from online judges.
+- Markdown preview, AStyle formatting with format on save, and plain-text support for test files (.txt, .inp, .out, .ans).
+- Snippets, checkpoints (local history), and a Theme Customizer with background images or video.
+- Two Windows downloads: an installer (.exe, auto-updates) and a portable zip that runs from a USB drive without admin rights.
+- No ads, no account, no telemetry.
+- Named after the VTuber Sameko Saba as an unofficial fan project; it is not affiliated with her.
+
+## Docs
+
+- [Wiki (English)](https://sameko.dev/wiki.html): installation, first project, requirements, compiler settings, shortcuts, themes, debugger, snippets, Competitive Companion, troubleshooting
+- [Wiki (Tiếng Việt)](https://sameko.dev/wiki-vi.html): Vietnamese version of the wiki
+- [Release notes](https://sameko.dev/wiki.html#whats-new): what changed in 1.3.2, 1.3.1 and 1.3.0
+- [Troubleshooting](https://sameko.dev/wiki.html#troubleshooting): IDE won't open, missing DLL, compile errors, Windows Defender false positives
+
+## Download
+
+- [GitHub releases](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases): Windows installer, Windows portable zip and Linux AppImage
+
+## Optional
+
+- [Source code](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP)
+- [Report an issue](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues)

@@ -228,7 +228,6 @@
                     return 'top ' + Math.round(offset) + 'px';
                 },
                 end: () => '+=' + Math.round(window.innerHeight * 1.8),
-                // The hero pin above adds scroll space; measure this one after it.
                 refreshPriority: -1,
                 invalidateOnRefresh: true,
                 onUpdate: pick,
@@ -273,9 +272,10 @@
             // the intro records the intro's hidden state as the resting state,
             // and scrolling back to the top leaves the title invisible.
             const REST = { opacity: 1, x: 0, y: 0, xPercent: 0, rotation: 0, scale: 1 };
+            // Keep the hero in normal flow so late initialization cannot move the next section.
             const apart = gsap.timeline({
                 defaults: { ease: 'none', immediateRender: false },
-                scrollTrigger: { trigger: '.hero-band', start: 'top top', end: '+=75%', scrub: 0.8, pin: true }
+                scrollTrigger: { trigger: '.hero-band', start: 'top top', end: '+=75%', scrub: 0.8 }
             });
             const leave = (target, vars) => {
                 const from = {};
