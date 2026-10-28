@@ -5,7 +5,7 @@
   <img src="src/assets/vectors/logo.svg" alt="Sameko Logo" width="650" />
   <br />
 
-  # 🐟 Sameko IDE ⚓
+  # 🐟 Sameko Dev C++ ⚓
   
   **The cutest & fastest C++ IDE for your coding adventures! (≧◡≦) ♡**
 
@@ -57,7 +57,7 @@
 <table>
   <tr>
     <td width="70%">
-      <p><b>Sameko IDE</b> is a lightweight C++ IDE for Windows and Linux, built for competitive programming and learning. The Windows build comes with GCC 16 pre-configured - no MinGW installation needed. Just download, extract, and start coding.</p>
+      <p><b>Sameko Dev C++</b> is a free, open-source C++ IDE for Windows and Linux, built for competitive programming and learning. The Windows build includes GCC 16, clangd and GDB. On Linux, Sameko uses the tools installed on your system.</p>
       <blockquote>💡 Think of it as a modern Dev-C++ alternative: simple interface, fast compilation, works out of the box.</blockquote>
       <p>🐟 <b>Unofficial fan project</b>, not affiliated with Sameko Saba. <a href="#-the-story-behind-it">Why the name?</a></p>
     </td>
@@ -71,18 +71,31 @@
 
 ## ✨ Features
 
-- 🚀 GCC 16 bundled on Windows, no setup required (on Linux it uses your distro's `g++`)
-- ⚡ Press F11 to compile and run instantly; an unchanged file runs again without recompiling
-- ✅ Input / Output / Expected cards with an AC / WA verdict, and big test inputs straight from a `.txt` file
-- 🐞 Real GDB debugger: breakpoints, watches, STL-aware variable trees, and an **Auto dry run** that walks your program line by line on its own
-- 🏆 Fetch test cases from Codeforces, AtCoder, LeetCode via Competitive Companion, and run them all in parallel
-- 🔗 Auto-links .cpp files when you `#include` custom headers
-- 🎨 6 themes: Kawaii Dark, Kawaii Light, Sakura, Dracula, Monokai, Nord, plus your own in the Theme Customizer
-- 📑 Multi-tab editor with split view
-- ✂️ Custom snippets and templates (BFS, DFS, Segment Tree, etc.)
-- 🧹 Format code with AStyle (`Ctrl+Shift+A`)
-- 💾 Auto-save with configurable intervals
-- 👁️ File watcher detects external changes
+### Build and run
+
+- 🚀 GCC 16 comes bundled on Windows. On Linux, Sameko uses your system's `g++`.
+- ⚡ Press `F11` to build and run. An unchanged file can run again without recompiling.
+- 🔗 Include a custom header to link its sibling `.cpp` file when multi-file mode is enabled.
+- 🧠 Get code completion and live diagnostics with clangd. Choose a C++ standard and add compiler flags in Settings.
+
+### Practice and debug
+
+- ✅ Compare Input, Output and Expected results with AC, WA and TLE verdicts. Load large inputs from a `.txt` file.
+- 🏆 Fetch problems and test cases with Competitive Companion. Run all tests in parallel or inspect them one at a time.
+- 🗂️ Organize problems into contests and collections, with statuses, notes and saved approaches.
+- 🐞 Debug with GDB using breakpoints, conditional breakpoints, watches and STL-aware variable trees. Auto dry run steps through code while you watch variables change.
+
+### Edit and customize
+
+- 📑 Work across tabs and split editor panes. Rename tabs, drag files into the window and create C++, C, input, output, text or Markdown files from the tab bar.
+- 📝 Preview Markdown beside the editor as you type. Toggle the preview with `Ctrl+Shift+V`.
+- 🧹 Format C and C++ with AStyle. Choose from 13 styles and optionally format on `Ctrl+S`.
+- ✂️ Customize snippets and C or C++ templates. Import templates and snippets from files.
+- 💾 Use auto-save, session restore and local history checkpoints to return to your work. Sameko also notices changes made outside the editor.
+- 🎨 Choose from six built-in themes or create your own with the Theme Customizer. Add an image or video background and share your theme.
+- 🔎 Search settings and shortcuts from the Settings dialog. Keybindings can be customized there too.
+
+Explore the [user guide](https://sameko.dev/wiki.html) for more features and instructions.
 
 <br />
 
@@ -100,16 +113,17 @@
 
 <br />
 
-## 🆕 What's New in v1.3.1
+## 🆕 What's New in v1.3.2
 
-- **Open with Sameko.** Files opened from Windows Explorer now open in the IDE, even when it is already running.
-- **Write-ups and test data.** `.md` is highlighted as Markdown, `.txt` / `.inp` / `.out` open as clean plain text with `# ` comments and `[SECTION]` headers, and C++ tools stay out of their way.
-- **A new Theme Customizer.** A live mini copy of the IDE, click-to-edit colors, search, ↺ to undo a single color, and highlighted Theme JSON.
-- **Smarter Open / Save.** Ctrl+O starts in the folder you are working in, and text and test files are in the file filters.
-- **Polished dialogs** and a Discord preview that looks like the real profile card.
-- **Many theme fixes**: Reset, Undo / Redo, backgrounds, import / export and more.
+- **Markdown preview.** Read a rendered preview beside your editor while writing notes and solutions.
+- **Format your way.** Pick an AStyle format and turn on Format on Save for C and C++ files.
+- **More flexible files.** Create different file types from the tab bar, rename a tab or drop files into the window to open them.
+- **Find settings faster.** Search settings and keyboard shortcuts in one place.
+- **Import templates and snippets.** Bring them in from files, thanks to contributions from [@aguajardoc](https://github.com/aguajardoc).
+- **A smoother interface.** Settings and dialogs respond faster, and background video pauses when you switch to another window.
+- **Fixes throughout the editor.** This release improves formatting, breakpoints, C++ highlighting, file renaming and UTF-16 support.
 
-See [CHANGELOG.md](CHANGELOG.md) for the full list.
+See [CHANGELOG.md](CHANGELOG.md) for the full list and [the release notes](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/tag/v1.3.2) for screenshots.
 
 ### Multi-file project note
 
@@ -127,7 +141,7 @@ Then turn it **OFF** and build again.
   <img src="https://img.shields.io/badge/Official%20Site-sameko.dev-88c9ea?style=for-the-badge&logo=cloudflare&logoColor=white&labelColor=1a2530" alt="Official Website" />
 </a>
 <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/GitHub-v1.3.1%20Release-88c9ea?style=for-the-badge&logo=github&logoColor=white&labelColor=1a2530" alt="Latest Release" />
+  <img src="https://img.shields.io/badge/GitHub-v1.3.2%20Release-88c9ea?style=for-the-badge&logo=github&logoColor=white&labelColor=1a2530" alt="Latest Release" />
 </a>
 
 </div>
@@ -149,11 +163,11 @@ Then turn it **OFF** and build again.
 
 ### 🐧 Linux Installation Guide
 
-Sameko on Linux uses your system's compiler and debugger. Follow these 3 simple steps:
+The v1.3.2 release provides an AppImage for 64-bit Linux. Sameko uses the compiler and tools installed on your system.
 
-#### 📌 Step 1: Install prerequisites (`g++`, `gdb`, `clangd` & `astyle`)
+#### 📌 Step 1: Install the tools
 
-Open your terminal and run the command for your Linux distribution. `g++` and `gdb` build and debug your code; `clangd` gives IntelliSense and live error checking, and `astyle` powers Format Code. The `.deb` package pulls all four in by itself.
+Install `g++` to compile programs and `gdb` to debug them. Install `clangd` for code suggestions and live diagnostics, and `astyle` for code formatting. Open a terminal and run the command for your distribution:
 
 ```bash
 # Debian / Ubuntu / Linux Mint / Pop!_OS
@@ -168,32 +182,22 @@ sudo pacman -S --noconfirm gcc gdb clang astyle
 
 ---
 
-#### 📌 Step 2: Download your preferred package
+#### 📌 Step 2: Download Sameko
 
-Get the latest Linux release from [**sameko.dev**](https://sameko.dev/) or [**GitHub Releases**](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest).
+Download `sameko-dev-cpp-1.3.2-linux-x86_64.AppImage` from [GitHub Releases](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/tag/v1.3.2) or visit [sameko.dev](https://sameko.dev/).
 
 ---
 
-#### 📌 Step 3: Run or install the application
+#### 📌 Step 3: Make it executable and run it
 
-- 🔹 **Option A: AppImage** *(Universal - no installation needed)*
-  ```bash
-  chmod +x sameko-dev-cpp-*.AppImage
-  ./sameko-dev-cpp-*.AppImage
-  ```
+Open a terminal in the folder where you downloaded the file, then run:
 
-- 🔹 **Option B: `.deb` Package** *(Debian / Ubuntu / Mint - auto-configures app menu & sandbox)*
-  ```bash
-  sudo apt install ./sameko-dev-cpp-*.deb
-  sameko-dev-cpp
-  ```
+```bash
+chmod +x sameko-dev-cpp-1.3.2-linux-x86_64.AppImage
+./sameko-dev-cpp-1.3.2-linux-x86_64.AppImage
+```
 
-- 🔹 **Option C: `.tar.gz` Archive** *(Standalone portable folder)*
-  ```bash
-  tar -xzf sameko-dev-cpp-*-linux-*.tar.gz
-  cd sameko-dev-cpp-*-linux-*
-  ./sameko-dev-cpp
-  ```
+You can keep the AppImage wherever you like and run it again from that folder. To build `.deb` or `.tar.gz` packages yourself, see [Building](#building).
 
 ---
 
@@ -214,7 +218,7 @@ Get the latest Linux release from [**sameko.dev**](https://sameko.dev/) or [**Gi
   ```
   *(The `.deb` installer configures sandbox permissions automatically).*
 
-- **AppImage closes right away with a sandbox error** (`The SUID sandbox helper binary was found, but is not configured correctly`): Ubuntu 24.04+ blocks the sandbox for apps that are not installed. Install the `.deb` instead (it sets this up), or start the AppImage with:
+- **AppImage closes right away with a sandbox error** (`The SUID sandbox helper binary was found, but is not configured correctly`): Ubuntu 24.04+ can block the sandbox for apps that are not installed. A `.deb` built from source sets it up during installation. Another option is to start the AppImage with:
   ```bash
   ./sameko-dev-cpp-*.AppImage --no-sandbox
   ```
@@ -300,6 +304,7 @@ npm run rebuild      # clean:dist, then a full build
 | `Ctrl + J`         | Toggle Panel         |
 | `Ctrl + \`         | Split Editor         |
 | `Ctrl + Shift + A` | Auto Format (AStyle) |
+| `Ctrl + Shift + V` | Toggle Markdown preview |
 | `Ctrl + Alt + S`   | Toggle Auto-Save     |
 | `Ctrl + Shift + P` | Command Palette      |
 
@@ -329,6 +334,8 @@ as long as the session is live, and go back to Run / Compile & Run once it ends.
 - **Yunchan** (Special thanks for designing the logo!)
 - **[KingShiba3766](https://github.com/daonghiemminh-collab)** (Donated the `sameko.dev` domain)
 - **[aiko-chan-ai](https://github.com/aiko-chan-ai)** (Fixed G++ spawn issue on some machines)
+- **[aguajardoc](https://github.com/aguajardoc)** (Added template and snippet imports and fixed the Linux dock icon)
+- **[baodao211](https://github.com/baodao211)** (Contributed the cursor trail and Scroll Beyond Last Line)
 - **[MerlyStella](https://github.com/MerlyStella)** (Tested everything, twice. The app is better because of it :D)
 
 **📝 Want to contribute?**
@@ -374,11 +381,5 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 </div>
 
 <img src="src/assets/docs/readme-footer.svg" width="100%" />
-
----
-
-<div align="center">
-  <sub><strong>Keywords</strong>: C++ IDE • portable C++ compiler • Dev-C++ alternative • competitive programming IDE • beginner-friendly IDE • lightweight IDE • Windows C++ IDE • GCC compiler • Monaco Editor • Electron IDE • code editor • student IDE • educational software • free C++ IDE • C++11 • C++14 • C++17 • C++20 • C++23 • syntax highlighting • auto-completion • Codeforces • AtCoder • LeetCode • programming tools • MinGW • code runner • AStyle formatter</sub>
-</div>
 
 
