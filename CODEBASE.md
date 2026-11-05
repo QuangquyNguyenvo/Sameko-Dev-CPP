@@ -105,7 +105,7 @@ syntax/clangd, local history, Discord RPC.
 | `splash.html` | Splash screen. |
 | `renderer/app/*.js` | The application itself, 18 files loaded in a fixed order (formerly one 7,900-line `app.js`). File index in §9. |
 | `renderer/boot.js` | Loaded first: error hooks, `loadScript()` (one-time script/module loader), shared `escHtml`. |
-| `vendor/monaco/` | Generated, gitignored: the Monaco ESM bundle built by `scripts/build-monaco.js` (`npm start`, the `test:*` GUI scripts and every `build:*` run it). `vim.js` (monaco-vim) is a second entry sharing its chunks, imported only when Vim Mode is on. |
+| `vendor/monaco/` | Generated, gitignored: the Monaco ESM bundle built by `scripts/build-monaco.js` (`npm start`, `npm test`, `npm run test:gui` and every `build:*` run it). `vim.js` (monaco-vim) is a second entry sharing its chunks, imported only when Vim Mode is on. |
 | `renderer/ui/` | `theme-manager.js`, `theme-tokens.js`, `theme-customizer.js` (draft/history/save), `theme-customizer-view.js` (controls/scoped IDE preview), `theme-marketplace.js`, `confirm-dialog.js`, `motion.js`. |
 | `styles/` | `base.css` (imports `animations.css` and fonts), `components/*.css`, `themes/{theme,themes}.css`. `components/toolbar.css` and `components/islands.css` load after `themes.css`: the header buttons, and the floating-card layout (header islands, editor / bottom panel / status bar cards, Run split button, collapsed bottom panel) for every theme. |
 | `assets/` | Fonts, icons, backgrounds (five looping `.webm` + one `.jpg`), screenshots (README only). |
@@ -168,14 +168,14 @@ in October 2026.)
 - **Customizer:** a separate draft owns history and validation. The dialog reuses the Settings
   popup's classes (`.settings-*`, `.setting-row`, `.btn-save`); its Shadow DOM preview is a scaled
   copy of the islands layout fed with all `ThemeTokens`. Editing never changes the active Monaco theme.
-  `npm run test:themes` covers editing, save/restart, backgrounds and portable export on an isolated profile.
+  `scripts/test-theme-customizer-gui.js` (part of `npm test`) covers editing, save/restart, backgrounds and portable export on an isolated profile.
 
 ## 5. Everything else at the root
 
 | Path | What it is |
 |---|---|
 | `Sameko-GCC/` | Bundled toolchain (gitignored). Copied into the Windows build as an extra resource. |
-| `scripts/` | `clean.js`, `build-appimage.js`, `build-icons.js`, `check-toolchain-deps.js`, `test-debugger.js`, `test-gui-smoke.js`. |
+| `scripts/` | `clean.js`, `build-appimage.js`, `build-icons.js`, `check-toolchain-deps.js`; tests: `test.js` (`npm test`: runs all of them in parallel), `test-gui.js` (boot, editor state, Build & Run), `test-theme-customizer-gui.js`, `test-debugger.js` (`--unit` / `--e2e`), `test-theme-tokens.js`, `test-theme-manager.js`, `test-theme-customizer-state.js`. |
 | `docs/` | The sameko.dev website (landing page and wiki). Not part of the app. |
 | `plans/` | Gitignored working plans. |
 | `samekodevcpp/` | electron-builder output (gitignored). |

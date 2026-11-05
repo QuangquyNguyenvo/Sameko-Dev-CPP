@@ -113,6 +113,9 @@ npm install
 # Run dev mode
 npm start
 
+# Run all tests (~15 s)
+npm test
+
 # Build for production
 npm run build:win
 ```

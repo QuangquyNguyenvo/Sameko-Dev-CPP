@@ -1,13 +1,26 @@
 'use strict';
 
+/*
+ * Theme Customizer checks in the real app (two launches: the last checks run
+ * after a restart). Part of npm test; run alone with:
+ *   node scripts/test-theme-customizer-gui.js
+ *   KEEP_PROFILE=1   keep the temp profile (it is kept anyway on failure)
+ *   SMOKE_SHOT=1     save screenshots to plans/_smoke-artifacts/
+ */
+
 const assert = require('assert');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { _electron: electron } = require('playwright-core');
 const ROOT = path.join(__dirname, '..');
 const artifacts = path.join(ROOT, 'plans', '_smoke-artifacts');
-fs.mkdirSync(artifacts, { recursive: true });
-const profile = fs.mkdtempSync(path.join(artifacts, 'theme-gui-'));
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-theme-gui-'));
+async function screenshot(name) {
+    if (!process.env.SMOKE_SHOT) return;
+    fs.mkdirSync(artifacts, { recursive: true });
+    await page.screenshot({ path: path.join(artifacts, name) });
+}
 let application;
 let page;
 const errors = [];
@@ -15,7 +28,7 @@ let passed = 0;
 
 async function launch() {
     application = await electron.launch({ executablePath: require('electron'),
-        args: [ROOT, '--user-data-dir=' + profile], cwd: ROOT, timeout: 60000 });
+        args: [ROOT, '--user-data-dir=' + profile, '--lang=en-US'], cwd: ROOT, timeout: 60000 });
     application.on('window', window => window.on('pageerror', error => errors.push(error.message)));
     const deadline = Date.now() + 60000;
     while (Date.now() < deadline) {
@@ -26,7 +39,8 @@ async function launch() {
     assert.ok(page, 'Main window did not open');
     page.on('pageerror', error => errors.push(error.message));
     await page.waitForFunction(() => typeof App !== 'undefined' && App.ready
-        && typeof ThemeCustomizer !== 'undefined' && ThemeManager.themes.size >= 6);
+        && typeof ThemeCustomizer !== 'undefined'
+        && ThemeManager.builtinThemeIds.every(id => ThemeManager.themes.has(id)));
     assert.equal(await application.evaluate(({ app }) => app.getPath('userData')), profile);
 }
 
@@ -50,8 +64,10 @@ async function main() {
             });
             assert.equal(calls, 1);
         });
-        await check('All six builtins open with the correct variant', async () => {
-            for (const id of ['kawaii-dark', 'kawaii-light', 'sakura', 'dracula', 'monokai', 'nord']) {
+        await check('All builtins open with the correct variant', async () => {
+            const builtins = await page.evaluate(() => ThemeManager.builtinThemeIds.slice());
+            assert.ok(builtins.length > 0);
+            for (const id of builtins) {
                 await page.evaluate(id => ThemeCustomizer.open(id), id);
                 const result = await page.evaluate(() => {
                     const host = document.querySelector('.tcf-preview-host');
@@ -171,18 +187,22 @@ async function main() {
             assert.equal(result.image, 'none');
         });
         await check('Reset and reopen cannot remove the new dialog', async () => {
-            const result = await page.evaluate(async () => {
+            await page.evaluate(async () => {
                 const t = ThemeCustomizer;
                 const confirm = t._confirm; t._confirm = async () => true;
                 await t.reset(); t._confirm = confirm;
                 await t.close(true); await t.open('kawaii-light');
-                await new Promise(resolve => setTimeout(resolve, 400));
-                return { popup: !!t.popup, connected: t.popup?.isConnected, source: t.sourceThemeId };
+                // Let any teardown still queued from the reset run before judging.
+                await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
             });
+            await page.waitForFunction(() => !ThemeCustomizer.busy && ThemeCustomizer.popup?.isConnected,
+                null, { timeout: 5000 }).catch(() => { });
+            const result = await page.evaluate(() => ({ popup: !!ThemeCustomizer.popup,
+                connected: ThemeCustomizer.popup?.isConnected, source: ThemeCustomizer.sourceThemeId }));
             assert.ok(result.popup && result.connected);
             assert.equal(result.source, 'kawaii-light');
         });
-        await page.screenshot({ path: path.join(artifacts, 'customizer-light.png') });
+        await screenshot('customizer-light.png');
         await page.evaluate(() => ThemeCustomizer.close(true));
         await page.evaluate(() => ThemeCustomizer.open('monokai'));
         await check('Uploaded background exports as portable data and saves with chosen editor scheme', async () => {
@@ -203,7 +223,7 @@ async function main() {
             assert.ok(result.embedded);
             assert.equal(result.scheme, 'dracula');
         });
-        await page.screenshot({ path: path.join(artifacts, 'customizer-dark.png') });
+        await screenshot('customizer-dark.png');
         await check('Import blocks both builtin ID formats', async () => {
             const result = await page.evaluate(() => [
                 ThemeManager.importTheme(JSON.stringify({ id: 'nord', name: 'Blocked', colors: {} })),
@@ -276,10 +296,13 @@ async function main() {
             assert.equal(result.selected, 'kawaii-dark');
         });
         assert.deepEqual(errors, [], 'Unexpected renderer errors');
-        console.log(`${passed} theme GUI checks passed. Isolated profile: ${profile}`);
+        console.log(`${passed} theme GUI checks passed.`);
     } finally {
-        if (application) await application.close();
+        if (application) { try { await application.close(); } catch (_) { } }
     }
 }
 
-main().catch(error => { console.error(error.stack); process.exitCode = 1; });
+main().catch(error => { console.log('FAIL ' + error.stack); process.exitCode = 1; }).finally(() => {
+    if (process.exitCode || process.env.KEEP_PROFILE) console.log('Profile kept: ' + profile);
+    else fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+});

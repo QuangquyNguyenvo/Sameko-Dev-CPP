@@ -253,15 +253,22 @@ async function testPortableExport() {
     assert.strictEqual(parsed.colors.appBackground, 'data:image/png;base64,AQID');
 }
 
+/** Run a case whose write fails on purpose without printing the expected error. */
+async function quietly(fn) {
+    const { error, warn } = console;
+    console.error = console.warn = () => { };
+    try { await fn(); } finally { console.error = error; console.warn = warn; }
+}
+
 (async () => {
     await testSerializedImmutableSaves();
     await testLegacyMigrationAndBackgroundReset();
     await testLegacyStateShapeUpgrade();
-    await testMigrationKeepsLegacyOnWriteFailure();
+    await quietly(testMigrationKeepsLegacyOnWriteFailure);
     await testCanonicalImportAndBuiltinGuard();
     await testBackgroundQueueMergesWithThemeSave();
     await testAssetMigrationSharesBackgroundQueue();
-    await testSaveFailurePropagates();
+    await quietly(testSaveFailurePropagates);
     await testPortableExport();
     console.log('theme-manager tests passed');
 })().catch((error) => {

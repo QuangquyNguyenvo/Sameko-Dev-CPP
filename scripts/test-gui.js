@@ -1,8 +1,17 @@
 #!/usr/bin/env node
 'use strict';
 
-// Behavioral regressions against the real Electron/Monaco renderer, on a disposable profile.
-// Run with: node scripts/test-editor-state.js
+/*
+ * GUI checks against the real Electron/Monaco app, in one launch on a throwaway
+ * profile: boot (window, Monaco, theme tokens), editor-state regressions, and
+ * one Build & Run of a real program through the bundled g++.
+ * Page errors and failed resource loads are collected for the whole session.
+ *
+ *   node scripts/test-gui.js     (npm run test:gui; also part of npm test)
+ *   KEEP_PROFILE=1               keep the temp profile (it is kept anyway on failure)
+ *   SMOKE_SHOT=1                 save a screenshot to plans/_smoke-artifacts/
+ */
+
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
@@ -10,7 +19,7 @@ const path = require('node:path');
 const { _electron } = require('playwright-core');
 
 const ROOT = path.resolve(__dirname, '..');
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-editor-state-'));
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-gui-'));
 let app;
 let failed = 0;
 let passed = 0;
@@ -22,7 +31,7 @@ async function check(name, test) {
         console.log('  PASS  ' + name);
     } catch (error) {
         failed++;
-        console.error('  FAIL  ' + name + '\n        ' + error.message);
+        console.log('  FAIL  ' + name + '\n        ' + error.message);
     }
 }
 
@@ -46,13 +55,25 @@ async function dropFiles(page, selector, files) {
 }
 
 async function main() {
-    console.log('Sameko editor state regressions');
+    console.log('Sameko GUI tests');
+    const failedRequests = [];
+    const pageErrors = [];
+    const consoleErrors = [];
     app = await _electron.launch({
         executablePath: require('electron'),
-        args: [ROOT, '--user-data-dir=' + profile],
+        args: [ROOT, '--user-data-dir=' + profile, '--lang=en-US'],   // a new profile follows the system language
         cwd: ROOT,
         timeout: 60000
     });
+    // Every window, the splash included, from the moment it opens.
+    const wire = (w) => {
+        w.on('requestfailed', req => failedRequests.push(req.url() + '  <- ' + (req.failure()?.errorText || '?')));
+        w.on('pageerror', error => pageErrors.push(error.message));
+        w.on('console', msg => { if (msg.type() === 'error') consoleErrors.push(msg.text()); });
+    };
+    app.windows().forEach(wire);
+    app.on('window', wire);
+
     let page;
     const deadline = Date.now() + 60000;
     while (Date.now() < deadline) {
@@ -60,20 +81,44 @@ async function main() {
         if (page) break;
         await new Promise(resolve => setTimeout(resolve, 100));
     }
-    assert.ok(page, 'main window opened');
-    const errors = [];
-    page.on('pageerror', error => errors.push(error.message));
-    await page.waitForFunction(() => typeof App !== 'undefined' && App.ready);
+    assert.ok(page, 'main window (index.html) opened');
+    // A listener turns on file-chooser interception now, long before the template
+    // import clicks: enabled lazily, it can lose the race and let a native dialog open.
+    page.on('filechooser', () => { });
+    await page.waitForFunction(() => typeof App !== 'undefined' && App.ready, null, { timeout: 60000 });
     await page.evaluate(async () => {
         await ensureMonaco();
         if (!App.tabs.length) newFile();
     });
 
-    await check('test uses an isolated user profile', async () => {
-        const userData = await app.evaluate(({ app }) => app.getPath('userData'));
-        assert.equal(path.resolve(userData), path.resolve(profile));
+    // ---- boot ---------------------------------------------------------------
+    await check('app name and isolated user profile', async () => {
+        const info = await app.evaluate(({ app }) => ({ name: app.getName(), userData: app.getPath('userData') }));
+        assert.equal(info.name, 'sameko-dev-cpp', 'app name names the userData folder');
+        assert.equal(path.resolve(info.userData), path.resolve(profile));
     });
 
+    await check('Monaco mounted and theme tokens resolve', async () => {
+        await page.waitForSelector('.monaco-editor', { timeout: 30000, state: 'attached' });
+        const probe = await page.evaluate(() => {
+            const cs = getComputedStyle(document.documentElement);
+            return {
+                variant: document.documentElement.getAttribute('data-theme-variant'),
+                // Tokens actually emitted for builtin themes (not --bg-base/--bg-surface).
+                empty: ['--bg-panel', '--editor-bg', '--text-primary'].filter(t => !cs.getPropertyValue(t).trim())
+            };
+        });
+        assert.deepEqual(probe.empty, [], 'empty tokens');
+        assert.ok(probe.variant === 'dark' || probe.variant === 'light', 'data-theme-variant=' + probe.variant);
+    });
+
+    if (process.env.SMOKE_SHOT) {
+        const dir = path.join(ROOT, 'plans', '_smoke-artifacts');
+        fs.mkdirSync(dir, { recursive: true });
+        await page.screenshot({ path: path.join(dir, 'main-window-' + process.platform + '.png') });
+    }
+
+    // ---- editor state -------------------------------------------------------
     await check('template import survives delayed editor initialization', async () => {
         const content = '// Imported before the mini editor is ready\nint main() {}\n';
         const fixture = path.join(profile, 'template.cpp');
@@ -86,9 +131,11 @@ async function main() {
             document.querySelector('.settings-tab[data-tab="template"]').click();
         });
         try {
-            const choosing = page.waitForEvent('filechooser');
-            await page.locator('#btn-import-template-from-file').click();
-            await (await choosing).setFiles(fixture);
+            const [chooser] = await Promise.all([
+                page.waitForEvent('filechooser', { timeout: 10000 }),
+                page.locator('#btn-import-template-from-file').click()
+            ]);
+            await chooser.setFiles(fixture);
             await page.waitForFunction(expected => document.getElementById('set-template').value === expected,
                 content, { timeout: 5000 });
         } finally {
@@ -353,18 +400,95 @@ async function main() {
         assert.ok(Math.abs(sizes.left - sizes.right) < 2, JSON.stringify(sizes));
     });
 
-    await check('no uncaught renderer exceptions', async () => assert.deepEqual(errors, []));
+    // ---- compile & run --------------------------------------------------------
+    // Waits on App state, not on sleeps: buildRun() resolves once the program has
+    // started; the run is over when isRunning drops and its output is 'done'.
+    async function buildAndRun(code) {
+        const tabId = await page.evaluate(async code => {
+            if (App.isSplit) closeSplit();
+            newFile();
+            const tab = App.tabs.find(t => t.id === App.activeTabId);
+            setTabText(tab, code);
+            document.getElementById('input-area').value = '';
+            document.getElementById('expected-area').value = '42';
+            await ACTION_HANDLERS.buildRun();
+            if (!tab.exePath) throw new Error('build failed: ' + JSON.stringify(App.problems.slice(0, 3)));
+            return tab.id;
+        }, code);
+        await page.waitForFunction(id => !App.isRunning && App.outputByTab[id]?.state === 'done',
+            tabId, { timeout: 30000 });
+        return page.evaluate(() => ({
+            output: document.getElementById('output-area').textContent,
+            verdict: document.getElementById('output-verdict').textContent,
+            stderrShown: !document.getElementById('stderr-panel').classList.contains('hidden'),
+            stderr: document.getElementById('stderr-area').textContent
+        }));
+    }
+
+    await check('Build & Run: stdout in Output, stderr in its own card, verdict AC', async () => {
+        const noisy = await buildAndRun('#include <cstdio>\n#include <iostream>\n'
+            + 'int main() { std::cout << 42 << "\\n"; std::cerr << "dbg\\n"; return 0; }\n');
+        assert.deepEqual(noisy, { output: '42\n', verdict: 'AC', stderrShown: true, stderr: 'dbg\n' });
+        const quiet = await buildAndRun('#include <cstdio>\nint main() { std::printf("42\\n"); return 0; }\n');
+        assert.deepEqual(quiet, { output: '42\n', verdict: 'AC', stderrShown: false, stderr: '' });
+    });
+
+    // ---- interface language ---------------------------------------------------------
+    await check('interface language: translates the UI, leaves names alone, switches back', async () => {
+        const read = () => page.evaluate(() => ({
+            settings: document.querySelector('#settings-popup .settings-header h2').textContent.trim(),
+            tip: document.querySelector('#settings-popup .settings-header input').placeholder,
+            tab: document.querySelector('.tab .tab-name')?.textContent,
+            cursor: document.getElementById('cursor-pos').textContent
+        }));
+        const before = await read();
+        const vi = await page.evaluate(async () => {
+            openSettings();
+            document.getElementById('set-language').value = 'vi';
+            await saveSettingsAndClose();
+            // Text the app writes afterwards (in English) is translated as it lands.
+            document.getElementById('cursor-pos').textContent = 'Ln 12, Col 5';
+            await new Promise(r => setTimeout(r, 0));
+            return document.documentElement.lang;
+        });
+        const after = await read();
+        assert.equal(vi, 'vi');
+        assert.equal(after.settings, 'Cài đặt');
+        assert.equal(after.tip, 'Tìm cài đặt');
+        assert.equal(after.cursor, 'Dòng 12, Cột 5');
+        assert.equal(after.tab, before.tab, 'file names are not translated');
+        const saved = JSON.parse(fs.readFileSync(path.join(profile, 'settings.json'), 'utf8'));
+        assert.equal(saved.appearance.language, 'vi');
+        await page.evaluate(async () => {
+            openSettings();
+            document.getElementById('set-language').value = 'en';
+            await saveSettingsAndClose();
+            document.getElementById('cursor-pos').textContent = 'Ln 1, Col 1';
+        });
+        const back = await read();
+        assert.equal(back.settings, before.settings);
+        assert.equal(back.tip, before.tip);
+    });
+
+    // ---- whole session ----------------------------------------------------------
+    await check('no failed resource loads', async () => assert.deepEqual(failedRequests, []));
+    await check('no uncaught renderer exceptions', async () => assert.deepEqual(pageErrors, []));
+    if (consoleErrors.length) {
+        // Reported, not failed: third-party code logs benign errors.
+        console.log('  NOTE  ' + consoleErrors.length + ' console.error line(s):');
+        consoleErrors.slice(0, 10).forEach(line => console.log('        · ' + line));
+    }
 }
 
 main().catch(error => {
     failed++;
-    console.error(error);
+    console.log('  FAIL  ' + (error && error.stack ? error.stack : error));
 }).finally(async () => {
-    if (app) await app.close();
-    const resolvedProfile = path.resolve(profile);
-    if (path.dirname(resolvedProfile) === path.resolve(os.tmpdir())
-        && path.basename(resolvedProfile).startsWith('sameko-editor-state-')) {
-        fs.rmSync(resolvedProfile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    if (app) { try { await app.close(); } catch (_) { } }
+    if (failed || process.env.KEEP_PROFILE) {
+        console.log('  profile kept: ' + profile);
+    } else {
+        fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
     }
     console.log(`\n${passed} passed, ${failed} failed`);
     process.exitCode = failed ? 1 : 0;

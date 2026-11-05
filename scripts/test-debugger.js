@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 /**
- * Sameko Dev C++ IDE - Debugger regression tests (manual runner)
+ * Sameko Dev C++ IDE - Debugger regression tests
  *
- * There is no test framework in this repo (no `npm test`). This is a plain
- * Node script — `node scripts/test-debugger.js` — that locks in the two pieces
- * of the debugger that were verified by hand but never committed as tests:
+ *   Part A     mi-parser.js unit tests — pure, always runs.
+ *   Parts B-D  gdb-session.js E2E      — need a real gdb/g++; SKIP if absent.
+ *              They run concurrently; each part's lines are printed in order.
  *
- *   Part A  mi-parser.js unit tests   — pure, always runs on any machine.
- *   Part B  gdb-session.js E2E        — needs a real gdb; auto-SKIPs if absent.
+ *   node scripts/test-debugger.js          all parts (npm run test:debugger)
+ *   node scripts/test-debugger.js --unit   Part A only
+ *   node scripts/test-debugger.js --e2e    Parts B-D only
  *
- * No dependencies beyond Node core (assert/fs/path/os/child_process).
- * Exit code is 0 unless something FAILED.
+ * Node core only. Exit code is 0 unless something FAILED.
  *
  * @module scripts/test-debugger
  */
@@ -21,35 +21,43 @@ const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { execFileSync } = require('child_process');
+const { promisify } = require('util');
+const execFile = promisify(require('child_process').execFile);
 
 const ROOT = path.join(__dirname, '..');
 
 // ---- tiny harness ---------------------------------------------------------
+// Each part gets its own log buffer so concurrent parts print in order.
 let passed = 0, failed = 0, skipped = 0;
 const fails = [];
 
-function check(name, fn) {
-    try {
-        fn();
-        passed++;
-        console.log('  PASS  ' + name);
-    } catch (err) {
-        failed++;
-        fails.push(name);
-        console.log('  FAIL  ' + name + '\n        ' + (err && err.message ? err.message : err));
-    }
-}
-function skip(name, why) {
-    skipped++;
-    console.log('  SKIP  ' + name + (why ? '  (' + why + ')' : ''));
+function makeLog(title) {
+    const lines = ['\n' + title];
+    return {
+        lines,
+        check(name, fn) {
+            try {
+                fn();
+                passed++;
+                lines.push('  PASS  ' + name);
+            } catch (err) {
+                failed++;
+                fails.push(name);
+                lines.push('  FAIL  ' + name + '\n        ' + (err && err.message ? err.message : err));
+            }
+        },
+        skip(name, why) {
+            skipped++;
+            lines.push('  SKIP  ' + name + (why ? '  (' + why + ')' : ''));
+        }
+    };
 }
 
 // ===========================================================================
 // PART A — mi-parser (pure unit tests)
 // ===========================================================================
-function partA() {
-    console.log('\nPart A — mi-parser.js (unit)');
+function partA(t) {
+    const check = t.check;
     const { parseLine } = require(path.join(ROOT, 'app/services/debugger/mi-parser'));
 
     check('result: ^done', () => {
@@ -206,8 +214,8 @@ const LOOP_SAMPLE = [
     '',
 ].join('\n');
 
-async function partB() {
-    console.log('\nPart B — gdb-session.js (integration)');
+async function partB(t) {
+    const { check, skip } = t;
     const tc = locateToolchain();
     if (!tc) { skip('gdb-session E2E', 'no gdb/g++ found'); return; }
 
@@ -220,7 +228,7 @@ async function partB() {
     const env = { ...process.env, PATH: tc.bin + path.delimiter + process.env.PATH };
 
     try {
-        execFileSync(tc.gpp, ['-g', '-O0', '-std=c++17', src, '-o', exe], { env, timeout: 60000, stdio: 'pipe' });
+        await execFile(tc.gpp, ['-g', '-O0', '-std=c++17', src, '-o', exe], { env, timeout: 60000 });
     } catch (err) {
         check('compile sample -g', () => { throw new Error('compile failed: ' + (err.message || err)); });
         try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) { }
@@ -312,8 +320,8 @@ async function partB() {
 // PART C — interrupt / Pause (Windows sanity: does -exec-interrupt actually stop
 // a running inferior?). Bounded timeouts so a broken interrupt FAILS, never hangs.
 // ===========================================================================
-async function partC() {
-    console.log('\nPart C — interrupt / Pause');
+async function partC(t) {
+    const { check, skip } = t;
     const tc = locateToolchain();
     if (!tc) { skip('interrupt E2E', 'no gdb/g++ found'); return; }
 
@@ -325,7 +333,7 @@ async function partC() {
     const env = { ...process.env, PATH: tc.bin + path.delimiter + process.env.PATH };
 
     try {
-        execFileSync(tc.gpp, ['-g', '-O0', src, '-o', exe], { env, timeout: 60000, stdio: 'pipe' });
+        await execFile(tc.gpp, ['-g', '-O0', src, '-o', exe], { env, timeout: 60000 });
     } catch (err) {
         check('compile loop -g', () => { throw new Error('compile failed: ' + (err.message || err)); });
         try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) { }
@@ -372,8 +380,8 @@ const COND_SAMPLE = [
     '',
 ].join('\n');
 
-async function partD() {
-    console.log('\nPart D — breakpoint condition changed while running');
+async function partD(t) {
+    const { check, skip } = t;
     const tc = locateToolchain();
     if (!tc) { skip('condition E2E', 'no gdb/g++ found'); return; }
 
@@ -385,7 +393,7 @@ async function partD() {
     const env = { ...process.env, PATH: tc.bin + path.delimiter + process.env.PATH };
 
     try {
-        execFileSync(tc.gpp, ['-g', '-O0', src, '-o', exe], { env, timeout: 60000, stdio: 'pipe' });
+        await execFile(tc.gpp, ['-g', '-O0', src, '-o', exe], { env, timeout: 60000 });
     } catch (err) {
         check('compile cond -g', () => { throw new Error('compile failed: ' + (err.message || err)); });
         try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (_) { }
@@ -423,10 +431,22 @@ async function partD() {
 // ===========================================================================
 (async function main() {
     console.log('Sameko debugger regression tests');
-    try { partA(); } catch (err) { console.error('Part A crashed:', err); failed++; }
-    try { await partB(); } catch (err) { console.error('Part B crashed:', err); failed++; }
-    try { await partC(); } catch (err) { console.error('Part C crashed:', err); failed++; }
-    try { await partD(); } catch (err) { console.error('Part D crashed:', err); failed++; }
+    const unit = !process.argv.includes('--e2e');
+    const e2e = !process.argv.includes('--unit');
+    const run = async (title, fn) => {
+        const t = makeLog(title);
+        try { await fn(t); } catch (err) { t.lines.push(title + ' crashed: ' + (err && err.stack || err)); failed++; }
+        return t.lines;
+    };
+    const parts = [];
+    if (unit) parts.push(run('Part A — mi-parser.js (unit)', partA));
+    if (e2e) {
+        // Independent programs and gdb sessions: run them side by side.
+        parts.push(run('Part B — gdb-session.js (integration)', partB));
+        parts.push(run('Part C — interrupt / Pause', partC));
+        parts.push(run('Part D — breakpoint condition changed while running', partD));
+    }
+    for (const lines of await Promise.all(parts)) console.log(lines.join('\n'));
 
     console.log('\n----------------------------------------');
     console.log(`PASSED ${passed} / FAILED ${failed} / SKIPPED ${skipped}`);
