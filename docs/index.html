@@ -63,6 +63,12 @@
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
             "isAccessibleForFree": true,
             "downloadUrl": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases",
+            "softwareVersion": "1.3.2",
+            "datePublished": "2026-10-04",
+            "dateModified": "2026-10-20",
+            "releaseNotes": "https://sameko.dev/wiki.html#whats-new",
+            "softwareHelp": { "@type": "CreativeWork", "url": "https://sameko.dev/wiki.html" },
+            "image": "https://sameko.dev/assets/og-image.png",
             "featureList": "Windows bundle with GCC 16, clangd and GDB; Linux packages using system compiler tools; Monaco Editor; C++26 support; Competitive Companion; portable Windows package",
             "license": "https://opensource.org/license/mit",
             "sameAs": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP"
@@ -74,6 +80,43 @@
             "url": "https://sameko.dev/",
             "alternateName": "Sameko IDE",
             "inLanguage": "en"
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://sameko.dev/#faq",
+            "about": { "@id": "https://sameko.dev/#software" },
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Is it really free?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes. Sameko Dev C++ is MIT licensed, with no ads, no account and no telemetry." }
+              },
+              {
+                "@type": "Question",
+                "name": "Do I need to install a compiler?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Not on Windows: GCC 16, clangd and GDB are bundled. On Linux, install g++, gdb and clangd from your distro." }
+              },
+              {
+                "@type": "Question",
+                "name": "Does it run from a USB drive?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes. The portable zip runs from any folder, with no admin rights or registry changes." }
+              },
+              {
+                "@type": "Question",
+                "name": "Which C++ standards work?",
+                "acceptedAnswer": { "@type": "Answer", "text": "C++98 through C++26 (C++17 by default). Switch in Settings → Compiler." }
+              },
+              {
+                "@type": "Question",
+                "name": "Windows Defender blocks the download.",
+                "acceptedAnswer": { "@type": "Answer", "text": "A common false positive for new Electron apps. Choose \"More info\" → \"Run anyway\", or right-click the .exe → Properties → Unblock." }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I make my own theme?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes. Click any part of the UI in the Theme Customizer to recolor it, add a background image or video, then export the theme." }
+              }
+            ]
           }
         ]
     }

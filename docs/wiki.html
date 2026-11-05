@@ -54,7 +54,9 @@
             {
                 "@type": "TechArticle",
                 "@id": "https://sameko.dev/wiki.html#article",
-                "headline": "Build with less friction.",
+                "headline": "Sameko Dev C++ Documentation: Installation, GCC 16 Compiler Setup and IDE Guide",
+                "alternativeHeadline": "Build with less friction.",
+                "dateModified": "2026-10-28",
                 "description": "Documentation for configuring GCC 16 and C++26 on Windows, then using Monaco, clangd, checkpoints, snippets, themes, and Competitive Companion. Linux packages use system compiler tools.",
                 "url": "https://sameko.dev/wiki.html",
                 "inLanguage": "en",
@@ -163,7 +165,7 @@
             </div>
             <div class="wiki-hero-wave" aria-hidden="true"></div>
             <div class="wiki-hero-copy" data-reveal>
-                <a class="wiki-release-pill" href="#whats-new"><b>v1.3.0</b> What's new &rarr;</a>
+                <a class="wiki-release-pill" href="#whats-new"><b>v1.3.2</b> What's new &rarr;</a>
                 <h1 id="wiki-hero-title">Build with less <span class="hl">friction.<svg class="hl__squiggle" viewBox="0 0 220 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 14C24 4 40 22 60 13S96 4 116 13s36 9 56 0 32-7 44-2"/></svg><svg class="hl__shine" viewBox="0 0 40 40" aria-hidden="true"><path pathLength="1" d="M9 31 4 22M20 26 19 12M31 29l7-9"/></svg></span></h1>
                 <p>Everything Sameko does, from <code>hello.cpp</code> to contest day.</p>
                 <form class="wiki-search" id="wiki-search-form" role="search">
@@ -228,40 +230,44 @@
 
                     <!-- WHAT'S NEW -->
                     <section id="whats-new" data-reveal>
-                        <span class="wiki-eyebrow">Release notes · 1.3.0 · 04 Oct 2026</span>
-                        <h2>What’s new in Sameko</h2>
-                        <p class="wiki-subtitle">Faster, calmer, more helpful.</p>
+                        <span class="wiki-eyebrow">Release notes · 1.3.2 · 20 Oct 2026</span>
+                        <h2>What’s new in Sameko 1.3.2</h2>
+                        <p class="wiki-subtitle">Markdown preview, format on save, and less clicking around.</p>
 
                         <div class="wiki-update-grid">
                             <article class="wiki-update-card">
-                                <strong>Faster live checking</strong>
-                                <p>clangd now drives live diagnostics (about 100&ndash;130 ms); <code>g++ -fsyntax-only</code> is the fallback.</p>
+                                <strong>Markdown preview</strong>
+                                <p>A <code>.md</code> file opens with a live rendered view beside it. Toggle it with <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>V</kbd>.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>More honest run metrics</strong>
-                                <p>A native launcher measures real wall time and peak memory.</p>
+                                <strong>Format on save</strong>
+                                <p>Pick one of 13 AStyle styles in Settings › Editor; one <kbd>Ctrl</kbd> + <kbd>Z</kbd> undoes the format.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Parallel test runs</strong>
-                                <p>Run All Tests uses up to four workers; tests near the limit rerun alone.</p>
+                                <strong>New file of any type</strong>
+                                <p>Right-click the <b>+</b> next to the tabs for C++, C, <code>.inp</code>, <code>.out</code>, text or Markdown.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>New daily workflow</strong>
-                                <p>File input, Output / Expected cards, interface scale and a lighter startup.</p>
+                                <strong>Rename a tab</strong>
+                                <p>Right-click a tab › Rename. The file on disk, its breakpoints and history follow.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Debugger and compiler polish</strong>
-                                <p>Flag-aware PCH for debug builds, batched variables, C++26 in the selector.</p>
+                                <strong>Search in Settings</strong>
+                                <p>Type at the top of Settings to see matching settings and shortcuts from every tab.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Electron 44</strong>
-                                <p>xterm.js 6 and a deferred Monaco load, so the editor appears sooner.</p>
+                                <strong>Import and drop files</strong>
+                                <p>Import a template or snippets from files, and drop files on the window to open them.</p>
                             </article>
                         </div>
 
                         <div class="callout note">
+                            <div class="callout-title">Also since 1.3.0</div>
+                            <p><b>1.3.1</b> rebuilt the Theme Customizer, made files open from Windows Explorer ("Open with"), and added plain-text support for <code>.txt</code>, <code>.inp</code>, <code>.out</code> and <code>.ans</code>. <b>1.3.0</b> brought clangd live checking (about 100&ndash;130 ms), parallel test runs, real run time and peak memory, test input from a file and Electron 44.</p>
+                        </div>
+                        <div class="callout note">
                             <div class="callout-title">Version scope</div>
-                            <p>Windows bundles GCC 16.1.0; Linux uses the compiler tools installed on your system.</p>
+                            <p>Windows bundles GCC 16.1.0, clangd, GDB and AStyle; Linux uses the tools installed on your system.</p>
                         </div>
                     </section>
 
@@ -270,15 +276,15 @@
                         <h2>Sameko Dev C++ Wiki</h2>
                         <p class="wiki-subtitle">Documentation from basics to advanced features.</p>
 
-                        <p>Sameko Dev C++ is a C++ IDE designed for competitive programming and education.
-                            It comes with a pre-configured GCC 16.1.0 compiler on Windows, allowing you to start coding immediately
-                            without installing additional compilers or MinGW.</p>
+                        <p>Sameko Dev C++ is a free, open-source (MIT) C++ IDE for competitive programming and education,
+                            built on the Monaco editor. On Windows it bundles GCC 16.1.0, clangd and GDB, so you can write,
+                            run and debug C++ right after installing, without setting up MinGW yourself. This guide covers
+                            version 1.3.2.</p>
 
                         <h2>Who is Sameko for?</h2>
                         <ul>
-                            <li><b>Beginners</b> who need a simple environment without the complexity of Visual Studio
-                            </li>
-                            <li><b>Competitive Programmers</b> who need fast compilation and test case integration</li>
+                            <li><b>Beginners</b> who need a simple environment without the complexity of Visual Studio</li>
+                            <li><b>Competitive programmers</b> who need fast builds, test cases and Competitive Companion</li>
                             <li><b>Students</b> who need a portable IDE to use on school computers via USB</li>
                         </ul>
                     </section>
@@ -289,13 +295,13 @@
 
                         <div class="callout note">
                             <div class="callout-title">Which one should I choose?</div>
-                            <p>Sameko provides 2 download options:</p>
+                            <p>Windows has 2 downloads:</p>
                             <ul>
                                 <li>
-                                    <b>Installer (.exe)</b> - Automatic setup with Start Menu shortcuts, right-click integration, auto-updates, and a clean uninstaller. Recommended for most users.
+                                    <b>Installer</b> (<code>sameko-dev-cpp-setup-&lt;version&gt;.exe</code>) - Start Menu and desktop shortcuts, "Open with" for C++ files, auto-updates and an uninstaller. Recommended for most users.
                                 </li>
                                 <li>
-                                    <b>Portable (.zip)</b> - Extract and run anywhere. No admin rights needed. Great for USB drives or school computers. Note: auto-updates are not available in portable mode.
+                                    <b>Portable (.zip)</b> - Extract and run anywhere. No admin rights or registry changes. Great for USB drives or school computers. Auto-update is not available in portable mode.
                                 </li>
                             </ul>
                         </div>
@@ -303,25 +309,24 @@
                         <div class="tutorial-steps">
                             <div class="tutorial-step">
                                 <h3>Download Sameko</h3>
-                                <p>Go to the <a href="index.html#download-trigger">homepage</a> and click the <b>Download</b> button to choose Installer or Portable version.</p>
+                                <p>Go to the <a href="index.html#download-trigger">homepage</a> and click <b>Download</b>, or get the files from <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases" target="_blank" rel="noopener noreferrer">GitHub Releases</a>.</p>
                             </div>
 
                             <div class="tutorial-step">
                                 <h3>Install or Extract</h3>
-                                <p>If Installer: Run the .exe and follow instructions.<br>
-                                    If Portable: Extract to a folder like <code>D:\Sameko-IDE\</code>.</p>
+                                <p>Installer: run the .exe and follow the steps. It asks for administrator rights only if you install into Program Files.<br>
+                                    Portable: extract to a folder such as <code>D:\Sameko-IDE\</code>.</p>
                             </div>
 
                             <div class="tutorial-step">
-                                <h3>Run Sameko Dev C++.exe</h3>
-                                <p>Double-click <code>Sameko Dev C++.exe</code> to launch the IDE.</p>
+                                <h3>Run Sameko Dev C++</h3>
+                                <p>Start it from the Start Menu, or double-click <code>Sameko Dev C++.exe</code> in the portable folder.</p>
                             </div>
                         </div>
 
                         <div class="callout note">
-                            <div class="callout-title">Note</div>
-                            <p>Windows Defender may warn "not commonly downloaded". This is normal,
-                                click "Keep" to continue.</p>
+                            <div class="callout-title">Windows Defender warning</div>
+                            <p>A new app can show "not commonly downloaded" or SmartScreen. Choose <b>Keep</b>, or <b>More info</b> &rarr; <b>Run anyway</b>.</p>
                         </div>
 
                         <div class="callout note">
@@ -333,8 +338,7 @@
                     <!-- FIRST PROJECT -->
                     <section id="first-project">
                         <h2>Creating your first project</h2>
-                        <p>After opening the IDE, try writing and running a Hello World program to verify installation.
-                        </p>
+                        <p>After opening the IDE, write and run a Hello World program to check that everything works.</p>
 
                         <div class="code-wrapper">
                             <button class="copy-btn" onclick="copyCode(this)">Copy</button>
@@ -348,16 +352,15 @@ int main() {
 
                         <p><b>Steps:</b></p>
                         <ol>
-                            <li>Paste the code above into the editor</li>
-                            <li>Press <kbd>Ctrl</kbd> + <kbd>S</kbd> to save as <code>hello.cpp</code></li>
-                            <li>Press <kbd>F11</kbd> to compile and run</li>
-                            <li>The output will appear in the terminal below</li>
+                            <li>Press <kbd>Ctrl</kbd> + <kbd>N</kbd> for a new file (it starts from your template in Settings › Template) and paste the code</li>
+                            <li>Press <kbd>Ctrl</kbd> + <kbd>S</kbd> to save it as <code>hello.cpp</code></li>
+                            <li>Press <kbd>F11</kbd> to build and run</li>
+                            <li>The output appears in the Terminal and in the <b>Output</b> card; the status bar shows run time and peak memory</li>
                         </ol>
 
                         <div class="callout tip">
                             <div class="callout-title">Tip</div>
-                            <p>Use <kbd>F9</kbd> to compile only, <kbd>F10</kbd> to run only, <kbd>F11</kbd> for both.
-                            </p>
+                            <p><kbd>F9</kbd> compiles only, <kbd>F10</kbd> runs without building, <kbd>F11</kbd> does both. The same choices are in the caret next to the Run button.</p>
                         </div>
                     </section>
 
@@ -375,7 +378,7 @@ int main() {
                             <tbody>
                                 <tr>
                                     <td>OS</td>
-                                    <td>Windows 10 64-bit</td>
+                                    <td>Windows 10 64-bit, or Linux x64</td>
                                     <td>Windows 11</td>
                                 </tr>
                                 <tr>
@@ -400,10 +403,10 @@ int main() {
                     <!-- COMPILER -->
                     <section id="compiler">
                         <h2>Compiler Settings</h2>
-                        <p>Sameko uses GCC 16 with pre-configured compile options.</p>
+                        <p>Sameko uses GCC 16.1.0 on Windows. Change the standard, optimization and extra flags in <b>Settings › Compiler</b>.</p>
 
                         <h3>C++ Standard</h3>
-                        <p>Sameko fully supports C++ standards from legacy to modern.</p>
+                        <p>Pick any standard from C++98 to C++26. <b>Default</b> is C++17, the standard most online judges and contestants use.</p>
 
                         <table>
                             <thead>
@@ -423,7 +426,7 @@ int main() {
                                 </tr>
                                 <tr>
                                     <td>C++17</td>
-                                    <td>(Default) Gold standard for Competitive Programming</td>
+                                    <td>(Default) The usual choice for competitive programming</td>
                                 </tr>
                                 <tr>
                                     <td>C++20</td>
@@ -442,21 +445,21 @@ int main() {
 
                         <h3>Common Compiler Flags</h3>
                         <ul>
-                            <li><code>-O2</code> - Optimize for speed, use when submitting to Codeforces</li>
+                            <li><code>-O2</code> - Optimize for speed, as most online judges do</li>
                             <li><code>-Wall</code> - Show warnings, helps find bugs</li>
-                            <li><code>-g</code> - Add debug information</li>
+                            <li><code>-g</code> - Add debug information (<kbd>F5</kbd> adds it for you)</li>
                         </ul>
 
-                        <div class="callout warning">
-                            <div class="callout-title">Warning</div>
-                            <p>Don't use <code>-O2</code> when debugging as optimized code is harder to trace.</p>
+                        <div class="callout tip">
+                            <div class="callout-title">Fast rebuilds</div>
+                            <p>Builds use a precompiled <code>bits/stdc++.h</code>, and building an unchanged file reuses the last executable.</p>
                         </div>
                     </section>
 
                     <!-- SHORTCUTS -->
                     <section id="shortcuts">
                         <h2>Keyboard Shortcuts</h2>
-                        <p>Shortcuts help you code faster.</p>
+                        <p>Default shortcuts. Change any of them in <b>Settings › Keybindings</b>.</p>
 
                         <table>
                             <thead>
@@ -480,7 +483,7 @@ int main() {
                                 </tr>
                                 <tr>
                                     <td><kbd>F11</kbd></td>
-                                    <td>Build & Run, or Step Into while debugging</td>
+                                    <td>Build &amp; Run, or Step Into while debugging</td>
                                 </tr>
                                 <tr>
                                     <td><kbd>Shift</kbd> + <kbd>F5</kbd></td>
@@ -499,32 +502,48 @@ int main() {
                                     <td>Open file</td>
                                 </tr>
                                 <tr>
-                                    <td><kbd>Ctrl</kbd> + <kbd>S</kbd></td>
-                                    <td>Save file</td>
+                                    <td><kbd>Ctrl</kbd> + <kbd>S</kbd> / <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>S</kbd></td>
+                                    <td>Save / Save As</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>T</kbd> / <kbd>Ctrl</kbd> + <kbd>W</kbd></td>
+                                    <td>New tab / Close tab</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Tab</kbd> / <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Tab</kbd></td>
+                                    <td>Next / previous tab</td>
                                 </tr>
                                 <tr>
                                     <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd></td>
                                     <td>Format code (AStyle)</td>
                                 </tr>
                                 <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>V</kbd></td>
+                                    <td>Markdown preview</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>/</kbd></td>
+                                    <td>Comment / uncomment line</td>
+                                </tr>
+                                <tr>
                                     <td><kbd>Ctrl</kbd> + <kbd>J</kbd></td>
-                                    <td>Toggle terminal</td>
+                                    <td>Show or hide the bottom panel (Problems / Terminal / Tests)</td>
                                 </tr>
                                 <tr>
-                                    <td><kbd>Ctrl</kbd> + <kbd>T</kbd></td>
-                                    <td>New tab</td>
-                                </tr>
-                                <tr>
-                                    <td><kbd>Ctrl</kbd> + <kbd>Tab</kbd></td>
-                                    <td>Next tab</td>
-                                </tr>
-                                <tr>
-                                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Tab</kbd></td>
-                                    <td>Previous tab</td>
+                                    <td><kbd>Ctrl</kbd> + <kbd>E</kbd></td>
+                                    <td>Show or hide the Explorer</td>
                                 </tr>
                                 <tr>
                                     <td><kbd>Ctrl</kbd> + <kbd>\</kbd></td>
                                     <td>Split editor</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>,</kbd></td>
+                                    <td>Settings</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>=</kbd> / <kbd>Ctrl</kbd> + <kbd>-</kbd> / <kbd>Ctrl</kbd> + <kbd>0</kbd></td>
+                                    <td>Interface scale up / down / reset</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -532,8 +551,8 @@ int main() {
 
                     <!-- THEMES -->
                     <section id="themes">
-                        <h2>Themes & Customization</h2>
-                        <p>Sameko includes 6 built-in themes. Change themes in Settings or click the palette icon.</p>
+                        <h2>Themes &amp; Customization</h2>
+                        <p>Sameko includes 6 built-in themes; Monokai is the default. Change the theme in <b>Settings › Appearance</b>.</p>
 
                         <table>
                             <thead>
@@ -544,24 +563,24 @@ int main() {
                             </thead>
                             <tbody>
                                 <tr>
+                                    <td>Monokai</td>
+                                    <td>Classic warm dark theme (default)</td>
+                                </tr>
+                                <tr>
                                     <td>Kawaii Light</td>
-                                    <td>Default light theme with soft blue tones</td>
+                                    <td>Light theme with soft blue tones</td>
                                 </tr>
                                 <tr>
                                     <td>Kawaii Dark</td>
                                     <td>Dark theme with blue accents</td>
                                 </tr>
                                 <tr>
-                                    <td>Sakura Pink</td>
+                                    <td>Sakura</td>
                                     <td>Light pink anime-style theme</td>
                                 </tr>
                                 <tr>
                                     <td>Dracula</td>
                                     <td>Popular purple-toned dark theme</td>
-                                </tr>
-                                <tr>
-                                    <td>Monokai</td>
-                                    <td>Classic warm dark theme</td>
                                 </tr>
                                 <tr>
                                     <td>Nord</td>
@@ -571,34 +590,45 @@ int main() {
                         </table>
 
                         <h3>Theme Customizer</h3>
-                        <p>Open the Theme Customizer to click on any UI element and change its color. You can also set custom background images or videos with opacity control, and import/export your custom themes.</p>
+                        <p>The live preview is a small copy of the real window: click any part of it to jump to its color. Colors take HEX, RGB or RGBA, each changed color has its own undo button, and <kbd>Ctrl</kbd> + <kbd>Z</kbd> / <kbd>Ctrl</kbd> + <kbd>Y</kbd> undo and redo. Edits stay in the preview until you save.</p>
+                        <p>You can add a background image or video with an opacity slider, edit the theme as JSON, and export it. Exported themes include their background files.</p>
+
+                        <div class="callout tip">
+                            <div class="callout-title">Interface scale and background video</div>
+                            <p><b>Settings › Appearance</b> has Interface Scale (80&ndash;200%, Auto enlarges it on 4K screens) and an <b>Animated Background</b> switch to turn a theme's video off. The video pauses on its own while you work in another window.</p>
+                        </div>
                     </section>
 
                     <!-- EDITOR FEATURES -->
                     <section id="editor-features">
                         <h2>Editor</h2>
-                        <p>Sameko uses the Monaco Editor - the same engine that powers VS Code. This gives you a professional editing experience out of the box.</p>
+                        <p>Sameko uses the Monaco Editor, the same engine that powers VS Code, with clangd for C++ language features.</p>
 
                         <h3>Key Editor Features</h3>
                         <ul>
-                            <li><b>IntelliSense</b> - clangd-backed completion, hover and signature help for STL methods, functions, and your own code</li>
-                            <li><b>Bracket Colorization</b> - matching brackets are colored for readability</li>
-                            <li><b>Minimap</b> - a bird's-eye view of your code on the right side</li>
-                            <li><b>Multi-cursor</b> - hold <kbd>Alt</kbd> and click to place multiple cursors</li>
-                            <li><b>Find & Replace</b> - <kbd>Ctrl</kbd> + <kbd>H</kbd> with regex support</li>
-                            <li><b>Code Folding</b> - collapse functions and blocks to focus on what matters</li>
-                            <li><b>Split Editor</b> - press <kbd>Ctrl</kbd> + <kbd>\</kbd> to work on two files side by side</li>
+                            <li><b>IntelliSense</b> - clangd-backed completion, hover and signature help for the STL and your own code</li>
+                            <li><b>Live Code Checking</b> - errors and warnings while you type, from clangd (about 100&ndash;130 ms)</li>
+                            <li><b>Format Code</b> - <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd>, with 13 AStyle styles in Settings › Editor › Format Style, and <b>Format on Save</b> for C/C++ files</li>
+                            <li><b>Auto-close for types</b> - typing <code>{</code> after <code>struct Name</code> (or <code>class</code>, <code>union</code>, <code>enum</code>) closes it as <code>{};</code></li>
+                            <li><b>Multi-cursor</b> - hold <kbd>Alt</kbd> and click, or <kbd>Ctrl</kbd> + <kbd>D</kbd> to select the next match</li>
+                            <li><b>Find &amp; Replace</b> - <kbd>Ctrl</kbd> + <kbd>H</kbd> with regex support</li>
+                            <li><b>Split Editor</b> - <kbd>Ctrl</kbd> + <kbd>\</kbd> to work on two files side by side</li>
+                            <li><b>Bracket colorization, minimap and code folding</b></li>
                         </ul>
 
+                        <h3>Markdown and test files</h3>
+                        <p>A <code>.md</code> file opens with a rendered preview beside the editor that updates while you type (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>V</kbd>, or the <b>Preview</b> button). <code>.txt</code>, <code>.inp</code>, <code>.out</code> and <code>.ans</code> open as plain text; live checking, IntelliSense, Format and Build skip them.</p>
+
                         <h3>Tabs</h3>
-                        <p>Open multiple files in tabs. Drag to reorder, middle-click to close, or right-click for options like "Close Others" and "Pin Tab". Your open tabs are restored when you reopen the IDE.</p>
+                        <p>Each tab keeps its own undo history, test cases and input. Drag to reorder and middle-click to close. Right-click a tab for <b>Close</b>, <b>Close Others</b>, <b>Rename</b>, <b>Copy Path</b> and <b>Checkpoints</b>; right-click the <b>+</b> to create a C++, C, input, output, text or Markdown file. Open tabs are restored when you reopen the IDE.</p>
+                        <p>You can also drop files onto the window, or open them from Windows Explorer with "Open with Sameko Dev C++"; they open in the running window.</p>
                     </section>
 
                     <!-- DEBUGGER -->
                     <section id="debugger" data-reveal>
                         <span class="wiki-eyebrow">Inspect, pause, understand</span>
                         <h2>Integrated GDB debugger</h2>
-                        <p>Build with debug information, set a breakpoint in the gutter, then use the Debug panel without leaving the editor. Sameko drives the bundled MinGW GDB on Windows; Linux uses the system <code>gdb</code>.</p>
+                        <p>Set a breakpoint in the gutter and press <kbd>F5</kbd>: Sameko builds with debug information and opens the Debug panel beside the editor. It drives the bundled MinGW GDB on Windows; Linux uses the system <code>gdb</code>.</p>
 
                         <div class="wiki-update-grid">
                             <article class="wiki-update-card">
@@ -621,46 +651,48 @@ int main() {
 
                         <div class="callout tip">
                             <div class="callout-title">Shortcut note</div>
-                            <p><kbd>F5</kbd> starts or continues debugging, <kbd>F10</kbd> steps over, <kbd>F11</kbd> steps into, <kbd>Shift</kbd> + <kbd>F11</kbd> steps out and <kbd>Shift</kbd> + <kbd>F5</kbd> stops. When you are not debugging, <kbd>F10</kbd> runs and <kbd>F11</kbd> builds and runs.</p>
+                            <p><kbd>F5</kbd> starts or continues debugging, <kbd>F10</kbd> steps over, <kbd>F11</kbd> steps into, <kbd>Shift</kbd> + <kbd>F11</kbd> steps out and <kbd>Shift</kbd> + <kbd>F5</kbd> stops. When you are not debugging, <kbd>F10</kbd> runs and <kbd>F11</kbd> builds and runs. Breakpoints move with the code when you add or remove lines above them.</p>
                         </div>
                     </section>
 
                     <!-- FILE EXPLORER -->
                     <section id="file-explorer">
                         <h2>File Explorer</h2>
-                        <p>The sidebar file explorer lets you browse and manage files without leaving the IDE.</p>
+                        <p>Open a folder (<kbd>Ctrl</kbd> + <kbd>E</kbd> shows or hides the Explorer) to browse and manage files without leaving the IDE.</p>
 
                         <ul>
-                            <li>Click any <code>.cpp</code>, <code>.c</code>, or <code>.h</code> file to open it in a tab</li>
-                            <li>Right-click for rename, delete, and other file operations</li>
-                            <li>Drag and drop files into the IDE to open them</li>
-                            <li>Recent files are tracked and accessible from the menu</li>
+                            <li><b>Files</b> lists the folder's files and subfolders; the open file is highlighted and follows the active tab</li>
+                            <li>The <b>filter box</b> at the top finds any file in the folder; <kbd>Enter</kbd> opens the first match, <kbd>Esc</kbd> clears it</li>
+                            <li><b>Recent</b> keeps the last three files you opened</li>
+                            <li><b>Contest</b> and <b>Collections</b> group problems, with a status (such as Done) and notes for each file</li>
+                            <li>Right-click for New File, Rename, Delete and other file operations; New File uses your template from Settings › Template</li>
+                            <li>Build output (<code>.exe</code>, <code>.o</code>, ...) is hidden behind a "build files hidden · Show" link</li>
                         </ul>
                     </section>
 
                     <!-- CHECKPOINTS / LOCAL HISTORY -->
                     <section id="checkpoints">
                         <h2>Checkpoints (Local History)</h2>
-                        <p>Sameko automatically saves a checkpoint every time you save a file. This means you can always go back to a previous version - even if you forgot to undo.</p>
+                        <p>Sameko saves a checkpoint every time you save a changed file, so you can go back to an earlier version even after closing the IDE.</p>
 
                         <h3>How It Works</h3>
                         <ol>
-                            <li>Every <kbd>Ctrl</kbd> + <kbd>S</kbd> creates a timestamped backup</li>
-                            <li>Open the Checkpoints panel to see all saved versions</li>
-                            <li>Click any checkpoint to preview it</li>
-                            <li>Restore a checkpoint to revert your file</li>
+                            <li>Every <kbd>Ctrl</kbd> + <kbd>S</kbd> that changes the file creates a timestamped checkpoint</li>
+                            <li>Right-click the tab › <b>Checkpoints</b> to see all saved versions</li>
+                            <li>Click a checkpoint to preview it</li>
+                            <li>Restore it to revert the file; <kbd>Ctrl</kbd> + <kbd>Z</kbd> brings back the text from before the restore</li>
                         </ol>
 
                         <div class="callout tip">
                             <div class="callout-title">Tip</div>
-                            <p>Checkpoints are stored locally and persist across IDE restarts. Great for experimenting with different solutions during a contest.</p>
+                            <p>Checkpoints are stored locally and survive restarts and renames. Set how long they are kept with "Delete After (days)" in Settings. Great for trying different solutions during a contest.</p>
                         </div>
                     </section>
 
                     <!-- COMPETITIVE -->
                     <section id="competitive">
-                        <h2>Competitive Companion</h2>
-                        <p>Competitive Companion is a browser extension that automatically fetches test cases from online judges like Codeforces, AtCoder, and LeetCode.</p>
+                        <h2>Competitive Companion and tests</h2>
+                        <p>Competitive Companion is a browser extension that sends a problem and its sample tests from online judges such as Codeforces and AtCoder to the IDE.</p>
 
                         <h3>Setup</h3>
                         <ol>
@@ -669,24 +701,28 @@ int main() {
                                     target="_blank" rel="noopener noreferrer">Competitive Companion</a> on Chrome or Firefox</li>
                             <li>Open Sameko IDE</li>
                             <li>Navigate to a problem page and click the extension icon</li>
-                            <li>Test cases are loaded into the IDE automatically</li>
+                            <li>The problem file and its test cases appear in the IDE</li>
                         </ol>
 
-                        <h3>Verdicts</h3>
-                        <p>After running tests, each case shows a verdict:</p>
+                        <h3>Input, Output and Expected</h3>
+                        <p>Each tab has an <b>Input</b>, <b>Output</b> and <b>Expected</b> card. When Expected is filled, Output shows <b>AC</b> or <b>WA · N lines</b> after a run. The file button on the Input card (or dropping a file on it) feeds a <code>.txt</code> file to the program instead of the typed input, which suits very large tests.</p>
+
+                        <h3>Run All Tests and verdicts</h3>
+                        <p><b>Run All Tests</b> runs a tab's test cases on up to four workers; a test close to the time limit is run again on its own. Each case shows a verdict:</p>
                         <ul>
                             <li><b>AC</b> - Accepted, output matches expected</li>
                             <li><b>WA</b> - Wrong Answer, output differs</li>
                             <li><b>TLE</b> - Time Limit Exceeded</li>
-                            <li><b>RE</b> - Runtime Error</li>
                             <li><b>MLE</b> - Memory Limit Exceeded</li>
+                            <li><b>RE</b> - Runtime Error</li>
+                            <li><b>CE</b> - Compilation Error</li>
                         </ul>
                     </section>
 
                     <!-- SNIPPETS -->
                     <section id="snippets">
                         <h2>Snippets</h2>
-                        <p>Snippets let you insert code templates by typing a short prefix and pressing <kbd>Tab</kbd> or <kbd>Enter</kbd>.</p>
+                        <p>Snippets insert code templates when you type a short prefix and pick it from the suggestion list with <kbd>Tab</kbd> or <kbd>Enter</kbd>.</p>
 
                         <h3>Built-in Snippets</h3>
                         <table>
@@ -702,67 +738,63 @@ int main() {
                                     <td>Competitive programming template with bits/stdc++.h and fast I/O</td>
                                 </tr>
                                 <tr>
-                                    <td><code>for</code></td>
-                                    <td>For loop (0 → n-1)</td>
+                                    <td><code>for</code> / <code>for1</code> / <code>ford</code></td>
+                                    <td>Loop 0 → n-1 / 1 → n / n-1 → 0</td>
                                 </tr>
                                 <tr>
-                                    <td><code>for1</code></td>
-                                    <td>For loop (1 → n)</td>
-                                </tr>
-                                <tr>
-                                    <td><code>ford</code></td>
-                                    <td>Reverse for loop (n-1 → 0)</td>
-                                </tr>
-                                <tr>
-                                    <td><code>fore</code></td>
-                                    <td>Range-based for loop</td>
-                                </tr>
-                                <tr>
-                                    <td><code>vec</code></td>
-                                    <td>Declare a vector</td>
-                                </tr>
-                                <tr>
-                                    <td><code>vecn</code></td>
-                                    <td>Vector with size n</td>
+                                    <td><code>vec</code> / <code>vecn</code> / <code>vecval</code></td>
+                                    <td>Vector / with size n / with size n and a value</td>
                                 </tr>
                                 <tr>
                                     <td><code>vv</code></td>
                                     <td>2D vector</td>
                                 </tr>
                                 <tr>
-                                    <td><code>all</code></td>
-                                    <td>v.begin(), v.end()</td>
+                                    <td><code>all</code> / <code>rall</code></td>
+                                    <td><code>v.begin(), v.end()</code> / reverse range</td>
                                 </tr>
                                 <tr>
-                                    <td><code>pq</code></td>
-                                    <td>Priority queue</td>
+                                    <td><code>ios</code></td>
+                                    <td>Fast I/O</td>
+                                </tr>
+                                <tr>
+                                    <td><code>fre</code></td>
+                                    <td>File I/O with <code>freopen</code></td>
+                                </tr>
+                                <tr>
+                                    <td><code>setp</code></td>
+                                    <td>Set output precision</td>
                                 </tr>
                             </tbody>
                         </table>
 
                         <h3>STL IntelliSense</h3>
-                        <p>Clangd provides context-aware completion, documentation hover and signature help for STL members such as <code>push_back</code>, <code>sort</code>, <code>lower_bound</code> and <code>substr</code>. Built-in snippets and language keywords remain available while clangd warms up or when a file is unsaved.</p>
+                        <p>Clangd provides context-aware completion, documentation hover and signature help for STL members such as <code>push_back</code>, <code>sort</code>, <code>lower_bound</code> and <code>substr</code>. Built-in snippets, keywords and common standard-library names stay available while clangd warms up.</p>
 
                         <h3>Custom Snippets</h3>
-                        <p>Go to <b>Settings → Snippets</b> to create your own. Each snippet has a prefix (trigger word) and a body (the code that gets inserted). Use this to add your own algorithm templates like BFS, DFS, Segment Tree, or DSU.</p>
+                        <p>Go to <b>Settings › Snippets</b> to create your own: each has a prefix (trigger word) and a body (the inserted code). <b>Import from File(s)</b> adds one snippet per file, named after the file. Use it for your own BFS, DFS, Segment Tree or DSU templates.</p>
                     </section>
 
                     <!-- AUTO-UPDATE -->
                     <section id="auto-update">
                         <h2>Auto-Update</h2>
-                        <p>The Installer version of Sameko checks for updates automatically in the background.</p>
+                        <p>The installed version of Sameko checks GitHub Releases for updates in the background.</p>
 
                         <h3>How It Works</h3>
                         <ol>
-                            <li>On startup, the IDE checks GitHub Releases for a newer version</li>
-                            <li>If an update is found, it downloads in the background</li>
+                            <li>After startup, the IDE looks for a newer stable release</li>
+                            <li>If one is found, it downloads in the background</li>
                             <li>A notification appears when the download is complete</li>
-                            <li>Click "Restart" to apply the update - your open files are restored</li>
+                            <li>Click <b>Restart to update</b>: the new version installs silently and reopens with your files</li>
                         </ol>
 
+                        <div class="callout note">
+                            <div class="callout-title">Beta updates</div>
+                            <p>Only stable releases are offered by default. Turn on <b>Settings › About › Get beta updates</b> to also receive pre-releases.</p>
+                        </div>
                         <div class="callout warning">
                             <div class="callout-title">Note</div>
-                            <p>Auto-update is only available in the Installer version. Portable users need to download new versions manually from the website.</p>
+                            <p>Auto-update is only available in the installed version. Portable users download new versions manually.</p>
                         </div>
                     </section>
 
@@ -800,6 +832,9 @@ int main() {
                         <h3>IDE won't open</h3>
                         <p>Right-click <code>Sameko Dev C++.exe</code>, select Properties, check "Unblock" at the bottom, then Apply.</p>
 
+                        <h3>Windows Defender blocks the download</h3>
+                        <p>A common false positive for new Electron apps. Choose <b>More info</b> &rarr; <b>Run anyway</b>, or unblock the .exe as above.</p>
+
                         <h3>"Missing DLL" error</h3>
                         <p>Install Visual C++ Redistributable from <a
                                 href="https://aka.ms/vs/17/release/vc_redist.x64.exe" target="_blank"
@@ -808,14 +843,13 @@ int main() {
                         <h3>Compile doesn't work</h3>
                         <p>Check the following:</p>
                         <ul>
-                            <li>Path doesn't contain special characters or spaces</li>
-                            <li>Antivirus isn't blocking gcc.exe</li>
-                            <li>File is saved with .cpp extension</li>
+                            <li>Antivirus isn't blocking <code>gcc.exe</code> or the program you built</li>
+                            <li>The file is saved with a <code>.cpp</code> or <code>.c</code> extension (text and Markdown files are not built)</li>
+                            <li>On Linux, <code>g++</code> is installed and on your <code>PATH</code></li>
                         </ul>
 
                         <h3>Terminal not showing output</h3>
-                        <p>Press <kbd>Ctrl</kbd> + <kbd>J</kbd> to toggle terminal panel. If still not visible, try
-                            restarting the IDE.</p>
+                        <p>Press <kbd>Ctrl</kbd> + <kbd>J</kbd> to open the bottom panel. If it is still empty, restart the IDE.</p>
 
                         <div class="callout note">
                             <div class="callout-title">Need more help?</div>

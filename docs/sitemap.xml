@@ -5,7 +5,7 @@
     <!-- Canonical public pages. Keep lastmod aligned with content releases. -->
     <url>
         <loc>https://sameko.dev/</loc>
-        <lastmod>2026-10-05</lastmod>
+        <lastmod>2026-10-28</lastmod>
         <image:image>
             <image:loc>https://sameko.dev/assets/a.webp</image:loc>
             <image:title>Sameko Character (Hero Image)</image:title>
@@ -15,11 +15,11 @@
 
     <url>
         <loc>https://sameko.dev/wiki.html</loc>
-        <lastmod>2026-10-05</lastmod>
+        <lastmod>2026-10-28</lastmod>
     </url>
 
     <url>
         <loc>https://sameko.dev/wiki-vi.html</loc>
-        <lastmod>2026-10-05</lastmod>
+        <lastmod>2026-10-28</lastmod>
     </url>
 </urlset>
