@@ -22,6 +22,8 @@ const MAX_PCH_VARIANTS = 4;
 
 /** Builds in flight, keyed by PCH key, so two callers never write one .gch at once. */
 const inFlight = new Map();
+/** Makes temp file names unique within this process (the pid covers other processes). */
+let tmpCounter = 0;
 
 /**
  * `-f` options that do not change what a precompiled header contains. Everything
@@ -140,23 +142,28 @@ async function ensurePCH(flags = '', onMessage = null) {
     const compilerExe = getDetectedCompiler() || 'g++';
     const fingerprint = compilerFingerprint(compilerExe);
 
-    // Check if existing PCH is valid
-    if (fs.existsSync(pchFile) && fs.existsSync(pchInfoFile)) {
+    const isValid = () => {
+        if (!fs.existsSync(pchFile) || !fs.existsSync(pchInfoFile)) return false;
         try {
             const pchInfo = JSON.parse(fs.readFileSync(pchInfoFile, 'utf-8'));
             // Caches written before the fingerprint existed have none; accept
             // them on a matching compiler path rather than forcing a rebuild.
             const sameBinary = pchInfo.fingerprint === undefined || pchInfo.fingerprint === fingerprint;
-            if (pchInfo.compiler === compilerExe && sameBinary) {
-                return { ready: true, pchSubDir, pchKey };
-            }
+            return pchInfo.compiler === compilerExe && sameBinary;
         } catch (e) {
-            // Invalid PCH info, will rebuild
+            return false; // Invalid PCH info, will rebuild
         }
-    }
+    };
+    if (isValid()) return { ready: true, pchSubDir, pchKey };
 
     const pchFlags = getPCHFlags(flags);
-    const buildArgs = ['-x', 'c++-header', 'stdc++.h', '-o', 'stdc++.h.gch', ...pchFlags];
+    // The directory is shared by every app instance (a second IDE window, the
+    // test suite), so build to a name unique to this process and rename it into
+    // place; another instance can never read or write a half-built .gch.
+    const tmpName = `stdc++.h.gch.${process.pid}-${++tmpCounter}.tmp`;
+    const tmpFile = path.join(pchSubDir, tmpName);
+    const buildArgs = ['-x', 'c++-header', 'stdc++.h', '-o', tmpName, ...pchFlags];
+    const removeTmp = (file) => { try { fs.unlinkSync(file); } catch (_) { } };
 
     // Create header file if not exists
     if (!fs.existsSync(pchHeader)) {
@@ -178,28 +185,43 @@ async function ensurePCH(flags = '', onMessage = null) {
         const compiler = spawn(compilerExe, buildArgs, { cwd: pchSubDir, env: env });
 
         compiler.on('close', (code) => {
-            if (code === 0) {
-                // Save PCH info for cache validation
-                try {
-                    fs.writeFileSync(pchInfoFile, JSON.stringify({
-                        compiler: compilerExe,
-                        fingerprint,
-                        flags: buildArgs.join(' ')
-                    }), 'utf-8');
-                } catch (_) { }
-
-                console.log(`[PCH] Created PCH for ${pchKey}`);
-                pruneOldVariants(pchKey);
-                resolve({ ready: true, pchSubDir, pchKey });
-            } else {
+            if (code !== 0) {
                 console.log(`[PCH] Failed to create PCH for ${pchKey}`);
                 // Do not leave a half-written .gch behind.
-                try { fs.unlinkSync(pchFile); } catch (_) { }
+                removeTmp(tmpFile);
                 resolve({ ready: false });
+                return;
             }
+            try {
+                fs.renameSync(tmpFile, pchFile);
+            } catch (_) {
+                // Windows refuses to replace a .gch another instance is compiling
+                // with. If that one is already valid, keep it and drop ours.
+                removeTmp(tmpFile);
+                resolve(isValid() ? { ready: true, pchSubDir, pchKey } : { ready: false });
+                return;
+            }
+            // Info last, also via rename: a valid pch-info.json always describes
+            // a complete .gch.
+            const infoTmp = `${pchInfoFile}.${process.pid}-${++tmpCounter}.tmp`;
+            try {
+                fs.writeFileSync(infoTmp, JSON.stringify({
+                    compiler: compilerExe,
+                    fingerprint,
+                    flags: buildArgs.join(' ')
+                }), 'utf-8');
+                fs.renameSync(infoTmp, pchInfoFile);
+            } catch (_) {
+                removeTmp(infoTmp);
+            }
+
+            console.log(`[PCH] Created PCH for ${pchKey}`);
+            pruneOldVariants(pchKey);
+            resolve({ ready: true, pchSubDir, pchKey });
         });
 
         compiler.on('error', () => {
+            removeTmp(tmpFile);
             resolve({ ready: false });
         });
     });

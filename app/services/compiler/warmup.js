@@ -6,10 +6,11 @@
 
 'use strict';
 
+const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const { getDetectedCompiler, getCompilerInfo, getCompilerEnv } = require('./detector');
-const { NULL_DEVICE, binName } = require('../../shared/platform');
+const { binName } = require('../../shared/platform');
 
 /**
  * Perform compiler warmup
@@ -27,8 +28,12 @@ function performCompilerWarmup(delay = 1000) {
 
         console.log('[System] Warming up compiler and linker binaries...');
 
-        // Warm up Compiler - compile a minimal program to the null device
-        const child = spawn(compiler, ['-x', 'c++', '-', '-o', NULL_DEVICE, '-pipe', '-s', '-O0'], {
+        // Warm up Compiler - compile and link a minimal program into the temp folder.
+        // Not `-o NUL`: MinGW ld appends `.exe` and writes `NUL.exe` into the cwd.
+        const tmp = os.tmpdir();
+        const out = path.join(tmp, binName('sameko-warmup'));
+        const child = spawn(compiler, ['-x', 'c++', '-', '-o', out, '-pipe', '-s', '-O0'], {
+            cwd: tmp,
             stdio: ['pipe', 'ignore', 'ignore'],
             windowsHide: true,
             env: env

@@ -141,22 +141,25 @@ function ensureLauncher() {
             const exe = path.join(dir, `sameko_run-${tag}.exe`);
             if (fs.existsSync(exe)) { launcherPath = exe; return resolve(exe); }
 
-            const src = path.join(dir, `sameko_run-${tag}.cpp`);
+            // Unique per process: another app instance may build the same tag at once.
+            const unique = `${process.pid}-${Date.now().toString(36)}`;
+            const src = path.join(dir, `sameko_run-${tag}.${unique}.cpp`);
             fs.writeFileSync(src, LAUNCHER_SOURCE, 'utf-8');
-            const tmpExe = exe + '.tmp';
+            const tmpExe = `${exe}.${unique}.tmp`;
+            const dropTmp = () => { try { fs.unlinkSync(tmpExe); } catch (_) { } };
             const child = spawn(compilerExe,
                 [src, '-o', tmpExe, '-O2', '-s', '-static', '-municode', '-w'],
                 { cwd: dir, env: getCompilerEnv(), windowsHide: true });
-            child.on('error', () => resolve(null));
+            child.on('error', () => { try { fs.unlinkSync(src); } catch (_) { } dropTmp(); resolve(null); });
             child.on('close', (code) => {
                 try { fs.unlinkSync(src); } catch (_) { }
-                if (code !== 0) { console.warn('[RunLauncher] build failed, falling back to direct runs'); return resolve(null); }
+                if (code !== 0) { dropTmp(); console.warn('[RunLauncher] build failed, falling back to direct runs'); return resolve(null); }
                 try {
                     fs.renameSync(tmpExe, exe);
                     launcherPath = exe;
                     console.log('[RunLauncher] ready:', exe);
                     resolve(exe);
-                } catch (_) { resolve(fs.existsSync(exe) ? (launcherPath = exe) : null); }
+                } catch (_) { dropTmp(); resolve(fs.existsSync(exe) ? (launcherPath = exe) : null); }
             });
         } catch (_) {
             resolve(null);
