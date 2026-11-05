@@ -33,6 +33,13 @@ let sessionPeriodicTimer = null;
 let sessionRestored = false;
 let sessionRestorePending = false;   // the restore prompt is waiting for an answer
 let pendingStoredSession = null;     // the last run's session while that prompt waits
+// What session.json last received (everything but `timestamp`) and when. An
+// unchanged session is not rewritten until the timestamp nears staleness, so an
+// idle IDE no longer rewrites the file every 30 s.
+const SESSION_REFRESH_AGE = 60 * 60 * 1000;
+let lastSessionWriteKey = null;
+let lastSessionWriteTime = 0;
+let sessionClearGeneration = 0;
 
 function normalizeTabPath(filePath) {
     return filePath ? pathKey(filePath) : null;
@@ -283,10 +290,21 @@ function saveSession(sync = false) {
             session.tabs = kept.concat(session.tabs);
         }
 
+        const { timestamp, ...content } = session;
+        const key = JSON.stringify(content);
+
         if (sync && window.electronAPI?.stateWriteSync) {
             window.electronAPI.stateWriteSync('session', session);
+            lastSessionWriteKey = key;
+            lastSessionWriteTime = timestamp;
         } else if (window.electronAPI?.stateWrite) {
-            window.electronAPI.stateWrite('session', session).catch(() => { });
+            if (key === lastSessionWriteKey && (timestamp - lastSessionWriteTime) < SESSION_REFRESH_AGE) return;
+            const generation = sessionClearGeneration;
+            window.electronAPI.stateWrite('session', session).then(() => {
+                if (generation !== sessionClearGeneration) return; // cleared meanwhile
+                lastSessionWriteKey = key;
+                lastSessionWriteTime = timestamp;
+            }).catch(() => { });
         }
     } catch (e) {
         console.warn('[Session] Failed to save session checkpoint:', e);
@@ -317,6 +335,9 @@ function startSessionPeriodicSave() {
  * Clear saved session (called after successful restore or when user explicitly closes all tabs)
  */
 function clearSession() {
+    lastSessionWriteKey = null;
+    lastSessionWriteTime = 0;
+    sessionClearGeneration++;
     try { localStorage.removeItem(SESSION_STORAGE_KEY); } catch (_) { }
     window.electronAPI?.stateDelete?.('session')?.catch?.(() => { });
 }
