@@ -1,3 +1,50 @@
+// ========================================================================
+// 1. DATA: SNIPPETS & TEMPLATES
+// ========================================================================
+// Built-in snippets. Top level so Settings > Snippets (snippet-editor.js) can list them;
+// users hide them through App.settings.hiddenSnippets or replace one with a user snippet
+// of the same trigger.
+window.BUILTIN_SNIPPETS = {
+    cpp: [
+        {
+            label: 'cp', doc: 'CP Template',
+            text: '#include <bits/stdc++.h>\nusing namespace std;\n\nusing ll = long long;\n\nvoid solve(){\n    ${0}\n}\n\nint main(){\n    ios_base::sync_with_stdio(false); cin.tie(NULL);\n    int t=1; cin >> t;\n    while(t--) solve();\n    return 0;\n}'
+        },
+        { label: 'cout', doc: 'Output', text: 'cout << ${1} << "\\n";' },
+        { label: 'cin', doc: 'Input', text: 'cin >> ${1};' },
+        // expr: an expression, offered anywhere in code (not only where a statement starts).
+        { label: 'all', doc: 'Range', text: '${1:v}.begin(), ${1:v}.end()', expr: true },
+        { label: 'rall', doc: 'Reverse Range', text: '${1:v}.rbegin(), ${1:v}.rend()', expr: true },
+        { label: 'sz', doc: 'Size', text: '${1:v}.size()', expr: true },
+
+        { label: 'vec', doc: 'Vector', text: 'vector<${1:int}> ${2:v};' },
+        { label: 'vecn', doc: 'Vector size n', text: 'vector<${1:int}> ${2:v}(${3:n});' },
+        { label: 'vecval', doc: 'Vector size n, val', text: 'vector<${1:int}> ${2:v}(${3:n}, ${4:0});' },
+        { label: 'vv', doc: 'Vector 2D', text: 'vector<vector<${1:int}>> ${2:v};' },
+
+        { label: 'ios', doc: 'Fast I/O', text: 'ios_base::sync_with_stdio(false); cin.tie(NULL);' },
+        { label: 'setp', doc: 'Set precision', text: 'cout << fixed << setprecision(${1:number});' },
+        { label: 'fre', doc: 'File I/O', text: 'if (fopen("${1:test}.inp", "r")) {\n    freopen("${1:test}.inp", "r", stdin);\n    freopen("${1:test}.out", "w", stdout);\n}' }
+    ],
+    c: [
+        { label: 'main', doc: 'Main C', text: 'int main(){\n    ${0}\n    return 0;\n}' },
+        { label: 'printf', doc: 'Print', text: 'printf("${1:%d}\\n", ${2});' },
+        { label: 'scanf', doc: 'Scan', text: 'scanf("${1:%d}", &${2});' }
+    ],
+    common: [
+        // Forward loop (0 -> n-1)
+        { label: 'for', doc: 'Loop 0 -> n-1', text: 'for(int ${1:i}=0; ${1:i}<${2:n}; ${1:i}++){\n    ${0}\n}' },
+        // Forward loop (1 -> n)
+        { label: 'for1', doc: 'Loop 1 -> n', text: 'for(int ${1:i}=1; ${1:i}<=${2:n}; ${1:i}++){\n    ${0}\n}' },
+        // Reverse loop (n-1 -> 0)
+        { label: 'ford', doc: 'Loop n-1 -> 0', text: 'for(int ${1:i}=${2:n}-1; ${1:i}>=0; ${1:i}--){\n    ${0}\n}' },
+
+        { label: 'while', doc: 'While', text: 'while(${1:cond}){\n    ${0}\n}' },
+        { label: 'if', doc: 'If', text: 'if(${1:cond}){\n    ${0}\n}' },
+        { label: 'ifelse', doc: 'If-Else', text: 'if(${1:cond}){\n    ${2}\n}else{\n    ${0}\n}' }
+    ]
+};
+
 window.registerCppIntellisense = function (monaco) {
 
     // Resolve the tab that owns the given Monaco model. The app tracks tabs on
@@ -47,48 +94,8 @@ window.registerCppIntellisense = function (monaco) {
     const intellisenseEnabled = () => editorSetting('intellisense') !== false;
     const snippetsEnabled = () => editorSetting('snippets') !== false;
 
-    // ========================================================================
-    // 1. DATA: SNIPPETS & TEMPLATES
-    // ========================================================================
-    const SNIPPETS = {
-        cpp: [
-            {
-                label: 'cp', doc: 'CP Template',
-                text: '#include <bits/stdc++.h>\nusing namespace std;\n\nusing ll = long long;\n\nvoid solve(){\n    ${0}\n}\n\nint main(){\n    ios_base::sync_with_stdio(false); cin.tie(NULL);\n    int t=1; cin >> t;\n    while(t--) solve();\n    return 0;\n}'
-            },
-            { label: 'cout', doc: 'Output', text: 'cout << ${1} << "\\n";' },
-            { label: 'cin', doc: 'Input', text: 'cin >> ${1};' },
-            { label: 'all', doc: 'Range', text: '${1:v}.begin(), ${1:v}.end()' },
-            { label: 'rall', doc: 'Reverse Range', text: '${1:v}.rbegin(), ${1:v}.rend()' },
-            { label: 'sz', doc: 'Size', text: '${1:v}.size()' },
-
-            { label: 'vec', doc: 'Vector', text: 'vector<${1:int}> ${2:v};' },
-            { label: 'vecn', doc: 'Vector size n', text: 'vector<${1:int}> ${2:v}(${3:n});' },
-            { label: 'vecval', doc: 'Vector size n, val', text: 'vector<${1:int}> ${2:v}(${3:n}, ${4:0});' },
-            { label: 'vv', doc: 'Vector 2D', text: 'vector<vector<${1:int}>> ${2:v};' },
-
-            { label: 'ios', doc: 'Fast I/O', text: 'ios_base::sync_with_stdio(false); cin.tie(NULL);' },
-            { label: 'setp', doc: 'Set precision', text: 'cout << fixed << setprecision(${1:number});' },
-            { label: 'fre', doc: 'File I/O', text: 'if (fopen("${1:test}.inp", "r")) {\n    freopen("${1:test}.inp", "r", stdin);\n    freopen("${1:test}.out", "w", stdout);\n}' }
-        ],
-        c: [
-            { label: 'main', doc: 'Main C', text: 'int main(){\n    ${0}\n    return 0;\n}' },
-            { label: 'printf', doc: 'Print', text: 'printf("${1:%d}\\n", ${2});' },
-            { label: 'scanf', doc: 'Scan', text: 'scanf("${1:%d}", &${2});' }
-        ],
-        common: [
-            // Forward loop (0 -> n-1)
-            { label: 'for', doc: 'Loop 0 -> n-1', text: 'for(int ${1:i}=0; ${1:i}<${2:n}; ${1:i}++){\n    ${0}\n}' },
-            // Forward loop (1 -> n)
-            { label: 'for1', doc: 'Loop 1 -> n', text: 'for(int ${1:i}=1; ${1:i}<=${2:n}; ${1:i}++){\n    ${0}\n}' },
-            // Reverse loop (n-1 -> 0)
-            { label: 'ford', doc: 'Loop n-1 -> 0', text: 'for(int ${1:i}=${2:n}-1; ${1:i}>=0; ${1:i}--){\n    ${0}\n}' },
-
-            { label: 'while', doc: 'While', text: 'while(${1:cond}){\n    ${0}\n}' },
-            { label: 'if', doc: 'If', text: 'if(${1:cond}){\n    ${0}\n}' },
-            { label: 'ifelse', doc: 'If-Else', text: 'if(${1:cond}){\n    ${2}\n}else{\n    ${0}\n}' }
-        ]
-    };
+    // 1. DATA: built-in snippets live in window.BUILTIN_SNIPPETS (top of this file,
+    // shared with Settings > Snippets); headers and std names below.
 
     // Headers
     const HEADERS = {
@@ -125,10 +132,10 @@ window.registerCppIntellisense = function (monaco) {
     // ========================================================================
     // 2. LOGIC PROVIDER (fallback when clangd is unavailable, e.g. unsaved files)
     // ========================================================================
-    const createProposals = (range, languageId, textUntilPosition) => {
+    // statementOK: the cursor is where a statement may start (see statementStart below).
+    const createProposals = (range, languageId, textUntilPosition, statementOK) => {
         const suggestions = [];
         const insideInclude = /#include\s*[<"]\s*$/.test(textUntilPosition);
-        const insideParentheses = /\([^\)]*$/.test(textUntilPosition);
         const atPreprocessor = /#\s*$/.test(textUntilPosition);
         const afterDot = /\.\s*$/.test(textUntilPosition);
 
@@ -156,19 +163,26 @@ window.registerCppIntellisense = function (monaco) {
             return { suggestions };
         }
 
-        if (!insideParentheses) {
-            SNIPPETS.common.forEach(s => suggestions.push({
+        // Expression snippets (`all`, `sz`) fit anywhere in code, `sort(all|)` included;
+        // statement snippets only where a statement may start.
+        // A built-in is skipped when the user hid it, or when a user snippet has the
+        // same trigger (the user's copy replaces it; deleting the copy brings it back).
+        const SNIPPETS = window.BUILTIN_SNIPPETS;
+        const settings = (typeof App !== 'undefined' && App.settings) || {};
+        const hidden = new Set(Array.isArray(settings.hiddenSnippets) ? settings.hiddenSnippets : []);
+        if (Array.isArray(settings.snippets)) settings.snippets.forEach(s => hidden.add(s.trigger));
+        const langSnippets = (languageId === 'cpp') ? SNIPPETS.cpp : SNIPPETS.c;
+        [...SNIPPETS.common, ...langSnippets].forEach(s => {
+            if (!s.expr && !statementOK) return;
+            if (hidden.has(s.label)) return;
+            suggestions.push({
                 label: s.label, kind: monaco.languages.CompletionItemKind.Snippet,
                 insertText: s.text, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
                 documentation: s.doc, range: range
-            }));
-            const langSnippets = (languageId === 'cpp') ? SNIPPETS.cpp : SNIPPETS.c;
-            langSnippets.forEach(s => suggestions.push({
-                label: s.label, kind: monaco.languages.CompletionItemKind.Snippet,
-                insertText: s.text, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                documentation: s.doc, range: range
-            }));
+            });
+        });
 
+        if (statementOK) {
             if (typeof App !== 'undefined' && App.settings && Array.isArray(App.settings.snippets)) {
                 App.settings.snippets.forEach(s => {
                     suggestions.push({
@@ -206,6 +220,33 @@ window.registerCppIntellisense = function (monaco) {
         return { suggestions };
     };
 
+    // LSP numbers its CompletionItemKinds from 1 in another order than Monaco
+    // (LSP 6 Variable is Monaco 6 Struct), so clangd kinds are mapped by name.
+    const LSP_KIND_NAMES = [null, 'Text', 'Method', 'Function', 'Constructor', 'Field', 'Variable', 'Class',
+        'Interface', 'Module', 'Property', 'Unit', 'Value', 'Enum', 'Keyword', 'Snippet', 'Color', 'File',
+        'Reference', 'Folder', 'EnumMember', 'Constant', 'Struct', 'Event', 'Operator', 'TypeParameter'];
+    const lspKindToMonaco = (kind) => {
+        const value = monaco.languages.CompletionItemKind[LSP_KIND_NAMES[kind]];
+        return value === undefined ? monaco.languages.CompletionItemKind.Text : value;
+    };
+
+    /** True when the cursor (end of `text`, one line) sits in a string, a char literal or a // comment. */
+    const insideLiteralOrComment = (text) => {
+        let quote = null;
+        for (let i = 0; i < text.length; i++) {
+            const c = text[i];
+            if (quote) {
+                if (c === '\\') i++;
+                else if (c === quote) quote = null;
+            } else if (c === '"' || c === '\'') {
+                quote = c;
+            } else if (c === '/' && text[i + 1] === '/') {
+                return true;
+            }
+        }
+        return quote !== null;
+    };
+
     // ========================================================================
     // 3. REGISTRATION (COMPLETION & HOVER)
     // ========================================================================
@@ -218,13 +259,28 @@ window.registerCppIntellisense = function (monaco) {
                 const textUntilPosition = model.getValueInRange({ startLineNumber: position.lineNumber, startColumn: 1, endLineNumber: position.lineNumber, endColumn: position.column });
                 const afterDot = /\.\s*$/.test(textUntilPosition);
 
+                // Typing inside "text", 'c' or a // comment is not code: suggesting
+                // there only turns words into snippets (e.g. "hello" -> a whole
+                // Hello World program). #include "..." paths still get headers.
+                if (!/^\s*#\s*include\b/.test(textUntilPosition) && insideLiteralOrComment(textUntilPosition)) {
+                    return { suggestions: [] };
+                }
+                // Statement snippets (`cout << … << "\n";`, `for`, `cp`) only where a statement
+                // may start: nothing but whitespace or ; { } before the word, outside
+                // parentheses, and no code after the cursor (closing brackets and ; are fine).
+                const textAfter = model.getLineContent(position.lineNumber).slice(position.column - 1);
+                const lead = textUntilPosition.slice(0, word.startColumn - 1);
+                const statementOK = !/[^\s)\]};]/.test(textAfter)
+                    && /(^|[;{}])\s*$/.test(lead) && !/\([^)]*$/.test(lead);
+                const isSnippet = s => s.kind === monaco.languages.CompletionItemKind.Snippet;
+
                 if (!intellisenseEnabled()) {
                     // Snippets are a separate switch, so they survive on their own.
                     // Everything else here — clangd, keywords, headers — is what
                     // "Intellisense" means.
                     if (!snippetsEnabled()) return { suggestions: [] };
-                    const snippetsOnly = createProposals(range, lang, textUntilPosition)
-                        .suggestions.filter(s => s.kind === monaco.languages.CompletionItemKind.Snippet);
+                    const snippetsOnly = createProposals(range, lang, textUntilPosition, statementOK)
+                        .suggestions.filter(isSnippet);
                     return { suggestions: snippetsOnly };
                 }
 
@@ -236,7 +292,7 @@ window.registerCppIntellisense = function (monaco) {
                     return { suggestions: [] };
                 }
 
-                let baseProposals = createProposals(range, lang, textUntilPosition);
+                let baseProposals = createProposals(range, lang, textUntilPosition, statementOK);
 
                 // For member-access (e.g. `v.|`), prefer clangd's
                 // textEdit.range which is already correct. When the
@@ -256,7 +312,9 @@ window.registerCppIntellisense = function (monaco) {
                         const character = position.column - 1;
 
                         try {
-                            const clangdItems = await window.electronAPI.getClangdCompletions(filePath, content, line, character);
+                            const res = await window.electronAPI.getClangdCompletions(filePath, content, line, character);
+                            const clangdItems = Array.isArray(res) ? res : (res && res.items) || [];
+                            const clangdIncomplete = !Array.isArray(res) && !!(res && res.isIncomplete);
                             if (clangdItems && clangdItems.length > 0) {
                                 // LSP CompletionItemKind: Method=2, Function=3, Field=5,
                                 // Variable=6, Property=10, Value=11, Keyword=14, etc.
@@ -309,7 +367,7 @@ window.registerCppIntellisense = function (monaco) {
 
                                     return {
                                         label: item.label,
-                                        kind: item.kind,
+                                        kind: lspKindToMonaco(item.kind),
                                         detail: item.detail,
                                         documentation: doc,
                                         insertText: insertText,
@@ -336,7 +394,10 @@ window.registerCppIntellisense = function (monaco) {
                                         sortText: 'zzz_' + (s.label.label || s.label)
                                     }));
                                 return {
-                                    suggestions: [...mappedClangdItems, ...customSnippets]
+                                    // clangd's snippets are statement patterns (`for (…) {…}`).
+                                    suggestions: [...(statementOK ? mappedClangdItems : mappedClangdItems.filter(s => !isSnippet(s))), ...customSnippets],
+                                    // Ask clangd again as the word grows: its list is capped.
+                                    incomplete: clangdIncomplete
                                 };
                             }
                         } catch (err) {

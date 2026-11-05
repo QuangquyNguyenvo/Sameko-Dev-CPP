@@ -24,6 +24,7 @@ Vim Mode and a cursor trail, fixes for data loss in contests, the Explorer, Save
 - **The Expected diff shows at most 2,000 lines** plus up to 200 mismatching ones, with "… lines not shown" in between; the verdict still covers every line. A run near the 8 MB output limit used to build about 44 million characters of HTML.
 - **Output and AC/WA use stdout only**, as Run All Tests does. Lines printed to `cerr` still show in the terminal but no longer count as the program's output.
 - **Build error marks stay on the built file** in whichever pane shows it, until you edit or build it again, and an error inside an included header no longer marks that line number in the `.cpp`.
+- **Suggestions stay out of the way**: nothing pops up inside strings, character literals or `//` comments; statement snippets (`for`, `cout`, ...) are offered only where a statement can start, while `all`/`rall`/`sz` still work inside expressions such as `sort(all`. clangd results are no longer cut off in long lists, and their icons match the kind (variable, function, ...).
 - **Live check waits for a pause in typing** after a check that new edits made outdated, instead of checking again at once.
 - **The Explorer filter reads the folder once** while you type, instead of once per keystroke.
 - **The session checkpoint is written only when it changes**: an idle IDE rewrote `session.json` every 30 seconds (about 120 times an hour); now it refreshes an unchanged one once an hour, and still writes it when the window closes.

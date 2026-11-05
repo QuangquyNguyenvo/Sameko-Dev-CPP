@@ -861,8 +861,8 @@ async function getDiagnostics(filePath, content, timeoutMs = 6000) {
  * @param {string} filePath 
  * @param {string} content 
  * @param {number} line 
- * @param {number} character 
- * @returns {Promise<any[]>}
+ * @param {number} character
+ * @returns {Promise<{items: any[], isIncomplete: boolean}|any[]>} [] when clangd is unavailable
  */
 async function getCompletions(filePath, content, line, character) {
     const fileUri = getFileUri(filePath);
@@ -893,7 +893,9 @@ async function getCompletions(filePath, content, line, character) {
             const labels = items.slice(0, 5).map(i => i.label).join(', ');
             console.log(`[Clangd-DBG] completions @${line}:${character} uri=${fileUri} → ${items.length} items [${labels}${items.length > 5 ? ', ...' : ''}]`);
         }
-        return items;
+        // clangd caps the list (100 items); isIncomplete tells the editor to ask
+        // again as the word grows instead of filtering the first, partial list.
+        return { items, isIncomplete: !!(result && !Array.isArray(result) && result.isIncomplete) };
     } catch (err) {
         console.error('[Clangd] getCompletions request failed:', err);
         return [];
