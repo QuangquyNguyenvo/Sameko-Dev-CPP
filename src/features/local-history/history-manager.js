@@ -351,10 +351,10 @@ const LocalHistory = {
             `;
         } else {
             list.innerHTML = entries.map((entry) => `
-                <div class="history-entry" data-backup-path="${entry.path || ''}" data-backup-id="${entry.id || ''}">
+                <div class="history-entry" data-backup-path="${escHtml(entry.path || '')}" data-backup-id="${escHtml(entry.id || '')}">
                     <div class="history-entry-info">
-                        <span class="history-entry-time">${entry.formattedTime}</span>
-                        <span class="history-entry-size">${entry.size}</span>
+                        <span class="history-entry-time">${escHtml(entry.formattedTime)}</span>
+                        <span class="history-entry-size">${escHtml(entry.size)}</span>
                     </div>
                     <div class="history-entry-actions">
                         <button class="btn-history-view" data-action="view" title="View content">

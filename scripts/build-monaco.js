@@ -48,10 +48,15 @@ function vimVersion() {
     return JSON.parse(fs.readFileSync(path.join(ROOT, 'node_modules', 'monaco-vim', 'package.json'), 'utf8')).version;
 }
 
+function purifyVersion() {
+    return JSON.parse(fs.readFileSync(path.join(ROOT, 'node_modules', 'dompurify', 'package.json'), 'utf8')).version;
+}
+
 function stampFor() {
     return {
         monaco: monacoVersion(),
         vim: vimVersion(),
+        purify: purifyVersion(),
         script: fs.statSync(__filename).mtimeMs,
         dev,
     };
@@ -61,7 +66,7 @@ function isCurrent() {
     try {
         const old = JSON.parse(fs.readFileSync(STAMP, 'utf8'));
         const now = stampFor();
-        return old.monaco === now.monaco && old.vim === now.vim && old.script === now.script && old.dev === now.dev
+        return old.monaco === now.monaco && old.vim === now.vim && old.purify === now.purify && old.script === now.script && old.dev === now.dev
             && fs.existsSync(path.join(OUT, 'editor.js'));
     } catch (_) {
         return false;
@@ -137,6 +142,11 @@ async function main() {
             // shares the editor's modules instead of carrying a second copy.
             build.onResolve({ filter: /^monaco-editor\/esm\// }, (a) => ({
                 path: path.join(MONACO, a.path.slice('monaco-editor/'.length) + '.js'),
+            }));
+            // Monaco ships its own copy of DOMPurify, which lags security fixes; use the
+            // app's dompurify package instead.
+            build.onResolve({ filter: /[\\/]dompurify[\\/]dompurify\.js$/ }, () => ({
+                path: path.join(ROOT, 'node_modules', 'dompurify', 'dist', 'purify.es.mjs'),
             }));
             // Its "browser" export is a UMD build carrying its own copy of Monaco 0.33
             // internals; the ESM build imports them from monaco-editor instead.

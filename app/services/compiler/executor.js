@@ -521,8 +521,39 @@ async function runExternal({ exePath, cwd }) {
     return runExternalLinux({ exePath, workingDir, env, startTime });
 }
 
+/** Env var that carries the program path into the external console. */
+const WIN_RUN_EXE_VAR = 'SAMEKO_RUN_EXE';
+
 /**
- * Windows implementation — unchanged behaviour, just moved out of runExternal().
+ * Build the cmd.exe command line for the external console run on Windows.
+ *
+ * The program path is NOT part of the text: it travels in the
+ * `SAMEKO_RUN_EXE` env var and the inner cmd (`/v:on`) reads it with delayed
+ * expansion (`!SAMEKO_RUN_EXE!`). Delayed expansion runs after cmd has parsed
+ * `&`, `|`, `^`, `%`, `(` ... and its result is never re-parsed, so a file
+ * named `a&calc&.exe` or `a%PATH%.exe` is just a file name. The outer cmd
+ * runs with `/v:off`, so it never expands the `!...!` itself, even when the
+ * user enabled DelayedExpansion in the registry. Both use `/d` (no AutoRun).
+ *
+ * @param {{ pause?: boolean, newWindow?: boolean }} [opts] - tests turn off
+ *   the final `pause` and the new window so they do not block.
+ * @returns {string} the argument for `cmd.exe /d /v:off /s /c "<here>"`
+ */
+function buildWindowsRunnerCommand({ pause = true, newWindow = true } = {}) {
+    const inner = [
+        'cls',
+        `"!${WIN_RUN_EXE_VAR}!"`,
+        'echo.',
+        'echo.',
+        'echo --------------------------------',
+        'echo Program finished. Press any key to close...',
+        ...(pause ? ['pause >nul'] : []),
+    ].join(' & ');
+    return `start "" ${newWindow ? '' : '/b '}/wait cmd /d /v:on /c "${inner}"`;
+}
+
+/**
+ * Windows implementation: open a dedicated console window, wait until it closes.
  * @returns {Promise<import('../../shared/types').RunResult>}
  */
 async function runExternalWindows({ exePath, workingDir, env, startTime }) {
@@ -530,32 +561,25 @@ async function runExternalWindows({ exePath, workingDir, env, startTime }) {
     let peakMemoryKB = 0;
     let memoryPollInterval = null;
 
-    const commandParts = [
-        `@echo off`,
-        `cls`,
-        `"${exePath}"`,
-        `echo.`,
-        `echo.`,
-        `echo --------------------------------`,
-        `echo Program finished. Press any key to close...`,
-        `pause >nul`
-    ];
-
-    const shellCommand = commandParts.join(' & ');
     // Open in a dedicated external CMD window and wait for it to fully close.
-    const waitCommand = `start "" /wait cmd /c "${shellCommand}"`;
-    const externalShell = exec(waitCommand, {
-        cwd: workingDir,
-        env,
-        windowsHide: false
-    });
+    // `start /wait` keeps this outer cmd alive until the window is closed.
+    const externalShell = spawn(process.env.ComSpec || 'cmd.exe',
+        ['/d', '/v:off', '/s', '/c', `"${buildWindowsRunnerCommand()}"`], {
+            cwd: workingDir,
+            env: { ...env, [WIN_RUN_EXE_VAR]: exePath },
+            windowsHide: false,
+            windowsVerbatimArguments: true,
+            stdio: 'ignore',
+        });
 
     // Windows-only: on POSIX the program runs as a grandchild of the terminal
     // emulator (see phase-05), so we have no reliable pid to sample. External
     // runs therefore report peakMemoryKB = 0 on Linux/macOS by design.
     const pollExternalMemory = () => {
         if (process.platform !== 'win32') return;
-        exec(`tasklist /FI "IMAGENAME eq ${exeName}" /FO CSV /NH`, (err, stdout) => {
+        // execFile, not exec: the name may contain `&` / `%`, so no shell.
+        execFile('tasklist', ['/FI', `IMAGENAME eq ${exeName}`, '/FO', 'CSV', '/NH'],
+            { windowsHide: true }, (err, stdout) => {
             if (err || !stdout) return;
 
             const rows = String(stdout)
@@ -1084,4 +1108,5 @@ module.exports = {
     getRunningProcess,
     setFileWatcherCallback,
     setSendToRendererCallback,
+    buildWindowsRunnerCommand,   // exported for tests
 };

@@ -2432,7 +2432,7 @@ const FileExplorer = {
         overlay.innerHTML = `
             <div class="note-dialog">
                 <div class="note-dialog-header">
-                    <h3>Note for ${fileName}</h3>
+                    <h3>Note for ${escHtml(fileName)}</h3>
                     <button class="note-dialog-close" title="Close">${this.ICONS.close}</button>
                 </div>
                 <div class="note-dialog-body">
@@ -4754,7 +4754,7 @@ const FileExplorer = {
                             html += `
                                 <div class="cat-list-item cp-problem-square ${isActiveProblem ? 'active' : ''} cp-status-${item.status || 'todo'}"
                                      data-cat-id="${escHtml(cat.id)}" data-file-path="${escHtml(item.filePath)}"
-                                     draggable="true" title="${item.fileName} (${statusInfo.label})">
+                                     draggable="true" title="${escHtml(item.fileName)} (${statusInfo.label})">
                                     ${escHtml(item.name)}
                                 </div>
                             `;
@@ -5266,7 +5266,7 @@ const FileExplorer = {
                 <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
                 <polyline points="14 2 14 8 20 8"/>
             </svg>
-            <span>${name ? name.textContent : 'File'}</span>
+            <span>${escHtml(name ? name.textContent : 'File')}</span>
         `;
         // Position offscreen so it doesn't flash
         ghost.style.position = 'fixed';
@@ -5657,7 +5657,7 @@ const FileExplorer = {
             overlay.innerHTML = `
                 <div class="note-dialog input-dialog">
                     <div class="note-dialog-header">
-                        <h3>Add to "${cat.name}"</h3>
+                        <h3>Add to "${escHtml(cat.name)}"</h3>
                         <button class="note-dialog-close" title="Close">${this.ICONS.close}</button>
                     </div>
                     <div class="note-dialog-body">

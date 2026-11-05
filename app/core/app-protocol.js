@@ -7,8 +7,10 @@
  *
  *   app://app/<path>               a file inside the app root (page, scripts, styles)
  *   app://app/@local?u=<file URL>  a picture, video, audio or subtitle file
- *   app://app/@local?p=<path>      anywhere on disk: theme backgrounds, Markdown
- *                                  media. A page that is not file:// may not load
+ *   app://app/@local?p=<path>      a local disk path: theme backgrounds, Markdown
+ *                                  media. Network paths (\\server\share, //server)
+ *                                  are refused: Windows would send the user's NTLM
+ *                                  hash to that server. A page that is not file:// may not load
  *                                  file:// URLs; the renderer rewrites them with
  *                                  localUrl() (src/renderer/boot.js). The path rides
  *                                  in the query so URL normalisation cannot change
@@ -43,7 +45,12 @@ const MEDIA_EXT = new Set([
 function localFile(q) {
     let file = null;
     try {
-        if (q.has('u')) file = fileURLToPath(new URL(q.get('u')));
+        if (q.has('u')) {
+            const u = new URL(q.get('u'));
+            // A file URL with a host names a network share.
+            if (u.hostname && u.hostname.toLowerCase() !== 'localhost') return null;
+            file = fileURLToPath(u);
+        }
         else if (q.has('p')) file = q.get('p');
     } catch (_) { return null; }
     if (!file || file.includes('\0')) return null;
@@ -53,24 +60,20 @@ function localFile(q) {
         const ext = /^[\\/]{2}\?[\\/](UNC[\\/])?(.*)$/i.exec(file);
         if (ext) file = (ext[1] ? '\\\\' : '') + ext[2];
     }
+    // Network paths (\\server\share, //server/x): opening one sends NTLM credentials.
+    if (/^[\\/]{2}/.test(file)) return null;
     if (!path.isAbsolute(file)) return null;
-    // Resolves ".." within the drive or \\server\share root.
+    // Resolves ".." within the drive.
     file = path.resolve(file);
     return MEDIA_EXT.has(path.extname(file).toLowerCase()) ? file : null;
 }
 
 /**
- * file:// URL for net.fetch. pathToFileURL turns \\localhost\share\x into
- * file:///share/x, so that server is addressed as 127.0.0.1.
+ * file:// URL for net.fetch (localFile returns only local paths).
  * @param {string} file
  * @returns {string}
  */
 function fetchUrl(file) {
-    const m = /^\\\\([^\\]+)\\(.+)$/.exec(file);
-    if (process.platform === 'win32' && m) {
-        const host = m[1].toLowerCase() === 'localhost' ? '127.0.0.1' : m[1];
-        return 'file://' + host + '/' + m[2].split('\\').map(encodeURIComponent).join('/');
-    }
     return pathToFileURL(file).href;
 }
 
@@ -95,12 +98,13 @@ function ensureHandled(root) {
     handled = true;
     const { protocol, net } = require('electron');
     const base = path.resolve(root);
-    protocol.handle(SCHEME, (request) => {
+    protocol.handle(SCHEME, async (request) => {
         let url;
         try { url = new URL(request.url); } catch (_) { return new Response(null, { status: 400 }); }
         if (url.host !== APP_HOST) return notFound();
         let file;
-        if (url.pathname === '/@local') {
+        const local = url.pathname === '/@local';
+        if (local) {
             file = localFile(url.searchParams);
             if (!file) return notFound();
         } else {
@@ -108,7 +112,12 @@ function ensureHandled(root) {
             if (file !== base && !file.startsWith(base + path.sep)) return notFound();
         }
         // Range requests let a background video seek and loop.
-        return net.fetch(fetchUrl(file), { headers: request.headers, bypassCustomProtocolHandlers: true });
+        const res = await net.fetch(fetchUrl(file), { headers: request.headers, bypassCustomProtocolHandlers: true });
+        if (!local) return res;
+        // @local is same-origin with the page: nosniff stops a user file (e.g. text/vtt) running as script/CSS.
+        const headers = new Headers(res.headers);
+        headers.set('X-Content-Type-Options', 'nosniff');
+        return new Response(res.body, { status: res.status, statusText: res.statusText, headers });
     });
 }
 
@@ -182,4 +191,4 @@ function urlFor(root, file) {
     return `${SCHEME}://${APP_HOST}/${rel}`;
 }
 
-module.exports = { registerScheme, ensureHandled, migrateFileOriginStorage, urlFor, SCHEME };
+module.exports = { registerScheme, ensureHandled, migrateFileOriginStorage, urlFor, SCHEME, localFile };
