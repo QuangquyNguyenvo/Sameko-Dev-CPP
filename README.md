@@ -92,7 +92,7 @@
 - 🧹 Format C and C++ with AStyle. Choose from 13 styles and optionally format on `Ctrl+S`.
 - ✂️ Customize snippets and C or C++ templates. Import templates and snippets from files.
 - 💾 Use auto-save, session restore and local history checkpoints to return to your work. Sameko also notices changes made outside the editor.
-- 🎨 Choose from six built-in themes or create your own with the Theme Customizer. Add an image or video background and share your theme.
+- 🎨 Choose from nine built-in themes, including Catppuccin Mocha, Gruvbox Dark and the soft red-on-black Crimson, or create your own with the Theme Customizer. Add an image or video background and share your theme.
 - 🔎 Search settings and shortcuts from the Settings dialog. Keybindings can be customized there too.
 
 Explore the [user guide](https://sameko.dev/wiki.html) for more features and instructions.
