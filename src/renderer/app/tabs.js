@@ -346,6 +346,8 @@ function renderTabs() {
         el.querySelector('.tab-x').onclick = e => { e.stopPropagation(); closeTab(t.id); };
         c.appendChild(el);
     });
+    // Focus moved between panes, or the last tab closed.
+    if (typeof updateIndentStatus === 'function') updateIndentStatus();
 
     setTimeout(() => {
         const focusedTab = c.querySelector('.tab.focused') || c.querySelector('.tab.active');

@@ -21,7 +21,8 @@ function initSnippetEditor() {
         minimap: { enabled: false },
         scrollBeyondLastLine: false,
         automaticLayout: true,
-        tabSize: 4,
+        // No tabSize here: in standalone Monaco it is a global model setting and would reset
+        // the indentation of every open file.
         lineNumbers: 'on',
         renderWhitespace: 'selection',
         emptySelectionClipboard: false,

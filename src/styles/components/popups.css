@@ -329,6 +329,11 @@
     color: var(--accent);
 }
 
+/* A row without an icon (an unticked choice) keeps its label in line with the others. */
+.tab-context-icon:empty {
+    width: 14px;
+}
+
 /* File extension on the right of a New File menu row */
 .tab-context-hint {
     margin-left: auto;

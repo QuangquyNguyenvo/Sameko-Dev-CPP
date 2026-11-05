@@ -375,6 +375,14 @@
                                 </select>
                             </div>
                             <div class="setting-row">
+                                <label>Indent with Tabs <span class="tooltip"
+                                        title="New files indent with tab characters instead of spaces. Files that already use tabs or spaces keep their own style.">?</span></label>
+                                <label class="switch">
+                                    <input type="checkbox" id="set-indentWithTabs">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-row">
                                 <label>Scroll Beyond Last Line <span class="tooltip"
                                         title="Let the editor scroll past the end of the file, so the last line can sit at the top of the screen.">?</span></label>
                                 <label class="switch">
@@ -1283,6 +1291,7 @@
                     <svg class="ico" data-icon="cpu" data-weight="duo"><use href="#i-cpu-duo"/></svg><span id="status-run-mem"></span>
                 </span>
                 <span class="status-item live-check-state" id="live-check-state">Live off</span>
+                <span class="status-item status-indent hidden" id="status-indent" role="button" tabindex="0" title="Select Indentation">Spaces: 4</span>
                 <span class="status-item" id="cursor-pos">Ln 1, Col 1</span>
                 <span class="status-item status-std" id="status-std" title="C++ standard (Settings › Compiler)">C++</span>
             </div>

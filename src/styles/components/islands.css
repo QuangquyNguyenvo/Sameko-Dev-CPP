@@ -1123,6 +1123,16 @@ body.performance-mode .main .editor-section {
     margin-left: 6px;
 }
 
+/* "Spaces: 4": opens the indentation menu. */
+.status-bar .status-indent {
+    cursor: pointer;
+}
+
+.status-bar .status-indent:hover,
+.status-bar .status-indent:focus-visible {
+    color: var(--text-primary);
+}
+
 .status-bar .status-std {
     padding: 1px 10px;
     border-radius: 999px;

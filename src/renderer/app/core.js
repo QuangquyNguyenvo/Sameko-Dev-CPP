@@ -20,6 +20,7 @@ const DEFAULT_SETTINGS = {
         fontSize: 14,
         fontFamily: "'JetBrains Mono', monospace",
         tabSize: 4,
+        indentWithTabs: false, // New/empty files indent with tabs; other files keep their detected style
         scrollBeyondLastLine: false,
         vimMode: false,     // Vim keybindings (vim-mode.js); switches to the keybindingsVim profile
         minimap: true,
@@ -892,9 +893,11 @@ function createEditor(containerId) {
         multiCursorModifier: resolveMultiCursorModifier(),
         scrollBeyondLastLine: !!App.settings.editor.scrollBeyondLastLine,
         automaticLayout: true,
+        // Model options: Monaco's model service applies these to every model and detects each
+        // file's own indentation (tabs or N spaces) when it is created; these are the fallback.
         tabSize: App.settings.editor.tabSize,
-        insertSpaces: true,
-        detectIndentation: false,
+        insertSpaces: !App.settings.editor.indentWithTabs,
+        detectIndentation: true,
         emptySelectionClipboard: false,
         cursorBlinking: App.settings.appearance.performanceMode ? 'solid' : 'smooth',
         smoothScrolling: false,
@@ -950,6 +953,11 @@ function createEditor(containerId) {
         document.getElementById('cursor-pos').textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
         scheduleDiscordCursorUpdate(e.position.lineNumber, e.position.column);
     });
+
+    // Status bar "Spaces: 4" / "Tab Size: 4" follows the focused editor's model.
+    editor.onDidChangeModelOptions(() => updateIndentStatus());
+    editor.onDidChangeModel(() => updateIndentStatus());
+    editor.onDidFocusEditorText(() => updateIndentStatus());
 
     editor.onDidChangeModelContent(() => {
         const model = editor.getModel();

@@ -235,8 +235,8 @@ async function main() {
         const values = await page.evaluate(async () => {
             openSettings();
             const toggle = document.getElementById('set-scrollBeyondLastLine');
-            const isImmediatelyAfterTabSize = toggle.closest('.setting-row').previousElementSibling
-                .querySelector('#set-tabSize') !== null;
+            const isAfterIndentWithTabs = toggle.closest('.setting-row').previousElementSibling
+                .querySelector('#set-indentWithTabs') !== null;
             toggle.checked = true;
             await saveSettingsAndClose();
             openSplit();
@@ -248,10 +248,10 @@ async function main() {
             await saveSettingsAndClose();
             const disabled = [App.editor, App.editor2].map(editor =>
                 editor.getOption(monaco.editor.EditorOption.scrollBeyondLastLine));
-            return { isImmediatelyAfterTabSize, enabled, checkedAfterReopen, disabled };
+            return { isAfterIndentWithTabs, enabled, checkedAfterReopen, disabled };
         });
         assert.deepEqual(values, {
-            isImmediatelyAfterTabSize: true,
+            isAfterIndentWithTabs: true,
             enabled: [true, true],
             checkedAfterReopen: true,
             disabled: [false, false]

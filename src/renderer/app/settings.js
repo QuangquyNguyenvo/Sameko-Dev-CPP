@@ -484,7 +484,8 @@ function initTemplateEditor() {
         minimap: { enabled: false },
         scrollBeyondLastLine: false,
         automaticLayout: true,
-        tabSize: 4,
+        // No tabSize/insertSpaces here: in standalone Monaco they are global model settings, and
+        // this editor would reset the indentation of every open file.
         lineNumbers: 'on',
         folding: false,
         renderWhitespace: 'none',
@@ -887,6 +888,7 @@ function openSettings() {
     document.getElementById('val-fontSize').textContent = App.settings.editor.fontSize + 'px';
     setFontFamilyInputs(App.settings.editor.fontFamily);
     document.getElementById('set-tabSize').value = App.settings.editor.tabSize;
+    document.getElementById('set-indentWithTabs').checked = !!App.settings.editor.indentWithTabs;
     document.getElementById('set-scrollBeyondLastLine').checked = !!App.settings.editor.scrollBeyondLastLine;
     const vimSwitch = document.getElementById('set-vimMode');
     vimSwitch.checked = !!App.settings.editor.vimMode;
@@ -1012,6 +1014,7 @@ async function saveSettingsAndClose() {
         App.settings.editor.fontSize = parseInt(document.getElementById('set-fontSize').value);
         App.settings.editor.fontFamily = normalizeFontFamilyInput(getSelectedFontFamily());
         App.settings.editor.tabSize = parseInt(document.getElementById('set-tabSize').value);
+        App.settings.editor.indentWithTabs = document.getElementById('set-indentWithTabs').checked;
         App.settings.editor.scrollBeyondLastLine = document.getElementById('set-scrollBeyondLastLine').checked;
         App.settings.editor.vimMode = document.getElementById('set-vimMode').checked;
         App.settings.editor.minimap = document.getElementById('set-minimap').checked;

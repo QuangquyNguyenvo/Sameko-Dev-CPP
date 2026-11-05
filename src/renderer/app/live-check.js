@@ -120,6 +120,75 @@ function updateLanguageStatus() {
         : language !== 'cpp' ? 'Plain Text'
         : std ? std.toUpperCase() : 'C++';
     label.title = language === 'cpp' ? 'C++ standard (Settings › Compiler)' : 'File type';
+    updateIndentStatus();
+}
+
+/**
+ * Status bar indentation item, like VS Code's: "Spaces: 4" or "Tab Size: 4" for the focused
+ * editor's model. Hidden with no tab open. Click: a menu to change or convert the indentation.
+ */
+function updateIndentStatus() {
+    const label = document.getElementById('status-indent');
+    if (!label) return;
+    const editor = getActiveEditor();
+    const model = editor?.getModel();
+    if (!model || !getTabForModel(model)) {
+        label.classList.add('hidden');
+        return;
+    }
+    const { insertSpaces, tabSize } = model.getOptions();
+    label.textContent = insertSpaces ? `Spaces: ${tabSize}` : `Tab Size: ${tabSize}`;
+    label.classList.remove('hidden');
+    if (!label.dataset.bound) {
+        label.dataset.bound = '1';
+        label.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rect = label.getBoundingClientRect();
+            showIndentMenu({ clientX: rect.left, clientY: rect.top });
+        });
+        label.addEventListener('keydown', (e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            const rect = label.getBoundingClientRect();
+            showIndentMenu({ clientX: rect.left, clientY: rect.top });
+        });
+    }
+}
+
+function showIndentMenu(at) {
+    const editor = getActiveEditor();
+    const model = editor?.getModel();
+    if (!model || !getTabForModel(model)) return;
+    const { insertSpaces, tabSize } = model.getOptions();
+    const CHECK = MENU_ICON('<polyline points="20 6 9 17 4 12"/>');
+    const CONVERT = MENU_ICON('<polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>');
+    const set = (opts) => {
+        model.updateOptions(opts);
+        editor.focus();
+    };
+    // Monaco's own commands (contrib/indentation): they rewrite the leading whitespace and set
+    // insertSpaces to match.
+    const convert = (id) => {
+        editor.focus();
+        editor.getAction(id)?.run();
+    };
+    openContextMenu(at, [
+        { icon: insertSpaces ? CHECK : '', label: 'Indent Using Spaces', action: () => set({ insertSpaces: true }) },
+        { icon: insertSpaces ? '' : CHECK, label: 'Indent Using Tabs', action: () => set({ insertSpaces: false }) },
+        { divider: true },
+        ...[2, 4, 8].map(size => ({
+            icon: tabSize === size ? CHECK : '',
+            label: `Tab Size: ${size}`,
+            action: () => set({ tabSize: size, indentSize: size })
+        })),
+        { divider: true },
+        { icon: CONVERT, label: 'Convert Indentation to Spaces', action: () => convert('editor.action.indentationToSpaces') },
+        { icon: CONVERT, label: 'Convert Indentation to Tabs', action: () => convert('editor.action.indentationToTabs') }
+    ]);
+    // Open upward from the status bar instead of covering it.
+    if (tabContextMenu && at.clientY > tabContextMenu.offsetHeight + 8) {
+        tabContextMenu.style.top = `${at.clientY - tabContextMenu.offsetHeight - 4}px`;
+    }
 }
 
 function scheduleLiveCheck() {
@@ -306,8 +375,10 @@ function applySettings() {
         fontFamily: App.settings.editor.fontFamily,
         tabSize: App.settings.editor.tabSize,
         scrollBeyondLastLine: !!App.settings.editor.scrollBeyondLastLine,
-        insertSpaces: true,
-        detectIndentation: false,
+        // Monaco re-detects every model's indentation only when one of these three changes, so a
+        // file's detected style or a status-bar choice survives unrelated settings saves.
+        insertSpaces: !App.settings.editor.indentWithTabs,
+        detectIndentation: true,
         emptySelectionClipboard: false,
         smoothScrolling: false,
         minimap: {
