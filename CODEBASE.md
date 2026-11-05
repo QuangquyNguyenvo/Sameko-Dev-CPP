@@ -241,7 +241,8 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
 - The INPUT panel is sent as one block 20 ms after start; the terminal input box sends its whole
   text in one IPC (Enter on an empty box sends an empty line).
 - Judging uses only the program's stdout, captured per run in `build.js` (`beginRunCapture` /
-  `captureRunOutput`, capped at 8 MiB, tied to the tab that ran). The terminal keeps no copy of
+  `captureRunOutput`, capped at 8 MiB, tied to the tab that ran). stderr is captured beside it
+  (`captureRunStderr`, 1 MiB) for the Stderr card, shown when non-empty. The terminal keeps no copy of
   its lines (`TerminalManager.getLines()` reads xterm's buffer on demand, for probes). The
   Expected diff draws at most `DIFF_MAX_ROWS` lines plus `DIFF_MAX_MISMATCHES` mismatches.
 - External terminal: `start /wait cmd` on Windows, a runner script plus a terminal emulator on Linux.

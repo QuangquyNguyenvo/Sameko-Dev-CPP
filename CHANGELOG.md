@@ -13,6 +13,7 @@ Vim Mode and a cursor trail, fixes for data loss in contests, the Explorer, Save
 - **Vim Mode** (Settings › Editor, off by default): Vim keys in both panes ([monaco-vim](https://github.com/brijeshb42/monaco-vim) 0.4.4), with the mode and pending keys of the focused pane in the status bar. `:w` saves, `:q` closes the tab, `:wq` and `:x` do both. It has its own shortcut profile in Settings › Keybindings, which moves Open File (Ctrl+Alt+O), New Tab (Ctrl+Shift+T), Close Tab (Ctrl+Shift+W), Problems (Ctrl+Shift+J), Explorer (Ctrl+Shift+E) and Select Next Occurrence (Ctrl+Shift+D) off the Ctrl keys Vim uses; shortcuts you change in one profile do not change the other. The keymap (~100 KB) loads only when Vim Mode is on.
 - **Cursor trail** (Settings › Appearance; #68, by @baodao211): a Neovide-style trail follows the cursor when it jumps, Vim jumps included. It draws only while the cursor moves, stays inside the editor under its popups and Find box, does not smear when you scroll, and works with Performance Mode on or off.
 - **Scroll Beyond Last Line** (Settings › Editor, off by default; #69, by @baodao211): scroll the last line up to the top of the editor.
+- **Stderr card** (#56): when a run writes to `cerr`, a fourth card under Input, Output and Expected shows it, kept per tab. It stays hidden for runs that write nothing to stderr, and AC/WA still reads stdout only.
 
 ### Changed
 

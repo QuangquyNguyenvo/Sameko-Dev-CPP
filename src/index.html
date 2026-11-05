@@ -1217,6 +1217,14 @@
                             placeholder="Expected output..."></textarea>
                         <div class="diff-display" id="expected-diff" style="display:none"></div>
                     </div>
+                    <!-- Shown only when the last run of this tab wrote to stderr. -->
+                    <div class="io-panel io-panel-stderr hidden" id="stderr-panel">
+                        <div class="panel-head">
+                            <span class="io-dot"></span>
+                            <span class="panel-title output">Stderr</span>
+                        </div>
+                        <pre class="io-output" id="stderr-area"></pre>
+                    </div>
                 </div>
 
                 <div class="resizer" id="resizer-term"></div>

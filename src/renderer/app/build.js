@@ -833,12 +833,16 @@ async function renderInputFile(filePath) {
 App.outputByTab = App.outputByTab || {};
 
 /**
- * @param {{text: string, state: 'running'|'done'|'stopped', verdict?: 'ac'|'wa', mismatches?: number}|null} out
+ * @param {{text: string, stderr?: string, state: 'running'|'done'|'stopped', verdict?: 'ac'|'wa', mismatches?: number}|null} out
  */
 function renderOutputPanel(out) {
     const body = document.getElementById('output-area');
     const verdict = document.getElementById('output-verdict');
     if (!body || !verdict) return;
+
+    const stderrText = out?.stderr || '';
+    document.getElementById('stderr-area').textContent = stderrText;
+    document.getElementById('stderr-panel').classList.toggle('hidden', !stderrText);
 
     const text = out ? out.text : '';
     body.textContent = text;
@@ -874,10 +878,11 @@ function setTabOutput(tabId, out) {
 // its last 5000 lines, mixes in input echo, stderr and status lines, and could
 // be fooled by a program printing "--- Running ---".
 const MAX_RUN_OUTPUT_CHARS = 8 * 1024 * 1024;
-let currentRun = null;   // { tabId, text, truncated }
+const MAX_RUN_STDERR_CHARS = 1024 * 1024;
+let currentRun = null;   // { tabId, text, truncated, stderr, stderrTruncated }
 
 function beginRunCapture(tabId) {
-    currentRun = { tabId, text: '', truncated: false };
+    currentRun = { tabId, text: '', truncated: false, stderr: '', stderrTruncated: false };
 }
 
 /** Free the last run's output (up to 8 MB) when its tab closes, unless it still runs. */
@@ -891,8 +896,20 @@ function captureRunOutput(data) {
     currentRun.text += String(data);
 }
 
+function captureRunStderr(data) {
+    if (!currentRun || data == null) return;
+    if (currentRun.stderr.length >= MAX_RUN_STDERR_CHARS) { currentRun.stderrTruncated = true; return; }
+    currentRun.stderr += String(data);
+}
+
 function runOutputText(run) {
     return run ? run.text.replace(/\r\n/g, '\n') : '';
+}
+
+function runStderrText(run) {
+    if (!run) return '';
+    const text = run.stderr.replace(/\r\n/g, '\n');
+    return run.stderrTruncated ? text + '\n… (only the first 1 MB is shown)' : text;
 }
 
 /** Judge a finished run against its own tab's Expected text. */
@@ -911,7 +928,7 @@ function compareOutput(run = currentRun) {
     // Keep EXPECTED strictly as editable expected output (no auto output rendering).
     if (!hasExpected || run.truncated) {
         if (run.truncated) log('Output is over 8 MB: shown in part and not compared with Expected.', 'warning');
-        setTabOutput(run.tabId, { text: actualText, state: 'done' });
+        setTabOutput(run.tabId, { text: actualText, stderr: runStderrText(run), state: 'done' });
         if (focused && !hasExpected) switchToExpectedEdit();
         return;
     }
@@ -919,6 +936,7 @@ function compareOutput(run = currentRun) {
     const diff = buildCompactDiffHtml(expectedRaw, actualText, { normalize: true });
     setTabOutput(run.tabId, {
         text: actualText,
+        stderr: runStderrText(run),
         state: 'done',
         verdict: diff.allMatch ? 'ac' : 'wa',
         mismatches: diff.mismatchCount

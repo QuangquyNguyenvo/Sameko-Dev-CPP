@@ -427,6 +427,8 @@
 .io-section > .io-panel-input { --io-dot: var(--accent); }
 .io-section > .io-panel-output { --io-dot: var(--warning, #f5a23a); }
 .io-section > .io-panel-expected { --io-dot: var(--success, #4cc38a); }
+.io-section > .io-panel-stderr { --io-dot: var(--error, #f05a6e); }
+.io-section > .io-panel-stderr.hidden { display: none; }
 
 .io-section > .io-panel > .panel-head {
     gap: 7px;

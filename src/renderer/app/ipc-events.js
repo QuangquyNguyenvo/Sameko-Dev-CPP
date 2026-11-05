@@ -66,7 +66,7 @@ if (window.electronAPI) {
         }
     });
     window.electronAPI.onProcessOutput?.(d => { captureRunOutput(d); logProgram(d, false); });
-    window.electronAPI.onProcessError?.(d => logProgram(d, true));
+    window.electronAPI.onProcessError?.(d => { captureRunStderr(d); logProgram(d, true); });
     window.electronAPI.onProcessExit?.(data => {
         if (App.runTimeout) {
             clearTimeout(App.runTimeout);
@@ -134,7 +134,7 @@ if (window.electronAPI) {
             App.runTimeout = null;
         }
         log('\n--- Stopped ---', 'warning');
-        if (currentRun) setTabOutput(currentRun.tabId, { text: runOutputText(currentRun), state: 'stopped' });
+        if (currentRun) setTabOutput(currentRun.tabId, { text: runOutputText(currentRun), stderr: runStderrText(currentRun), state: 'stopped' });
         setRunning(false);
         setStatus('Stopped', '');
     });
