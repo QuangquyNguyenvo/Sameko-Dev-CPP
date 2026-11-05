@@ -35,12 +35,9 @@ async function initAbout() {
     }
 
     const checkBtn = document.getElementById('btn-check-update');
-    // Remove old listeners to avoid duplicates if re-init
-    if (checkBtn) {
-        const newBtn = checkBtn.cloneNode(true);
-        checkBtn.parentNode.replaceChild(newBtn, checkBtn);
-        newBtn.onclick = () => checkForUpdates();
-    }
+    // onclick replaces any earlier handler, so re-init adds no duplicates.
+    // (No cloneNode: a clone copies translated text, which i18n then takes as English.)
+    if (checkBtn) checkBtn.onclick = () => checkForUpdates();
 
     const githubBtn = document.getElementById('btn-github');
     if (githubBtn) {

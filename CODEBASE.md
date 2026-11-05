@@ -111,7 +111,7 @@ syntax/clangd, local history, Discord RPC.
 | `assets/` | Fonts, icons, backgrounds (five looping `.webm` + one `.jpg`), screenshots (README only). |
 
 ### Loaded scripts, in order (`index.html`)
-`renderer/boot.js` (error hooks, `loadScript`, shared `escHtml`) → `features/suggestions/cpp-suggestions.js` →
+`renderer/boot.js` (error hooks, `loadScript`, shared `escHtml`) → `renderer/i18n.js` → `renderer/locales/{vi,zh-CN}.js` → `features/suggestions/cpp-suggestions.js` →
 `features/snippets/snippet-editor.js` → `renderer/ui/theme-tokens.js` →
 `theme-manager.js` → `theme-marketplace.js` → `theme-customizer-view.js` → `theme-customizer.js` → `confirm-dialog.js` → `motion.js` →
 `features/local-history/history-manager.js` → `features/file-explorer/file-explorer.js` →
@@ -139,6 +139,19 @@ dependency only.
 Every `.js` under `src/` is in that list; a new renderer file does nothing until it gets a
 `<script>` tag there. (Eight never-loaded modules and the golden-layout dependency were deleted
 in October 2026.)
+
+### Interface language
+- `renderer/i18n.js` (`I18n`) translates the page in place. App code keeps writing **English**;
+  each locale file maps the English text to its translation (`I18n.register('vi', {...})`, keys
+  with `{0}` are templates). Once a non-English language is on, a MutationObserver translates every
+  text node and the `title`/`placeholder`/`aria-label`... attributes the app adds later; in English it
+  costs nothing (no observer). Monaco, xterm, inputs, `pre`, file/tab names, debugger values, diff
+  lines and anything under `translate="no"` / `data-i18n-skip` are skipped (`I18n.SKIP`).
+- Setting: `appearance.language` (`en` default | `vi` | `zh-CN`), applied in `core.js` right after
+  `loadSettings()` and on Settings save. Any other value (the old `auto`) resolves to English.
+  Picked with flag buttons (`renderLanguagePicker()` in `settings.js`) over a hidden `#set-language`.
+- `I18n.t('English {0}', x)` is for text that never reaches the DOM as-is.
+- Installer: `package.json` › `build.nsis.installerLanguages` + the `LangString`s in `installer/installer.nsh`.
 
 ### Theme system
 - **Data:** `ThemeManager._getHardcodedThemes()` defines the nine builtin themes (`kawaii-dark`,

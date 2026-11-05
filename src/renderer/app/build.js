@@ -550,6 +550,7 @@ function log(msg, type = '') {
         }
     }
 
+    if (typeof I18n !== 'undefined' && typeof msg === 'string') msg = I18n.t(msg);
     TerminalManager.writeMessage(msg, hexColor, colorEnabled);
 }
 

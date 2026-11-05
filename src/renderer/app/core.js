@@ -66,7 +66,8 @@ const DEFAULT_SETTINGS = {
         performanceMode: true,
         animatedBackground: true,  // play a theme's background video (only while the window has focus)
         cursorTrail: true,         // Neovide-style cursor trail (independent of performance mode)
-        uiScale: 'auto'   // 'auto' or a percentage; applied by the main process as the page zoom
+        uiScale: 'auto',  // 'auto' or a percentage; applied by the main process as the page zoom
+        language: 'en'    // interface language (renderer/i18n.js): 'en', 'vi', 'zh-CN'
     },
     startup: {
         behavior: 'restore-previous-session'
@@ -262,6 +263,8 @@ int main() {
 // ============================================================================
 document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
+    // Before anything else draws, so the first paint is already in the chosen language.
+    I18n.setLanguage(App.settings.appearance.language);
     applySettings();
     // Monaco is the heaviest part of startup (~0.6s of load + editor create).
     // Don't block first paint on it. It loads on demand the moment a file is

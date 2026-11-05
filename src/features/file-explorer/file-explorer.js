@@ -69,7 +69,7 @@ const FileExplorer = {
         testing: { label: 'Testing', color: '#ffb74d' },
         ac: { label: 'Accepted', color: '#66bb6a' },
         wa: { label: 'Wrong Answer', color: '#ef5350' },
-        tle: { label: 'Time Limit', color: '#ffa726' },
+        tle: { label: 'Time Limit Exceeded', badge: 'TLE', color: '#ffa726' },
         re: { label: 'Runtime Error', color: '#ab47bc' },
     },
 
@@ -202,8 +202,8 @@ const FileExplorer = {
         working: { label: 'Working', iconKey: 'clock', color: '#ffc107' },
         ac: { label: 'Accepted', iconKey: 'check', color: '#4caf50' },
         wa: { label: 'Wrong Answer', iconKey: 'cross', color: '#f44336' },
-        tle: { label: 'Time Limit', iconKey: 'timer', color: '#ff9800' },
-        mle: { label: 'Memory Limit', iconKey: 'memory', color: '#9c27b0' },
+        tle: { label: 'Time Limit Exceeded', iconKey: 'timer', color: '#ff9800' },
+        mle: { label: 'Memory Limit Exceeded', iconKey: 'memory', color: '#9c27b0' },
         rte: { label: 'Runtime Error', iconKey: 'warning', color: '#f44336' }
     },
 
@@ -1557,7 +1557,7 @@ const FileExplorer = {
                     <span class="cp-row-status">${icon}</span>
                     <span class="cp-row-id">${escHtml(prob.id)}</span>
                     <span class="cp-row-label">${escHtml(prob.label || '')}</span>
-                    <span class="cp-row-badge cp-badge-${prob.status || 'todo'}">${escHtml(statusInfo.label)}</span>
+                    <span class="cp-row-badge cp-badge-${prob.status || 'todo'}" title="${escHtml(statusInfo.label)}">${escHtml(statusInfo.badge || statusInfo.label)}</span>
                     ${timeStr ? `<span class="cp-row-time">${escHtml(timeStr)}</span>` : ''}
                 </div>
             `;
@@ -4773,7 +4773,7 @@ const FileExplorer = {
                                      draggable="true" title="${escHtml(item.fileName)}">
                                     <span class="cat-list-item-status">${statusIcon}</span>
                                     <span class="cat-list-item-name">${escHtml(item.name)}</span>
-                                    <span class="cat-list-item-badge cp-badge-${item.status || 'todo'}">${escHtml(statusInfo.label)}</span>
+                                    <span class="cat-list-item-badge cp-badge-${item.status || 'todo'}" title="${escHtml(statusInfo.label)}">${escHtml(statusInfo.badge || statusInfo.label)}</span>
                                 </div>
                             `;
                         }
@@ -4888,7 +4888,7 @@ const FileExplorer = {
                                  draggable="true" title="${escHtml(item.fileName)}">
                                 <span class="cat-list-item-status">${statusIcon}</span>
                                 <span class="cat-list-item-name">${escHtml(item.name)}</span>
-                                <span class="cat-list-item-badge cp-badge-${item.status || 'todo'}">${escHtml(statusInfo.label)}</span>
+                                <span class="cat-list-item-badge cp-badge-${item.status || 'todo'}" title="${escHtml(statusInfo.label)}">${escHtml(statusInfo.badge || statusInfo.label)}</span>
                             </div>
                         `;
                     }

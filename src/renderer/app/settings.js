@@ -298,7 +298,6 @@ function initSettings() {
     const clearPchBtn = document.getElementById('btn-clear-pch');
     if (clearPchBtn) {
         clearPchBtn.onclick = async () => {
-            const originalText = clearPchBtn.textContent;
             clearPchBtn.textContent = 'Clearing...';
             clearPchBtn.disabled = true;
 
@@ -310,7 +309,7 @@ function initSettings() {
                 setTimeout(() => {
                     clearPchBtn.textContent = 'Done!';
                     setTimeout(() => {
-                        clearPchBtn.textContent = originalText;
+                        clearPchBtn.textContent = 'Clear PCH Cache'; // English source; i18n translates it
                         clearPchBtn.disabled = false;
                     }, 1500);
                 }, 800);
@@ -318,7 +317,7 @@ function initSettings() {
                 clearPchBtn.textContent = 'Failed!';
                 clearPchBtn.style.backgroundColor = 'var(--red-primary)';
                 setTimeout(() => {
-                    clearPchBtn.textContent = originalText;
+                    clearPchBtn.textContent = 'Clear PCH Cache'; // English source; i18n translates it
                     clearPchBtn.disabled = false;
                     clearPchBtn.style.backgroundColor = '';
                 }, 2000);
@@ -371,6 +370,7 @@ function initSettingsSearch() {
 function settingsSearchText(el) {
     const parts = [el.textContent];
     el.querySelectorAll('[title]').forEach(t => parts.push(t.title));
+    parts.push(I18n.sourceText(el));   // English words match in every language
     return parts.join(' ').toLowerCase().replace(/\s+/g, ' ');
 }
 
@@ -402,7 +402,7 @@ function applySettingsSearch(raw) {
     content.querySelectorAll(':scope > .settings-panel').forEach(panel => {
         const tab = document.querySelector(`#settings-popup .settings-tab[data-tab="${panel.id.replace(/^panel-/, '')}"]`);
         const title = panel.querySelector('h3');
-        const whole = matches(((tab?.textContent || '') + ' ' + (title?.textContent || '')).toLowerCase());
+        const whole = matches([tab?.textContent, title?.textContent, I18n.sourceText(tab), I18n.sourceText(title)].join(' ').toLowerCase());
         let hit = whole;
         if (!whole) {
             hit = false;
@@ -822,6 +822,56 @@ function getSelectedFontFamily() {
     return normalizeFontFamilyInput(selectEl.value);
 }
 
+
+// Flag buttons for Settings › Appearance › Language. The hidden #set-language select stays
+// the value that is saved; Windows has no flag emoji, so the flags are inline SVG.
+const LANGUAGE_FLAGS = {
+    en: '<svg viewBox="0 0 60 40" aria-hidden="true"><rect width="60" height="40" fill="#012169"/>'
+        + '<path d="M0 0L60 40M60 0L0 40" stroke="#fff" stroke-width="8"/>'
+        + '<path d="M0 0L60 40M60 0L0 40" stroke="#C8102E" stroke-width="3"/>'
+        + '<path d="M30 0V40M0 20H60" stroke="#fff" stroke-width="12"/>'
+        + '<path d="M30 0V40M0 20H60" stroke="#C8102E" stroke-width="7"/></svg>',
+    vi: '<svg viewBox="0 0 60 40" aria-hidden="true"><rect width="60" height="40" fill="#DA251D"/>'
+        + '<path fill="#FF0" d="M30 8l3.53 10.86h11.41l-9.23 6.71 3.53 10.86L30 29.72l-9.24 6.71 3.53-10.86-9.23-6.71h11.41z"/></svg>',
+    'zh-CN': '<svg viewBox="0 0 60 40" aria-hidden="true"><rect width="60" height="40" fill="#EE1C25"/>'
+        + '<g fill="#FF0"><path d="M12 5l2.35 7.24h7.61l-6.16 4.47 2.35 7.24L12 19.48l-6.15 4.47 2.35-7.24-6.16-4.47h7.61z"/>'
+        + '<circle cx="24" cy="5" r="1.6"/><circle cx="28" cy="9" r="1.6"/><circle cx="28" cy="15" r="1.6"/><circle cx="24" cy="19" r="1.6"/></g></svg>',
+};
+
+function renderLanguagePicker() {
+    const picker = document.getElementById('lang-picker');
+    const select = document.getElementById('set-language');
+    if (!picker || !select) return;
+    picker.replaceChildren(...I18n.LANGUAGES.map(({ code, name }) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'lang-option';
+        btn.dataset.lang = code;
+        btn.setAttribute('role', 'radio');
+        btn.innerHTML = '<span class="lang-flag">' + LANGUAGE_FLAGS[code] + '</span>';
+        const label = document.createElement('span');
+        label.textContent = name;             // a language's own name is never translated
+        label.translate = false;
+        btn.appendChild(label);
+        btn.addEventListener('click', () => {
+            select.value = code;
+            select.dispatchEvent(new Event('change', { bubbles: true }));
+            syncLanguagePicker();
+        });
+        return btn;
+    }));
+    syncLanguagePicker();
+}
+
+function syncLanguagePicker() {
+    const value = document.getElementById('set-language')?.value;
+    document.querySelectorAll('#lang-picker .lang-option').forEach(btn => {
+        const on = btn.dataset.lang === value;
+        btn.classList.toggle('active', on);
+        btn.setAttribute('aria-checked', String(on));
+    });
+}
+
 function openSettings() {
     // Populate theme dropdowns dynamically from ThemeManager first
     populateThemeDropdowns();
@@ -900,6 +950,10 @@ function openSettings() {
 
     document.getElementById('set-animatedBackground').checked = App.settings.appearance.animatedBackground !== false;
     document.getElementById('set-uiScale').value = String(App.settings.appearance.uiScale ?? 'auto');
+    const langSelect = document.getElementById('set-language');
+    langSelect.replaceChildren(...I18n.LANGUAGES.map(({ code, name }) => new Option(name, code)));
+    langSelect.value = I18n.resolve(App.settings.appearance.language);
+    renderLanguagePicker();
 
     // Background settings (optional - may not exist if Background section removed)
     const bgOpacitySlider = document.getElementById('set-bgOpacity');
@@ -1013,6 +1067,7 @@ async function saveSettingsAndClose() {
         App.settings.appearance.animatedBackground = document.getElementById('set-animatedBackground').checked;
         const uiScale = document.getElementById('set-uiScale').value;
         App.settings.appearance.uiScale = uiScale === 'auto' ? 'auto' : Number(uiScale);
+        App.settings.appearance.language = document.getElementById('set-language').value;
 
         // Background settings (optional - may not exist if Background section removed)
         const bgOpacityEl = document.getElementById('set-bgOpacity');
@@ -1050,6 +1105,7 @@ async function saveSettingsAndClose() {
         const saved = await saveSettings();
         if (saved?.success === false) throw new Error(saved.error || 'Could not save settings.');
         applySettings();
+        I18n.setLanguage(App.settings.appearance.language);
         updateShortcutMap(); // Apply new shortcuts immediately
         closeSettings();
         log('Settings saved', 'success');

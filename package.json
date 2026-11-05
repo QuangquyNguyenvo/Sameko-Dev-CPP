@@ -223,7 +223,9 @@
             "installerSidebar": "installer/sidebar.bmp",
             "uninstallerSidebar": "installer/sidebar.bmp",
             "installerHeader": "installer/header.bmp",
-            "runAfterFinish": true
+            "runAfterFinish": true,
+            "installerLanguages": ["en_US", "vi_VN", "zh_CN"],
+            "multiLanguageInstaller": true
         },
         "mac": {
             "target": "dmg",
