@@ -122,6 +122,32 @@ npm run build:win
 
 <br />
 
+## 🧰 Bundled Compiler (Sameko-GCC)
+
+The IDE ships its own GCC so users install nothing. To develop with it, put the toolchain in
+`Sameko-GCC/` at the repo root (gitignored):
+
+1. Download `Sameko-GCC-16.x.x.zip` from the
+   [Releases page](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases), or
+   **GCC 16.x + MinGW-w64 (UCRT) – Win64, without LLVM** from [winlibs.com](https://winlibs.com/).
+2. Extract it so that `Sameko-GCC/bin/g++.exe` exists. The folder must be named exactly
+   `Sameko-GCC`; it is the only bundled location the IDE looks in.
+3. Run `npm start` and check the log for `[System] Compiler: Bundled Sameko-GCC 16.x.x`.
+
+Without it the IDE falls back to a system compiler (`C:\TDM-GCC-64`, `C:\MinGW`,
+`C:\msys64\mingw64`, or `g++` on `PATH`). Optional tools picked up from `Sameko-GCC/bin` when
+present: `gdb` (debugger), `clangd` (IntelliSense and live checking), `astyle` (formatting),
+`ld.lld` (faster linker).
+
+| Problem | Check |
+| :------ | :---- |
+| `bits/stdc++.h` not found | `Sameko-GCC/include/c++/16.x.x/bits/stdc++.h` exists |
+| `g++.exe` not found | `Sameko-GCC/bin/g++.exe` exists |
+| Slow first start | The precompiled header is built once (~5–10 s), later runs are instant |
+| Compile fails | No special characters in the path; antivirus is not blocking `gcc.exe` |
+
+<br />
+
 ## 💌 Questions?
 
 Just open an issue or ask in Discussions! We're friendly~ 🐟

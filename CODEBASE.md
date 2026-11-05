@@ -179,8 +179,7 @@ in October 2026.)
 | `docs/` | The sameko.dev website (landing page and wiki). Not part of the app. |
 | `plans/` | Gitignored working plans. |
 | `samekodevcpp/` | electron-builder output (gitignored). |
-| `setup-bundled-mingw.md` | How to obtain and place the bundled compiler. |
-| `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md` | User and contributor docs. |
+| `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md` | User and contributor docs (`CONTRIBUTING.md` also covers placing the bundled compiler). |
 
 ## 6. Packaging (`package.json` › `build`)
 - electron-builder, `asar: true`, output `samekodevcpp/`, appId `com.quangquy.cppide`.
