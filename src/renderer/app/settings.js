@@ -38,6 +38,7 @@ function loadSettings() {
                 keybindings: { ...DEFAULT_SETTINGS.keybindings, ...saved.keybindings },
                 keybindingsVim: { ...DEFAULT_SETTINGS.keybindingsVim, ...saved.keybindingsVim },
                 snippets: saved.snippets || DEFAULT_SETTINGS.snippets,
+                hiddenSnippets: Array.isArray(saved.hiddenSnippets) ? saved.hiddenSnippets : [],
                 localHistory: { ...DEFAULT_SETTINGS.localHistory, ...saved.localHistory },
                 discord: { ...DEFAULT_SETTINGS.discord, ...saved.discord },
                 updates: { ...DEFAULT_SETTINGS.updates, ...saved.updates }

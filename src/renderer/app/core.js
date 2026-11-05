@@ -146,6 +146,8 @@ int main() {
     snippets: [
         { trigger: 'hello', name: 'Hello World', content: '#include <iostream>\nusing namespace std;\n\nint main() {\n\tcout << "Hello World!";\n\treturn 0;\n}', isBuiltin: true },
     ],
+    // Triggers of built-in snippets (window.BUILTIN_SNIPPETS) the user hid in Settings › Snippets.
+    hiddenSnippets: [],
     discord: {
         enabled: true
     },

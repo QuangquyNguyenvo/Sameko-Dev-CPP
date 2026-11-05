@@ -1015,4 +1015,10 @@
     '… {#0} line not shown': '… {0} dòng không được hiển thị',
     'WA · {#0} line': 'WA · {0} dòng',
     'WA · {#0} lines': 'WA · {0} dòng',
+    // Settings › Snippets: built-in snippets
+    'Built-in snippets': 'Snippet có sẵn',
+    'Hide the ones you don\'t use, or edit one: your copy replaces the built-in. Delete the copy to get the built-in back.': 'Ẩn những snippet bạn không dùng, hoặc sửa một snippet: bản của bạn sẽ thay bản có sẵn. Xóa bản của bạn để dùng lại bản có sẵn.',
+    'Edit a copy': 'Sửa một bản sao',
+    'Show': 'Hiện',
+    'Replaced by your snippet': 'Đã thay bằng snippet của bạn',
 });

@@ -75,12 +75,81 @@ function closeSnippetEditor() {
     currentEditingIndex = null;
 }
 
+const SNIPPET_ICON_EDIT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>';
+const SNIPPET_ICON_HIDE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" /><line x1="1" y1="1" x2="23" y2="23" /></svg>';
+const SNIPPET_ICON_SHOW = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>';
+
+/** First line of a snippet, cut to 50 characters, with "..." when there is more. */
+function snippetPreviewText(content) {
+    // Show the code as it is inserted: ${1:i} -> i, $1 / ${0} -> nothing.
+    const text = content.replace(/\$\{\d+:([^}]*)\}/g, '$1').replace(/\$\{\d+\}|\$\d+/g, '');
+    return text.split('\n')[0].substring(0, 50) + (text.length > 50 || text.includes('\n') ? '...' : '');
+}
+
+/**
+ * The built-in snippets (window.BUILTIN_SNIPPETS, cpp-suggestions.js) as rows: hide/show one,
+ * or edit a copy, which becomes a user snippet that replaces the built-in of the same trigger.
+ */
+function renderBuiltinSnippets() {
+    const B = window.BUILTIN_SNIPPETS;
+    if (!B) return '';
+    const hidden = new Set(App.settings.hiddenSnippets || []);
+    const userTriggers = new Set((App.settings.snippets || []).map(s => s.trigger));
+    const rows = [
+        ...(B.common || []).map(s => [s, 'C/C++']),
+        ...(B.cpp || []).map(s => [s, 'C++']),
+        ...(B.c || []).map(s => [s, 'C'])
+    ].map(([s, lang]) => {
+        const replaced = userTriggers.has(s.label);
+        const isHidden = !replaced && hidden.has(s.label);
+        const actions = replaced
+            ? '<div class="snippet-replaced-note">Replaced by your snippet</div>'
+            : `<div class="snippet-actions">
+                <button class="btn-edit" data-builtin-edit="${escHtml(s.label)}" title="Edit a copy">${SNIPPET_ICON_EDIT}</button>
+                <button class="btn-edit" data-builtin-toggle="${escHtml(s.label)}" title="${isHidden ? 'Show' : 'Hide'}">${isHidden ? SNIPPET_ICON_SHOW : SNIPPET_ICON_HIDE}</button>
+            </div>`;
+        return `
+        <div class="snippet-item builtin snippet-builtin${isHidden ? ' is-hidden' : ''}${replaced ? ' is-replaced' : ''}" data-builtin-trigger="${escHtml(s.label)}">
+            <div class="snippet-trigger" translate="no">${escHtml(s.label)}</div>
+            <div class="snippet-lang" translate="no">${lang}</div>
+            <div class="snippet-preview" translate="no" title="${escHtml(s.text)}">${escHtml(snippetPreviewText(s.text))}</div>
+            ${actions}
+        </div>`;
+    }).join('');
+    return `
+        <div class="snippets-section-title">Built-in snippets</div>
+        <div class="snippets-section-desc">Hide the ones you don't use, or edit one: your copy replaces the built-in. Delete the copy to get the built-in back.</div>
+        ${rows}`;
+}
+
+/** Opens the editor on a copy of a built-in snippet, saved as a new user snippet. */
+function editBuiltinSnippet(trigger) {
+    const B = window.BUILTIN_SNIPPETS || {};
+    const s = [...(B.common || []), ...(B.cpp || []), ...(B.c || [])].find(x => x.label === trigger);
+    if (!s) return;
+    currentEditingIndex = null;
+    document.getElementById('snippet-editor-title').textContent = 'Edit Snippet';
+    document.getElementById('snippet-trigger-input').value = s.label;
+    showSnippetText(s.text);
+    document.getElementById('snippet-editor-modal').classList.add('active');
+}
+
+function toggleBuiltinSnippet(trigger) {
+    const hidden = Array.isArray(App.settings.hiddenSnippets) ? App.settings.hiddenSnippets : [];
+    App.settings.hiddenSnippets = hidden.includes(trigger)
+        ? hidden.filter(t => t !== trigger)
+        : [...hidden, trigger];
+    renderSnippetsList();
+    if (typeof saveSettings === 'function') saveSettings();
+}
+
 window.renderSnippetsList = function () {
     const listContainer = document.getElementById('snippets-list');
     if (!listContainer) return;
 
+    let userHtml;
     if (!App.settings.snippets || App.settings.snippets.length === 0) {
-        listContainer.innerHTML = `
+        userHtml = `
             <div class="snippets-empty">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
@@ -92,20 +161,16 @@ window.renderSnippetsList = function () {
                 <p>Click "Add New Snippet" or "Import from File(s)" to add some.</p>
             </div>
         `;
-        return;
-    }
-
-    listContainer.innerHTML = App.settings.snippets.map((s, idx) => `
+    } else {
+        userHtml = App.settings.snippets.map((s, idx) => `
         <div class="snippet-item ${s.isBuiltin ? 'builtin' : ''}">
             <div class="snippet-trigger">${escHtml(s.trigger)}</div>
             <div class="snippet-preview" title="${escHtml(s.content)}">
-                ${escHtml(s.content.split('\n')[0].substring(0, 50))}${s.content.length > 50 || s.content.includes('\n') ? '...' : ''}
+                ${escHtml(snippetPreviewText(s.content))}
             </div>
             <div class="snippet-actions">
                 <button class="btn-edit" data-snippet-edit="${idx}" title="Edit">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z" />
-                    </svg>
+                    ${SNIPPET_ICON_EDIT}
                 </button>
                 <button class="btn-delete" data-snippet-delete="${idx}" title="Delete">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -116,6 +181,9 @@ window.renderSnippetsList = function () {
             </div>
         </div>
     `).join('');
+    }
+
+    listContainer.innerHTML = userHtml + renderBuiltinSnippets();
 
     // Listeners instead of inline onclick="" attributes (blocked by the CSP).
     listContainer.querySelectorAll('[data-snippet-edit]').forEach(btn => {
@@ -123,6 +191,12 @@ window.renderSnippetsList = function () {
     });
     listContainer.querySelectorAll('[data-snippet-delete]').forEach(btn => {
         btn.addEventListener('click', () => window.deleteSnippet(parseInt(btn.dataset.snippetDelete, 10)));
+    });
+    listContainer.querySelectorAll('[data-builtin-edit]').forEach(btn => {
+        btn.addEventListener('click', () => editBuiltinSnippet(btn.dataset.builtinEdit));
+    });
+    listContainer.querySelectorAll('[data-builtin-toggle]').forEach(btn => {
+        btn.addEventListener('click', () => toggleBuiltinSnippet(btn.dataset.builtinToggle));
     });
 };
 

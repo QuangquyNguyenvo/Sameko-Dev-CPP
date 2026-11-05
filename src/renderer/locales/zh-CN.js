@@ -1038,4 +1038,10 @@
     '… {#0} line not shown': '… 还有 {0} 行未显示',
     'WA · {#0} line': 'WA · {0} 行',
     'WA · {#0} lines': 'WA · {0} 行',
+    // Settings › Snippets: built-in snippets
+    'Built-in snippets': '内置代码片段',
+    'Hide the ones you don\'t use, or edit one: your copy replaces the built-in. Delete the copy to get the built-in back.': '隐藏不用的代码片段，或编辑其中一个：你的副本会替换内置版本。删除副本即可恢复内置版本。',
+    'Edit a copy': '编辑副本',
+    'Show': '显示',
+    'Replaced by your snippet': '已被你的代码片段替换',
 });

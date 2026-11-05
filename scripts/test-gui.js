@@ -174,6 +174,35 @@ async function main() {
         assert.deepEqual(values, ['', '']);
     });
 
+    await check('Settings › Snippets lists built-ins and marks hidden ones', async () => {
+        const rows = await page.evaluate(() => {
+            const saved = App.settings.hiddenSnippets;
+            App.settings.hiddenSnippets = ['cout'];
+            renderSnippetsList();
+            const row = t => document.querySelector(`#snippets-list [data-builtin-trigger="${t}"]`);
+            const result = [row('cout')?.classList.contains('is-hidden'), row('cin')?.classList.contains('is-hidden')];
+            App.settings.hiddenSnippets = saved;
+            renderSnippetsList();
+            return result;
+        });
+        assert.deepEqual(rows, [true, false]);
+    });
+
+    await check('indentation follows each file: tabs, spaces, and the setting for a new file', async () => {
+        const tabbed = path.join(profile, 'tab-indented.cpp');
+        fs.writeFileSync(tabbed, 'int main() {\n\tif (1) {\n\t\treturn 0;\n\t}\n}\n');
+        const values = await page.evaluate(async (file) => {
+            await openFileFromPath(file);
+            const tabFile = App.editor.getModel().getOptions().insertSpaces;
+            const tabStatus = document.getElementById('status-indent').textContent;
+            newFile('txt');
+            const empty = App.editor.getModel().getOptions().insertSpaces;
+            const emptyStatus = document.getElementById('status-indent').textContent;
+            return { tabFile, tabStatus, empty, emptyStatus };
+        }, tabbed);
+        assert.deepEqual(values, { tabFile: false, tabStatus: 'Tab Size: 4', empty: true, emptyStatus: 'Spaces: 4' });
+    });
+
     await check('disabling Performance Mode restores bracket colors in both editors', async () => {
         const values = await page.evaluate(() => {
             openSplit();
