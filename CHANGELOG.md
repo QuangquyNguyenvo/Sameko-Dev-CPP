@@ -105,6 +105,7 @@ Vim Mode and a cursor trail, fixes for data loss in contests, the Explorer, Save
 - **Linux**: two files whose paths differ only in letter case no longer share one executable.
 - **Saving state at startup** can no longer fail because the cleanup of old temporary files removed the file being saved.
 - **macOS**: files opened from Finder or the Dock open in the app, and clicking the Dock icon after closing the window shows a working window.
+- **Enter after `for (…)`, `if (…)`, `while (…)`, `else`, `do` or `case x:` indents with spaces** like the rest of the file (the editor's indent size); it inserted a tab after the spaces.
 
 ### Removed
 

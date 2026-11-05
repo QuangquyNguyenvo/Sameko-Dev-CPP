@@ -1040,10 +1040,13 @@ function createEditor(containerId) {
             if (shouldIndent) {
                 e.preventDefault();
 
-                const tabChar = '\t'; // Use tab character
+                // One indent level in the model's own unit (the editors use
+                // insertSpaces, so a hard tab here mixed tabs into space indents).
+                const { insertSpaces, indentSize, tabSize } = model.getOptions();
+                const unit = insertSpaces ? ' '.repeat(indentSize || tabSize || 4) : '\t';
 
-                // Insert newline + current indent + one more tab
-                const newIndent = currentIndent + tabChar;
+                // Insert newline + current indent + one more level
+                const newIndent = currentIndent + unit;
 
                 editor.executeEdits('auto-indent', [{
                     range: new monaco.Range(lineNumber, lineMaxCol, lineNumber, lineMaxCol),
