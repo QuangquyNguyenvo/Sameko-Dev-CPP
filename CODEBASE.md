@@ -262,7 +262,8 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   carries the full document; it is forwarded (`didOpen`, then `didChange`) only when the text
   differs from what clangd has, and `clangd-close-document` sends `didClose` when a tab closes.
   Flags (standard, MinGW target, include paths, `-Wall -Wextra`, extra flags) are sent as
-  `fallbackFlags` in the LSP `initialize` request; clangd is restarted when Settings change them.
+  `fallbackFlags` in the LSP `initialize` request; clangd is restarted when Settings change them
+  or `editor.argumentPlaceholders` (off adds `--function-arg-placeholders=0`).
   Nothing is written to the machine-wide clangd config any more (a file left by an older version
   is removed if it still carries the app's marker).
 

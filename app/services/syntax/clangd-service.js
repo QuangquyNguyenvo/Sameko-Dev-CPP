@@ -13,7 +13,7 @@ const os = require('os');
 const url = require('url');
 const { app } = require('electron');
 const { getCompilerBinDir, getBasePath, getWritableBasePath, getDetectedCompiler } = require('../compiler/detector');
-const { getCompilerSettings } = require('../../shared/settings-reader');
+const { getCompilerSettings, getArgumentPlaceholdersSetting } = require('../../shared/settings-reader');
 const { binName, NULL_DEVICE, IS_WIN, IS_MAC } = require('../../shared/platform');
 const { splitFlags } = require('../../shared/validators');
 
@@ -402,6 +402,9 @@ function getGccIncludePaths() {
 /**
  * Spawn the clangd child process
  */
+// The Argument Placeholders setting the running clangd was started with.
+let spawnedArgPlaceholders = true;
+
 async function spawnProcess() {
     // 1. Process Leak guard: prevent spawning multiple active processes
     if (clangdProcess) {
@@ -430,6 +433,10 @@ async function spawnProcess() {
         '--enable-config',
         `--query-driver=${queryDriverPath}`
     ];
+    // Passed only to turn them off: without the flag a user's own clangd config
+    // (Completion: ArgumentLists) still decides.
+    spawnedArgPlaceholders = getArgumentPlaceholdersSetting();
+    if (!spawnedArgPlaceholders) flags.push('--function-arg-placeholders=0');
 
     console.log(`[Clangd] Spawning from ${clangdPath} with flags:`, flags);
 
@@ -625,13 +632,15 @@ async function regenerateCompileFlags() {
  * match the (possibly changed) cppStandard/extraFlags, and cleanly restarts
  * clangd when they changed — fallback flags are only read at initialise time,
  * so without a restart e.g. a new -DLOCAL would not affect completions or
- * diagnostics until the next app launch.
+ * diagnostics until the next app launch. Argument Placeholders is a command
+ * line flag, so changing it needs a restart too.
  * @returns {Promise<void>}
  */
 async function onSettingsChanged() {
     if (!isEnabled || isPermanentlyDisabled) return;
-    const changed = await regenerateCompileFlags();
-    if (!changed || !clangdProcess) return;
+    const flagsChanged = await regenerateCompileFlags();
+    const placeholdersChanged = getArgumentPlaceholdersSetting() !== spawnedArgPlaceholders;
+    if ((!flagsChanged && !placeholdersChanged) || !clangdProcess) return;
 
     isShuttingDown = true;
     try {

@@ -854,6 +854,7 @@ function openSettings() {
     document.getElementById('set-liveCheck').checked = App.settings.editor.liveCheck || false;
     document.getElementById('set-liveCheckDelay').value = App.settings.editor.liveCheckDelay || 1000;
     document.getElementById('set-intellisense').checked = App.settings.editor.intellisense !== false;
+    document.getElementById('set-argumentPlaceholders').checked = App.settings.editor.argumentPlaceholders === true;
     document.getElementById('set-keywords').checked = App.settings.editor.keywords !== false;
     document.getElementById('set-snippets-enabled').checked = App.settings.editor.snippets !== false;
 
@@ -976,6 +977,7 @@ async function saveSettingsAndClose() {
         App.settings.editor.liveCheck = document.getElementById('set-liveCheck').checked;
         App.settings.editor.liveCheckDelay = parseInt(document.getElementById('set-liveCheckDelay').value) || 1000;
         App.settings.editor.intellisense = document.getElementById('set-intellisense').checked;
+        App.settings.editor.argumentPlaceholders = document.getElementById('set-argumentPlaceholders').checked;
         App.settings.editor.keywords = document.getElementById('set-keywords').checked;
         App.settings.editor.snippets = document.getElementById('set-snippets-enabled').checked;
 

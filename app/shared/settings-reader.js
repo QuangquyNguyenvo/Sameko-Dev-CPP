@@ -37,4 +37,13 @@ function getCompilerSettings() {
     };
 }
 
-module.exports = { readUserSettings, getCompilerSettings };
+/**
+ * Whether clangd should fill a picked function's arguments with placeholders.
+ * @returns {boolean}
+ */
+function getArgumentPlaceholdersSetting() {
+    const settings = readUserSettings();
+    return !!(settings && settings.editor && settings.editor.argumentPlaceholders === true);
+}
+
+module.exports = { readUserSettings, getCompilerSettings, getArgumentPlaceholdersSetting };

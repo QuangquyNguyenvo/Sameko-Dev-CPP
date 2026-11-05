@@ -33,6 +33,7 @@ const DEFAULT_SETTINGS = {
         snippets: true,  // Enable snippet suggestions
         keywords: true,  // Enable keyword suggestions
         intellisense: true,  // Clangd-backed completions + hover
+        argumentPlaceholders: false, // Fill a picked function's arguments with placeholders
         formatStyle: 'google',  // AStyle preset (app/services/formatter/styles.js)
         formatOnSave: false     // Format C/C++ files on Ctrl+S (not on auto-save)
     },
