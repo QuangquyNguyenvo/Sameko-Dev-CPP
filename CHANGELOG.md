@@ -15,7 +15,7 @@ Vim Mode and a cursor trail, fixes for data loss in contests, the Explorer, Save
 - **Cursor trail** (Settings › Appearance; #68, by @baodao211): a Neovide-style trail follows the cursor when it jumps, Vim jumps included. It draws only while the cursor moves, stays inside the editor under its popups and Find box, does not smear when you scroll, and works with Performance Mode on or off.
 - **Scroll Beyond Last Line** (Settings › Editor, off by default; #69, by @baodao211): scroll the last line up to the top of the editor.
 - **Stderr card** (#56): when a run writes to `cerr`, a fourth card under Input, Output and Expected shows it, kept per tab. It stays hidden for runs that write nothing to stderr, and AC/WA still reads stdout only.
-- **Argument Placeholders** (Settings › Editor, on by default; #67): turn it off and picking a function from the suggestions inserts just `name()` with the cursor inside, without the parameter names. (Overloaded functions such as `lower_bound` already insert only the parentheses.)
+- **Argument Placeholders** (Settings › Editor, off by default; #67): picking a function from the suggestions inserts just `name()` with the cursor inside; turn it on to fill in the parameter names as before. (Overloaded functions such as `lower_bound` always insert only the parentheses.)
 - **Three new builtin themes** (#60): Catppuccin Mocha (peach on plum, over a pixel-art road at sunset), Gruvbox Dark (gold on warm brown, over a pixel-art sleepy morning) and Crimson (soft red on near-black, over a pixel-art autumn temple gate), with readable syntax colors in each. Each background video is 0.4–0.8 MB (VP9, 720p, 30 fps; Gruvbox keeps its source 16 fps).
 
 ### Changed
