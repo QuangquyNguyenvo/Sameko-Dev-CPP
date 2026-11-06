@@ -20,8 +20,10 @@ const { ipcMain, app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const fsp = fs.promises;
+const { pipeline } = require('stream/promises');
 const crypto = require('crypto');
 const url = require('url');
+const { IPC } = require('../shared/constants');
 
 const stateDir = () => path.join(app.getPath('userData'), 'state');
 const assetDir = () => path.join(app.getPath('userData'), 'theme-assets');
@@ -115,12 +117,84 @@ async function saveThemeAsset(dataUrl) {
     return url.pathToFileURL(file).href;
 }
 
+// Picked by path, so large wallpaper videos never pass through IPC as base64.
+const MAX_IMPORT_BYTES = 512 * 1024 * 1024;
+const EXT_ASSET = {};
+for (const ext of Object.values(ASSET_EXT)) EXT_ASSET['.' + ext] = ext;
+EXT_ASSET['.jpeg'] = 'jpg';
+
+/** Local absolute path, or null for network paths, devices and URLs (mirrors app-protocol localFile). */
+function localAssetPath(p) {
+    if (typeof p !== 'string' || !p || p.includes('\0')) return null;
+    let file = p;
+    if (process.platform === 'win32') {
+        // \\.\ is a device; \\?\C:\x is a plain path, \\?\UNC\srv\x a network one.
+        if (/^[\\/]{2}\.[\\/]/.test(file)) return null;
+        const ext = /^[\\/]{2}\?[\\/](UNC[\\/])?(.*)$/i.exec(file);
+        if (ext) file = (ext[1] ? '\\\\' : '') + ext[2];
+    }
+    // Network paths (\\server\share, //server/x): opening one sends NTLM credentials.
+    if (/^[\\/]{2}/.test(file)) return null;
+    // URLs (file:, http:, ...) — a Windows drive letter is a single character.
+    if (/^[a-z][a-z0-9+.-]+:/i.test(file)) return null;
+    if (!path.isAbsolute(file)) return null;
+    return path.resolve(file);
+}
+
+/**
+ * Copy a local image/video into theme-assets under its content hash and
+ * return a file:// URL for it, like saveThemeAsset. The hash is streamed.
+ */
+async function importThemeAsset(filePath) {
+    const file = localAssetPath(filePath);
+    if (!file) throw new Error('Not a local file path');
+    const ext = EXT_ASSET[path.extname(file).toLowerCase()];
+    if (!ext) throw new Error('Unsupported asset type: ' + path.extname(file));
+    // A symlink to \\server\share\x.png passes the check above; opening it would still send
+    // NTLM credentials to that server.
+    const link = await fsp.lstat(file);
+    if (link.isSymbolicLink()) {
+        const target = await fsp.readlink(file);
+        if (!localAssetPath(path.resolve(path.dirname(file), target))) throw new Error('Not a local file path');
+    }
+    const st = await fsp.stat(file);
+    if (!st.isFile()) throw new Error('Not a regular file');
+    if (st.size > MAX_IMPORT_BYTES) throw new Error('Asset too large');
+
+    const dir = assetDir();
+    await fsp.mkdir(dir, { recursive: true });
+    const tmp = path.join(dir, `import-${RUN_TAG}-${++writeSeq}.tmp`);
+    const hash = crypto.createHash('sha1');
+    try {
+        // Hash while copying: one read of the source, and the copy is exactly the hashed bytes.
+        // pipeline() closes both files on an error, so the temp file can be removed.
+        const src = fs.createReadStream(file);
+        src.on('data', (chunk) => hash.update(chunk));
+        await pipeline(src, fs.createWriteStream(tmp));
+        const target = path.join(dir, hash.digest('hex') + '.' + ext);
+        if (fs.existsSync(target)) await fsp.rm(tmp, { force: true });
+        else await fsp.rename(tmp, target);
+        return url.pathToFileURL(target).href;
+    } catch (error) {
+        await fsp.rm(tmp, { force: true }).catch(() => { });
+        throw error;
+    }
+}
+
 /**
  * Drop checkpoints of untitled tabs that no session will ever ask for again,
  * and temp files left by a crash in the middle of a save.
  */
 async function sweepStaleState() {
     const dir = stateDir();
+    // An import cut short by a crash leaves a copy of up to 512 MB in theme-assets.
+    try {
+        for (const name of await fsp.readdir(assetDir())) {
+            if (/^import-.*\.tmp$/.test(name) && !name.startsWith(`import-${RUN_TAG}-`)) {
+                await fsp.rm(path.join(assetDir(), name), { force: true }).catch(() => { });
+            }
+        }
+    } catch (_) { }
     let names;
     try { names = await fsp.readdir(dir); } catch (_) { return; }
     const cutoff = Date.now() - 14 * 24 * 60 * 60 * 1000;
@@ -170,6 +244,14 @@ function registerHandlers() {
     ipcMain.handle('theme-asset-save', async (event, dataUrl) => {
         try {
             return { success: true, url: await saveThemeAsset(dataUrl) };
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle(IPC.THEME.ASSET_IMPORT, async (event, filePath) => {
+        try {
+            return { success: true, url: await importThemeAsset(filePath) };
         } catch (error) {
             return { success: false, error: error.message };
         }

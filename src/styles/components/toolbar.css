@@ -228,8 +228,16 @@
 }
 
 /* ---- Window buttons ---- */
+/* In their own island (index.html): bare, they vanished over a bright background, and the
+ * close button lit up as a square block against the window edge. */
+.header-bar .win-btns.header-island {
+    gap: 2px;
+}
+
 .header-bar .win-btn {
-    width: 44px;
+    width: 38px;
+    height: 34px;
+    border-radius: 12px;
     color: var(--text-secondary);
 }
 
@@ -245,6 +253,7 @@
 
 .header-bar .win-btn.close:hover {
     background: #e81123;
+    border-radius: 12px;
     color: #fff;
 }
 

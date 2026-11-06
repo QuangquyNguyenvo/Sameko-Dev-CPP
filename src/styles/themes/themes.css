@@ -231,6 +231,27 @@
         backdrop-filter: blur(var(--terminal-bg-blur, 0px));
         -webkit-backdrop-filter: blur(var(--terminal-bg-blur, 0px));
     }
+
+    /* The picture shows through the editor and the panels: each gets ONE see-through layer
+     * (--editor-bg / --bg-panel are translucent in this theme). Elsewhere these colours are
+     * stacked (pane over card, panel over editor colour) and would add up to near-opaque. */
+    :root body {
+        --island-bg: var(--bg-panel);
+    }
+
+    :root .editor-pane,
+    :root .editor-section > .editors-container {
+        background: transparent;
+    }
+
+    /* Input/Output are content, like the editor: white rather than the pale-blue chrome. */
+    :root .io-section > .io-panel {
+        background: var(--editor-bg) !important;
+    }
+
+    :root .docked-io-textarea {
+        background: transparent;
+    }
 }
 
 /* kawaii-light terminal line colors are now token-driven via --term-line-*
@@ -1640,7 +1661,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 10000;
+    z-index: var(--z-fullscreen);
     display: flex;
     align-items: center;
     justify-content: center;

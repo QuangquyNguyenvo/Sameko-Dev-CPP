@@ -139,7 +139,7 @@ async function runAllTests() {
     }
 
     // Ensure Terminal is visible for logs
-    if (!App.showTerm && !DockingState.terminalDocked) {
+    if (!App.showTerm && !DockingState.terminalDocked && App.settings.execution.showTerminalOnRun !== false) {
         App.showTerm = true;
         updateUI();
     }

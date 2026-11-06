@@ -38,7 +38,7 @@ function saveSplashPalette() {
     const opaque = (c) => c.replace(/^rgba\(([^,]+),([^,]+),([^,]+),[^)]+\)$/, 'rgb($1,$2,$3)');
     const palette = {
         type: document.documentElement.getAttribute('data-theme-variant') || 'dark',
-        bg: v('--editor-bg'),
+        bg: opaque(v('--editor-bg')),
         panel: opaque(v('--bg-panel')),
         accent: v('--accent'),
         text: v('--text-primary'),
@@ -63,8 +63,13 @@ function applyBackgroundSettings() {
 
     // overlay: tints .app-container when a bg image/video is present. Dark themes
     // use a stronger tint, light themes a very subtle one (matching the original
-    // hand-tuned values). Base color is stored per-theme as `appOverlay`.
-    const overlayBase = tc.appOverlay || (isLight ? '255, 255, 255' : '26, 37, 48');
+    // hand-tuned values). Base color is stored per-theme as `appOverlay`; 'none' shows the
+    // background undimmed (Kawaii Dark/Light).
+    // appOverlay is not a token, so importing a theme does not check it: accept only "r, g, b",
+    // or a theme file could put url(https://...) layers into the background below.
+    const noOverlay = tc.appOverlay === 'none';
+    const overlayRgb = typeof tc.appOverlay === 'string' && /^\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*$/.test(tc.appOverlay);
+    const overlayBase = (overlayRgb && tc.appOverlay) || (isLight ? '255, 255, 255' : '26, 37, 48');
     const overlayAlpha = isLight ? (opacity * 0.15) : (0.3 + opacity * 0.5);
 
     // default: fallback gradient, shown only when a theme has no bg image/video
@@ -92,10 +97,12 @@ function applyBackgroundSettings() {
     const canonical = ThemeManager.getBackgroundOverrides(theme);
     // Explicit clears and newly saved backgrounds win over the legacy Settings URL.
     const hasCanonical = canonical !== null && canonical !== undefined;
-    const userThemeBg = hasCanonical ? '' : normalizeBgUrl(perTheme[theme]?.bgUrl || App.settings.appearance.bgUrl);
+    // Until ThemeManager has loaded the stored backgrounds, paint none (no flash of the default).
+    const bgKnown = !ThemeManager.isLoading?.();
+    const userThemeBg = hasCanonical || !bgKnown ? '' : normalizeBgUrl(perTheme[theme]?.bgUrl || App.settings.appearance.bgUrl);
 
     // Get theme-specific background from THEME definition (default)
-    const themeDefaultBg = themeObj?.colors?.appBackground; // e.g. 'assets/backgrounds/pink.gif'
+    const themeDefaultBg = bgKnown ? themeObj?.colors?.appBackground : ''; // e.g. 'assets/backgrounds/pink.gif'
 
 
     // Single background owner (Phase 07 §4). The still image — theme default OR a
@@ -132,7 +139,7 @@ function applyBackgroundSettings() {
 
     const appContainer = document.querySelector('.app-container');
     if (appContainer) {
-        if (userThemeBg || themeDefaultBg) {
+        if ((userThemeBg || themeDefaultBg) && !noOverlay) {
             appContainer.style.background = themeConfig.overlay;
         } else {
             appContainer.style.background = 'transparent';
@@ -141,86 +148,6 @@ function applyBackgroundSettings() {
 
     // A video hidden behind a user image would otherwise keep decoding.
     ThemeManager.syncBackgroundVideo();
-
-    updateFakeBlur();
-}
-
-// The background, blurred once into a small image, for the glass surfaces in islands.css
-// (--app-bg-blurred). Done when the page is idle: it takes ~30 ms. Without a background image or
-// video the variable is removed and the glass shows the theme's gradient through its tint.
-let fakeBlurJob = 0;
-let fakeBlurSource = null;
-function updateFakeBlur() {
-    const job = ++fakeBlurJob;
-    const root = document.documentElement;
-    // A different picture: drop the old copy now, so the glass never shows the previous
-    // background while the new one loads (or if it fails to).
-    const forget = (source) => {
-        if (source !== fakeBlurSource) root.style.removeProperty('--app-bg-blurred');
-        fakeBlurSource = source;
-    };
-    const draw = (src, width, height, opacity) => {
-        if (job !== fakeBlurJob || !width || !height) return;
-        const cs = getComputedStyle(root);
-        const canvas = document.createElement('canvas');
-        // 640 px wide, stretched over the window: blur(3px) here reads as a light ~7 px frost.
-        canvas.width = 640;
-        canvas.height = Math.round(640 * height / width);
-        const ctx = canvas.getContext('2d');
-        ctx.fillStyle = cs.getPropertyValue('--editor-bg').trim() || '#1a2530';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.filter = `blur(3px) brightness(${parseFloat(cs.getPropertyValue('--app-bg-brightness')) || 1})`;
-        ctx.globalAlpha = opacity;
-        // Drawn past the edges, so the blur does not fade them to the fill colour.
-        ctx.drawImage(src, -12, -12, canvas.width + 24, canvas.height + 24);
-        try {
-            root.style.setProperty('--app-bg-blurred', `url("${canvas.toDataURL('image/jpeg', 0.85)}")`);
-        } catch (_) {
-            root.style.removeProperty('--app-bg-blurred');
-        }
-    };
-    const whenIdle = (fn) => (window.requestIdleCallback ? requestIdleCallback(fn, { timeout: 2000 }) : setTimeout(fn, 200));
-
-    const video = document.getElementById('app-bg-video');
-    if (video && video.style.display !== 'none' && video.getAttribute('src')) {
-        forget('video:' + video.getAttribute('src'));
-        // A cached video reports its data loaded before the first frame can be drawn; drawn
-        // then, the copy is only the fill colour. Wait (up to ~3 s) until a frame has pixels.
-        const hasFrame = () => {
-            try {
-                const c = document.createElement('canvas');
-                c.width = c.height = 4;
-                const g = c.getContext('2d', { willReadFrequently: true });
-                g.drawImage(video, 0, 0, 4, 4);
-                const d = g.getImageData(0, 0, 4, 4).data;
-                for (let i = 3; i < d.length; i += 4) if (d[i]) return true;
-            } catch (_) { return true; }   // unreadable: let draw() decide
-            return false;
-        };
-        let tries = 0;
-        const fromVideo = () => {
-            if (job !== fakeBlurJob) return;
-            if (!hasFrame() && ++tries < 30) { setTimeout(fromVideo, 100); return; }
-            whenIdle(() => draw(video, video.videoWidth, video.videoHeight,
-                parseFloat(getComputedStyle(video).opacity) || 1));
-        };
-        if (video.readyState >= 2) fromVideo();
-        else video.addEventListener('loadeddata', fromVideo, { once: true });
-        return;
-    }
-    const url = /^url\(\s*["']?(.*?)["']?\s*\)$/.exec(root.style.getPropertyValue('--app-bg-image').trim()
-        || getComputedStyle(root).getPropertyValue('--app-bg-image').trim());
-    if (!url) {
-        root.style.removeProperty('--app-bg-blurred');
-        fakeBlurSource = null;
-        return;
-    }
-    forget('image:' + url[1]);
-    const img = new Image();
-    img.src = url[1];
-    img.decode().then(() => whenIdle(() => draw(img, img.naturalWidth, img.naturalHeight,
-        parseFloat(getComputedStyle(document.body, '::before').opacity) || 1)))
-        .catch(() => { if (job === fakeBlurJob) root.style.removeProperty('--app-bg-blurred'); });
 }
 
 // Minimised or fully covered: stop decoding the background video until it is seen again.

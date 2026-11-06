@@ -49,18 +49,38 @@ const ThemeManager = {
         'nord',
         'catppuccin-mocha',
         'gruvbox-dark',
-        'crimson'
+        'crimson',
+        'event-horizon',
+        'pixel-night'
     ],
 
     /**
-     * Initialize Theme Manager
+     * Load user themes and background overrides.  Runs once: started when the page loads,
+     * awaited again once Monaco is up.  Until it finishes no background is shown, because
+     * the user's own background for a theme is not known yet; showing the theme's default
+     * first made it flash at startup.
      */
-    async init() {
+    init() {
+        if (!this._initPromise) {
+            this._initPromise = (async () => {
+                this._loadAllHardcodedThemes();
+                await this.loadUserThemes();
+                await this.loadBackgroundOverrides();
+                await this._migrateLegacyState();
+            })().finally(() => { this.initialized = true; });
+        }
+        return this._initPromise;
+    },
 
-        this._loadAllHardcodedThemes();
-        await this.loadUserThemes();
-        await this.loadBackgroundOverrides();
-        await this._migrateLegacyState();
+    /** True between the start and the end of init(). */
+    isLoading() {
+        return !!this._initPromise && !this.initialized;
+    },
+
+    /** Define every loaded theme in Monaco (themes registered before Monaco loaded were skipped). */
+    defineMonacoThemes() {
+        if (typeof monaco === 'undefined') return;
+        for (const theme of this.themes.values()) this._defineMonacoTheme(theme);
     },
 
     /**
@@ -97,150 +117,167 @@ const ThemeManager = {
      */
     _getHardcodedThemes() {
         return {
+            // Mita's night room: deep electric blue, with her blush pink as the accent.
             'kawaii-dark': {
                 meta: { id: 'kawaii-dark', name: 'Kawaii Dark', type: 'dark' },
                 colors: {
-                    appBackground: 'assets/backgrounds/darkblue.webm',
-                    appOverlay: '26, 37, 48',
-                    bgOceanLight: '#1a3a50',
-                    bgOceanMedium: '#152535',
-                    bgOceanDeep: '#88c9ea',
-                    bgOceanDark: '#0d1a25',
-                    bgGlass: 'rgba(26, 37, 48, 0.95)',
-                    bgGlassHeavy: 'rgba(21, 37, 53, 0.97)',
-                    bgGlassBorder: 'rgba(58, 96, 117, 0.8)',
-                    accent: '#88c9ea',
-                    accentHover: '#5eb7e0',
-                    textPrimary: '#e0f0ff',
-                    textSecondary: '#a0c0d0',
-                    textMuted: '#7990a0',
-                    success: '#7dcea0',
-                    error: '#ff6b6b',
-                    warning: '#fcd5ce',
-                    border: '#3a6075',
-                    borderStrong: '#88c9ea',
-                    shadowSoft: '0 8px 32px rgba(0, 0, 0, 0.4)',
-                    shadowCard: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                    glow: '0 0 15px rgba(136, 201, 234, 0.4)',
-                    bgHeader: 'rgba(21, 37, 53, 0.4)',
-                    bgPanel: 'rgba(26, 37, 48, 0.95)',
-                    bgInput: '#1a2a3a',
-                    bgButton: '#243040',
-                    bgButtonHover: '#3a5060',
-                    editorBg: '#1a2530',
-                    terminalBg: '#152535',
-                    settingsLabelColor: '#a0c0d0',
-                    settingsSectionColor: '#88c9ea',
-                    buttonTextOnAccent: '#ffffff',
-                    btnBg: 'rgba(255, 255, 255, 0.1)',
-                    btnBgHover: 'rgba(255, 255, 255, 0.15)',
-                    btnBorder: '#3a6075',
-                    btnText: '#e0f0ff',
-                    btnTextHover: '#88c9ea',
-                    btnPrimaryBg: '#88c9ea',
-                    btnPrimaryBgHover: '#5eb7e0',
-                    btnPrimaryText: '#ffffff',
-                    // Load-bearing tokens moved from themes.css [data-theme] (Phase 06)
-                    successDark: '#4caf50',
-                    successHover: '#45a045',
-                    errorDark: '#ff4444',
-                    borderGlassEdge: 'rgba(255, 255, 255, 0.1)',
-                    welcomeBoxBg: 'rgba(37, 64, 90, 0.4)'
+                    appBackground: 'assets/backgrounds/kawaii-dark.webm',
+                    appOverlay: 'none',
+                    bgOceanLight: '#1f2a5e',
+                    bgOceanMedium: '#161c42',
+                    bgOceanDeep: '#ff9ec4',
+                    bgOceanDark: '#0c1030',
+                    bgGlass: 'rgba(18, 22, 51, 0.92)',
+                    bgGlassHeavy: 'rgba(14, 18, 44, 0.95)',
+                    bgGlassBorder: 'rgba(120, 134, 210, 0.45)',
+                    accent: '#ff9ec4',
+                    accentHover: '#ffb8d4',
+                    textPrimary: '#eef0ff',
+                    textSecondary: '#c3c8ea',
+                    textMuted: '#9aa0cc',
+                    success: '#8fe0b4',
+                    error: '#ff7a8f',
+                    warning: '#ffd08a',
+                    border: '#2f3870',
+                    borderStrong: '#ff9ec4',
+                    shadowSoft: '0 8px 32px rgba(4, 6, 24, 0.5)',
+                    shadowCard: '0 4px 12px rgba(4, 6, 24, 0.4)',
+                    glow: '0 0 16px rgba(255, 158, 196, 0.35)',
+                    bgHeader: 'rgba(18, 22, 51, 0.55)',
+                    bgPanel: 'rgba(18, 22, 51, 0.92)',
+                    bgInput: '#0f132c',
+                    bgButton: '#222a5a',
+                    bgButtonHover: '#2f3a78',
+                    editorBg: '#121633',
+                    terminalBg: '#0f132c',
+                    settingsLabelColor: '#c3c8ea',
+                    settingsSectionColor: '#ff9ec4',
+                    buttonTextOnAccent: '#2a1030',
+                    btnBg: 'rgba(255, 255, 255, 0.08)',
+                    btnBgHover: 'rgba(255, 255, 255, 0.13)',
+                    btnBorder: '#2f3870',
+                    btnText: '#eef0ff',
+                    btnTextHover: '#ff9ec4',
+                    btnPrimaryBg: '#ff9ec4',
+                    btnPrimaryBgHover: '#ffb8d4',
+                    btnPrimaryText: '#2a1030',
+                    successDark: '#5bbf8a',
+                    successHover: '#4aa877',
+                    errorDark: '#ff5577',
+                    folderIconClosed: '#9db0ff',
+                    folderIconOpen: '#ff9ec4',
+                    borderGlassEdge: 'rgba(255, 255, 255, 0.08)',
+                    welcomeBoxBg: 'rgba(24, 30, 72, 0.25)'
                 },
                 editor: {
                     base: 'vs-dark', inherit: true,
-                    background: '#1a2530', foreground: '#e0f0ff',
+                    background: '#121633', foreground: '#e6e8fb',
+                    lineHighlight: '#1a2048',
+                    selection: '#33407f',
+                    cursor: '#ff9ec4',
+                    lineNumber: '#7a82b8',
+                    lineNumberActive: '#ff9ec4',
+                    scrollbar: '#7a82b850',
+                    scrollbarHover: '#9aa0cc80',
+                    scrollbarActive: '#ff9ec480',
+                    bracketPairs: ['#ff9ec4', '#9db0ff', '#ffd08a'],
                     syntax: {
-                        comment: { color: '6a8a9a', fontStyle: 'italic' },
-                        keyword: { color: '88c9ea' },
-                        string: { color: 'a3d9a5' },
-                        escape: { color: 'ebcb8b', fontStyle: 'bold' },
-                        number: { color: 'ebcb8b' },
-                        type: { color: 'e8a8b8' },
-                        function: { color: '7ec8e3' },
-                        variable: { color: '9cdcfe' },
-                        operator: { color: 'e0f0ff' },
-                        bracket: { color: 'ffd700' }
+                        comment: { color: '8189c2', fontStyle: 'italic' },
+                        keyword: { color: 'ff9ec4' },
+                        string: { color: 'ffd6a5' },
+                        escape: { color: 'ff9ec4', fontStyle: 'bold' },
+                        number: { color: 'ffb38a' },
+                        type: { color: '9db0ff' },
+                        function: { color: '8fd8f0' },
+                        variable: { color: 'c9d1ff' },
+                        operator: { color: 'b4b9e0' },
+                        bracket: { color: 'b4b9e0' }
                     }
                 }
             },
+            // White and ocean blue over blue line art: white content, pale-blue chrome, a dimmed video.
             'kawaii-light': {
                 meta: { id: 'kawaii-light', name: 'Kawaii Light', type: 'light' },
                 colors: {
                     componentStyle: 'kawaii-light',
-                    appBackground: 'assets/backgrounds/background.jpg',
-                    appOverlay: '255, 255, 255',
-                    bgOceanLight: '#e8f4fc',
-                    bgOceanMedium: '#d0e8f5',
-                    bgOceanDeep: '#4a9bc9',
-                    bgOceanDark: '#2a7ab0',
-                    bgGlass: 'rgba(232, 244, 252, 0.95)',
-                    bgGlassHeavy: 'rgba(208, 232, 245, 0.97)',
-                    bgGlassBorder: 'rgba(74, 155, 201, 0.5)',
-                    accent: '#4a9bc9',
-                    accentHover: '#3a8ab8',
-                    textPrimary: '#2a4a5a',
-                    textSecondary: '#4a6a7a',
-                    textMuted: '#7a9aaa',
-                    success: '#5dbe8a',
-                    error: '#e55a5a',
-                    warning: '#e5a05a',
-                    border: '#b9dcf0',
-                    borderStrong: '#4a9bc9',
-                    shadowSoft: '0 8px 32px rgba(74, 155, 201, 0.2)',
-                    shadowCard: '0 4px 12px rgba(74, 155, 201, 0.15)',
-                    glow: '0 0 15px rgba(74, 155, 201, 0.3)',
-                    bgHeader: 'rgba(208, 232, 245, 0.4)',
-                    bgPanel: 'rgba(244, 250, 255, 0.96)',
-                    bgInput: '#ffffff',
-                    bgButton: '#eef7fd',
-                    bgButtonHover: '#d0e8f5',
-                    // A light editor and terminal: they used to be kawaii-dark's navy, a dark
-                    // block in the middle of a light theme.
-                    editorBg: '#fbfdff',
-                    terminalBg: '#f3f9fe',
-                    terminalText: '#2a4a5a',
-                    terminalPlaceholder: '#6a8a9a',
-                    settingsLabelColor: '#4a6a7a',
-                    settingsSectionColor: '#4a9bc9',
+                    appBackground: 'assets/backgrounds/kawaii-light.webm',
+                    appOverlay: 'none',
+                    // The picture is mostly white: dimmed so the gaps between the cards frame them
+                    // and the window does not glare.
+                    bgBrightness: 80,
+                    bgOceanLight: '#e8f0f9',
+                    bgOceanMedium: '#d4e3f2',
+                    bgOceanDeep: '#2f78bd',
+                    bgOceanDark: '#2668a8',
+                    bgGlass: 'rgba(236, 243, 251, 0.92)',
+                    bgGlassHeavy: 'rgba(228, 238, 249, 0.97)',
+                    bgGlassBorder: 'rgba(47, 120, 189, 0.35)',
+                    accent: '#2f78bd',
+                    accentHover: '#2668a8',
+                    textPrimary: '#263850',
+                    textSecondary: '#4a5d78',
+                    textMuted: '#5d6b84',
+                    success: '#3f9a6a',
+                    error: '#d6496b',
+                    warning: '#c98a2a',
+                    border: '#c6d6e8',
+                    borderStrong: '#2f78bd',
+                    shadowSoft: '0 8px 32px rgba(48, 62, 88, 0.16)',
+                    shadowCard: '0 4px 12px rgba(48, 62, 88, 0.12)',
+                    glow: '0 0 15px rgba(47, 120, 189, 0.3)',
+                    bgHeader: 'rgba(232, 240, 249, 0.7)',
+                    // Chrome is pale ocean blue, content (editorBg) is white; both a little
+                    // see-through (themes.css keeps it to one layer per surface for this theme).
+                    bgPanel: 'rgba(234, 242, 250, 0.92)',
+                    bgInput: 'rgba(255, 255, 255, 0.9)',
+                    bgButton: '#e6eef8',
+                    bgButtonHover: '#d6e4f3',
+                    editorBg: 'rgba(253, 254, 255, 0.95)',
+                    terminalBg: 'rgba(253, 254, 255, 0.95)',
+                    terminalText: '#263850',
+                    terminalPlaceholder: '#5d6b84',
+                    settingsLabelColor: '#4a5d78',
+                    settingsSectionColor: '#2f78bd',
                     buttonTextOnAccent: '#ffffff',
                     btnBg: '#ffffff',
-                    btnBgHover: '#e8f4fc',
-                    btnBorder: '#a0c8e0',
-                    btnText: '#2a4a5a',
-                    btnTextHover: '#4a9bc9',
-                    btnPrimaryBg: '#4a9bc9',
-                    btnPrimaryBgHover: '#3a8ab8',
+                    btnBgHover: '#eaf2fb',
+                    btnBorder: '#bcd0e6',
+                    btnText: '#263850',
+                    btnTextHover: '#2f78bd',
+                    btnPrimaryBg: '#2f78bd',
+                    btnPrimaryBgHover: '#2668a8',
                     btnPrimaryText: '#ffffff',
-                    // Terminal line colors — kawaii-light overrides (were the
-                    // [data-theme="kawaii-light"] .terminal-body .line.* rules).
-                    termLineSuccess: '#3f9a6a',
-                    termLineError: '#d6496b',
-                    termLineWarning: '#c98a2a',
-                    termLineInfo: '#2f86b8',
-                    termLineSystem: '#7a9aaa',
-                    termLineInput: '#2f9fb5'
+                    folderIconClosed: '#e0a040',
+                    folderIconOpen: '#2f78bd',
+                    // Terminal line colors (were [data-theme="kawaii-light"] .terminal-body rules).
+                    termLineSuccess: '#2f8a5c',
+                    termLineError: '#d03f64',
+                    termLineWarning: '#b97a1e',
+                    termLineInfo: '#2f78bd',
+                    termLineSystem: '#5d6b84',
+                    termLineInput: '#1b77a0'
                 },
                 editor: {
                     base: 'vs', inherit: true,
-                    background: '#fbfdff', foreground: '#2a4a5a',
-                    lineHighlight: '#eef7fd',
-                    selection: '#cfe6f5',
-                    cursor: '#4a9bc9',
-                    lineNumber: '#a8c4d4',
-                    lineNumberActive: '#4a9bc9',
-                    // Pastel hues dark enough to read on white.
+                    background: '#fdfeff', foreground: '#263850',
+                    lineHighlight: '#e3edf8',
+                    selection: '#cfe1f3',
+                    cursor: '#2f78bd',
+                    lineNumber: '#6a7a92',
+                    lineNumberActive: '#2f78bd',
+                    bracketPairs: ['#2f78bd', '#c4446f', '#9a5f12'],
+                    // Hues dark enough to read on white (each at least 4.5:1).
                     syntax: {
-                        comment: { color: '8aa8b8', fontStyle: 'italic' },
-                        keyword: { color: 'd6608a' },
-                        string: { color: '3f9a6a' },
-                        escape: { color: 'c98a2a', fontStyle: 'bold' },
-                        number: { color: 'c27a2a' },
-                        type: { color: '7a6ad0' },
-                        function: { color: '2f86b8' },
-                        variable: { color: '2a4a5a' },
-                        operator: { color: '5a7a8a' },
-                        bracket: { color: 'd99a20' }
+                        comment: { color: '5c6a83', fontStyle: 'italic' },
+                        keyword: { color: 'c4446f' },
+                        string: { color: '9a5f12' },
+                        escape: { color: 'c0482a', fontStyle: 'bold' },
+                        number: { color: 'c0482a' },
+                        type: { color: '6352c4' },
+                        function: { color: '1b77a0' },
+                        variable: { color: '263850' },
+                        operator: { color: '566883' },
+                        bracket: { color: '566883' }
                     }
                 }
             },
@@ -734,6 +771,154 @@ const ThemeManager = {
                         type: { color: 'f0a090' },
                         function: { color: 'a7d3c9' },
                         operator: { color: 'd6b0b6' }
+                    }
+                }
+            },
+            // Flat-vector space: ivory accretion disk on indigo, lavender asteroids, pastel pink planets.
+            'event-horizon': {
+                meta: { id: 'event-horizon', name: 'Event Horizon', type: 'dark' },
+                colors: {
+                    appBackground: 'assets/backgrounds/event-horizon.webm',
+                    appOverlay: '24, 22, 38',
+                    bgOceanLight: '#2e2c45',
+                    bgOceanMedium: '#1d1c2e',
+                    bgOceanDeep: '#c3bbf2',
+                    bgOceanDark: '#24203f',
+                    bgGlass: 'rgba(26, 25, 42, 0.84)',
+                    bgGlassHeavy: 'rgba(22, 21, 36, 0.93)',
+                    bgGlassBorder: 'rgba(140, 135, 190, 0.55)',
+                    accent: '#c3bbf2',
+                    accentHover: '#d8d2fb',
+                    textPrimary: '#ebe8f5',
+                    textSecondary: '#d4d1e8',
+                    textMuted: '#a3a0c4',
+                    success: '#c7dca4',
+                    error: '#f59bb0',
+                    warning: '#f4c39a',
+                    border: '#4a4670',
+                    borderStrong: '#c3bbf2',
+                    shadowSoft: '0 8px 32px rgba(0, 0, 0, 0.5)',
+                    shadowCard: '0 4px 12px rgba(0, 0, 0, 0.4)',
+                    glow: '0 0 18px rgba(195, 187, 242, 0.35)',
+                    bgHeader: 'rgba(38, 35, 60, 0.5)',
+                    bgPanel: 'rgba(26, 25, 42, 0.84)',
+                    bgInput: '#141323',
+                    bgButton: '#2c2a44',
+                    bgButtonHover: '#3b3858',
+                    editorBg: '#18172a',
+                    terminalBg: '#141324',
+                    settingsLabelColor: '#d4d1e8',
+                    settingsSectionColor: '#f5b3c4',
+                    buttonTextOnAccent: '#1d1b30',
+                    btnBg: 'rgba(255, 255, 255, 0.06)',
+                    btnBgHover: 'rgba(255, 255, 255, 0.1)',
+                    btnBorder: '#3b3858',
+                    btnText: '#ebe8f5',
+                    btnTextHover: '#c3bbf2',
+                    btnPrimaryBg: '#c3bbf2',
+                    btnPrimaryBgHover: '#d8d2fb',
+                    btnPrimaryText: '#1d1b30',
+                    successDark: '#9fb87c',
+                    successHover: '#b3c98f',
+                    errorDark: '#e07a98',
+                    folderIconClosed: '#c3bbf2',
+                    folderIconOpen: '#f5b3c4',
+                    borderGlassEdge: 'rgba(255, 255, 255, 0.07)',
+                    welcomeBoxBg: 'rgba(36, 33, 58, 0.45)'
+                },
+                editor: {
+                    base: 'vs-dark', inherit: true,
+                    background: '#18172a', foreground: '#e2dfef',
+                    lineHighlight: '#211f36',
+                    selection: '#38355c',
+                    cursor: '#efe3b8',
+                    lineNumber: '#7f7ca6',
+                    lineNumberActive: '#c3bbf2',
+                    scrollbar: '#5d5a8050',
+                    scrollbarHover: '#7a76a880',
+                    scrollbarActive: '#c3bbf280',
+                    bracketPairs: ['#c3bbf2', '#f5b3c4', '#eed59a'],
+                    syntax: {
+                        comment: { color: '8f8cb6', fontStyle: 'italic' },
+                        keyword: { color: 'f5b3c4' },
+                        string: { color: 'eed59a' },
+                        escape: { color: 'f5b3c4', fontStyle: 'bold' },
+                        number: { color: 'f4b39a' },
+                        type: { color: 'b8b0ee' },
+                        function: { color: 'c7dca4' },
+                        operator: { color: 'b6b3d4' },
+                        bracket: { color: 'aaa7c8' }
+                    }
+                }
+            },
+            // The original Kawaii Dark (1.0 to 1.3): ocean blue with a cyan accent over a pixel city at night.
+            'pixel-night': {
+                meta: { id: 'pixel-night', name: 'Pixel Night', type: 'dark' },
+                colors: {
+                    appBackground: 'assets/backgrounds/darkblue.webm',
+                    appOverlay: '26, 37, 48',
+                    // Before 1.4 this theme had no folder colours and used the defaults.
+                    folderIconClosed: '#f0c674',
+                    folderIconOpen: '#f5b942',
+                    bgOceanLight: '#1a3a50',
+                    bgOceanMedium: '#152535',
+                    bgOceanDeep: '#88c9ea',
+                    bgOceanDark: '#0d1a25',
+                    bgGlass: 'rgba(26, 37, 48, 0.95)',
+                    bgGlassHeavy: 'rgba(21, 37, 53, 0.97)',
+                    bgGlassBorder: 'rgba(58, 96, 117, 0.8)',
+                    accent: '#88c9ea',
+                    accentHover: '#5eb7e0',
+                    textPrimary: '#e0f0ff',
+                    textSecondary: '#a0c0d0',
+                    textMuted: '#7990a0',
+                    success: '#7dcea0',
+                    error: '#ff6b6b',
+                    warning: '#fcd5ce',
+                    border: '#3a6075',
+                    borderStrong: '#88c9ea',
+                    shadowSoft: '0 8px 32px rgba(0, 0, 0, 0.4)',
+                    shadowCard: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                    glow: '0 0 15px rgba(136, 201, 234, 0.4)',
+                    bgHeader: 'rgba(21, 37, 53, 0.4)',
+                    bgPanel: 'rgba(26, 37, 48, 0.95)',
+                    bgInput: '#1a2a3a',
+                    bgButton: '#243040',
+                    bgButtonHover: '#3a5060',
+                    editorBg: '#1a2530',
+                    terminalBg: '#152535',
+                    settingsLabelColor: '#a0c0d0',
+                    settingsSectionColor: '#88c9ea',
+                    buttonTextOnAccent: '#ffffff',
+                    btnBg: 'rgba(255, 255, 255, 0.1)',
+                    btnBgHover: 'rgba(255, 255, 255, 0.15)',
+                    btnBorder: '#3a6075',
+                    btnText: '#e0f0ff',
+                    btnTextHover: '#88c9ea',
+                    btnPrimaryBg: '#88c9ea',
+                    btnPrimaryBgHover: '#5eb7e0',
+                    btnPrimaryText: '#ffffff',
+                    // Load-bearing tokens moved from themes.css [data-theme] (Phase 06)
+                    successDark: '#4caf50',
+                    successHover: '#45a045',
+                    errorDark: '#ff4444',
+                    borderGlassEdge: 'rgba(255, 255, 255, 0.1)',
+                    welcomeBoxBg: 'rgba(37, 64, 90, 0.4)'
+                },
+                editor: {
+                    base: 'vs-dark', inherit: true,
+                    background: '#1a2530', foreground: '#e0f0ff',
+                    syntax: {
+                        comment: { color: '6a8a9a', fontStyle: 'italic' },
+                        keyword: { color: '88c9ea' },
+                        string: { color: 'a3d9a5' },
+                        escape: { color: 'ebcb8b', fontStyle: 'bold' },
+                        number: { color: 'ebcb8b' },
+                        type: { color: 'e8a8b8' },
+                        function: { color: '7ec8e3' },
+                        variable: { color: '9cdcfe' },
+                        operator: { color: 'e0f0ff' },
+                        bracket: { color: 'ffd700' }
                     }
                 }
             },
@@ -1282,6 +1467,12 @@ const ThemeManager = {
                 'scrollbarSlider.activeBackground': editorConfig.scrollbarActive || '#88c9ea80'
             }
         };
+        // Bracket pair colours (Monaco's defaults are gold, orchid and blue).
+        if (Array.isArray(editorConfig.bracketPairs)) {
+            editorConfig.bracketPairs.slice(0, 6).forEach((color, i) => {
+                if (typeof color === 'string' && /^#(?:[\da-f]{3,4}|[\da-f]{6}|[\da-f]{8})$/i.test(color)) monacoTheme.colors[`editorBracketHighlight.foreground${i + 1}`] = color;
+            });
+        }
 
         try {
             monaco.editor.defineTheme(theme.id, monacoTheme);
@@ -1355,10 +1546,6 @@ const ThemeManager = {
         document.documentElement.setAttribute('data-theme-variant', theme.type || 'dark');
         this._applyCSSVariables(theme);
         this._updateBackground(theme);
-        // The glass surfaces paint a blurred copy of the background; every theme change must
-        // redo it (deleting or re-saving the active theme reaches here without applyTheme()).
-        if (typeof updateFakeBlur === 'function') updateFakeBlur();
-
         // Monaco: an explicit editor color scheme overrides the UI theme; otherwise
         // the editor follows the UI theme. This is the single place that decides the
         // editor theme, so switching themes no longer double-sets Monaco.
@@ -1409,7 +1596,7 @@ const ThemeManager = {
             || this._legacyBackgroundExists(themeId);
         if (themeId === 'kawaii-light' && !hasBackgroundOverride && (!theme.colors || !theme.colors.appBackground)) {
             if (!theme.colors) theme.colors = {};
-            theme.colors.appBackground = 'assets/backgrounds/background.jpg';
+            theme.colors.appBackground = 'assets/backgrounds/kawaii-light.webm';
         }
     },
 
@@ -1464,7 +1651,13 @@ const ThemeManager = {
      */
     _applyCSSVariables(theme) {
         const root = document.documentElement;
-        const colors = theme.colors || {};
+        let colors = theme.colors || {};
+        // Images wait for init(), like the video in _updateBackground().
+        if (this.isLoading() && (colors.appBackground || colors.editorBackground)) {
+            colors = { ...colors };
+            delete colors.appBackground;
+            delete colors.editorBackground;
+        }
 
         // Use unified ThemeTokens module for applying colors
         // clearFirst: true removes old values before applying new ones
@@ -1643,7 +1836,8 @@ const ThemeManager = {
         const bgVideo = document.getElementById('app-bg-video');
         if (!bgVideo) return;
 
-        const bgPath = theme.colors?.appBackground;
+        // Before init() the user's background is unknown: show none rather than the default.
+        const bgPath = this.isLoading() ? '' : theme.colors?.appBackground;
 
         // Supported video extensions or data URI
         if (bgPath && (

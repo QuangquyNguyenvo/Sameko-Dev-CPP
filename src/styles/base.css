@@ -17,6 +17,17 @@
     box-sizing: border-box;
 }
 
+/* Stacking layers for everything that floats over the app. A popup goes in the layer
+   above every window that can open it, so it is never hidden behind its own opener. */
+:root {
+    --z-panel: 2000;        /* Settings, Local History */
+    --z-panel-raised: 2100; /* Theme Customizer, history preview (opened from a panel) */
+    --z-fullscreen: 10000;  /* Theme Marketplace, Snippet Editor */
+    --z-dialog: 20000;      /* text inputs, Competitive Companion, update, debugger prompt */
+    --z-confirm: 20100;     /* confirm dialog: above any window or dialog that asks it */
+    --z-toast: 30000;       /* "file changed" and "restore session" notices */
+}
+
 :root {
     /* Light Theme Color Palette - Dimmed for comfort */
     --bg-ocean-light: #d0e5f5;

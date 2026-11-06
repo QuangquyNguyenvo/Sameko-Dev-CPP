@@ -182,16 +182,20 @@ window.registerCppIntellisense = function (monaco) {
             });
         });
 
-        if (statementOK) {
-            if (typeof App !== 'undefined' && App.settings && Array.isArray(App.settings.snippets)) {
-                App.settings.snippets.forEach(s => {
-                    suggestions.push({
-                        label: s.trigger, kind: monaco.languages.CompletionItemKind.Snippet,
-                        insertText: s.content, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                        documentation: s.name || 'Custom Snippet', range: range
-                    });
+        // User snippets keep the 1.3 rule (anywhere outside parentheses): users write
+        // mid-line ones too (`vector<ll`). A copy of an expression built-in (`all`) goes
+        // everywhere the built-in went, `sort(all|)` included.
+        const exprTriggers = new Set([...SNIPPETS.common, ...langSnippets].filter(s => s.expr).map(s => s.label));
+        const insideParentheses = /\([^)]*$/.test(textUntilPosition);
+        if (Array.isArray(settings.snippets)) {
+            settings.snippets.forEach(s => {
+                if (!statementOK && insideParentheses && !exprTriggers.has(s.trigger)) return;
+                suggestions.push({
+                    label: s.trigger, kind: monaco.languages.CompletionItemKind.Snippet,
+                    insertText: s.content, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                    documentation: s.name || 'Custom Snippet', range: range
                 });
-            }
+            });
         }
 
         const cppKeywords = [

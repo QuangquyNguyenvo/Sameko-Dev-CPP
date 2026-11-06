@@ -666,8 +666,12 @@ const ThemeTokens = {
             }
         };
 
-        // Numeric / effect defaults
-        d('bgOpacity',           50);
+        // Numeric / effect defaults.  A video background is drawn at full opacity when the
+        // theme sets none (#app-bg-video), a still image at half (body::before); filling in 50
+        // for a video made "Save background" store a half-faded video.
+        const videoBg = typeof c.appBackground === 'string'
+            && /(\.(webm|mp4)(\?.*)?$|^data:video\/)/i.test(c.appBackground.trim());
+        d('bgOpacity',           videoBg ? 100 : 50);
         d('bgBrightness',        100);
         d('bgBlur',              0);
         d('editorBgOpacity',     15);

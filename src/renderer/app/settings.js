@@ -924,6 +924,7 @@ function openSettings() {
     document.getElementById('set-timeLimitEnabled').checked = App.settings.execution.timeLimitEnabled;
     document.getElementById('set-timeLimitSeconds').value = App.settings.execution.timeLimitSeconds;
     document.getElementById('set-clearTerminal').checked = App.settings.execution.clearTerminal;
+    document.getElementById('set-showTerminalOnRun').checked = App.settings.execution.showTerminalOnRun !== false;
     document.getElementById('set-autoSendInput').checked = App.settings.execution.autoSendInput;
     document.getElementById('set-useExternalTerminal').checked = App.settings.execution.useExternalTerminal || false;
     const setRealtimeOutput = document.getElementById('set-realtimeOutput');
@@ -1052,6 +1053,7 @@ async function saveSettingsAndClose() {
         App.settings.execution.timeLimitEnabled = document.getElementById('set-timeLimitEnabled').checked;
         App.settings.execution.timeLimitSeconds = parseInt(document.getElementById('set-timeLimitSeconds').value);
         App.settings.execution.clearTerminal = document.getElementById('set-clearTerminal').checked;
+        App.settings.execution.showTerminalOnRun = document.getElementById('set-showTerminalOnRun').checked;
         App.settings.execution.autoSendInput = document.getElementById('set-autoSendInput').checked;
         App.settings.execution.useExternalTerminal = document.getElementById('set-useExternalTerminal').checked;
         const realtimeOutputToggle = document.getElementById('set-realtimeOutput');

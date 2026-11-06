@@ -154,9 +154,9 @@ in October 2026.)
 - Installer: `package.json` › `build.nsis.installerLanguages` + the `LangString`s in `installer/installer.nsh`.
 
 ### Theme system
-- **Data:** `ThemeManager._getHardcodedThemes()` defines the nine builtin themes (`kawaii-dark`,
+- **Data:** `ThemeManager._getHardcodedThemes()` defines the eleven builtin themes (`kawaii-dark`,
   `kawaii-light`, `sakura`, `dracula`, `monokai`, `nord`,
-  `catppuccin-mocha`, `gruvbox-dark`, `crimson`) inline; the list of ids is
+  `catppuccin-mocha`, `gruvbox-dark`, `crimson`, `event-horizon`, `pixel-night`) inline; the list of ids is
   `ThemeManager.builtinThemeIds`. Every builtin has a background picture or video; a theme with
   `appBackground: ''` shows the fallback gradient (editorBg -> bgOceanDark).
 - **Tokens:** `ThemeTokens` maps each token to a CSS variable and type, holds defaults

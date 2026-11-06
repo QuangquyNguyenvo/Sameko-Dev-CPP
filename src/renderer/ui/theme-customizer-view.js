@@ -115,18 +115,18 @@
     }
 
     var FRIENDLY_TOKEN_LABELS = {
-        bgBase: 'Main background',
+        bgBase: 'Resize gutters',
         bgOceanDark: 'Main background',
         bgOceanMedium: 'Secondary background',
         bgOceanLight: 'Surface',
-        bgSurface: 'Surface',
+        bgSurface: 'Markdown preview blocks',
         editorBg: 'Editor background',
         bgPanel: 'Panels',
         'bgPanel-problems': 'Problems panel',
-        'bgPanel-input': 'Input',
-        'bgPanel-expected': 'Expected',
-        bgHeader: 'Header',
-        'bgHeader-main': 'Header',
+        'bgPanel-input': 'Input panel',
+        'bgPanel-expected': 'Expected panel',
+        bgHeader: 'Headers',
+        'bgHeader-main': 'Main title bar',
         'bgHeader-statusbar': 'Status bar',
         bgInput: 'Input fields',
         terminalBg: 'Terminal',
@@ -225,6 +225,35 @@
         button.setAttribute('aria-label', 'Revert ' + label);
         button.innerHTML = '<svg class="ico" width="14" height="14" aria-hidden="true"><use href="#i-arrows-clockwise"/></svg>';
         return button;
+    }
+
+    /* The swatch and the value share one bordered field. */
+    function createColorField(picker, input, hash) {
+        var field = document.createElement('span');
+        field.className = 'tcf-color-field';
+        var swatch = document.createElement('span');
+        swatch.className = 'tcf-swatch';
+        swatch.appendChild(picker);
+        field.appendChild(swatch);
+        if (hash) {
+            var prefix = document.createElement('span');
+            prefix.className = 'tcf-hash';
+            prefix.setAttribute('aria-hidden', 'true');
+            prefix.textContent = '#';
+            field.appendChild(prefix);
+        }
+        field.appendChild(input);
+        return field;
+    }
+
+    /* The swatch paints the real value (an rgba() keeps its alpha); the native
+     * colour input on top of it stays clickable but transparent. */
+    function setSwatch(row, value) {
+        var swatch = row.querySelector('.tcf-swatch');
+        if (!swatch) return;
+        var text = asString(value, '').trim();
+        if (/^(?:[\da-f]{6}|[\da-f]{8})$/i.test(text)) text = '#' + text;
+        swatch.style.setProperty('--tcf-swatch', isSafeCssValue(text) ? text : swatchColor(text));
     }
 
     /* A changed row gets a revert button showing the saved value. */
@@ -538,7 +567,7 @@
             '</div>',
             '<div class="tcf-preview-pane"><div class="tcf-preview-heading"><h3>Live preview</h3><span class="tcf-preview-help">Click any part to edit its color</span></div><div class="tcf-preview-host" data-tcf-preview></div></div>',
             '</div>',
-            '<div class="settings-footer tcf-footer"><div class="tcf-footer-left"><span class="tcf-status" data-tcf-status role="status" aria-live="polite">Ready</span><button type="button" class="tcf-danger-link" data-tcf-action="delete">Delete theme</button></div><div class="tcf-footer-actions"><button type="button" class="btn-reset" data-tcf-action="undo" title="Undo the last change (Ctrl+Z)">Undo</button><button type="button" class="btn-reset" data-tcf-action="redo" title="Redo (Ctrl+Y)">Redo</button><button type="button" class="btn-reset" data-tcf-action="reset" title="Reset the whole theme">Reset all</button><button type="button" class="btn-reset" data-tcf-action="close">Cancel</button><button type="button" class="btn-reset tcf-secondary" data-tcf-action="save-background">Save background</button><button type="button" class="btn-reset tcf-secondary" data-tcf-action="save-as">Save as new</button><button type="button" class="btn-save" data-tcf-action="save">Save</button></div></div>',
+            '<div class="settings-footer tcf-footer"><div class="tcf-footer-left"><span class="tcf-history"><button type="button" class="tcf-icon-button" data-tcf-action="undo" aria-label="Undo" title="Undo the last change (Ctrl+Z)"><svg class="tcf-hist-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button><button type="button" class="tcf-icon-button" data-tcf-action="redo" aria-label="Redo" title="Redo (Ctrl+Y)"><svg class="tcf-hist-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button></span><span class="tcf-status" data-tcf-status role="status" aria-live="polite"></span></div><div class="tcf-footer-actions"><button type="button" class="tcf-danger-link" data-tcf-action="delete">Delete theme</button><button type="button" class="btn-reset tcf-ghost" data-tcf-action="reset" title="Reset the whole theme">Reset all</button><button type="button" class="btn-reset" data-tcf-action="close">Cancel</button><button type="button" class="btn-reset tcf-secondary" data-tcf-action="save-background">Save background</button><button type="button" class="btn-reset tcf-secondary" data-tcf-action="save-as">Save as new</button><button type="button" class="btn-save" data-tcf-action="save">Save</button></div></div>',
             '</div>'
         ].join('');
 
@@ -926,11 +955,9 @@
         var name = document.createElement('span');
         name.className = 'tcf-token-name';
         name.textContent = friendlyTokenLabel(key);
-        var variable = document.createElement('code');
-        variable.className = 'tcf-token-var';
-        variable.textContent = asString(def && def.cssVar, '');
+        /* The CSS variable is for power users: a tooltip, not a second line. */
+        label.title = asString(def && def.cssVar, '');
         label.appendChild(name);
-        label.appendChild(variable);
         var editor = document.createElement('div');
         editor.className = 'tcf-token-editor';
         var picker = document.createElement('input');
@@ -947,8 +974,7 @@
         input.setAttribute('aria-label', friendlyTokenLabel(key) + ' CSS value');
         input.spellcheck = false;
         editor.appendChild(createRevertButton(key, friendlyTokenLabel(key)));
-        editor.appendChild(picker);
-        editor.appendChild(input);
+        editor.appendChild(createColorField(picker, input, false));
         row.appendChild(label);
         row.appendChild(editor);
         return row;
@@ -966,6 +992,7 @@
             if (input && (input !== active || self._options.force)) input.value = value;
             if (picker && (picker !== active || self._options.force)) picker.value = swatchColor(value);
             if (input) input.title = value;
+            setSwatch(row, value);
             if (typeof self.controller.savedValue === 'function') {
                 var saved = self.controller.savedValue(key);
                 markChanged(row, !sameColor(themeColors(self._theme)[key], saved), saved);
@@ -1011,11 +1038,8 @@
         var title = document.createElement('span');
         title.className = 'tcf-token-name';
         title.textContent = labelForKey(name);
-        var variable = document.createElement('code');
-        variable.className = 'tcf-token-var';
-        variable.textContent = '--syntax-' + name;
+        label.title = '--syntax-' + name;
         label.appendChild(title);
-        label.appendChild(variable);
         var editor = document.createElement('div');
         editor.className = 'tcf-token-editor';
         var picker = document.createElement('input');
@@ -1032,8 +1056,8 @@
         input.setAttribute('aria-label', labelForKey(name) + ' syntax CSS value');
         input.spellcheck = false;
         editor.appendChild(createRevertButton('syntax' + name.charAt(0).toUpperCase() + name.slice(1), labelForKey(name)));
-        editor.appendChild(picker);
-        editor.appendChild(input);
+        /* Monaco stores these without '#': the field shows one in front. */
+        editor.appendChild(createColorField(picker, input, true));
         row.appendChild(label);
         row.appendChild(editor);
         return row;
@@ -1050,6 +1074,8 @@
             var active = self.element.ownerDocument && self.element.ownerDocument.activeElement;
             if (input && (input !== active || self._options.force)) input.value = value;
             if (picker && (picker !== active || self._options.force)) picker.value = swatchColor(value);
+            if (input) input.title = value ? '#' + asString(value, '').replace(/^#/, '') : '';
+            setSwatch(row, value);
             if (typeof self.controller.savedSyntax === 'function') {
                 var saved = self.controller.savedSyntax(name);
                 markChanged(row, !sameColor(value, saved), saved);
@@ -1164,11 +1190,12 @@
         Array.prototype.forEach.call(this.element.querySelectorAll('[data-tcf-bg-url]'), function (input) {
             var active = self.element.ownerDocument && self.element.ownerDocument.activeElement;
             if (input !== active || self._options.force) input.value = asString(tokenValue(self._theme, input.getAttribute('data-key')), '').replace(/^url\(['"]?|['"]?\)$/g, '');
+            input.title = input.value;
         });
         Array.prototype.forEach.call(this.element.querySelectorAll('[data-tcf-range]'), function (range) {
             var active = self.element.ownerDocument && self.element.ownerDocument.activeElement;
             var key = range.getAttribute('data-key');
-            var fallback = key.indexOf('Brightness') >= 0 ? 100 : key === 'bgOpacity' ? 50 : key === 'editorBgOpacity' ? 15 : key === 'terminalOpacity' || key === 'panelOpacity' || key === 'welcomeBoxOpacity' ? 100 : 0;
+            var fallback = key.indexOf('Brightness') >= 0 ? 100 : key === 'bgOpacity' ? (isVideoAsset(asString(tokenValue(self._theme, 'appBackground'), '')) ? 100 : 50) : key === 'editorBgOpacity' ? 15 : key === 'terminalOpacity' || key === 'panelOpacity' || key === 'welcomeBoxOpacity' ? 100 : 0;
             if (range !== active || self._options.force) range.value = String(numericValue(self._theme, key, fallback));
             var output = range.parentElement && range.parentElement.querySelector('[data-tcf-range-value]');
             if (output) output.textContent = self._formatRange(key, range.value);
@@ -1500,12 +1527,12 @@
             percent *= 100;
         }
         var opacity = Math.min(Math.max(percent, 0), 100) / 100;
-        var overlayBase = /^s*d{1,3}s*,s*d{1,3}s*,s*d{1,3}s*$/.test(asString(colors.appOverlay, '')) ? colors.appOverlay : (variant === 'light' ? '255, 255, 255' : '26, 37, 48');
+        var overlayBase = /^\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*$/.test(asString(colors.appOverlay, '')) ? colors.appOverlay : (variant === 'light' ? '255, 255, 255' : '26, 37, 48');
         var overlayAlpha = variant === 'light' ? opacity * 0.15 : 0.3 + opacity * 0.5;
         var gradientTop = isSafeCssValue(colors.editorBg) ? colors.editorBg : isSafeCssValue(colors.bgOceanMedium) ? colors.bgOceanMedium : '#1a2530';
         var gradientBottom = isSafeCssValue(colors.bgOceanDark) ? colors.bgOceanDark : isSafeCssValue(colors.bgOceanMedium) ? colors.bgOceanMedium : '#152535';
         style.setProperty('--tcf-app-base', hasBackground ? (variant === 'light' ? 'var(--bg-ocean-light)' : '#1a2530') : 'linear-gradient(135deg, ' + gradientTop + ' 0%, ' + gradientBottom + ' 100%)');
-        style.setProperty('--tcf-app-overlay', hasBackground ? 'rgba(' + overlayBase + ', ' + overlayAlpha + ')' : 'transparent');
+        style.setProperty('--tcf-app-overlay', hasBackground && colors.appOverlay !== 'none' ? 'rgba(' + overlayBase + ', ' + overlayAlpha + ')' : 'transparent');
         this._syncPreviewVideo(theme);
         this._fitPreview();
         return this._previewHost;
@@ -1560,7 +1587,8 @@
         }
         var status = this.element.querySelector('[data-tcf-status]');
         if (status && !options.busy) {
-            status.textContent = this._statusMessage || (options.dirty ? 'Draft changes previewed' : 'Ready');
+            /* Idle is silent: the header already says Saved / Unsaved changes. */
+            status.textContent = this._statusMessage || '';
             status.dataset.tone = this._statusMessage ? this._statusTone : '';
             status.dataset.type = this._statusMessage ? this._statusTone : '';
         } else if (status && options.busy) {

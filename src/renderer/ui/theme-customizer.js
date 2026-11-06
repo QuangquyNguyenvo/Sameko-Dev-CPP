@@ -262,7 +262,12 @@ const ThemeCustomizer = {
 
     async _setBackgroundFileNow(file, key) {
         if (!file || !ThemeManager.ASSET_KEYS.includes(key) || this.busy) return;
-        if (file.size > 64 * 1024 * 1024) { this.notify('Background files must be smaller than 64 MB.', 'error'); return; }
+        // A file with a path is copied by main (any size up to 512 MB); without one
+        // (no path from the picker) it has to travel over IPC as a data URL.
+        const api = window.electronAPI;
+        const filePath = (api?.saveThemeAssetFromPath && api.getPathForFile?.(file)) || '';
+        if (filePath && file.size > 512 * 1024 * 1024) { this.notify('Background files must be smaller than 512 MB.', 'error'); return; }
+        if (!filePath && file.size > 64 * 1024 * 1024) { this.notify('Background files must be smaller than 64 MB.', 'error'); return; }
         if (!['image/png','image/jpeg','image/gif','image/webp','image/svg+xml','image/avif','image/bmp','video/webm','video/mp4'].includes(file.type)) {
             this.notify('Choose a supported image, MP4 or WebM video.', 'error'); return;
         }
@@ -270,15 +275,21 @@ const ThemeCustomizer = {
         const request = (this._assetRequests[key] || 0) + 1;
         this._assetRequests[key] = request;
         try {
-            const url = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = () => reject(new Error('Could not read background file.'));
-                reader.readAsDataURL(file);
-            });
-            // Keep snapshots small: history stores file URLs instead of repeated base64 blobs.
-            const assets = { [key]: url };
-            await ThemeManager.externalizeAssets(assets);
+            const assets = {};
+            if (filePath) {
+                const result = await api.saveThemeAssetFromPath(filePath);
+                if (!result?.success) throw new Error('Could not read background file.');
+                assets[key] = result.url;
+            } else {
+                assets[key] = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = () => reject(new Error('Could not read background file.'));
+                    reader.readAsDataURL(file);
+                });
+                // Keep snapshots small: history stores file URLs instead of repeated base64 blobs.
+                await ThemeManager.externalizeAssets(assets);
+            }
             if (generation === this._generation && request === this._assetRequests[key]) {
                 this.setToken(key, assets[key], { force: true, fromUpload: true });
             }

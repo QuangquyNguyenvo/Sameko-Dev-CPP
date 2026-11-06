@@ -413,7 +413,7 @@
         .sdbg-guide-ok:hover{filter:brightness(1.08)}
         /* Text prompt (Electron has no window.prompt) — used for conditional
            breakpoints. Same card language as the coach-mark guide. */
-        #sameko-debug-prompt{position:fixed;inset:0;z-index:1700;display:flex;align-items:flex-start;
+        #sameko-debug-prompt{position:fixed;inset:0;z-index:var(--z-dialog,20000);display:flex;align-items:flex-start;
           justify-content:center;padding-top:120px;background:rgba(6,12,18,.5);
           font-family:'Nunito','Segoe UI',sans-serif}
         .sdbg-prompt-card{background:var(--bg-glass-heavy,rgba(26,37,48,.98));color:var(--text-primary,#e0f0ff);

@@ -98,14 +98,17 @@ async function buildActiveTab({ runAfter }) {
             markTabSaved(tab, text);
         }
 
-        if (!App.showTerm) {
-            App.showTerm = true;
-            if (App.settings.panels) App.settings.panels.showTerm = true;
-            saveSettings();
-            updateUI();
-        }
-        if (runAfter && DockingState.terminalDocked) {
-            showBottomPanel('terminal');
+        // Off: the layout stays as the user left it; a failed build still opens Problems below.
+        if (App.settings.execution.showTerminalOnRun !== false) {
+            if (!App.showTerm) {
+                App.showTerm = true;
+                if (App.settings.panels) App.settings.panels.showTerm = true;
+                saveSettings();
+                updateUI();
+            }
+            if (runAfter && DockingState.terminalDocked) {
+                showBottomPanel('terminal');
+            }
         }
 
         if (App.settings.execution.clearTerminal) clearTerm();
@@ -233,13 +236,15 @@ async function runNow(clearTerminal) {
     if (App.isRunning) await stop();
     const runSeq = ++App.runSeq;
 
-    if (!App.showTerm) {
-        App.showTerm = true;
-        updateUI();
-    }
+    if (App.settings.execution.showTerminalOnRun !== false) {
+        if (!App.showTerm) {
+            App.showTerm = true;
+            updateUI();
+        }
 
-    if (DockingState.terminalDocked) {
-        showBottomPanel('terminal');
+        if (DockingState.terminalDocked) {
+            showBottomPanel('terminal');
+        }
     }
 
 
@@ -256,7 +261,7 @@ async function runNow(clearTerminal) {
     if (window.FileExplorer && _runTab) window.FileExplorer.notifyBuildEvent(_runTab.path, 'run-start');
 
 
-    if (DockingState.terminalDocked) {
+    if (DockingState.terminalDocked && App.settings.execution.showTerminalOnRun !== false) {
         switchDockedPanel('terminal');
 
         setTimeout(() => {

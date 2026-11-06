@@ -169,7 +169,7 @@ async function main() {
             assert.ok(result.video && result.muted);
             assert.equal(result.autoplay, false);
             assert.equal(result.doubleFilter, false);
-            assert.ok(result.source.includes('darkblue.webm'));
+            assert.ok(result.source.includes('kawaii-dark.webm'));
         });
         await check('Cleared builtin background saves and becomes the selected theme', async () => {
             const result = await page.evaluate(async () => {

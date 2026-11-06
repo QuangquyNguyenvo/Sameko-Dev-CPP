@@ -129,7 +129,7 @@ async function testLegacyMigrationAndBackgroundReset() {
     assert.strictEqual(manager.themes.get('kawaii-dark').colors.appBackground, '', 'explicit empty background disables the builtin');
     await manager.resetBackgroundOverrides('kawaii-dark');
     manager.setTheme('kawaii-dark');
-    assert.strictEqual(manager.themes.get('kawaii-dark').colors.appBackground, 'assets/backgrounds/darkblue.webm', 'reset restores builtin baseline');
+    assert.strictEqual(manager.themes.get('kawaii-dark').colors.appBackground, 'assets/backgrounds/kawaii-dark.webm', 'reset restores builtin baseline');
 }
 
 async function testLegacyStateShapeUpgrade() {

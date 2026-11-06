@@ -17,7 +17,7 @@
     bottom: 0;
     background: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(4px);
-    z-index: 2000;
+    z-index: var(--z-panel);
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease, visibility 0.2s ease;
@@ -40,7 +40,7 @@
     border: 2px solid var(--border, rgba(136, 201, 234, 0.3));
     border-radius: 20px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-    z-index: 2001;
+    z-index: calc(var(--z-panel) + 1);
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease, visibility 0.2s ease, transform 0.2s ease;
@@ -263,7 +263,7 @@
     bottom: 0;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(4px);
-    z-index: 2100;
+    z-index: var(--z-panel-raised);
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s ease, visibility 0.2s ease;

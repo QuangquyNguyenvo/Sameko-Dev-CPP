@@ -93,6 +93,11 @@ const IPC = {
         CLANGD_HOVER: 'get-clangd-hover',
     },
 
+    // Theme assets (backgrounds picked in the Theme Customizer)
+    THEME: {
+        ASSET_IMPORT: 'theme-asset-import',
+    },
+
     // Renderer Events (Main -> Renderer)
     EVENTS: {
         FILE_OPENED: 'file-opened',

@@ -122,8 +122,8 @@
 
             <span class="sep"></span>
 
-            <!-- Windows buttons -->
-            <div class="win-btns">
+            <!-- Windows buttons: an island like the others, so they stay visible over any background -->
+            <div class="win-btns island header-island">
                 <button class="win-btn" id="btn-min" title="Minimize">
                     <svg class="ico" data-icon="minus"><use href="#i-minus"/></svg>
                 </button>
@@ -629,6 +629,14 @@
                                 <label>Clear Terminal on Run</label>
                                 <label class="switch">
                                     <input type="checkbox" id="set-clearTerminal" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-row">
+                                <label>Show Terminal on Run <span class="tooltip"
+                                        title="Open the Terminal each time you build or run.&#10;Off: the panels stay as you left them. Build errors still open Problems.">?</span></label>
+                                <label class="switch">
+                                    <input type="checkbox" id="set-showTerminalOnRun" checked>
                                     <span class="slider"></span>
                                 </label>
                             </div>

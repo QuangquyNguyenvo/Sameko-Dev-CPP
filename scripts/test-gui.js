@@ -188,6 +188,40 @@ async function main() {
         assert.deepEqual(rows, [true, false]);
     });
 
+    await check('user snippets are suggested mid-line, and a copied `all` inside sort(...)', async () => {
+        const labels = await page.evaluate(async () => {
+            const saved = App.settings.snippets;
+            App.settings.snippets = [
+                { trigger: 'myll', content: 'long long', name: 'll' },
+                { trigger: 'all', content: '${1:v}.begin(), ${1:v}.end()', name: 'all copy' },
+            ];
+            const suggest = async (text) => {
+                App.editor.getModel().setValue(text);
+                const line = App.editor.getModel().getLineCount();
+                App.editor.setPosition({ lineNumber: line, column: App.editor.getModel().getLineMaxColumn(line) });
+                App.editor.focus();
+                App.editor.trigger('test', 'editor.action.triggerSuggest', {});
+                for (let i = 0; i < 60; i++) {
+                    await new Promise(r => setTimeout(r, 100));
+                    const rows = [...document.querySelectorAll('.suggest-widget.visible .monaco-list-row .label-name')];
+                    if (rows.length) {
+                        App.editor.trigger('test', 'hideSuggestWidget', {});
+                        return rows.map(r => r.textContent);
+                    }
+                }
+                return [];
+            };
+            newFile();
+            const result = [
+                (await suggest('vector<myl')).includes('myll'),
+                (await suggest('int main() {\n    sort(al')).includes('all'),
+            ];
+            App.settings.snippets = saved;
+            return result;
+        });
+        assert.deepEqual(labels, [true, true]);
+    });
+
     await check('indentation follows each file: tabs, spaces, and the setting for a new file', async () => {
         const tabbed = path.join(profile, 'tab-indented.cpp');
         fs.writeFileSync(tabbed, 'int main() {\n\tif (1) {\n\t\treturn 0;\n\t}\n}\n');
@@ -460,6 +494,36 @@ async function main() {
         assert.deepEqual(noisy, { output: '42\n', verdict: 'AC', stderrShown: true, stderr: 'dbg\n' });
         const quiet = await buildAndRun('#include <cstdio>\nint main() { std::printf("42\\n"); return 0; }\n');
         assert.deepEqual(quiet, { output: '42\n', verdict: 'AC', stderrShown: false, stderr: '' });
+    });
+
+    await check('Show Terminal on Run off: Build & Run leaves the panels as they are', async () => {
+        const setOption = (on) => page.evaluate(async on => {
+            openSettings();
+            document.getElementById('set-showTerminalOnRun').checked = on;
+            await saveSettingsAndClose();
+        }, on);
+        // Docked: which bottom tab is open; floating: whether the Terminal card is shown.
+        const hideTerminal = () => page.evaluate(() => {
+            if (DockingState.terminalDocked) showBottomPanel('problems');
+            else { App.showTerm = false; updateUI(); }
+        });
+        const terminalShown = () => page.evaluate(() => DockingState.terminalDocked
+            ? (App.showProblems && !isBottomPanelCollapsed()
+                && document.getElementById('problems-panel').dataset.view === 'terminal')
+            : App.showTerm);
+        const code = '#include <cstdio>\nint main() { std::printf("42\\n"); return 0; }\n';
+
+        await setOption(false);
+        const saved = JSON.parse(fs.readFileSync(path.join(profile, 'settings.json'), 'utf8'));
+        assert.equal(saved.execution.showTerminalOnRun, false);
+        await hideTerminal();
+        assert.equal((await buildAndRun(code)).verdict, 'AC');
+        assert.equal(await terminalShown(), false, 'Terminal opened although the option is off');
+
+        await setOption(true);
+        await hideTerminal();
+        await buildAndRun(code);
+        assert.equal(await terminalShown(), true, 'Terminal not opened with the option on');
     });
 
     // ---- interface language ---------------------------------------------------------

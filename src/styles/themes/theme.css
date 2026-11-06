@@ -1029,7 +1029,7 @@ body.customizer-open::before {
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 2000;
+    z-index: var(--z-panel);
     backdrop-filter: blur(6px);
 }
 
@@ -1317,7 +1317,7 @@ html:not([data-theme]) .setting-row>label:not(.switch) {
 @container style(--component-style: kawaii-light) {
     html:root .setting-row label:first-child,
     html:root .setting-row>label:not(.switch) {
-        color: #5a9fc8;
+        color: var(--settings-label-color);
     }
 }
 
@@ -3073,7 +3073,7 @@ body.split-active .editor-pane {
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 2000;
+    z-index: var(--z-dialog);
     backdrop-filter: blur(6px);
 }
 
@@ -3922,7 +3922,7 @@ body.split-active .editor-pane {
     position: fixed;
     bottom: 80px;
     right: 20px;
-    z-index: 3000;
+    z-index: var(--z-toast);
     animation: slideInUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -3988,7 +3988,7 @@ body.split-active .editor-pane {
     position: fixed;
     right: 20px;
     bottom: 20px;
-    z-index: 3100;
+    z-index: var(--z-toast);
     opacity: 0;
     transform: translateY(16px);
     transition: opacity 0.18s ease, transform 0.18s ease;
@@ -4139,7 +4139,7 @@ body.split-active .editor-pane {
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 3000;
+    z-index: var(--z-dialog);
     backdrop-filter: blur(4px);
 }
 
@@ -5644,7 +5644,7 @@ body.split-active .editor-pane {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10001;
+    z-index: var(--z-dialog);
     animation: fadeIn 0.2s ease;
 }
 

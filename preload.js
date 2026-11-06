@@ -172,6 +172,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     stateWriteSync: (name, data) => ipcRenderer.sendSync('state-write-sync', { name, data }),
     stateDelete: (name) => ipcRenderer.invoke('state-delete', name),
     saveThemeAsset: (dataUrl) => ipcRenderer.invoke('theme-asset-save', dataUrl),
+    saveThemeAssetFromPath: (filePath) => ipcRenderer.invoke('theme-asset-import', filePath),
 
     // Discord Rich Presence
     discordUpdatePresence: (data) => ipcRenderer.invoke('discord-update-presence', data),

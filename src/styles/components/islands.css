@@ -289,18 +289,30 @@
     font-weight: 800;
 }
 
-/* ---- Frosted glass without backdrop-filter ----
+/* ---- No backdrop-filter ----
  * A backdrop blur is recomputed on every frame the background changes, and the background is
- * usually a playing video. The background is instead blurred once into a small image,
- * --app-bg-blurred (updateFakeBlur in appearance.js), and glass surfaces paint it fixed to the
- * window, so it lines up with the real background behind them. */
+ * usually a playing video. The welcome card is only a tint: it is on screen whenever no file is
+ * open, and a frosted copy of the background hid most of the picture. A soft shadow keeps its
+ * text readable. */
 .welcome-box,
 [data-theme] .welcome-box {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
-    background:
-        linear-gradient(var(--welcome-box-bg, transparent), var(--welcome-box-bg, transparent)),
-        var(--app-bg-blurred, none) var(--app-bg-position, center center) / cover no-repeat fixed !important;
+    background: var(--welcome-box-bg, transparent) !important;
+}
+
+/* The dark title is gradient-filled text (transparent fill), so a text-shadow would show
+ * through it: drop-shadow follows the glyphs instead. */
+[data-theme-variant="dark"] .welcome-box h1 {
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+}
+
+[data-theme-variant="dark"] .welcome-box p {
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme-variant="light"] .welcome-box p {
+    text-shadow: 0 1px 6px rgba(255, 255, 255, 0.8);
 }
 
 /* Full-screen dim layers behind dialogs: a plain dim. Blurring the UI under them cannot be
@@ -609,12 +621,23 @@
     border-bottom: none;
 }
 
+/* Explorer text is Nunito, the body face: Fredoka (theme.css) reads heavy at tree size. */
+.explorer-sidebar .explorer-title,
+.explorer-sidebar .explorer-item,
+.explorer-sidebar .explorer-folder-name,
+.explorer-sidebar .explorer-section-title,
+.explorer-sidebar .cat-section-title,
+.explorer-sidebar .cp-contest-name,
+.explorer-sidebar .explorer-open-btn {
+    font-family: 'Nunito', 'Segoe UI', sans-serif;
+}
+
 .explorer-sidebar .explorer-title {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 800;
     letter-spacing: 0;
     text-transform: none;
@@ -668,12 +691,12 @@
     color: var(--text-primary);
     font-family: inherit;
     font-size: 12.5px;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .explorer-filter input::placeholder {
     color: var(--text-muted);
-    font-weight: 600;
+    font-weight: 400;
 }
 
 .explorer-filter-clear {
@@ -723,8 +746,8 @@
 .explorer-sidebar .cat-section-title {
     font-size: 11px;
     font-weight: 800;
-    letter-spacing: 0.8px;
-    color: var(--text-secondary);
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
 }
 
 /* Rows: pills inset from the card edge. */
@@ -735,11 +758,15 @@
     padding-bottom: 6px;
     padding-right: 6px;
     border-radius: 999px;
-    font-weight: 700;
+    font-weight: 600;
 }
 
 .explorer-sidebar .explorer-item-name {
     font-size: 13px;
+    font-weight: 600;
+}
+
+.explorer-sidebar .explorer-item.active .explorer-item-name {
     font-weight: 700;
 }
 

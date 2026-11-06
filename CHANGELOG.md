@@ -4,119 +4,94 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.4.0] - 2026-11-07
 
-Vim Mode and a cursor trail, fixes for data loss in contests, the Explorer, Save As and session restore, a lighter editor while typing, and updated libraries.
+Vietnamese and Chinese interface, Vim Mode, new themes, a Settings-style Theme Customizer, data-loss fixes and security fixes.
 
 ### Added
 
-- **Interface languages** (Settings › Appearance › Language; #70): English, Tiếng Việt and 简体中文. Auto, the default for a new profile, follows the Windows language; settings saved by an older version stay in English. The change applies at once, without a restart, and Settings search still finds English words. Code, file names, program output and compiler messages are never translated. The installer also offers the three languages (picked from the Windows language) with Sameko's own welcome and finish text translated.
-- **Vim Mode** (Settings › Editor, off by default): Vim keys in both panes ([monaco-vim](https://github.com/brijeshb42/monaco-vim) 0.4.4), with the mode and pending keys of the focused pane in the status bar. `:w` saves, `:q` closes the tab, `:wq` and `:x` do both. It has its own shortcut profile in Settings › Keybindings, which moves Open File (Ctrl+Alt+O), New Tab (Ctrl+Shift+T), Close Tab (Ctrl+Shift+W), Problems (Ctrl+Shift+J), Explorer (Ctrl+Shift+E) and Select Next Occurrence (Ctrl+Shift+D) off the Ctrl keys Vim uses; shortcuts you change in one profile do not change the other. The keymap (~100 KB) loads only when Vim Mode is on.
-- **Cursor trail** (Settings › Appearance; #68, by @baodao211): a Neovide-style trail follows the cursor when it jumps, Vim jumps included. It draws only while the cursor moves, stays inside the editor under its popups and Find box, does not smear when you scroll, and works with Performance Mode on or off.
-- **Scroll Beyond Last Line** (Settings › Editor, off by default; #69, by @baodao211): scroll the last line up to the top of the editor.
-- **Stderr card** (#56): when a run writes to `cerr`, a fourth card under Input, Output and Expected shows it, kept per tab. It stays hidden for runs that write nothing to stderr, and AC/WA still reads stdout only.
-- **Argument Placeholders** (Settings › Editor, off by default; #67): picking a function from the suggestions inserts just `name()` with the cursor inside; turn it on to fill in the parameter names as before. (Overloaded functions such as `lower_bound` always insert only the parentheses.)
-- **Indentation follows each file, as in VS Code**: a file indented with tabs keeps tabs (Enter, Tab and snippets insert `\t`), one indented with spaces keeps its width. New and empty files follow **Indent with Tabs** (Settings › Editor, off by default). The status bar shows `Spaces: 4` or `Tab Size: 4` for the focused file; click it to switch between spaces and tabs, pick the tab size, or convert the file's indentation.
-- **Built-in snippets can be hidden or edited** (Settings › Snippets): hide the ones you don't use, or edit a copy that replaces the built-in; delete the copy to get the built-in back.
-- **Three new builtin themes** (#60): Catppuccin Mocha (peach on plum, over a pixel-art road at sunset), Gruvbox Dark (gold on warm brown, over a pixel-art sleepy morning) and Crimson (soft red on near-black, over a pixel-art autumn temple gate), with readable syntax colors in each. Each background video is 0.4–0.8 MB (VP9, 720p, 30 fps; Gruvbox keeps its source 16 fps).
+- **Interface languages** (#70): English, Tiếng Việt, 简体中文 (Settings › Appearance › Language). Code and program output are never translated.
+- **Vim Mode** (Settings › Editor): `:w`, `:q`, `:wq`, with its own shortcut profile.
+- **Cursor trail** (#68, by @baodao211).
+- **Scroll Beyond Last Line** (#69, by @baodao211).
+- **Stderr card** (#56): `cerr` output gets its own card under Input / Output / Expected.
+- **Argument Placeholders** (#67, off by default): suggestions insert just `name()`.
+- **Indentation per file**, as in VS Code; switch spaces/tabs from the status bar.
+- **Built-in snippets** can be hidden or edited.
+- **Show Terminal on Run** (Settings › Execution): turn it off and Build & Run no longer switches to the Terminal.
+- **New themes** (#60): Catppuccin Mocha, Gruvbox Dark, Crimson, Event Horizon.
+- **New Kawaii Dark and Kawaii Light**: new video backgrounds and colours. The old Kawaii Dark is still there as **Pixel Night**.
 
 ### Changed
 
-- **Typing in large files is lighter**: the editor no longer copies the whole file on every keystroke (twice with the file open in both panes) to track unsaved changes.
-- **The Expected diff shows at most 2,000 lines** plus up to 200 mismatching ones, with "… lines not shown" in between; the verdict still covers every line. A run near the 8 MB output limit used to build about 44 million characters of HTML.
-- **Output and AC/WA use stdout only**, as Run All Tests does. Lines printed to `cerr` still show in the terminal but no longer count as the program's output.
-- **Build error marks stay on the built file** in whichever pane shows it, until you edit or build it again, and an error inside an included header no longer marks that line number in the `.cpp`.
-- **Suggestions stay out of the way**: nothing pops up inside strings, character literals or `//` comments; statement snippets (`for`, `cout`, ...) are offered only where a statement can start, while `all`/`rall`/`sz` still work inside expressions such as `sort(all`. clangd results are no longer cut off in long lists, and their icons match the kind (variable, function, ...).
-- **Live check waits for a pause in typing** after a check that new edits made outdated, instead of checking again at once.
-- **The Explorer filter reads the folder once** while you type, instead of once per keystroke.
-- **The session checkpoint is written only when it changes**: an idle IDE rewrote `session.json` every 30 seconds (about 120 times an hour); now it refreshes an unchanged one once an hour, and still writes it when the window closes.
-- **Libraries updated**: Monaco Editor 0.45 → 0.57, now bundled with esbuild (only the editor parts the IDE uses; `npm start` builds it), Electron 44.5.1 → 44.9.3, DOMPurify 3.4.17, marked 18.1.1. The main process uses Node's built-in code cache instead of `v8-compile-cache`. `npm audit` reports no vulnerabilities.
-- **Faster start after the first launch**: the window is served from an `app://` address instead of `file://`, so Chromium keeps a compiled copy of the editor's and the IDE's JavaScript (~2.5 MB) instead of compiling it again on every launch. Pictures, videos and audio from disk (theme backgrounds, Markdown media) load through the same address; settings stored by earlier versions in the page's storage are carried over once. The Markdown preview no longer loads pictures from network shares (`\\server\…`), so opening a file cannot make Windows connect to another computer.
-- **clangd starts with the first C++ tab** instead of while the window is still loading, and does not run at all (~70 MB) when no C++ file is open.
-- **Smaller install**: Monaco's unused translations (renamed in 0.52), `judge-selftest.js` and `types.js` are no longer packaged.
+- **Theme Customizer** looks like Settings: larger, bolder text, row cards, clearer labels.
+- **Background files up to 512 MB** in the Customizer (was 64 MB).
+- **Window buttons** sit in their own island, visible on any background.
+- **Welcome card** no longer hides the background.
+- **Explorer text** is lighter (Nunito instead of bold Fredoka).
+- **Theme backgrounds** are VP9 1080p at 60 fps (1–8 MB each); Kawaii themes no longer dim theirs.
+- **Faster start** after the first launch (`app://` + code cache).
+- **clangd** starts with the first C++ tab.
+- **Typing in large files** is lighter.
+- **Suggestions** stay out of strings and comments.
+- **Expected diff** shows at most 2,000 lines.
+- **Output and AC/WA** use stdout only.
+- **Less background work**: live check waits for a pause, the Explorer filter reads the folder once, the session is saved only when it changes.
+- **Libraries**: Monaco 0.57 (esbuild bundle), Electron 44.9.3, DOMPurify 3.4.17, marked 18.1.1.
+- **Smaller install**.
 
 ### Fixed
 
-- **The installed app runs Monaco's background worker again.** It failed to load from the packaged app, so word suggestions, link detection and similar work ran on the UI thread while you typed.
-- **F5 in split view debugs the file in the focused pane.** It saved the left editor's text into the right pane's file. Breakpoints (Ctrl+click too), the current-line arrow and Run to Cursor now work in both panes.
-- **Saving can no longer leave a half-written file**: files and `.sameko` are written to a temporary file and then swapped in, so a full disk or a crash keeps the old file. A read-only file still refuses the save.
-- **A failed save stops Build, Run and F5** instead of compiling the old file and marking the tab saved; text typed while a save runs stays unsaved.
-- **Creating a contest with an existing name keeps its statuses, times and approaches** and only adds the new problems; a damaged `.sameko` is left alone.
-- **Switching contests saves the old contest's data and loads the new one's**; status changes went into the wrong `.sameko`, and the timer kept running.
-- **Copy, cut and paste ask before replacing a file of the same name**, and refuse while that file is open in a tab. Cut and paste moves open tabs with their files, also when a folder moves.
-- **Renaming a contest folder keeps it in place**, and a failed rename keeps the old name.
-- **Moving or renaming a folder keeps the local history** of the files in it.
-- **The welcome card's frosted glass shows the current background.** After deleting or re-saving the active theme it kept the previous theme's picture, and returning to a theme whose video was already loaded left it a flat colour.
-- **A file has one local history however its path is written.** `C:\x.cpp`, `C:/x.cpp` and `c:\x.cpp` kept separate checkpoint lists (letter case is ignored except on Linux); existing lists are merged the first time the file is opened in history, and a rename that only changes letter case keeps them.
-- **New File with a name that is taken opens that file** instead of replacing it with the template.
-- **Save As onto a file open in another tab** closes that tab when it has no edits, or keeps its edits as an untitled copy (`a (unsaved copy).cpp`, still C++); saving the old tab used to write its outdated text back over the new file.
-- **Unsaved work from the last session survives an unanswered restore prompt.** Left open for 30 seconds, the prompt let the periodic save delete it.
-- **Competitive Companion never replaces an existing file** with a new problem's template (a file it could not read counted as free).
-- **Create .inp / .out asks before emptying an existing file.**
-- **Load Approach asks before replacing unsaved text**, and Ctrl+Z brings it back; switching approaches no longer fails with an `execCommand` error. Save and Load Approach use the problem's own tab, and approach IDs stay unique after a deletion (duplicates in older files are repaired).
-- **Restoring a checkpoint goes into the tab of its own file**, not the other pane in split view.
-- **Build & Run runs the program it built**: switching tabs while it compiles no longer runs another tab's program.
-- **A run is judged against its own tab** after switching tabs, and correct output over 5,000 lines is no longer judged WA.
-- **Run All Tests keeps each tab's tests and results apart**, and the right pane uses its own Input, Expected and tests when it has focus.
-- **A batch test stops at its time limit** even when the program starts a child that keeps its output open, and a character split between two output chunks no longer turns into `�` (also in compiler errors, the debugger and clangd).
-- **Programs get a correct `PATH`**: it was `...\bin;undefined`, so `system("chcp 65001")` or `system("ping …")` could fail with "is not recognized".
-- **Auto-save saves every edited tab** with its own text, and a failed auto-save is reported and retried every 30 seconds instead of being dropped.
-- **Clicking a problem opens the file it names** (an included header too) and moves the cursor in the pane that shows it; the error badge goes on the built tab.
-- **Enter on an empty terminal line sends an empty line** to the program (`getline`), and a pasted input keeps its last blank line.
-- **Ctrl+W closes the tab in the focused pane.**
-- **The "file changed outside the IDE" prompt** follows the file after its tab is closed and reopened, and goes away with the tab.
-- **The same file opened with different letter case** (Windows) uses one tab.
-- **Split view is restored** when the app starts again.
-- **Live check results for a file just saved as `.md` or `.txt`** are dropped, along with its old C++ marks.
-- **Changing a breakpoint condition while the program runs** takes effect at once.
-- **No more "Running" stuck on** when the program's `.exe` was deleted.
-- **The build cache rebuilds** when a header is included through a macro or `#embed`, and the g++ live check reports `fatal error`.
-- **Local history makes a checkpoint for every changed save** (some small edits had the same fingerprint as the previous text), and retries after a failed write.
-- **Reset Settings resets Local History** too, without a restart.
-- **Editing or exporting a built-in theme that is not active** uses its saved background instead of the default one, and Save waits for a background that is still loading.
-- **A downloaded update found after a restart** is offered again on Windows (the lookup always failed).
-- **The snippet editor is no longer empty** when it is opened before the editor has finished loading.
-- **Closing a tab after Save As or a rename** releases its IntelliSense document, and a Linux file watcher no longer comes back after its tab closed. A tab closed while IntelliSense is still starting no longer stays open in clangd.
-- **Each untitled tab builds its own program**: building a second untitled tab no longer replaces the first one's, so Run Only runs the right code.
-- **Run Only while a program is running** stops it first; the old program's "Stopped" and its time limit no longer end the new run, its auto-sent input goes to the right run, and its last output no longer shows up in the new run.
-- **The Input box is sent as typed**: leading spaces, trailing spaces and blank lines reach `getline`.
-- **Saving an untitled tab into a contest problem** over a file open in another tab handles that tab as Save As does.
-- **A clean live check of one pane keeps the other pane's error marks**, and turning Live Check off drops a check still in progress.
-- **Clear (or Undo) in the theme editor wins over a background file** that is still being read.
-- **Saving through a symlink whose target was deleted** recreates the target instead of replacing the link with a file.
-- **Restoring a session keeps unsaved text of a file you already reopened**: it opens as `name (recovered).cpp` instead of being dropped.
-- **Turning Auto-save off** cancels a save that was already scheduled.
-- **Close Others** asks about each unsaved tab in turn and closes all of them; one of the questions used to be lost and its tab stayed open.
-- **Reset Settings** also resets the keyboard shortcuts that are in effect, not only the ones shown.
-- **Clear History of an untitled tab** is no longer undone by a checkpoint that was being written.
-- **F5 builds with your compiler settings** (`-D`, `-I`, extra flags), only with debug info and no optimisation; a breakpoint disabled before F5 stays disabled; Stop while the debug build compiles no longer starts the program afterwards, nor brings a stopped session back.
-- **Recursive calls show the right locals**: stepping from `f(2)` into `f(1)` used to keep showing `f(2)`'s values.
-- **The editor loads again after a failed first attempt** instead of staying blank until a restart.
-- **Competitive Companion** keeps a problem it could not save as an unsaved tab, so its text and tests are not lost.
-- **Closing a tab while another close is still asking** removes the right tab; another unsaved tab could disappear without a question.
-- **New Problem in a collection** opens a file of the same name instead of replacing it with the template.
-- **Collections**: Refresh keeps items from subfolders and other folders, a problem dragged to another collection stays there, and renaming a collection moves the approaches, pins and statuses of files that are not open.
-- **Contests**: deleting a problem whose file cannot be deleted keeps its status and approaches and says why; a contest of `.c`/`.cc` files opens those files; building or judging an `A.cpp` in another folder no longer changes the contest's problem A.
-- **Text typed in the terminal box while the previous line is being sent** is kept.
-- **Ctrl+Tab in the right pane** moves through the tabs in that pane.
-- **Theme author names are shown as text** in the marketplace; HTML in an imported theme's author field is no longer rendered.
-- **Importing a theme from a Gist larger than 1 MB** (an embedded background) works.
-- **Run Only pressed twice quickly** starts one program, and uses the input of the tab it was pressed in.
-- **Debugger**: a breakpoint toggled while gdb starts keeps that state, and Stop followed quickly by another F5 no longer leaves a stray gdb running.
-- **Turning Live Check off** also clears the marks of tabs that are not shown, and Auto-save turned off stops before the next queued file.
-- **Contests**: a problem file name in `.sameko` can no longer point outside the contest folder, so deleting that problem cannot delete another file; renaming a problem's source (`A.c` → `A.cpp`) keeps the problem linked to it.
-- **Unsaved work done while the "Restore previous session" prompt is still open** is checkpointed together with the old session instead of being lost on quit.
-- **Delete on a folder in the Explorer** deletes the folder (after a confirmation) instead of failing with a file error.
-- **Additional Compile Flags with quoted paths** (`-I"C:/My Headers"`) are passed as one argument to g++, the live check and clangd.
-- **Build cache**: a build whose flags name another source or object file (`helper.cpp`, `lib.a`) is always rebuilt, so a change in that file is not missed.
-- **Linux**: two files whose paths differ only in letter case no longer share one executable.
-- **Saving state at startup** can no longer fail because the cleanup of old temporary files removed the file being saved.
-- **macOS**: files opened from Finder or the Dock open in the app, and clicking the Dock icon after closing the window shows a working window.
-- **Enter after `for (…)`, `if (…)`, `while (…)`, `else`, `do` or `case x:` indents with spaces** like the rest of the file (the editor's indent size); it inserted a tab after the spaces.
+- **Saving**
+  - No half-written files after a crash or a full disk.
+  - A failed save stops Build, Run and F5.
+  - Save As onto an open file no longer overwrites it with old text.
+  - Auto-save saves every edited tab and retries failures.
+  - Unsaved work survives the restore prompt.
+- **Contests and Explorer**
+  - Creating or switching contests keeps statuses, times and approaches.
+  - Copy, cut and paste ask before replacing a file.
+  - Moving or renaming folders keeps local history and contest data.
+  - New File, New Problem and Competitive Companion never replace an existing file.
+  - Deleting a folder works; a contest can no longer delete files outside its folder.
+  - Collections keep items, pins and statuses after Refresh or a rename.
+- **Build and Run**
+  - Build & Run runs the program it built; each untitled tab has its own program.
+  - A run is judged against its own tab; long correct output is no longer WA.
+  - Run All Tests keeps tabs apart; batch tests stop at the time limit.
+  - Programs get a correct `PATH`.
+  - Input is sent as typed; an empty terminal line reaches `getline`.
+  - Quoted paths in compile flags work.
+- **Editor and tabs**
+  - The installed app runs Monaco's background worker again.
+  - Ctrl+W, Ctrl+Tab, error marks and checkpoints act on the focused pane.
+  - One tab per file, whatever the letter case; split view is restored.
+  - Enter after `for (…)`, `if (…)` etc. indents with spaces.
+  - The editor recovers from a failed first load.
+- **Debugger**
+  - F5 in split view debugs the focused file, with your compiler flags.
+  - Recursive calls show the right locals; breakpoint changes apply at once.
+- **Themes and UI**
+  - Popups open on top of the window that asked for them.
+  - No flash of the default background at startup.
+  - A saved video background is no longer half faded.
+  - Theme author names are shown as text; Gist themes over 1 MB import.
+- **Platforms**
+  - Windows: a downloaded update is offered again after a restart.
+  - macOS: files opened from Finder or the Dock open in the app.
+  - Linux: paths that differ only in case no longer share a program.
+
+### Security
+
+- **Themes cannot load backgrounds from network paths**, which made Windows send your password hash (NTLM) to another computer.
+- **External console**: a file name with `&` or `%` can no longer run commands.
+- **Files from disk** are served with strict type checking, so a subtitle file cannot run as a script.
+- **Monaco's DOMPurify** updated to 3.4.17 (3.4.15 had sanitizer bypasses).
+- **File, collection and history names** are escaped everywhere.
 
 ### Removed
 
-- Unused code: about 41 KB of CSS from three earlier theme customizers, `color-registry.js`, an unused ANSI-to-HTML converter, a contest status bar nothing showed, four duplicate HTML escapers, and helpers nothing called in the main process.
+- About 41 KB of unused CSS and dead code.
 
 ## [1.3.2] - 2026-10-20
 
@@ -693,7 +668,9 @@ A full code audit, Electron 44, a reworked interface (floating cards, Explorer, 
 - Keyboard shortcuts for all major actions
 - Custom frameless window with native controls
 
-[Unreleased]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.3.2...v1.4.0
+[1.3.2]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.1.0...v1.2.0

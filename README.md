@@ -92,7 +92,7 @@
 - 🧹 Format C and C++ with AStyle. Choose from 13 styles and optionally format on `Ctrl+S`.
 - ✂️ Customize snippets and C or C++ templates. Import templates and snippets from files.
 - 💾 Use auto-save, session restore and local history checkpoints to return to your work. Sameko also notices changes made outside the editor.
-- 🎨 Choose from nine built-in themes, including Catppuccin Mocha, Gruvbox Dark and the soft red-on-black Crimson, or create your own with the Theme Customizer. Add an image or video background and share your theme.
+- 🎨 Choose from eleven built-in themes, including Catppuccin Mocha, Gruvbox Dark, the soft red-on-black Crimson and the space-themed Event Horizon, or create your own with the Theme Customizer. Add an image or video background and share your theme.
 - 🔎 Search settings and shortcuts from the Settings dialog. Keybindings can be customized there too.
 
 Explore the [user guide](https://sameko.dev/wiki.html) for more features and instructions.
@@ -113,17 +113,17 @@ Explore the [user guide](https://sameko.dev/wiki.html) for more features and ins
 
 <br />
 
-## 🆕 What's New in v1.3.2
+## 🆕 What's New in v1.4.0
 
-- **Markdown preview.** Read a rendered preview beside your editor while writing notes and solutions.
-- **Format your way.** Pick an AStyle format and turn on Format on Save for C and C++ files.
-- **More flexible files.** Create different file types from the tab bar, rename a tab or drop files into the window to open them.
-- **Find settings faster.** Search settings and keyboard shortcuts in one place.
-- **Import templates and snippets.** Bring them in from files, thanks to contributions from [@aguajardoc](https://github.com/aguajardoc).
-- **A smoother interface.** Settings and dialogs respond faster, and background video pauses when you switch to another window.
-- **Fixes throughout the editor.** This release improves formatting, breakpoints, C++ highlighting, file renaming and UTF-16 support.
+- **Vietnamese and Chinese interface.** Switch between English, Tiếng Việt and 简体中文 in Settings › Appearance.
+- **New themes.** Event Horizon, Catppuccin Mocha, Gruvbox Dark and Crimson, plus new Kawaii Dark and Kawaii Light. The old Kawaii Dark is still there as Pixel Night.
+- **A clearer Theme Customizer.** It now looks like Settings, and backgrounds can be up to 512 MB.
+- **Vim Mode, cursor trail and more editor options.** Scroll beyond the last line, indentation per file, and built-in snippets you can hide or edit.
+- **Stderr in its own card.** `cerr` output no longer mixes with Output, so AC/WA checks stdout only.
+- **Show Terminal on Run.** Turn it off to keep your panels as they are when you build and run.
+- **Safer saving and security fixes.** No half-written files after a crash, and themes can no longer reach network paths.
 
-See [CHANGELOG.md](CHANGELOG.md) for the full list and [the release notes](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/tag/v1.3.2) for screenshots.
+See [CHANGELOG.md](CHANGELOG.md) for the full list and [the release notes](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/tag/v1.4.0) for screenshots.
 
 ### Multi-file project note
 
@@ -141,7 +141,7 @@ Then turn it **OFF** and build again.
   <img src="https://img.shields.io/badge/Official%20Site-sameko.dev-88c9ea?style=for-the-badge&logo=cloudflare&logoColor=white&labelColor=1a2530" alt="Official Website" />
 </a>
 <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/GitHub-v1.3.2%20Release-88c9ea?style=for-the-badge&logo=github&logoColor=white&labelColor=1a2530" alt="Latest Release" />
+  <img src="https://img.shields.io/badge/GitHub-v1.4.0%20Release-88c9ea?style=for-the-badge&logo=github&logoColor=white&labelColor=1a2530" alt="Latest Release" />
 </a>
 
 </div>
@@ -163,7 +163,7 @@ Then turn it **OFF** and build again.
 
 ### 🐧 Linux Installation Guide
 
-The v1.3.2 release provides an AppImage for 64-bit Linux. Sameko uses the compiler and tools installed on your system.
+The v1.4.0 release provides an AppImage for 64-bit Linux. Sameko uses the compiler and tools installed on your system.
 
 #### 📌 Step 1: Install the tools
 
@@ -184,7 +184,7 @@ sudo pacman -S --noconfirm gcc gdb clang astyle
 
 #### 📌 Step 2: Download Sameko
 
-Download `sameko-dev-cpp-1.3.2-linux-x86_64.AppImage` from [GitHub Releases](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/tag/v1.3.2) or visit [sameko.dev](https://sameko.dev/).
+Download `sameko-dev-cpp-1.4.0-linux-x86_64.AppImage` from [GitHub Releases](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/tag/v1.4.0) or visit [sameko.dev](https://sameko.dev/).
 
 ---
 
@@ -193,8 +193,8 @@ Download `sameko-dev-cpp-1.3.2-linux-x86_64.AppImage` from [GitHub Releases](htt
 Open a terminal in the folder where you downloaded the file, then run:
 
 ```bash
-chmod +x sameko-dev-cpp-1.3.2-linux-x86_64.AppImage
-./sameko-dev-cpp-1.3.2-linux-x86_64.AppImage
+chmod +x sameko-dev-cpp-1.4.0-linux-x86_64.AppImage
+./sameko-dev-cpp-1.4.0-linux-x86_64.AppImage
 ```
 
 You can keep the AppImage wherever you like and run it again from that folder. To build `.deb` or `.tar.gz` packages yourself, see [Building](#building).

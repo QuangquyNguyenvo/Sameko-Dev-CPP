@@ -11,7 +11,10 @@ class ConfirmDialog {
         this.message = document.getElementById('confirm-dialog-message');
         this.cancelBtn = document.getElementById('confirm-dialog-cancel');
         this.confirmBtn = document.getElementById('confirm-dialog-confirm');
-        
+        // .app-container is a stacking context (z-index: 1): inside it the dialog could never
+        // rise above popups that live on <body> (text inputs, menus). Live on <body> too.
+        document.body.append(this.overlay, this.dialog);
+
         this.resolver = null;
         this.isOpen = false;
         this.previouslyFocusedEl = null;

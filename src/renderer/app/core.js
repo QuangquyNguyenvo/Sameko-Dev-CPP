@@ -54,6 +54,7 @@ const DEFAULT_SETTINGS = {
         timeLimitEnabled: false,
         timeLimitSeconds: 3,
         clearTerminal: true,
+        showTerminalOnRun: true, // off: Build & Run leaves the panels as they are
         autoSendInput: true,
         useExternalTerminal: false,
         panelFontSize: 13,
@@ -268,6 +269,14 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSettings();
     // Before anything else draws, so the first paint is already in the chosen language.
     I18n.setLanguage(App.settings.appearance.language);
+    // Read the user's themes and backgrounds now, not after Monaco: until they are in, the
+    // theme is painted without a background, then again with the right one.  The reads take
+    // a few ms, so this normally finishes before the window is shown.
+    if (typeof ThemeManager !== 'undefined') {
+        ThemeManager.init()
+            .catch((e) => console.error('[ThemeManager] Init failed:', e))
+            .then(() => applyTheme(App.settings.appearance.theme));
+    }
     applySettings();
     // Monaco is the heaviest part of startup (~0.6s of load + editor create).
     // Don't block first paint on it. It loads on demand the moment a file is
@@ -674,13 +683,15 @@ function initMonaco(onReady, onLoadError) {
             }
         });
 
-        // Initialize ThemeManager (async for JSON loading)
+        // ThemeManager started loading at page load; themes registered before Monaco
+        // existed still need their Monaco definitions.
         if (typeof ThemeManager !== 'undefined') {
             try {
                 await ThemeManager.init();
             } catch (e) {
                 console.error('[ThemeManager] Init failed:', e);
             }
+            ThemeManager.defineMonacoThemes();
         }
 
         // Move background images an older version stored inline in
