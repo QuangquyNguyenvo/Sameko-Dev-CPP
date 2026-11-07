@@ -84,22 +84,24 @@
 
 ### Practice and debug
 
-- ✅ Compare Input, Output and Expected results with AC, WA and TLE verdicts. Load large inputs from a `.txt` file.
+- ✅ Compare Input, Output and Expected results with AC, WA and TLE verdicts. `cerr` output gets its own Stderr card, so verdicts check stdout only. Load large inputs from a `.txt` file.
 - 🏆 Fetch problems and test cases with Competitive Companion. Run all tests in parallel or inspect them one at a time.
 - 🗂️ Organize problems into contests and collections, with statuses, notes and saved approaches.
 - 🐞 Debug with GDB using breakpoints, conditional breakpoints, watches and STL-aware variable trees. Auto dry run steps through code while you watch variables change.
 
 ### Edit and customize
 
+- 🌏 Use the interface in English, Tiếng Việt or 简体中文. Code and program output are never translated.
 - 📑 Work across tabs and split editor panes. Rename tabs, drag files into the window and create C++, C, input, output, text or Markdown files from the tab bar.
+- ⌨️ Turn on Vim Mode (`:w`, `:q`, `:wq`), a cursor trail and scrolling past the last line. Indentation (spaces or tabs) is kept per file.
 - 📝 Preview Markdown beside the editor as you type. Toggle the preview with `Ctrl+Shift+V`.
 - 🧹 Format C and C++ with AStyle. Choose from 13 styles and optionally format on `Ctrl+S`.
-- ✂️ Customize snippets and C or C++ templates. Import templates and snippets from files.
+- ✂️ Customize snippets and C or C++ templates, and hide or edit the built-in snippets. Import templates and snippets from files.
 - 💾 Use auto-save, session restore and local history checkpoints to return to your work. Sameko also notices changes made outside the editor.
 - 🎨 Choose from eleven built-in themes, including Catppuccin Mocha, Gruvbox Dark, the soft red-on-black Crimson and the space-themed Event Horizon, or create your own with the Theme Customizer. Add an image or video background and share your theme.
 - 🔎 Search settings and shortcuts from the Settings dialog. Keybindings can be customized there too.
 
-Explore the [user guide](https://sameko.dev/wiki.html) for more features and instructions.
+Explore the [user guide](https://sameko.dev/wiki) for more features and instructions.
 
 <br />
 
