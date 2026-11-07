@@ -1,0 +1,26 @@
+# Opens a pull request on microsoft/winget-pkgs whenever a release is published here,
+# so `winget upgrade` picks up the new version.
+# Needs the repository secret WINGET_TOKEN: a classic GitHub token with the `public_repo` scope.
+name: Publish to WinGet
+
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to publish (for example v1.4.1)
+        required: true
+
+jobs:
+  winget:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: vedantmgoyal9/winget-releaser@b7370d4d152efdce803a26cc6ca9eee58cb2ad54 # v2
+        with:
+          identifier: QuangquyNguyenvo.SamekoDevCpp
+          installers-regex: '^sameko-dev-cpp-setup-[\d.]+\.exe$'
+          release-tag: ${{ inputs.tag || github.event.release.tag_name }}
+          max-versions-to-keep: 3
+          token: ${{ secrets.WINGET_TOKEN }}
+          fork-user: QuangquyNguyenvo
