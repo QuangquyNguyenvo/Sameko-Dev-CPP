@@ -9,6 +9,10 @@
   
   **The cutest & fastest C++ IDE for your coding adventures! (≧◡≦) ♡**
 
+  ### ⬇️ [Download Sameko Dev C++ for Windows & Linux](https://sameko.dev/)
+
+  <sub>Official downloads are only on <a href="https://sameko.dev/">sameko.dev</a> and in this repository's <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest">Releases</a>.</sub>
+
   <p>
     <a href="https://sameko.dev/" target="_blank" rel="noopener noreferrer">
       <img src="https://img.shields.io/badge/Download-Sameko%20IDE-88c9ea?style=for-the-badge&labelColor=1a2530" alt="Download" />
