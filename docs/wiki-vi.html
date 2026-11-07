@@ -54,7 +54,7 @@
                 "@id": "https://sameko.dev/wiki-vi.html#article",
                 "headline": "Tài liệu Sameko Dev C++: Cài đặt, cấu hình GCC 16 và hướng dẫn sử dụng IDE",
                 "alternativeHeadline": "Code nhanh hơn, hiểu rõ hơn.",
-                "dateModified": "2026-10-28",
+                "dateModified": "2026-11-07",
                 "description": "Tài liệu cấu hình GCC 16 và C++26 trên Windows, sau đó dùng Monaco, clangd, checkpoints, snippets, themes và Competitive Companion. Linux dùng compiler hệ thống.",
                 "url": "https://sameko.dev/wiki-vi.html",
                 "inLanguage": "vi",
@@ -162,7 +162,7 @@
             </div>
             <div class="wiki-hero-wave" aria-hidden="true"></div>
             <div class="wiki-hero-copy" data-reveal>
-                <a class="wiki-release-pill" href="#whats-new"><b>v1.3.2</b> Có gì mới &rarr;</a>
+                <a class="wiki-release-pill" href="#whats-new"><b>v1.4.0</b> Có gì mới &rarr;</a>
                 <h1 id="wiki-hero-title" class="is-two-line">Code nhanh hơn,<br><span class="hl">hiểu rõ hơn.<svg class="hl__squiggle" viewBox="0 0 220 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 14C24 4 40 22 60 13S96 4 116 13s36 9 56 0 32-7 44-2"/></svg><svg class="hl__shine" viewBox="0 0 40 40" aria-hidden="true"><path pathLength="1" d="M9 31 4 22M20 26 19 12M31 29l7-9"/></svg></span></h1>
                 <p>Mọi thứ về Sameko, từ <code>hello.cpp</code> đến ngày thi.</p>
                 <form class="wiki-search" id="wiki-search-form" role="search">
@@ -229,40 +229,40 @@
                 <div>
                     <!-- CÓ GÌ MỚI -->
                     <section id="whats-new" data-reveal>
-                        <span class="wiki-eyebrow">Release notes · 1.3.2 · 20/10/2026</span>
-                        <h2>Có gì mới trong Sameko 1.3.2</h2>
-                        <p class="wiki-subtitle">Xem trước Markdown, định dạng khi lưu, bớt thao tác thừa.</p>
+                        <span class="wiki-eyebrow">Release notes · 1.4.0 · 07/11/2026</span>
+                        <h2>Có gì mới trong Sameko 1.4.0</h2>
+                        <p class="wiki-subtitle">Giao diện tiếng Việt và tiếng Trung, Vim Mode, theme mới, lưu file an toàn hơn.</p>
 
                         <div class="wiki-update-grid">
                             <article class="wiki-update-card">
-                                <strong>Xem trước Markdown</strong>
-                                <p>File <code>.md</code> mở kèm bản hiển thị cập nhật ngay khi gõ. Bật/tắt bằng <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>V</kbd>.</p>
+                                <strong>Ngôn ngữ giao diện</strong>
+                                <p>English, Tiếng Việt và 简体中文 trong Settings › Appearance › Language. Code và output của chương trình không bao giờ bị dịch.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Định dạng khi lưu</strong>
-                                <p>Chọn 1 trong 13 kiểu AStyle ở Settings › Editor; một lần <kbd>Ctrl</kbd> + <kbd>Z</kbd> là hoàn tác phần định dạng.</p>
+                                <strong>Vim Mode</strong>
+                                <p>Bật trong Settings › Editor; dùng được <code>:w</code>, <code>:q</code>, <code>:wq</code>, có bộ phím tắt riêng.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Tạo file đủ loại</strong>
-                                <p>Chuột phải nút <b>+</b> cạnh thanh tab để tạo file C++, C, <code>.inp</code>, <code>.out</code>, text hoặc Markdown.</p>
+                                <strong>Thẻ Stderr</strong>
+                                <p>Output của <code>cerr</code> có thẻ riêng dưới Input / Output / Expected; AC/WA chỉ chấm theo stdout.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Đổi tên tab</strong>
-                                <p>Chuột phải tab › Rename. File trên đĩa, breakpoint và lịch sử đi theo.</p>
+                                <strong>Theme mới</strong>
+                                <p>Catppuccin Mocha, Gruvbox Dark, Crimson, Event Horizon, cùng Kawaii Dark và Kawaii Light mới có nền video.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Tìm trong Settings</strong>
-                                <p>Gõ vào ô trên cùng của Settings để lọc cài đặt và phím tắt ở mọi tab.</p>
+                                <strong>Lưu file an toàn hơn</strong>
+                                <p>Không còn file ghi dở khi máy treo hoặc đầy ổ; lưu lỗi thì Build, Run và F5 sẽ dừng.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Nhập và kéo thả file</strong>
-                                <p>Nhập template hoặc snippet từ file, kéo thả file vào cửa sổ để mở.</p>
+                                <strong>Khởi động nhanh hơn</strong>
+                                <p>Từ lần mở thứ hai khởi động nhanh hơn, clangd chạy cùng tab C++ đầu tiên, gõ file lớn nhẹ hơn.</p>
                             </article>
                         </div>
 
                         <div class="callout note">
                             <div class="callout-title">Từ bản 1.3.0 đến nay</div>
-                            <p><b>1.3.1</b> làm lại Theme Customizer, cho mở file trực tiếp từ Windows Explorer ("Open with"), và đọc <code>.txt</code>, <code>.inp</code>, <code>.out</code>, <code>.ans</code> dạng văn bản thường. <b>1.3.0</b> mang lại kiểm tra lỗi trực tiếp bằng clangd (khoảng 100&ndash;130 ms), chạy test song song, đo đúng thời gian chạy và bộ nhớ tối đa, đọc input từ file và Electron 44.</p>
+                            <p><b>1.3.2</b> thêm xem trước Markdown, định dạng khi lưu bằng AStyle, đổi tên tab và tìm kiếm trong Settings. <b>1.3.1</b> làm lại Theme Customizer và đọc <code>.txt</code>, <code>.inp</code>, <code>.out</code>, <code>.ans</code> dạng văn bản thường. <b>1.3.0</b> mang lại kiểm tra lỗi trực tiếp bằng clangd, chạy test song song, đo đúng thời gian chạy và bộ nhớ tối đa.</p>
                         </div>
                         <div class="callout note">
                             <div class="callout-title">Phạm vi phiên bản</div>
@@ -277,7 +277,7 @@
 
                         <p>Sameko Dev C++ là IDE C++ miễn phí, mã nguồn mở (MIT), dành cho lập trình thi đấu và học tập,
                             xây dựng trên Monaco Editor. Trên Windows, Sameko có sẵn GCC 16.1.0, clangd và GDB nên bạn có thể
-                            viết, chạy và debug C++ ngay sau khi cài, không cần tự cài MinGW. Tài liệu này viết cho bản 1.3.2.</p>
+                            viết, chạy và debug C++ ngay sau khi cài, không cần tự cài MinGW. Tài liệu này viết cho bản 1.4.0.</p>
 
                         <h2>Sameko dành cho ai?</h2>
                         <ul>

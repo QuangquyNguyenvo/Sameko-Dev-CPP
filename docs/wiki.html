@@ -56,7 +56,7 @@
                 "@id": "https://sameko.dev/wiki.html#article",
                 "headline": "Sameko Dev C++ Documentation: Installation, GCC 16 Compiler Setup and IDE Guide",
                 "alternativeHeadline": "Build with less friction.",
-                "dateModified": "2026-10-28",
+                "dateModified": "2026-11-07",
                 "description": "Documentation for configuring GCC 16 and C++26 on Windows, then using Monaco, clangd, checkpoints, snippets, themes, and Competitive Companion. Linux packages use system compiler tools.",
                 "url": "https://sameko.dev/wiki.html",
                 "inLanguage": "en",
@@ -165,7 +165,7 @@
             </div>
             <div class="wiki-hero-wave" aria-hidden="true"></div>
             <div class="wiki-hero-copy" data-reveal>
-                <a class="wiki-release-pill" href="#whats-new"><b>v1.3.2</b> What's new &rarr;</a>
+                <a class="wiki-release-pill" href="#whats-new"><b>v1.4.0</b> What's new &rarr;</a>
                 <h1 id="wiki-hero-title">Build with less <span class="hl">friction.<svg class="hl__squiggle" viewBox="0 0 220 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 14C24 4 40 22 60 13S96 4 116 13s36 9 56 0 32-7 44-2"/></svg><svg class="hl__shine" viewBox="0 0 40 40" aria-hidden="true"><path pathLength="1" d="M9 31 4 22M20 26 19 12M31 29l7-9"/></svg></span></h1>
                 <p>Everything Sameko does, from <code>hello.cpp</code> to contest day.</p>
                 <form class="wiki-search" id="wiki-search-form" role="search">
@@ -230,40 +230,40 @@
 
                     <!-- WHAT'S NEW -->
                     <section id="whats-new" data-reveal>
-                        <span class="wiki-eyebrow">Release notes · 1.3.2 · 20 Oct 2026</span>
-                        <h2>What’s new in Sameko 1.3.2</h2>
-                        <p class="wiki-subtitle">Markdown preview, format on save, and less clicking around.</p>
+                        <span class="wiki-eyebrow">Release notes · 1.4.0 · 7 Nov 2026</span>
+                        <h2>What’s new in Sameko 1.4.0</h2>
+                        <p class="wiki-subtitle">Vietnamese and Chinese interface, Vim Mode, new themes and safer saving.</p>
 
                         <div class="wiki-update-grid">
                             <article class="wiki-update-card">
-                                <strong>Markdown preview</strong>
-                                <p>A <code>.md</code> file opens with a live rendered view beside it. Toggle it with <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>V</kbd>.</p>
+                                <strong>Interface languages</strong>
+                                <p>English, Tiếng Việt and 简体中文 in Settings › Appearance › Language. Code and program output are never translated.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Format on save</strong>
-                                <p>Pick one of 13 AStyle styles in Settings › Editor; one <kbd>Ctrl</kbd> + <kbd>Z</kbd> undoes the format.</p>
+                                <strong>Vim Mode</strong>
+                                <p>Turn it on in Settings › Editor; <code>:w</code>, <code>:q</code> and <code>:wq</code> work, with its own shortcut profile.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>New file of any type</strong>
-                                <p>Right-click the <b>+</b> next to the tabs for C++, C, <code>.inp</code>, <code>.out</code>, text or Markdown.</p>
+                                <strong>Stderr card</strong>
+                                <p><code>cerr</code> output gets its own card under Input / Output / Expected; AC/WA is judged on stdout only.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Rename a tab</strong>
-                                <p>Right-click a tab › Rename. The file on disk, its breakpoints and history follow.</p>
+                                <strong>New themes</strong>
+                                <p>Catppuccin Mocha, Gruvbox Dark, Crimson, Event Horizon, and new Kawaii Dark and Kawaii Light with video backgrounds.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Search in Settings</strong>
-                                <p>Type at the top of Settings to see matching settings and shortcuts from every tab.</p>
+                                <strong>Safer saving</strong>
+                                <p>No half-written files after a crash or full disk, and a failed save stops Build, Run and F5.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Import and drop files</strong>
-                                <p>Import a template or snippets from files, and drop files on the window to open them.</p>
+                                <strong>Faster start</strong>
+                                <p>Later launches start faster, clangd starts with the first C++ tab, and typing in large files is lighter.</p>
                             </article>
                         </div>
 
                         <div class="callout note">
                             <div class="callout-title">Also since 1.3.0</div>
-                            <p><b>1.3.1</b> rebuilt the Theme Customizer, made files open from Windows Explorer ("Open with"), and added plain-text support for <code>.txt</code>, <code>.inp</code>, <code>.out</code> and <code>.ans</code>. <b>1.3.0</b> brought clangd live checking (about 100&ndash;130 ms), parallel test runs, real run time and peak memory, test input from a file and Electron 44.</p>
+                            <p><b>1.3.2</b> added Markdown preview, format on save with AStyle, renaming tabs and search in Settings. <b>1.3.1</b> rebuilt the Theme Customizer and added plain-text support for <code>.txt</code>, <code>.inp</code>, <code>.out</code> and <code>.ans</code>. <b>1.3.0</b> brought clangd live checking, parallel test runs, real run time and peak memory.</p>
                         </div>
                         <div class="callout note">
                             <div class="callout-title">Version scope</div>
@@ -279,7 +279,7 @@
                         <p>Sameko Dev C++ is a free, open-source (MIT) C++ IDE for competitive programming and education,
                             built on the Monaco editor. On Windows it bundles GCC 16.1.0, clangd and GDB, so you can write,
                             run and debug C++ right after installing, without setting up MinGW yourself. This guide covers
-                            version 1.3.2.</p>
+                            version 1.4.0.</p>
 
                         <h2>Who is Sameko for?</h2>
                         <ul>
