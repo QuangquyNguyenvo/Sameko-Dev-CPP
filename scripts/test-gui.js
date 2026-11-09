@@ -571,6 +571,34 @@ async function main() {
         assert.deepEqual(await state(), { settings: false, find: false });
     });
 
+    await check('Vietnamese letters come from the bundled fonts, not Arial or Consolas', async () => {
+        const text = 'Đọc dữ liệu: ạ ả ấ ầ ẩ ẫ ậ ắ ằ ẳ ẵ ặ ẹ ẻ ẽ ế ề ể ễ ệ ỉ ị ọ ỏ ố ồ ổ ỗ ộ ớ ờ ở ỡ ợ ụ ủ ứ ừ ử ữ ự ỳ ỵ ỷ ỹ ă â đ ơ ư Ă Đ Ơ Ư';
+        const session = await page.context().newCDPSession(page);
+        try {
+            await session.send('DOM.enable');
+            await session.send('CSS.enable');
+            for (const family of ["'JetBrains Mono', monospace", "'Nunito', sans-serif", "'Fredoka', sans-serif"]) {
+                await page.evaluate(async ([t, f]) => {
+                    const d = document.createElement('div');
+                    Object.assign(d.style, { fontFamily: f, position: 'fixed', left: '0', top: '0' });
+                    d.id = 'vi-font-check';
+                    d.textContent = t;
+                    document.body.appendChild(d);
+                    void d.offsetWidth;          // lay it out so the unicode-range faces start loading
+                    await document.fonts.ready;
+                    await new Promise(requestAnimationFrame);
+                }, [text, family]);
+                const { root } = await session.send('DOM.getDocument', { depth: 0 });
+                const { nodeId } = await session.send('DOM.querySelector', { nodeId: root.nodeId, selector: '#vi-font-check' });
+                const { fonts } = await session.send('CSS.getPlatformFontsForNode', { nodeId });
+                await page.evaluate(() => document.getElementById('vi-font-check').remove());
+                assert.deepEqual(fonts.filter(f => !f.isCustomFont).map(f => `${f.familyName}: ${f.glyphCount}`), [], family);
+            }
+        } finally {
+            await session.detach();
+        }
+    });
+
     // ---- interface language ---------------------------------------------------------
     await check('interface language: translates the UI, leaves names alone, switches back', async () => {
         const read = () => page.evaluate(() => ({
