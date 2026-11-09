@@ -133,6 +133,11 @@ The IDE ships its own GCC so users install nothing. To develop with it, put the 
 2. Extract it so that `Sameko-GCC/bin/g++.exe` exists. The folder must be named exactly
    `Sameko-GCC`; it is the only bundled location the IDE looks in.
 3. Run `npm start` and check the log for `[System] Compiler: Bundled Sameko-GCC 16.x.x`.
+4. Before a release built from a new toolchain, run `node scripts/patch-toolchain-utf8.js`
+   (needs `mt.exe` from the Windows SDK). It gives binutils and two GCC helpers the UTF-8 code
+   page, without which nothing builds for a Windows user whose folder name has letters such as
+   `ễ` (`C:\Users\Nguyễn\...` is both `%TEMP%` and the default install folder).
+   `scripts/check-toolchain-deps.js` fails until it is done.
 
 Without it the IDE falls back to a system compiler (`C:\TDM-GCC-64`, `C:\MinGW`,
 `C:\msys64\mingw64`, or `g++` on `PATH`). Optional tools picked up from `Sameko-GCC/bin` when
