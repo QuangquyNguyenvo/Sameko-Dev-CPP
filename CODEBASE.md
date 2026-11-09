@@ -90,6 +90,7 @@ and `window.open` are denied in `app/windows/main-window.js`.
 | `settings-store.js` | The only reader/writer of `settings.json`: atomic write, `.bak` fallback, keeps main-owned keys (`windowBounds`) when the renderer saves. |
 | `settings-reader.js` | Compiler settings for main-process services, read through the store. |
 | `judge.js` | `normalizeOutput()`, `compareOutputs()`; also loaded by `preload.js` so both sides judge alike. |
+| `exit-codes.js` | `describeExit(code, signal)`: name and usual cause of a crash code (0xC00000FD stack overflow, 0xC0000409 abort/assert/uncaught exception…), `describeStartError(winError)`: why Windows would not start a program (antivirus, policy). English; the renderer translates. |
 | `types.js`, `validators.js` | JSDoc types; input validation. |
 
 ## 3. `preload.js`
@@ -175,7 +176,7 @@ in October 2026.)
 | Path | What it is |
 |---|---|
 | `Sameko-GCC/` | Bundled toolchain (gitignored). Copied into the Windows build as an extra resource. |
-| `scripts/` | `clean.js`, `build-appimage.js`, `build-icons.js`, `check-toolchain-deps.js`; tests: `test.js` (`npm test`: runs all of them in parallel), `test-gui.js` (boot, editor state, Build & Run), `test-theme-customizer-gui.js`, `test-debugger.js` (`--unit` / `--e2e`), `test-theme-tokens.js`, `test-theme-manager.js`, `test-theme-customizer-state.js`. |
+| `scripts/` | `clean.js`, `build-appimage.js`, `build-icons.js`, `check-toolchain-deps.js`, `patch-toolchain-utf8.js` (gives binutils the UTF-8 code page, §6); tests: `test.js` (`npm test`: runs all of them in parallel), `test-gui.js` (boot, editor state, Build & Run), `test-theme-customizer-gui.js`, `test-debugger.js` (`--unit` / `--e2e`), `test-theme-tokens.js`, `test-theme-manager.js`, `test-theme-customizer-state.js`, `test-run-checks.js` (crash names, judge rules). |
 | `docs/` | The sameko.dev website (landing page and wiki). Not part of the app. |
 | `plans/` | Gitignored working plans. |
 | `samekodevcpp/` | electron-builder output (gitignored). |
@@ -264,6 +265,12 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   (`captureRunStderr`, 1 MiB) for the Stderr card, shown when non-empty. The terminal keeps no copy of
   its lines (`TerminalManager.getLines()` reads xterm's buffer on demand, for probes). The
   Expected diff draws at most `DIFF_MAX_ROWS` lines plus `DIFF_MAX_MISMATCHES` mismatches.
+- A crash is named: `process-exit` carries `crash` (`exit-codes.js`), printed under "--- Exit ---".
+  When the launcher cannot start the program it writes `{startError}` (CreateProcess's error)
+  and exits 126; a spawn Windows refuses throws "spawn UNKNOWN" (caught); an `.exe` built this
+  session that is missing at Run time is reported as quarantined (`wasBuiltThisSession`).
+- Windows builds link with `-Wl,--stack=268435456` (Settings › Compiler › Large Stack, default on,
+  added by `buildCompileFlags()`); the build cache treats that flag as cacheable.
 - External terminal: `start /wait cmd` on Windows, a runner script plus a terminal emulator on Linux.
 - Stop is `executor.stopProcess()`: it kills only the child it spawned (`taskkill /pid /t` on
   Windows) while holding its handle. Never kill by image name.
@@ -340,6 +347,9 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
 - One warm-up run, then the tests run on a pool of up to 4 workers
   (`settings.execution.parallelTests`, default on); a test that timed out or used more than 60% of
   the limit is re-run alone. Each test goes through the run launcher, output is capped at 16 MB.
+- A test with a blank expected output is `RAN` (ran cleanly, not judged): not AC, not failed, and
+  it never marks a contest problem solved. A TLE from a build without -O1/-O2/-O3 gets a hint
+  that judges use -O2 (`addSlowBuildHint`).
 
 **Persistence**
 

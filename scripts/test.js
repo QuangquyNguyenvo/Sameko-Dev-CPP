@@ -17,7 +17,8 @@ const STAGES = [
         ['theme tokens', 'test-theme-tokens.js'],
         ['theme manager', 'test-theme-manager.js'],
         ['customizer state', 'test-theme-customizer-state.js'],
-        ['mi-parser', 'test-debugger.js', '--unit']
+        ['mi-parser', 'test-debugger.js', '--unit'],
+        ['run checks', 'test-run-checks.js']
     ],
     [
         ['gui', 'test-gui.js'],

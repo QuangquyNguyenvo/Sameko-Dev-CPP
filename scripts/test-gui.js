@@ -526,6 +526,71 @@ async function main() {
         assert.equal(await terminalShown(), true, 'Terminal not opened with the option on');
     });
 
+    if (process.platform === 'win32') {
+        await check('a deep DFS runs with Large Stack; without it the crash is named, not just a number', async () => {
+            // A path-shaped tree, 100,000 levels deep: Windows' 2 MB stack overflows, judges' does not.
+            const dfs = '#include <bits/stdc++.h>\nusing namespace std;\nvector<int> g[100005]; int best = 0;\n'
+                + 'void dfs(int u, int p, int d) { best = max(best, d); for (int v : g[u]) if (v != p) dfs(v, u, d + 1); }\n'
+                + 'int main() { int n = 100000; for (int i = 1; i < n; i++) { g[i].push_back(i + 1); g[i + 1].push_back(i); }\n'
+                + '    dfs(1, 0, 0); cout << best << "\\n"; }\n';
+            assert.equal((await buildAndRun(dfs)).output, '99999\n');
+            await page.evaluate(() => { App.settings.compiler.largeStack = false; });
+            try {
+                await buildAndRun(dfs);
+                const terminal = await page.evaluate(() => TerminalManager.getLines().map(l => l.text).join('\n'));
+                assert.match(terminal, /Exit: 3221225725/);
+                assert.match(terminal, /Stack overflow \(0xC00000FD\)/);
+                assert.match(terminal, /Large Stack \(256 MB\)/);
+            } finally {
+                await page.evaluate(() => { App.settings.compiler.largeStack = true; });
+            }
+        });
+
+        // What an antivirus does to a fresh build, simulated: the .exe disappears after the build
+        // (quarantine), or Windows refuses to start the file (here: not a program at all).
+        await check('a build that vanished, or a program Windows will not start, is explained', async () => {
+            const terminal = () => page.evaluate(() => TerminalManager.getLines().map(l => l.text).join('\n'));
+            await buildAndRun('#include <cstdio>\nint main() { std::printf("42\\n"); return 0; }\n');
+            const exePath = await page.evaluate(() => App.tabs.find(t => t.id === App.activeTabId).exePath);
+            fs.unlinkSync(exePath);
+            await page.evaluate(() => ACTION_HANDLERS.run());
+            await page.waitForFunction(() => !App.isRunning, null, { timeout: 10000 });
+            assert.match(await terminal(), /built a moment ago is gone: an antivirus most likely quarantined it/);
+
+            const fake = path.join(profile, 'not-a-program.exe');
+            fs.writeFileSync(fake, 'this is text, not a Windows program');
+            const result = await page.evaluate((exe) => window.electronAPI.run({ exePath: exe, cwd: null }), fake);
+            if (result.success === false) {
+                // Run launcher not built yet: the file is spawned directly and Windows refuses it.
+                assert.match(result.error, /blocked the program from starting/);
+            } else {
+                // Through the launcher: CreateProcess fails and its Windows error is explained.
+                await page.waitForFunction(() => TerminalManager.getLines().some(l => /Windows error \d+/.test(l.text)),
+                    null, { timeout: 10000 });
+                assert.match(await terminal(), /not a valid Windows program/);
+            }
+        });
+    }
+
+    await check('a test without expected output is RAN, not AC, and is not counted as failed', async () => {
+        const result = await page.evaluate(async () => {
+            if (App.isSplit) closeSplit();
+            newFile();
+            const tab = App.tabs.find(t => t.id === App.activeTabId);
+            setTabText(tab, '#include <cstdio>\nint main() { int x; if (scanf("%d", &x) == 1) printf("%d\\n", 2 * x); }\n');
+            ccProblem = { name: 'RAN check', tests: [{ input: '21', output: '42' }, { input: '5', output: '' }] };
+            await runAllTests();
+            return {
+                statuses: batchTestResults.map(r => r.status),
+                summary: document.querySelector('#tests-results-list .test-results-summary')?.textContent.replace(/\s+/g, ' ').trim()
+            };
+        });
+        assert.deepEqual(result.statuses, ['AC', 'RAN']);
+        assert.match(result.summary, /1\/2/);
+        assert.match(result.summary, /0 failed/);
+        assert.match(result.summary, /1 not judged/);
+    });
+
     // ---- find widget, Escape, fonts -------------------------------------------------
     await check('find widget: buttons use browser tooltips and Close stays clickable (#71)', async () => {
         await page.evaluate(() => { if (App.isSplit) closeSplit(); newFile(); App.editor.focus(); });

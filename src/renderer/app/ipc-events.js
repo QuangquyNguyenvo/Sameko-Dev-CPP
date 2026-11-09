@@ -76,6 +76,11 @@ if (window.electronAPI) {
         const code = typeof data === 'object' ? data.code : data;
         const execTime = typeof data === 'object' ? data.executionTime : null;
         const peakMemKB = typeof data === 'object' ? data.peakMemoryKB : null;
+        // POSIX reports a crash as a signal with no exit code ("Exit: null" before).
+        const signal = typeof data === 'object' ? data.signal : null;
+        const exitLabel = code === null || code === undefined ? (signal || '?') : code;
+        // Name and usual cause of a crash code (app/shared/exit-codes.js), e.g. 3221225725.
+        const crash = typeof data === 'object' ? data.crash : null;
 
 
         let timeStr = '';
@@ -100,7 +105,12 @@ if (window.electronAPI) {
 
         // --- Exit: 0 ---
         // Time: 757ms | Memory: 2.4MB
-        log(`\n--- Exit: ${code} ---`, code === 0 ? 'success' : 'warning');
+        log(`\n--- Exit: ${exitLabel} ---`, code === 0 ? 'success' : 'warning');
+        if (crash) {
+            const t = (s) => (typeof I18n !== 'undefined' ? I18n.t(s) : s);
+            log(`${t(crash.name)} (${crash.hex})`, 'error');
+            if (crash.hint) log(crash.hint, 'info');
+        }
 
 
         if (timeStr || memStr) {
@@ -121,7 +131,7 @@ if (window.electronAPI) {
         }
 
         // Time and memory have their own status bar item (showRunStats).
-        setStatus(code === 0 ? 'Done' : `Exit: ${code}`, code === 0 ? 'success' : '');
+        setStatus(code === 0 ? 'Done' : crash ? crash.name : `Exit: ${exitLabel}`, code === 0 ? 'success' : '');
         if (code === 0) setTimeout(() => compareOutput(run), 100);
 
         // Notify explorer: run finished

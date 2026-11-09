@@ -918,6 +918,8 @@ function openSettings() {
     if (lldToggle) lldToggle.checked = App.settings.compiler.useLLD !== false;
     const singleFileToggle = document.getElementById('set-singleFileMode');
     if (singleFileToggle) singleFileToggle.checked = App.settings.compiler.singleFileMode !== false;
+    const largeStackToggle = document.getElementById('set-largeStack');
+    if (largeStackToggle) largeStackToggle.checked = App.settings.compiler.largeStack !== false;
     const extraFlagsInput = document.getElementById('set-extraFlags');
     if (extraFlagsInput) extraFlagsInput.value = App.settings.compiler.extraFlags || '';
 
@@ -1071,6 +1073,8 @@ async function saveSettingsAndClose() {
         if (lldToggle) App.settings.compiler.useLLD = lldToggle.checked;
         const singleFileToggle = document.getElementById('set-singleFileMode');
         if (singleFileToggle) App.settings.compiler.singleFileMode = singleFileToggle.checked;
+        const largeStackToggle = document.getElementById('set-largeStack');
+        if (largeStackToggle) App.settings.compiler.largeStack = largeStackToggle.checked;
         const extraFlagsInput = document.getElementById('set-extraFlags');
         if (extraFlagsInput) App.settings.compiler.extraFlags = extraFlagsInput.value.trim();
 

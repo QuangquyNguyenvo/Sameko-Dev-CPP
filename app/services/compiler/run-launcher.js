@@ -28,7 +28,7 @@ const { spawn } = require('child_process');
 const { getDetectedCompiler, getCompilerEnv } = require('./detector');
 const { IS_WIN, ensurePrivateDir, appTempDir } = require('../../shared/platform');
 
-const LAUNCHER_VERSION = 1; // bump when LAUNCHER_SOURCE changes
+const LAUNCHER_VERSION = 2; // bump when LAUNCHER_SOURCE changes
 
 const LAUNCHER_SOURCE = String.raw`
 #define UNICODE
@@ -65,6 +65,13 @@ int wmain(int argc, wchar_t** argv) {
     PROCESS_INFORMATION pi;
     ZeroMemory(&pi, sizeof(pi));
     if (!CreateProcessW(argv[2], &cmd[0], NULL, NULL, TRUE, CREATE_SUSPENDED, NULL, NULL, &si, &pi)) {
+        // Say why: 225/226 = antivirus, 5 = access denied, 2 = the file vanished (quarantined)...
+        DWORD err = GetLastError();
+        FILE* ef = _wfopen(argv[1], L"w");
+        if (ef) {
+            fprintf(ef, "{\"startError\":%lu}", (unsigned long)err);
+            fclose(ef);
+        }
         return 126;
     }
     if (job) AssignProcessToJobObject(job, pi.hProcess);
@@ -184,13 +191,14 @@ function newStatsFile() {
 /**
  * Read and delete a stats file.
  * @param {string} file
- * @returns {{wallMs:number, cpuMs:number, peakKB:number}|null}
+ * @returns {{wallMs:number, cpuMs:number, peakKB:number}|{startError:number}|null} startError:
+ *   the program never started; CreateProcess failed with this Windows error code
  */
 function readStats(file) {
     if (!file) return null;
     try {
         const data = JSON.parse(fs.readFileSync(file, 'utf-8'));
-        if (data && Number.isFinite(data.wallMs)) return data;
+        if (data && (Number.isFinite(data.wallMs) || Number.isFinite(data.startError))) return data;
     } catch (_) { /* program was killed before the helper could write */ }
     finally { try { fs.unlinkSync(file); } catch (_) { } }
     return null;

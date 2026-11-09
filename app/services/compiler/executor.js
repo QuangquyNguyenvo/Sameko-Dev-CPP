@@ -16,6 +16,7 @@ const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getWritableBasePat
 const { ensurePCH } = require('./pch-manager');
 const { getLauncherIfReady, newStatsFile, readStats } = require('./run-launcher');
 const { validateCompilerFlags, splitFlags, joinFlags } = require('../../shared/validators');
+const { describeExit, describeStartError } = require('../../shared/exit-codes');
 const { EXE_SUFFIX, IS_WIN, IS_MAC, IS_LINUX, ensurePrivateDir, readProcMemoryKB, which, appTempDir } = require('../../shared/platform');
 
 let runningProcess = null;
@@ -70,8 +71,42 @@ function cleanupOldBuildArtifacts(buildsDir) {
 // only, so the first build after a restart always runs the compiler.
 const buildCache = new Map();
 
-// Flags that make a build read files the cache key cannot see.
-const UNCACHEABLE_FLAG = /^(-I|-iquote|-isystem|-idirafter|-include|-imacros|-L|-l(?!stdc\+\+exp$)|-Wl,|-Wa,|-Wp,|-T|-B|-specs|--sysroot|@)/;
+// Every executable this session built successfully. One that is missing afterwards was not
+// "never compiled": something removed it, nearly always an antivirus quarantining it.
+const builtThisSession = new Set();
+
+function wasBuiltThisSession(exePath) {
+    return !!exePath && builtThisSession.has(exePath);
+}
+
+/** The error for Run when its executable does not exist. */
+function missingExeMessage(exePath) {
+    if (wasBuiltThisSession(exePath)) {
+        return `The program built a moment ago is gone: an antivirus most likely quarantined it. Add this folder to its exclusions: ${path.dirname(exePath)}`;
+    }
+    return 'Executable not found. Please compile first.';
+}
+
+// Node's code for a spawn Windows refused: "UNKNOWN" is what an antivirus block looks like.
+const SPAWN_BLOCKED = new Set(['UNKNOWN', 'EACCES', 'EPERM']);
+
+/** The error for a program (or the run launcher) that could not be spawned at all. */
+function startFailureMessage(err, file) {
+    if (err && SPAWN_BLOCKED.has(err.code)) {
+        return `Windows or an antivirus blocked the program from starting. Add this folder to its exclusions: ${path.dirname(file)}`;
+    }
+    return `Could not start the program: ${err && err.message ? err.message : err}`;
+}
+
+/** The launcher could not start the program: tell the user why, and where the build folder is. */
+function reportStartError(winError, exePath) {
+    sendToRenderer('system-message', { type: 'error', message: describeStartError(winError) });
+    sendToRenderer('system-message', { type: 'info', message: `Windows error ${winError}. Build folder: ${path.dirname(exePath)}` });
+}
+
+// Flags that make a build read files the cache key cannot see. `-Wl,--stack=N` (the Large Stack
+// setting) reads nothing, so it keeps the build cacheable.
+const UNCACHEABLE_FLAG = /^(-I|-iquote|-isystem|-idirafter|-include|-imacros|-L|-l(?!stdc\+\+exp$)|-Wl,(?!--stack=\d+$)|-Wa,|-Wp,|-T|-B|-specs|--sysroot|@)/;
 
 /**
  * Hash of everything that decides the output of this build, or null when the
@@ -377,6 +412,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
     const cached = cacheKey && reusableBuild(outputPath, cacheKey);
     if (cached) {
         console.log(`[Compile] Unchanged, reusing ${outputPath}`);
+        builtThisSession.add(outputPath);
         return {
             success: true,
             cached: true,
@@ -468,6 +504,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
                 });
             } else {
                 if (cacheKey) rememberBuild(outputPath, cacheKey, stderr);
+                builtThisSession.add(outputPath);
                 resolve({
                     success: true,
                     message: 'Compilation successful!',
@@ -509,7 +546,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
  */
 async function runExternal({ exePath, cwd }) {
     if (!exePath || !fs.existsSync(exePath)) {
-        return { success: false, error: 'Executable not found. Please compile first.' };
+        return { success: false, error: missingExeMessage(exePath) };
     }
 
     const workingDir = cwd || path.dirname(exePath);
@@ -791,7 +828,7 @@ async function runExternalMac({ exePath, workingDir, env, startTime }) {
  */
 async function run({ exePath, cwd }) {
     if (!exePath || !fs.existsSync(exePath)) {
-        return { success: false, error: 'Executable not found. Please compile first.' };
+        return { success: false, error: missingExeMessage(exePath) };
     }
 
     // "Run only" pressed while a program is still running: never orphan it.
@@ -809,9 +846,18 @@ async function run({ exePath, cwd }) {
     const launcher = getLauncherIfReady();
     const statsFile = launcher ? newStatsFile() : null;
 
-    runningProcess = launcher
-        ? spawn(launcher, [statsFile, exePath], { cwd: workingDir, env: env, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
-        : spawn(exePath, [], { cwd: workingDir, env: env, stdio: ['pipe', 'pipe', 'pipe'] });
+    try {
+        runningProcess = launcher
+            ? spawn(launcher, [statsFile, exePath], { cwd: workingDir, env: env, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+            : spawn(exePath, [], { cwd: workingDir, env: env, stdio: ['pipe', 'pipe', 'pipe'] });
+    } catch (err) {
+        // Windows refused to create the process. Node throws ("spawn UNKNOWN") instead of
+        // emitting 'error': an antivirus block, or a file that is not a program. The renderer
+        // showed "Error invoking remote method 'run'" for it.
+        readStats(statsFile);
+        console.warn('[Run] spawn failed:', err && err.message);
+        return { success: false, error: startFailureMessage(err, launcher || exePath) };
+    }
 
     const child = runningProcess;
     const pid = child.pid;
@@ -951,16 +997,21 @@ async function run({ exePath, cwd }) {
         return false;
     };
 
-    child.on('close', (code) => {
+    child.on('close', (code, signal) => {
         const wasCurrent = finish();
         const stats = readStats(statsFile); // also removes the file
         // A process stopped by the user already reported 'process-stopped'.
         if (!wasCurrent) return;
+        // The launcher could not start the program (it exits 126): say why instead of a bare 126.
+        if (stats && Number.isFinite(stats.startError)) reportStartError(stats.startError, exePath);
+        const timed = stats && Number.isFinite(stats.wallMs) ? stats : null;
         sendToRenderer('process-exit', {
             code,
-            executionTime: stats ? Math.round(stats.wallMs) : Date.now() - runStartTime,
-            cpuTime: stats ? Math.round(stats.cpuMs) : null,
-            peakMemoryKB: stats ? stats.peakKB : peakMemoryKB
+            signal: signal || null,               // POSIX: a crash is a signal, code is null
+            crash: describeExit(code, signal),    // what a crash code means (exit-codes.js)
+            executionTime: timed ? Math.round(timed.wallMs) : Date.now() - runStartTime,
+            cpuTime: timed ? Math.round(timed.cpuMs) : null,
+            peakMemoryKB: timed ? timed.peakKB : peakMemoryKB
         });
     });
 
@@ -970,6 +1021,10 @@ async function run({ exePath, cwd }) {
         if (!finish()) return;
         readStats(statsFile);
         sendToRenderer('process-error', `Could not start the program: ${err && err.message ? err.message : err}\n`);
+        // "spawn UNKNOWN" is what Node says when an antivirus blocks the file it starts.
+        if (err && SPAWN_BLOCKED.has(err.code)) {
+            sendToRenderer('system-message', { type: 'error', message: startFailureMessage(err, launcher || exePath) });
+        }
         sendToRenderer('process-exit', { code: -1, executionTime: Date.now() - runStartTime, cpuTime: null, peakMemoryKB: 0 });
     });
 
@@ -1106,6 +1161,7 @@ module.exports = {
     stopProcess,
     isProcessRunning,
     getRunningProcess,
+    wasBuiltThisSession,
     setFileWatcherCallback,
     setSendToRendererCallback,
     buildWindowsRunnerCommand,   // exported for tests

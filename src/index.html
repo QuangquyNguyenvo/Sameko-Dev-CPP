@@ -598,6 +598,14 @@
                                 </label>
                             </div>
                             <div class="setting-row">
+                                <label>Large Stack (256 MB) <span class="tooltip"
+                                        title="Give programs a 256 MB stack, as Codeforces and most judges do. Windows' default of 2 MB makes a deep recursion (a DFS 100,000 levels deep) crash with a stack overflow. Windows only.">?</span></label>
+                                <label class="switch">
+                                    <input type="checkbox" id="set-largeStack" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="setting-row">
                                 <label>Additional Compile Flags <span class="tooltip"
                                         title="Extra flags appended to every compile command, e.g. -DLOCAL -DDEBUG. Also used by IntelliSense.">?</span></label>
                                 <input type="text" id="set-extraFlags" placeholder="e.g. -DLOCAL" style="flex:1;min-width:220px;" />

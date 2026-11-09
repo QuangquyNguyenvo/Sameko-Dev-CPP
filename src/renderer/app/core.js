@@ -44,6 +44,7 @@ const DEFAULT_SETTINGS = {
         warnings: false,
         useLLD: true,
         singleFileMode: true,
+        largeStack: true,   // Windows: link with a 256 MB stack, as judges give (buildCompileFlags)
         fastDebugMode: true,
         disableExceptions: false,
         disableRTTI: false,

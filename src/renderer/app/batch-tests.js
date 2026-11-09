@@ -265,8 +265,11 @@ async function runAllTests() {
             }
         }
 
+        addSlowBuildHint(results, compileFlags, timeLimit);
+
         // Report in test order, whatever order they finished in.
         const finalResults = [];
+        let ranCount = 0;
         for (let i = 0; i < totalTests; i++) {
             const result = results[i];
             finalResults.push(result);
@@ -274,6 +277,9 @@ async function runAllTests() {
             if (result.status === 'AC') {
                 passedCount++;
                 log(`  Test ${i + 1}: AC (${result.executionTime}ms)`, 'success');
+            } else if (result.status === 'RAN') {
+                ranCount++;
+                log(`  Test ${i + 1}: RAN (${result.executionTime}ms), no expected output`, 'info');
             } else {
                 log(`  Test ${i + 1}: ${result.status} (${result.executionTime}ms)`,
                     result.status === 'WA' ? 'error' : 'warning');
@@ -296,7 +302,9 @@ async function runAllTests() {
 
 
         const allPassed = passedCount === totalTests;
-        log(`\n=== ${tab.name}: ${passedCount}/${totalTests} AC ===`, allPassed ? 'success' : 'warning');
+        const notJudged = ranCount ? `, ${ranCount} not judged (no expected output)` : '';
+        log(`\n=== ${tab.name}: ${passedCount}/${totalTests} AC${notJudged} ===`, allPassed ? 'success' : 'warning');
+        if (results.some(r => r.slowBuildHint)) log(SLOW_BUILD_HINT, 'info');
         setStatus(`${passedCount}/${totalTests} AC`, allPassed ? 'success' : '');
 
         // Update UI
@@ -381,6 +389,7 @@ async function runSingleTestByIndex(testIndex) {
         result.testIndex = testIndex;
         result.testName = `Test ${testIndex + 1}`;
         result.actualOutput = result.output ?? '';
+        addSlowBuildHint([result], compileFlags, timeLimit);
 
         const live = getPreferredTabId() === tab.id && ccProblem === problem;
         const owned = live ? batchTestResults : (tab.testState && tab.testState.problem === problem ? tab.testState.results : null);
@@ -401,7 +410,11 @@ async function runSingleTestByIndex(testIndex) {
         if (result.status === 'AC') {
             log(`Single Test ${testIndex + 1}: AC (${timeStr})`, 'success');
             setStatus(`Test ${testIndex + 1}: AC`, 'success');
+        } else if (result.status === 'RAN') {
+            log(`Single Test ${testIndex + 1}: RAN (${timeStr}), no expected output`, 'info');
+            setStatus(`Test ${testIndex + 1}: RAN`, '');
         } else {
+            if (result.slowBuildHint) log(SLOW_BUILD_HINT, 'info');
             log(`Single Test ${testIndex + 1}: ${result.status} (${timeStr})`, result.status === 'WA' ? 'error' : 'warning');
             setStatus(`Test ${testIndex + 1}: ${result.status}`, 'warning');
         }
@@ -431,6 +444,7 @@ function renderTestResults() {
     // Calculate passed from results that match existing tests
     // Note: batchTestResults might be cleared or partial.
     const passed = results.filter(r => r.status === 'AC').length;
+    const notJudged = results.filter(r => r.status === 'RAN').length;   // no expected output
     const executed = results.length;
 
 
@@ -465,7 +479,8 @@ function renderTestResults() {
                 <div class="${summaryClass}">
                     <span class="test-summary-ratio">${passed}/${total}</span>
                     <span class="test-summary-stat passed">✓ ${passed} passed</span>
-                    <span class="test-summary-stat failed">✗ ${executed - passed} failed</span>
+                    <span class="test-summary-stat failed">✗ ${executed - passed - notJudged} failed</span>
+                    ${notJudged ? `<span class="test-summary-stat">${notJudged} not judged</span>` : ''}
                     <span class="test-summary-stat total">${totalTime}ms</span>
                 </div>
                 `;
@@ -487,7 +502,7 @@ function renderTestResults() {
             timeStr = result.executionTime >= 1000
                 ? (result.executionTime / 1000).toFixed(2) + 's'
                 : result.executionTime + 'ms';
-            details = result.details || '';
+            details = translateTestDetails(result);
         } else {
             // Format sample inputs for display if no result
             const inputPreview = (test.input || '').replace(/\n/g, ' ').substring(0, 20);
@@ -502,7 +517,7 @@ function renderTestResults() {
                     <span class="test-result-status ${escHtml(statusClass)}">${escHtml(status)}</span>
                     <div class="test-result-info">
                         <span class="test-result-title">Test ${idx + 1}</span>
-                        <span class="test-result-details">${escHtml(details)}</span>
+                        <span class="test-result-details" title="${escHtml(details)}">${escHtml(details)}</span>
                     </div>
                     <span class="test-result-time">${timeStr}</span>
                     <button class="test-run-btn" data-run-index="${idx}" title="Run this test case">
@@ -603,6 +618,40 @@ function showTestsTab() {
     switchProblemsTab('tests');
 }
 
+// A time verdict from an unoptimized build misleads: judges compile with -O2, and STL-heavy code
+// runs ~3x slower at -O0 (sort + set + map + Dijkstra on n = 2e5 with the bundled GCC:
+// 760-870 ms at -O0, 270-330 ms at -O2). The default build is -O0 for fast compiles.
+const SLOW_BUILD_HINT = 'This build has no optimization (-O0). Judges use -O2, often several times faster: set Optimization to -O2 in Settings › Compiler to time it like the judge.';
+
+/** Flags TLE (or close-to-limit) results that came from a build without -O1/-O2/-O3/-Os/-Ofast. */
+function addSlowBuildHint(results, flags, timeLimit) {
+    if (/(^|\s)-O([123sz]|fast)(\s|$)/.test(flags || '')) return;
+    for (const r of results) {
+        if (!r || !(r.status === 'TLE' || (r.status === 'AC' && r.executionTime > timeLimit * 0.5))) continue;
+        r.slowBuildHint = true;
+        if (r.status === 'TLE') r.details = (r.details ? r.details + '\n' : '') + SLOW_BUILD_HINT;
+    }
+}
+
+/**
+ * A test's details in the interface language. They are built in the main process from fixed
+ * English pieces (crash name and cause from app/shared/exit-codes.js, verdict texts), which have
+ * locale entries; the values around them (exit code, stderr) stay as they are.
+ */
+function translateTestDetails(result) {
+    let text = result.details || '';
+    if (typeof I18n === 'undefined' || !text) return text;
+    // The two antivirus texts are whole templates with the folder in them (locale files).
+    if (/^(The program built a moment ago is gone|Windows or an antivirus blocked)/.test(text)) return I18n.t(text);
+    const pieces = [result.crash && result.crash.name, result.crash && result.crash.hint, result.startErrorMessage, SLOW_BUILD_HINT,
+        'Runtime error', 'Time limit exceeded', 'No expected output to compare with',
+        'Output limit exceeded (more than 16 MB printed)'];
+    for (const piece of pieces) {
+        if (piece && text.includes(piece)) text = text.replace(piece, I18n.t(piece));
+    }
+    return text;
+}
+
 function buildCompileFlags() {
     const flags = [];
     if (App.settings.compiler.cppStandard) {
@@ -628,6 +677,14 @@ function buildCompileFlags() {
     if (fastDebugMode) {
         if (App.settings.compiler.disableExceptions) flags.push('-fno-exceptions');
         if (App.settings.compiler.disableRTTI) flags.push('-fno-rtti');
+    }
+
+    // Windows gives a program 2 MB of stack, so a DFS 100,000 levels deep (a path-shaped tree,
+    // n = 1e5) crashes with 0xC00000FD here while Codeforces, which allows 256 MB, accepts it.
+    // Only address space is reserved; memory is used as the stack actually grows. Before the
+    // extra flags, so a user's own -Wl,--stack=… wins (ld takes the last one).
+    if (App.settings.compiler.largeStack !== false && /^win/i.test(navigator.platform || '')) {
+        flags.push('-Wl,--stack=268435456');
     }
 
     if (App.settings.compiler.extraFlags) {

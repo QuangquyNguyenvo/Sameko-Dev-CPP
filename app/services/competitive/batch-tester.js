@@ -12,6 +12,8 @@ const crypto = require('crypto');
 const { spawn, exec } = require('child_process');
 const { getCompilerEnv } = require('../compiler/detector');
 const { normalizeOutput, compareOutputs } = require('../../shared/judge');
+const { describeExit, describeStartError } = require('../../shared/exit-codes');
+const { wasBuiltThisSession } = require('../compiler/executor');
 const { IS_WIN, IS_LINUX, readProcMemoryKB, killProcessTree } = require('../../shared/platform');
 const { getLauncherIfReady, newStatsFile, readStats } = require('../compiler/run-launcher');
 
@@ -29,7 +31,16 @@ const { getLauncherIfReady, newStatsFile, readStats } = require('../compiler/run
 async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, debug = false, testMeta = null }) {
     return new Promise((resolve) => {
         if (!exePath || !fs.existsSync(exePath)) {
-            resolve({ status: 'CE', error: 'Executable not found' });
+            // Built a moment ago and gone now: an antivirus quarantined it (executor.js).
+            const gone = wasBuiltThisSession(exePath);
+            resolve({
+                status: gone ? 'RE' : 'CE',
+                error: 'Executable not found',
+                details: gone
+                    ? `The program built a moment ago is gone: an antivirus most likely quarantined it. Add this folder to its exclusions: ${path.dirname(exePath)}`
+                    : 'Executable not found',
+                executionTime: 0
+            });
             return;
         }
 
@@ -61,9 +72,26 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
         // POSIX: its own process group, so a timeout can stop whatever it started.
         const launcher = getLauncherIfReady();
         const statsFile = launcher ? newStatsFile() : null;
-        const testProcess = launcher
-            ? spawn(launcher, [statsFile, exePath], { cwd: workingDir, env: getCompilerEnv(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
-            : spawn(exePath, [], { cwd: workingDir, env: getCompilerEnv(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN });
+        let testProcess;
+        try {
+            testProcess = launcher
+                ? spawn(launcher, [statsFile, exePath], { cwd: workingDir, env: getCompilerEnv(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+                : spawn(exePath, [], { cwd: workingDir, env: getCompilerEnv(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN });
+        } catch (err) {
+            // Windows refused to create the process; Node throws ("spawn UNKNOWN") rather than
+            // emitting 'error', which used to reject the whole Run All Tests.
+            readStats(statsFile);
+            const blocked = err && ['UNKNOWN', 'EACCES', 'EPERM'].includes(err.code);
+            resolve({
+                status: 'RE',
+                error: err && err.message,
+                executionTime: 0,
+                details: blocked
+                    ? `Windows or an antivirus blocked the program from starting. Add this folder to its exclusions: ${path.dirname(launcher || exePath)}`
+                    : `Could not start the program: ${err && err.message}`
+            });
+            return;
+        }
 
         const pid = testProcess.pid;
         debugInfo.pid = pid || null;
@@ -164,8 +192,11 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
             if (!IS_WIN) killProcessTree(testProcess);
 
             const stats = readStats(statsFile); // also removes the file
-            const executionTime = stats ? Math.round(stats.wallMs) : Date.now() - startTime;
-            if (stats) peakMemoryKB = stats.peakKB;
+            // startError: the launcher could not start the program at all (antivirus, policy…).
+            const startError = stats && Number.isFinite(stats.startError) ? stats.startError : null;
+            const timed = stats && Number.isFinite(stats.wallMs) ? stats : null;
+            const executionTime = timed ? Math.round(timed.wallMs) : Date.now() - startTime;
+            if (timed) peakMemoryKB = timed.peakKB;
 
             debugInfo.exitCode = code;
             debugInfo.signal = signal || null;
@@ -174,8 +205,12 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
             // Determine status
             let status = 'AC';
             let details = '';
+            let crash = null;
 
-            if (killed) {
+            if (startError !== null) {
+                status = 'RE';
+                details = `${describeStartError(startError)} (Windows error ${startError}; build folder: ${path.dirname(exePath)})`;
+            } else if (killed) {
                 status = 'TLE';
                 details = 'Time limit exceeded';
             } else if (outputTruncated) {
@@ -183,20 +218,27 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
                 details = 'Output limit exceeded (more than 16 MB printed)';
             } else if (code !== 0) {
                 status = 'RE';
-                const reason = signal
-                    ? `signal: ${signal}`
-                    : `exit code: ${code}`;
+                // 3221225725 tells a student nothing; "Stack overflow, 0xC00000FD" and what
+                // usually causes it does (app/shared/exit-codes.js).
+                crash = describeExit(code, signal);
+                const reason = crash
+                    ? `${crash.name}, ${crash.hex}`
+                    : signal ? `signal: ${signal}` : `exit code: ${code}`;
                 const errPreview = truncate(normalizeOutput(errorOutput || ''), 160);
                 debugInfo.hadStderr = !!(errorOutput && errorOutput.length > 0);
                 debugInfo.stderrPreview = errPreview;
-                details = `Runtime error (${reason})${errPreview ? `\nStderr: ${errPreview}` : ''}`;
+                details = `Runtime error (${reason})${crash && crash.hint ? `\n${crash.hint}` : ''}${errPreview ? `\nStderr: ${errPreview}` : ''}`;
             } else if (expectedOutput !== undefined && expectedOutput !== null) {
                 const expectedText = String(expectedOutput ?? '');
                 const hasExpected = expectedText.trim().length > 0;
 
-                // If expected is blank, treat as run-only (do not judge WA).
-                // This avoids false WA when users only want to execute and inspect output.
-                if (hasExpected) {
+                // A blank expected output means run-only: nothing to judge. It used to
+                // count as AC, so a test with only an input showed a green AC and could mark
+                // a contest problem solved; RAN says it ran cleanly and was not judged.
+                if (!hasExpected) {
+                    status = 'RAN';
+                    details = 'No expected output to compare with';
+                } else {
                     // Compare output using shared judge rules
                     const compared = compareOutputs(output, expectedOutput);
                     debugInfo.expectedNormHash = hashText(compared.expectedNorm);
@@ -215,7 +257,10 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
                 error: errorOutput,
                 executionTime,
                 peakMemoryKB,
-                details
+                details,
+                exitCode: code,
+                crash,
+                startErrorMessage: startError !== null ? describeStartError(startError) : undefined
             };
 
             if (debugInfo.enabled) {
@@ -240,6 +285,10 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
             readStats(statsFile);
 
             const response = { status: 'RE', error: err.message, executionTime: 0 };
+            // "spawn UNKNOWN": Windows or an antivirus refused to start the file (launcher or program).
+            if (err && ['UNKNOWN', 'EACCES', 'EPERM'].includes(err.code)) {
+                response.details = `Windows or an antivirus blocked the program from starting. Add this folder to its exclusions: ${path.dirname(launcher || exePath)}`;
+            }
             if (debugInfo.enabled) {
                 response.debug = {
                     ...debugInfo,

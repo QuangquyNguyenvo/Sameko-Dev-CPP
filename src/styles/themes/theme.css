@@ -4571,6 +4571,12 @@ body.split-active .editor-pane {
     color: var(--test-pending, var(--text-secondary));
 }
 
+/* Ran without an expected output to compare with: not a verdict, so neither green nor red. */
+.test-result-status.RAN {
+    background: color-mix(in srgb, var(--text-muted) 32%, transparent);
+    color: var(--text-secondary);
+}
+
 .test-result-status.AC {
     background: var(--success);
     color: var(--btn-primary-text, white);
