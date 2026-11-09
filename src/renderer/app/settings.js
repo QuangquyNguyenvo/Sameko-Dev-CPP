@@ -1009,6 +1009,30 @@ function closeSettings() {
     document.getElementById('settings-overlay').classList.remove('show');
 }
 
+/**
+ * Escape while Settings is open, from the capture-phase key handler. What sits on top of
+ * Settings takes the key first: a find, suggest or parameter-hint widget in the template or
+ * snippet editor (Monaco closes it on this same key), the snippet editor dialog, a confirm
+ * dialog (it handles Escape itself). Then a search in Settings is cleared; the next Escape
+ * closes Settings. Before, the first Escape in such an editor closed all of Settings and left
+ * the find widget or the snippet dialog behind.
+ * @param {KeyboardEvent} e
+ */
+function handleSettingsEscape(e) {
+    const overlay = document.getElementById('settings-overlay');
+    if (!overlay || !overlay.classList.contains('show')) return;
+    const editor = e.target instanceof Element ? e.target.closest('.monaco-editor') : null;
+    if (editor && editor.querySelector('.find-widget.visible, .suggest-widget.visible, .parameter-hints-widget.visible')) return;
+    if (typeof confirmDialog !== 'undefined' && confirmDialog.isOpen) return;
+    const snippetDialog = document.getElementById('snippet-editor-modal');
+    if (snippetDialog && snippetDialog.classList.contains('active')) {
+        e.preventDefault();
+        closeSnippetEditor();
+        return;
+    }
+    if (!clearSettingsSearch()) closeSettings();
+}
+
 async function saveSettingsAndClose() {
     const previousSettings = JSON.parse(JSON.stringify(App.settings));
     try {

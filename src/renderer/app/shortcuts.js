@@ -186,9 +186,9 @@ function initShortcuts() {
         }
 
         // Escape closes Settings from anywhere, including while the editor
-        // (a textarea) still has focus behind the overlay.
-        // A search in Settings is cleared first; the next Escape closes.
-        if (e.key === 'Escape' && !clearSettingsSearch()) closeSettings();
+        // (a textarea) still has focus behind the overlay. A widget or dialog on top
+        // of Settings and then a search in Settings are closed first (settings.js).
+        if (e.key === 'Escape') handleSettingsEscape(e);
 
         // PERFORMANCE: Early exit for uninteresting keys to prevent "freeze"
         // If it's a regular key typing in an input/editor, and NO modifiers are pressed, 
