@@ -892,6 +892,23 @@ function buildQuickSuggestions() {
     return { other: on, comments: false, strings: on };
 }
 
+// Monaco labels the find widget's buttons (Match Case, Find in Selection, Close…) with its own
+// hover, placed above the button inside the editor. The editor card clips it, and at the right
+// edge the Close label wrapped onto the Close button and took the click, so the widget could
+// not be closed with the mouse (#71). These buttons get the browser's tooltip instead: it is
+// drawn outside the page, so it is never clipped and never covers what it describes. The
+// capture listener on the document runs before Monaco's own mouseover handler on the button.
+document.addEventListener('mouseover', (e) => {
+    const button = e.target instanceof Element
+        && e.target.closest('.find-widget .button, .find-widget .monaco-custom-toggle');
+    if (!button) return;
+    if (!button.title) {
+        const label = button.getAttribute('aria-label');
+        if (label) button.title = label;
+    }
+    e.stopPropagation();
+}, true);
+
 function createEditor(containerId) {
     const editor = monaco.editor.create(document.getElementById(containerId), {
         value: '',

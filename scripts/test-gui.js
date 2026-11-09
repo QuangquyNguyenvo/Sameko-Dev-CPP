@@ -526,6 +526,51 @@ async function main() {
         assert.equal(await terminalShown(), true, 'Terminal not opened with the option on');
     });
 
+    // ---- find widget, Escape, fonts -------------------------------------------------
+    await check('find widget: buttons use browser tooltips and Close stays clickable (#71)', async () => {
+        await page.evaluate(() => { if (App.isSplit) closeSplit(); newFile(); App.editor.focus(); });
+        await page.keyboard.press('Control+KeyF');
+        await page.waitForSelector('#editor-container .find-widget.visible');
+        const close = page.locator('#editor-container .find-widget.visible .codicon-widget-close');
+        await close.hover();
+        await page.waitForTimeout(1200);   // longer than Monaco's hover delay
+        const state = await page.evaluate(() => {
+            const button = document.querySelector('#editor-container .find-widget .codicon-widget-close');
+            const r = button.getBoundingClientRect();
+            const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
+            return {
+                title: button.title,
+                monacoHover: !!document.querySelector('.context-view .monaco-hover'),
+                closeOnTop: !!(top && top.closest('.find-widget'))
+            };
+        });
+        assert.ok(state.title.startsWith('Close'), 'browser tooltip: ' + state.title);
+        assert.deepEqual({ monacoHover: state.monacoHover, closeOnTop: state.closeOnTop }, { monacoHover: false, closeOnTop: true });
+        await close.click();
+        await page.waitForFunction(() => !document.querySelector('#editor-container .find-widget.visible'), null, { timeout: 5000 });
+    });
+
+    await check('Escape in a Settings editor closes its find widget first, then Settings', async () => {
+        await page.evaluate(() => {
+            openSettings();
+            document.querySelector('.settings-tab[data-tab="template"]').click();
+            initTemplateEditor();
+            templateEditor.focus();
+        });
+        await page.keyboard.press('Control+KeyF');
+        await page.waitForSelector('#template-editor-container .find-widget.visible');
+        const state = () => page.evaluate(() => ({
+            settings: document.getElementById('settings-overlay').classList.contains('show'),
+            find: !!document.querySelector('#template-editor-container .find-widget.visible')
+        }));
+        await page.keyboard.press('Escape');
+        await page.waitForFunction(() => !document.querySelector('#template-editor-container .find-widget.visible'));
+        assert.deepEqual(await state(), { settings: true, find: false });
+        await page.evaluate(() => templateEditor.focus());
+        await page.keyboard.press('Escape');
+        assert.deepEqual(await state(), { settings: false, find: false });
+    });
+
     // ---- interface language ---------------------------------------------------------
     await check('interface language: translates the UI, leaves names alone, switches back', async () => {
         const read = () => page.evaluate(() => ({
