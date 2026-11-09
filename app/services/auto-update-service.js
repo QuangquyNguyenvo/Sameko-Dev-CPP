@@ -367,27 +367,54 @@ class AutoUpdateService {
      * Install the downloaded update and restart the app
      */
     quitAndInstall() {
-        if (this.updateDownloaded) {
-            log.info('[AutoUpdate] Quitting and installing update...');
-
-            // setImmediate ensures the app quits after this function returns
-            setImmediate(() => {
-                // Disable all windows close event handlers
-                app.removeAllListeners('window-all-closed');
-
-                // Close all windows
-                BrowserWindow.getAllWindows().forEach(window => {
-                    window.removeAllListeners('close');
-                    window.close();
-                });
-
-                // Silent install (no wizard; NSIS reuses the folder the app is installed in),
-                // then start the updated app. A Program Files install still asks for UAC.
-                this.updater.quitAndInstall(true, true);
-            });
-        } else {
+        if (!this.updateDownloaded) {
             log.warn('[AutoUpdate] No update downloaded yet');
+            return;
         }
+        log.info('[AutoUpdate] Quitting and installing update...');
+
+        // setImmediate: the IPC call that asked for this returns first.
+        setImmediate(() => {
+            // Start the installer before anything else is torn down. electron-updater only
+            // installs a download it made or validated in this session; the installer a previous
+            // session left (checkPendingUpdate's `fromPending`) is not one until electron-updater's
+            // own check has run, and it is never one when that check fails (offline, GitHub rate
+            // limit). The windows used to be closed first: electron-updater then logged "No update
+            // filepath provided, can't quit and install" and did not quit, leaving a process with
+            // no window that kept the single-instance lock, so the app could not be opened again
+            // until it was killed (user report 2026-11-09; reproduced with --fake-update).
+            // install() starts the installer, which waits for this process to exit, or reports
+            // the error (the renderer hides Restart) and returns false.
+            // Not silent: installer/installer.nsh skips every page of an update but the progress
+            // bar and then starts the app, so the minute of copying shows instead of a blank screen.
+            // That wizard (assistedInstaller.nsh, instFilesPre) appends "\<productName>" to a folder
+            // that does not already contain it, which a silent install (/S /D=C:\IDE, as a school
+            // might deploy) never did: such an install is updated silently, or it would move.
+            const installDir = path.dirname(process.execPath).toLowerCase();
+            const silent = !IS_WIN || !installDir.includes(app.getName().toLowerCase());
+            if (!this.updater.install(silent, true)) {
+                this.updateDownloaded = false;
+                log.warn('[AutoUpdate] Installer not started; checking again so the download can be validated');
+                this.checkForUpdates(false).catch(() => { });
+                return;
+            }
+
+            // The program the user is running holds DLLs of the bundled toolchain (libstdc++,
+            // libgcc) open, and the installer replaces that folder.
+            try { require('./compiler').stopProcess(); } catch (_) { }
+
+            // Silent install (no wizard; NSIS reuses the folder the app is installed in), then the
+            // updated app starts (--force-run). A Program Files install still asks for UAC.
+            // Nothing may veto the quit now: no close prompts, no "keep running" handlers.
+            app.removeAllListeners('window-all-closed');
+            BrowserWindow.getAllWindows().forEach(window => {
+                window.removeAllListeners('close');
+                window.close();
+            });
+            // electron-updater's quitAndInstall() does the same after starting the installer.
+            require('electron').autoUpdater.emit('before-quit-for-update');
+            app.quit();
+        });
     }
 
     getStatus() {
