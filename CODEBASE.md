@@ -193,7 +193,11 @@ in October 2026.)
   nasm, ninja, the `wl-*` package manager, the DLLs only they import, Python's test suite,
   GCC plugin headers, `.idl` files): 894 → 540 MB. The DLL list was derived from PE imports;
   after editing the filter or updating the toolchain, build `--win dir` and run
-  `node scripts/check-toolchain-deps.js` — it fails if any kept binary imports a dropped DLL.
+  `node scripts/check-toolchain-deps.js` — it fails if any kept binary imports a dropped DLL,
+  or if `as`/`ld`/`collect2`/`lto-wrapper` lack the UTF-8 code-page manifest that
+  `scripts/patch-toolchain-utf8.js` embeds (without it nothing builds under a folder name such
+  as `C:\Users\Nguyễn\…`, which is both `%TEMP%` and the default install folder; gdb is left
+  alone: with UTF-8 its string printing breaks).
   Runtime DLLs a user's program may need (`libgomp`, `libquadmath`, `libatomic`, `libssp` and
   their dependency `libdl`) are kept on purpose.
 - Linux: AppImage, deb, tar.gz; `npm run build:appimage` builds the AppImage via

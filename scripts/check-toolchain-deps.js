@@ -57,8 +57,15 @@ for (const file of binaries(root)) {
 }
 
 console.log(`Checked ${checked} binaries under ${root}`);
+// Builds under a folder name outside the ANSI code page (C:\Users\Nguyễn\...) need the UTF-8
+// manifest in binutils and two GCC helpers: scripts/patch-toolchain-utf8.js adds it.
+const { problems } = require('./patch-toolchain-utf8');
+const noUtf8 = problems(root).map((t) => `${path.relative(root, t.file)}: ${t.problem}`);
+if (noUtf8.length) {
+    console.log(`Build programs to fix (run node scripts/patch-toolchain-utf8.js on Sameko-GCC):\n  ${noUtf8.join('\n  ')}`);
+}
 if (missing.length) {
     console.log(`Missing DLLs (${missing.length}):\n  ${missing.join('\n  ')}`);
-    process.exit(1);
 }
-console.log('All imports resolve.');
+if (missing.length || noUtf8.length) process.exit(1);
+console.log('All imports resolve; build programs use the UTF-8 code page.');
