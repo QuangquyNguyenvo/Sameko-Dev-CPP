@@ -1084,6 +1084,8 @@
     'Not found': 'Không tìm thấy',
     'Path to the compiler or interpreter': 'Đường dẫn tới compiler hoặc trình thông dịch',
     '{0} is not a source file the app can build. Switch to the solution\'s tab (C/C++, Python, Java, Kotlin, Rust, Go, Pascal or JavaScript).': '{0} không phải file mã nguồn app build được. Hãy chuyển sang tab của lời giải (C/C++, Python, Java, Kotlin, Rust, Go, Pascal hoặc JavaScript).',
+    'Reset Layout': 'Đặt lại bố cục',
+    'Layout reset': 'Đã đặt lại bố cục',
     'Not a source file': 'Không phải file mã nguồn',
     '(no other source file here)': '(không có file mã nguồn khác)',
     'No expected output to compare with': 'Không có output mong đợi để so sánh',

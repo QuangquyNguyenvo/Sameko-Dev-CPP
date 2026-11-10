@@ -910,6 +910,40 @@ function applySavedPanelSizes() {
     }
 }
 
+/**
+ * View › Reset Layout: panels back where a fresh install has them (I/O on the right, the terminal
+ * docked in the bottom panel) at their default sizes. Which panels are open is kept.
+ */
+function resetLayout() {
+    const ioVisible = DockingState.ioDocked ? true : App.showIO;
+    const termVisible = DockingState.terminalDocked
+        ? App.showProblems && !isBottomPanelCollapsed() && document.getElementById('docked-terminal-tab')?.classList.contains('active')
+        : App.showTerm;
+
+    if (DockingState.ioDocked) undockIO();
+    if (!DockingState.terminalDocked) dockTerminalToProblems({ open: !!termVisible });
+    else if (termVisible) showBottomPanel('terminal');
+
+    for (const id of ['io-section', 'terminal-section']) {
+        const el = document.getElementById(id);
+        if (el) el.style.width = '';
+    }
+    const problemsPanel = document.getElementById('problems-panel');
+    if (problemsPanel) problemsPanel.style.height = '';
+
+    App.showIO = ioVisible;
+    if (!App.settings.panels) App.settings.panels = {};
+    Object.assign(App.settings.panels, {
+        showIO: ioVisible, ioDocked: false, terminalDocked: true,
+        ioWidth: null, termWidth: null, problemsHeight: null
+    });
+    saveSettings();
+    updateUI();
+    refreshEditorLayout();
+    fitTerminal();
+    log('Layout reset', 'info');
+}
+
 function persistPanelSize(targetId, sizeValue) {
     if (!App.settings.panels) App.settings.panels = {};
 

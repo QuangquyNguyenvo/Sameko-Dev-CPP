@@ -435,6 +435,7 @@ function doAction(action) {
         toggleio: toggleIO,
         toggleterm: toggleTerm,
         toggleproblems: toggleProblems,
+        resetlayout: resetLayout,
         spliteditor: openSplit,
         swapsplit: swapSplitEditors,
         closesplit: closeSplit,
