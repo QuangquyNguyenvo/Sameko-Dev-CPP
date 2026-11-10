@@ -379,7 +379,9 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   `languages.build`. An untitled tab sends its name's extension (`untitledExt`) and is written to
   `<temp>/cpp-ide/untitled-<tab id>/Main.<ext>` (Java: named after the public class); other
   untitled tabs are C++ (`temp_code-<tab id>.cpp`). The + button's right-click menu and
-  Settings › Code Template › New File create these tabs (`newFile(ext)`, `NEW_FILE_STARTERS`).
+  Settings › Code Template › New File create these tabs (`newFile(ext)`); they start from
+  `settings.template.others[ext]` (the template's Other menu, saved only when changed), else
+  `NEW_FILE_STARTERS`.
   Nothing is bundled: the tool comes from
   Settings › Compiler › Other Languages, else PATH (the process's and the registry's, read with
   PowerShell so a tool installed after start is found), the tool's home variable and its usual

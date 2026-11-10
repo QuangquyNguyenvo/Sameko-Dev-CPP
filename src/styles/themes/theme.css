@@ -4815,6 +4815,37 @@ body.split-active .editor-pane {
     margin-bottom: 12px;
 }
 
+/* The description and the New File choice share one line, so the editor below gets the height. */
+.template-intro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-bottom: 12px;
+}
+
+.template-intro .setting-desc {
+    margin: 0;
+}
+
+.template-new-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.template-new-file select {
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
 /* The template is one card in the style of .setting-row: file name and actions on top,
  * the editor below it filling the rest of the panel (settings.js fitTemplateEditor). */
 .template-editor {
@@ -4884,6 +4915,41 @@ body.split-active .editor-pane {
     background: var(--editor-bg);
     color: var(--text-primary);
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+/* The other languages' templates: a third tab after C++ and C, its language picked from an
+ * invisible <select> laid over it (settings.js switchTemplateLang fills the badge and name). */
+.template-other {
+    position: relative;
+    padding-right: 9px;
+}
+
+.template-other select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    opacity: 0;
+    cursor: pointer;
+    font: inherit;
+}
+
+.template-other select option {
+    background: var(--bg-panel);
+    color: var(--text-primary);
+}
+
+.template-other-caret {
+    margin-left: -2px;
+    opacity: 0.7;
+    transition: transform 0.15s ease;
+}
+
+.template-other:hover .template-other-caret {
+    transform: translateY(1px);
+}
+
+.template-other:focus-within {
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent) 60%, transparent);
 }
 
 .template-lang:not(.active) .template-language {

@@ -815,10 +815,10 @@
                         <!-- Template Tab -->
                         <div class="settings-panel" id="panel-template">
                             <h3>Code Template</h3>
-                            <p class="setting-desc">Choose the code that appears whenever you create a new C++ or C file.</p>
-                            <div class="setting-row" style="margin-bottom: 12px;">
-                                <label>New File <span class="tooltip"
-                                        title="What Ctrl+N and the + button create&#10;Right-click the + button for the other kinds">?</span></label>
+                            <div class="template-intro">
+                                <p class="setting-desc">Choose the code a new file starts with.</p>
+                                <label class="template-new-file" for="set-new-file-type">New File <span class="tooltip"
+                                        title="What Ctrl+N and the + button create&#10;Right-click the + button for the other kinds">?</span>
                                 <select id="set-new-file-type" translate="no">
                                     <option value="cpp">C++</option>
                                     <option value="c">C</option>
@@ -830,6 +830,7 @@
                                     <option value="pas">Pascal</option>
                                     <option value="js">JavaScript</option>
                                 </select>
+                                </label>
                             </div>
                             <div class="template-editor">
                                 <div class="template-editor-header">
@@ -837,6 +838,21 @@
                                         <span class="template-langs" role="tablist">
                                             <button class="template-lang active" data-lang="cpp" role="tab"><span class="template-language">C++</span> untitled.cpp</button>
                                             <button class="template-lang" data-lang="c" role="tab"><span class="template-language">C</span> untitled.c</button>
+                                            <label class="template-lang template-other" title="Templates of the other languages">
+                                                <span class="template-language" id="template-other-badge" translate="no">+</span>
+                                                <span id="template-other-name">Other</span>
+                                                <svg class="template-other-caret" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                                                <select id="template-other-lang" aria-label="Templates of the other languages">
+                                                    <option value="" hidden>Other</option>
+                                                    <option value="py" translate="no">Python</option>
+                                                    <option value="java" translate="no">Java</option>
+                                                    <option value="kt" translate="no">Kotlin</option>
+                                                    <option value="rs" translate="no">Rust</option>
+                                                    <option value="go" translate="no">Go</option>
+                                                    <option value="pas" translate="no">Pascal</option>
+                                                    <option value="js" translate="no">JavaScript</option>
+                                                </select>
+                                            </label>
                                         </span>
                                         <span class="template-editor-lines" id="template-line-count"></span>
                                     </span>

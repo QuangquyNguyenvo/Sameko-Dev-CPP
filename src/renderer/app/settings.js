@@ -401,9 +401,11 @@ function initSettings() {
     if (importTemplateFromFileBtn) {
         importTemplateFromFileBtn.onclick = importTemplateFromFile;
     }
-    document.querySelectorAll('#panel-template .template-lang').forEach((b) => {
+    document.querySelectorAll('#panel-template .template-lang[data-lang]').forEach((b) => {
         b.onclick = () => switchTemplateLang(b.dataset.lang);
     });
+    const otherTemplate = document.getElementById('template-other-lang');
+    if (otherTemplate) otherTemplate.onchange = () => { if (otherTemplate.value) switchTemplateLang(otherTemplate.value); };
 
     // Template Monaco editor will be initialized when settings panel opens
 
@@ -424,7 +426,7 @@ function initSettings() {
 // Typing in the header search shows every panel at once, keeping only the rows that match
 // (label, tooltip, select options, keybinding name or key). A panel whose own name matches
 // is shown whole. Clicking a tab or clearing the box returns to the normal one-panel view.
-const SETTINGS_SEARCH_ITEMS = '.setting-row, .keybinding-item';
+const SETTINGS_SEARCH_ITEMS = '.setting-row, .template-new-file, .keybinding-item';
 
 function initSettingsSearch() {
     const input = document.getElementById('settings-search');
@@ -502,24 +504,58 @@ function clearSettingsSearch() {
 }
 
 // Template editor (Monaco mini editor for settings). One model per language, so switching
-// between the C++ and C template keeps each one's undo history.
+// between templates keeps each one's undo history. C++ and C have their own tabs; the other
+// languages share the "Other" menu and are saved in settings.template.others only when changed.
 let templateEditor = null;
 let templateLang = 'cpp';
 const templateModels = {};
 const TEMPLATE_FIELDS = { cpp: 'set-template', c: 'set-template-c' };
 const TEMPLATE_DEFAULTS = { cpp: () => DEFAULT_SETTINGS.template.code, c: () => DEFAULT_SETTINGS.template.cCode };
+// ext -> [Monaco language, name, tab badge]; the starters are NEW_FILE_STARTERS (tabs.js).
+const OTHER_TEMPLATE_LANGS = {
+    py: ['python', 'Python', 'Py'], java: ['java', 'Java', 'Java'], kt: ['kotlin', 'Kotlin', 'Kt'], rs: ['rust', 'Rust', 'Rs'],
+    go: ['go', 'Go', 'Go'], pas: ['pascal', 'Pascal', 'Pas'], js: ['javascript', 'JavaScript', 'JS']
+};
+const otherTemplateTexts = {};
+
+function templateDefault(lang) {
+    return TEMPLATE_DEFAULTS[lang] ? TEMPLATE_DEFAULTS[lang]() : (NEW_FILE_STARTERS[lang] || '');
+}
+
+function templateText(lang) {
+    return TEMPLATE_FIELDS[lang] ? document.getElementById(TEMPLATE_FIELDS[lang]).value : (otherTemplateTexts[lang] ?? '');
+}
 
 function setTemplateText(lang, code) {
-    document.getElementById(TEMPLATE_FIELDS[lang]).value = code;
+    if (TEMPLATE_FIELDS[lang]) document.getElementById(TEMPLATE_FIELDS[lang]).value = code;
+    else otherTemplateTexts[lang] = code;
     if (templateModels[lang]) templateModels[lang].setValue(code);
+}
+
+/** settings.template.others: the other languages' templates that differ from their starter. */
+function changedOtherTemplates() {
+    const out = {};
+    for (const lang of Object.keys(OTHER_TEMPLATE_LANGS)) {
+        if (lang in otherTemplateTexts && otherTemplateTexts[lang] !== templateDefault(lang)) out[lang] = otherTemplateTexts[lang];
+    }
+    return out;
 }
 
 function switchTemplateLang(lang) {
     templateLang = lang;
-    document.querySelectorAll('#panel-template .template-lang').forEach((b) => {
+    document.querySelectorAll('#panel-template .template-lang[data-lang]').forEach((b) => {
         b.classList.toggle('active', b.dataset.lang === lang);
         b.setAttribute('aria-selected', b.dataset.lang === lang);
     });
+    // The Other tab reads like the C++ and C ones once a language is picked: badge, untitled.<ext>.
+    const other = document.getElementById('template-other-lang');
+    const picked = OTHER_TEMPLATE_LANGS[lang];
+    if (other) {
+        other.value = picked ? lang : '';
+        other.closest('.template-other')?.classList.toggle('active', !!picked);
+        document.getElementById('template-other-badge').textContent = picked ? picked[2] : '+';
+        document.getElementById('template-other-name').textContent = picked ? `untitled.${lang}` : 'Other';
+    }
     if (templateEditor) {
         templateEditor.setModel(templateModels[lang]);
         updateTemplateLineCount();
@@ -531,11 +567,12 @@ function initTemplateEditor() {
     const container = document.getElementById('template-editor-container');
     if (!container || templateEditor) return;
 
-    for (const lang of Object.keys(TEMPLATE_FIELDS)) {
-        const field = document.getElementById(TEMPLATE_FIELDS[lang]);
-        templateModels[lang] = monaco.editor.createModel(field.value, 'cpp');
+    for (const lang of [...Object.keys(TEMPLATE_FIELDS), ...Object.keys(OTHER_TEMPLATE_LANGS)]) {
+        templateModels[lang] = monaco.editor.createModel(templateText(lang), OTHER_TEMPLATE_LANGS[lang]?.[0] || 'cpp');
         templateModels[lang].onDidChangeContent(() => {
-            field.value = templateModels[lang].getValue();
+            const code = templateModels[lang].getValue();
+            if (TEMPLATE_FIELDS[lang]) document.getElementById(TEMPLATE_FIELDS[lang]).value = code;
+            else otherTemplateTexts[lang] = code;
             if (lang === templateLang) updateTemplateLineCount();
         });
     }
@@ -1047,6 +1084,9 @@ function openSettings() {
     // The mini editor is created only when its tab is visible.
     setTemplateText('cpp', App.settings.template?.code ?? DEFAULT_SETTINGS.template.code);
     setTemplateText('c', App.settings.template?.cCode ?? DEFAULT_SETTINGS.template.cCode);
+    for (const lang of Object.keys(OTHER_TEMPLATE_LANGS)) {
+        setTemplateText(lang, App.settings.template?.others?.[lang] ?? templateDefault(lang));
+    }
     const newFileType = document.getElementById('set-new-file-type');
     if (newFileType) newFileType.value = App.settings.template?.newFileType || 'cpp';
 
@@ -1186,6 +1226,7 @@ async function saveSettingsAndClose() {
         if (!App.settings.template) App.settings.template = {};
         App.settings.template.code = document.getElementById('set-template').value;
         App.settings.template.cCode = document.getElementById('set-template-c').value;
+        App.settings.template.others = changedOtherTemplates();
         App.settings.template.newFileType = document.getElementById('set-new-file-type')?.value || 'cpp';
 
         const prereleaseEl = document.getElementById('set-updatesPrerelease');
@@ -1448,10 +1489,10 @@ async function resetTemplate() {
     const lang = templateLang;
     const confirmed = await showConfirmDialog({
         title: 'Reset Template',
-        message: `Reset the ${lang === 'c' ? 'C' : 'C++'} template to default?`,
+        message: `Reset the ${lang === 'c' ? 'C' : OTHER_TEMPLATE_LANGS[lang]?.[1] || 'C++'} template to default?`,
         confirmText: 'Reset'
     });
-    if (confirmed) setTemplateText(lang, TEMPLATE_DEFAULTS[lang]());
+    if (confirmed) setTemplateText(lang, templateDefault(lang));
 }
 
 async function importTemplateFromFile() {
@@ -1459,7 +1500,7 @@ async function importTemplateFromFile() {
     input.type = 'file';
     
     // Restrict to C++ or text file formats
-    input.accept = '.cpp,.cc,.cxx,.c,.h,.hpp,.hxx,.txt';
+    input.accept = '.cpp,.cc,.cxx,.c,.h,.hpp,.hxx,.txt,' + Object.keys(OTHER_TEMPLATE_LANGS).map(e => '.' + e).join(',');
 
     input.onchange = (e) => {
         const file = e.target.files[0];
@@ -1467,7 +1508,7 @@ async function importTemplateFromFile() {
         // The extension picks the template (.c -> C, .cpp/.cc/.cxx/.hpp/.hxx -> C++);
         // .h and .txt go to the template on screen.
         const ext = (file.name.match(/\.([^.]+)$/) || [])[1]?.toLowerCase();
-        const lang = ext === 'c' ? 'c' : /^(cpp|cc|cxx|hpp|hxx)$/.test(ext) ? 'cpp' : templateLang;
+        const lang = ext === 'c' ? 'c' : /^(cpp|cc|cxx|hpp|hxx)$/.test(ext) ? 'cpp' : OTHER_TEMPLATE_LANGS[ext] ? ext : templateLang;
 
         const reader = new FileReader();
         reader.onload = (event) => {
