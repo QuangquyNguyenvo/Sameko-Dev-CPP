@@ -89,24 +89,22 @@ class AutoUpdateService {
 
         // Disable ALL signature verification for unsigned builds
         autoUpdater.verifyUpdateCodeSignature = false;
-        
-        // Force disable differential downloads (they require signing)
-        autoUpdater.disableDifferentialDownload = true;
-        
-        // Disable web installer differential downloads
-        autoUpdater.disableWebInstaller = false;
-        
+
+        // Differential download: only the blocks of the new installer that the installed one
+        // lacks are fetched, using the .blockmap files published next to both installers and
+        // the copy of the installer every install keeps in %LOCALAPPDATA%\<name>-updater. The
+        // bundled GCC is stored in the installer as the same bytes in every version
+        // (scripts/toolchain-package.js), so an update without a new GCC skips its ~60 MB, and
+        // unchanged Electron files are skipped too. Signing is not involved: the whole file's
+        // sha512 is checked at the end. Any failure (no old blockmap on the server, no cached
+        // installer) falls back to downloading the whole installer, as before.
+        autoUpdater.disableDifferentialDownload = false;
+
+        // No web installer is published; true also silences electron-updater's warning about it.
+        autoUpdater.disableWebInstaller = true;
+
         // Force allow unsigned updates
         autoUpdater.forceDevUpdateConfig = false;
-        
-        // Override the default signature validator to always return true
-        // This allows unsigned builds to update
-        if (autoUpdater.httpExecutor) {
-            const originalDownloadToBuffer = autoUpdater.httpExecutor.downloadToBuffer;
-            autoUpdater.httpExecutor.downloadToBuffer = function(...args) {
-                return originalDownloadToBuffer.apply(this, args);
-            };
-        }
 
         this.setupEventHandlers();
         return autoUpdater;
@@ -396,8 +394,12 @@ class AutoUpdateService {
             // That wizard (assistedInstaller.nsh, instFilesPre) appends "\<productName>" to a folder
             // that does not already contain it, which a silent install (/S /D=C:\IDE, as a school
             // might deploy) never did: such an install is updated silently, or it would move.
+            // The wizard looks for the product file name, which is also the executable's name
+            // ("Sameko Dev C++"); app.getName() is the package name ("sameko-dev-cpp").
             const installDir = path.dirname(process.execPath).toLowerCase();
-            const silent = !IS_WIN || !installDir.includes(app.getName().toLowerCase());
+            const productName = path.basename(process.execPath, path.extname(process.execPath)).toLowerCase();
+            const silent = !IS_WIN || !installDir.includes(productName);
+            log.info(`[AutoUpdate] Installer ${silent ? 'silent' : 'with progress window'} (${installDir})`);
             if (!this.updater.install(silent, true)) {
                 this.updateDownloaded = false;
                 log.warn('[AutoUpdate] Installer not started; checking again so the download can be validated');
@@ -409,9 +411,10 @@ class AutoUpdateService {
             // libgcc) open, and the installer replaces that folder.
             try { require('./compiler').stopProcess(); } catch (_) { }
 
-            // Silent install (no wizard; NSIS reuses the folder the app is installed in), then the
-            // updated app starts (--force-run). A Program Files install still asks for UAC.
-            // Nothing may veto the quit now: no close prompts, no "keep running" handlers.
+            // The installer (its progress page, or silent, see above) reuses the folder the app is
+            // installed in and then starts the updated app (--force-run). A Program Files install
+            // still asks for UAC. Nothing may veto the quit now: no close prompts, no "keep
+            // running" handlers.
             app.removeAllListeners('window-all-closed');
             BrowserWindow.getAllWindows().forEach(window => {
                 window.removeAllListeners('close');
