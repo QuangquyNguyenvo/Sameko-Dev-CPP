@@ -1076,6 +1076,7 @@
     '⚠ The debugger is for C/C++ only. Run {0} with Build & Run (F11) instead.': '⚠ Debugger chỉ dành cho C/C++. Hãy chạy {0} bằng Build & Run (F11).',
     'Other Languages': 'Ngôn ngữ khác',
     'Uses the compiler or interpreter already installed on this computer&#10;Leave a path empty to find it automatically&#10;IntelliSense, live check, Format and the debugger are C/C++ only': 'Dùng compiler hoặc trình thông dịch đã cài trên máy&#10;Để trống đường dẫn thì app tự tìm&#10;IntelliSense, live check, Format và debugger chỉ dùng cho C/C++',
+    'What Ctrl+N and the + button create&#10;Right-click the + button for the other kinds': 'Loại file Ctrl+N và nút + tạo ra&#10;Chuột phải vào nút + để chọn loại khác',
     'Installed something new?': 'Vừa cài thêm gì?',
     'Detect Again': 'Tìm lại',
     'Looking for compilers...': 'Đang tìm compiler...',

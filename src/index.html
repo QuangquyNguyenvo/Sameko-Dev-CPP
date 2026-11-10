@@ -815,6 +815,21 @@
                         <div class="settings-panel" id="panel-template">
                             <h3>Code Template</h3>
                             <p class="setting-desc">Choose the code that appears whenever you create a new C++ or C file.</p>
+                            <div class="setting-row" style="margin-bottom: 12px;">
+                                <label>New File <span class="tooltip"
+                                        title="What Ctrl+N and the + button create&#10;Right-click the + button for the other kinds">?</span></label>
+                                <select id="set-new-file-type" translate="no">
+                                    <option value="cpp">C++</option>
+                                    <option value="c">C</option>
+                                    <option value="py">Python</option>
+                                    <option value="java">Java</option>
+                                    <option value="kt">Kotlin</option>
+                                    <option value="rs">Rust</option>
+                                    <option value="go">Go</option>
+                                    <option value="pas">Pascal</option>
+                                    <option value="js">JavaScript</option>
+                                </select>
+                            </div>
                             <div class="template-editor">
                                 <div class="template-editor-header">
                                     <span class="template-editor-file">

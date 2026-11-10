@@ -14,12 +14,23 @@ const pendingFileOpens = new Map();
 
 /** A new untitled tab. `ext` picks the file type (right-click the + button); C++ by default.
  *  .cpp and .c start from their template in Settings > Template, other types empty. */
-function newFile(ext = 'cpp') {
-    if (typeof ext !== 'string') ext = 'cpp';   // called as a click handler
+// The few lines a new tab of another language starts with (C/C++ use the Code Template setting).
+// Java's class is not public, so the file may be saved under any name.
+const NEW_FILE_STARTERS = {
+    java: 'import java.util.*;\n\nclass Main {\n    public static void main(String[] args) {\n        \n    }\n}\n',
+    kt: 'fun main() {\n    \n}\n',
+    rs: 'fn main() {\n    \n}\n',
+    go: 'package main\n\nfunc main() {\n\t\n}\n',
+    pas: 'program main;\n\nbegin\n    \nend.\n',
+};
+
+/** A new untitled tab; with no extension, the kind chosen in Settings › Code Template. */
+function newFile(ext) {
+    if (typeof ext !== 'string') ext = App.settings.template?.newFileType || 'cpp';   // also called as a click handler
     const id = createRestoredTabId();
 
     const templateCode = ext === 'cpp' ? (App.settings.template?.code ?? DEFAULT_CODE)
-        : ext === 'c' ? (App.settings.template?.cCode ?? DEFAULT_SETTINGS.template.cCode) : '';
+        : ext === 'c' ? (App.settings.template?.cCode ?? DEFAULT_SETTINGS.template.cCode) : (NEW_FILE_STARTERS[ext] || '');
     const tab = { id, name: 'untitled.' + ext, path: null, untitledHistoryKey: createUntitledHistoryKey(), content: templateCode, original: templateCode, modified: false, viewState: null };
     App.tabs.push(tab);
     setActive(id);

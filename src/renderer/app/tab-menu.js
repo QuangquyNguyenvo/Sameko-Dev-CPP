@@ -60,10 +60,22 @@ function showTabContextMenu(e, tab) {
     ]);
 }
 
-// Right-click on the + button: the kind of file the new tab starts as.
+// Right-click on the + button: the kind of file the new tab starts as. The languages other than
+// C/C++ (built with the computer's own compiler, languages.js) sit in one submenu.
+const NEW_FILE_OTHER_TYPES = [
+    { ext: 'py', label: 'Python' },
+    { ext: 'java', label: 'Java' },
+    { ext: 'kt', label: 'Kotlin' },
+    { ext: 'rs', label: 'Rust' },
+    { ext: 'go', label: 'Go' },
+    { ext: 'pas', label: 'Pascal' },
+    { ext: 'js', label: 'JavaScript' }
+];
+
 const NEW_FILE_TYPES = [
     { ext: 'cpp', label: 'C++ file' },
     { ext: 'c', label: 'C file' },
+    { label: 'Other Languages', children: NEW_FILE_OTHER_TYPES },
     { divider: true },
     { ext: 'inp', label: 'Input' },
     { ext: 'out', label: 'Output' },
@@ -72,15 +84,55 @@ const NEW_FILE_TYPES = [
 ];
 
 function showNewFileMenu(e) {
-    openContextMenu(e, NEW_FILE_TYPES.map(t => t.divider ? t : {
+    const entry = t => t.divider ? t : t.children ? { icon: NEW_FILE_ICON, label: t.label, children: t.children.map(entry) } : {
         icon: NEW_FILE_ICON,
         label: t.label,
         hint: '.' + t.ext,
         action: () => newFile(t.ext)
-    }));
+    };
+    openContextMenu(e, NEW_FILE_TYPES.map(entry));
 }
 
-/** A small menu at the mouse. items: {icon, label, hint?, action, disabled?} or {divider: true}. */
+/** One row of a context menu; a row with children opens them in a submenu on hover. */
+function contextMenuRow(item) {
+    if (item.divider) {
+        const div = document.createElement('div');
+        div.className = 'tab-context-sep';
+        return div;
+    }
+
+    const menuItem = document.createElement('div');
+    menuItem.className = 'tab-context-item' + (item.disabled ? ' disabled' : '') + (item.children ? ' has-sub' : '');
+    menuItem.innerHTML = `<span class="tab-context-icon">${item.icon}</span><span>${escHtml(item.label)}</span>`
+        + (item.hint ? `<span class="tab-context-hint">${escHtml(item.hint)}</span>` : '')
+        + (item.children ? '<span class="tab-context-hint tab-context-arrow">›</span>' : '');
+
+    if (item.children) {
+        const sub = document.createElement('div');
+        sub.className = 'tab-context-menu tab-context-sub';
+        item.children.forEach(child => sub.appendChild(contextMenuRow(child)));
+        menuItem.appendChild(sub);
+        // Opens to the left when there is no room on the right, and stays inside the window.
+        menuItem.addEventListener('mouseenter', () => {
+            const row = menuItem.getBoundingClientRect();
+            const width = sub.offsetWidth;
+            menuItem.classList.toggle('flip', row.right + width + 8 > window.innerWidth);
+            sub.style.top = `${Math.min(-6, window.innerHeight - 8 - row.top - sub.offsetHeight)}px`;
+        });
+        return menuItem;
+    }
+
+    if (!item.disabled) {
+        menuItem.onclick = () => {
+            if (tabContextMenu) tabContextMenu.remove();
+            tabContextMenu = null;
+            item.action();
+        };
+    }
+    return menuItem;
+}
+
+/** A small menu at the mouse. items: {icon, label, hint?, action, disabled?}, {icon, label, children} or {divider: true}. */
 function openContextMenu(e, items) {
     if (tabContextMenu) tabContextMenu.remove();
 
@@ -88,29 +140,7 @@ function openContextMenu(e, items) {
     tabContextMenu = document.createElement('div');
     tabContextMenu.className = 'tab-context-menu';
 
-    items.forEach(item => {
-        if (item.divider) {
-            const div = document.createElement('div');
-            div.className = 'tab-context-sep';
-            tabContextMenu.appendChild(div);
-            return;
-        }
-
-        const menuItem = document.createElement('div');
-        menuItem.className = 'tab-context-item' + (item.disabled ? ' disabled' : '');
-        menuItem.innerHTML = `<span class="tab-context-icon">${item.icon}</span><span>${escHtml(item.label)}</span>`
-            + (item.hint ? `<span class="tab-context-hint">${escHtml(item.hint)}</span>` : '');
-
-        if (!item.disabled) {
-            menuItem.onclick = () => {
-                tabContextMenu.remove();
-                tabContextMenu = null;
-                item.action();
-            };
-        }
-
-        tabContextMenu.appendChild(menuItem);
-    });
+    items.forEach(item => tabContextMenu.appendChild(contextMenuRow(item)));
 
     // Kept inside the window when opened near its right or bottom edge.
     tabContextMenu.style.left = '0px';

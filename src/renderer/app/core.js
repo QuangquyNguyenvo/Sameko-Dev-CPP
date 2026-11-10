@@ -116,7 +116,8 @@ int main() {
 
     return 0;
 }
-`
+`,
+        newFileType: 'cpp'   // what Ctrl+N and the + button create (tabs.js newFile)
     },
     keybindings: {
         compile: 'F9',

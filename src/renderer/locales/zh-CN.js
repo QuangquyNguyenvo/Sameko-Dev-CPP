@@ -1099,6 +1099,7 @@
     '⚠ The debugger is for C/C++ only. Run {0} with Build & Run (F11) instead.': '⚠ 调试器仅支持 C/C++。请用 Build & Run (F11) 运行 {0}。',
     'Other Languages': '其他语言',
     'Uses the compiler or interpreter already installed on this computer&#10;Leave a path empty to find it automatically&#10;IntelliSense, live check, Format and the debugger are C/C++ only': '使用本机已安装的编译器或解释器&#10;路径留空则自动查找&#10;IntelliSense、实时检查、格式化和调试器仅支持 C/C++',
+    'What Ctrl+N and the + button create&#10;Right-click the + button for the other kinds': 'Ctrl+N 和 + 按钮新建的文件类型&#10;右键点击 + 按钮可选择其他类型',
     'Installed something new?': '刚安装了新工具？',
     'Detect Again': '重新检测',
     'Looking for compilers...': '正在查找编译器...',

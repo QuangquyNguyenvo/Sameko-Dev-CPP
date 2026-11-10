@@ -1034,6 +1034,8 @@ function openSettings() {
     // The mini editor is created only when its tab is visible.
     setTemplateText('cpp', App.settings.template?.code ?? DEFAULT_SETTINGS.template.code);
     setTemplateText('c', App.settings.template?.cCode ?? DEFAULT_SETTINGS.template.cCode);
+    const newFileType = document.getElementById('set-new-file-type');
+    if (newFileType) newFileType.value = App.settings.template?.newFileType || 'cpp';
 
 
     renderKeybindings();
@@ -1171,6 +1173,7 @@ async function saveSettingsAndClose() {
         if (!App.settings.template) App.settings.template = {};
         App.settings.template.code = document.getElementById('set-template').value;
         App.settings.template.cCode = document.getElementById('set-template-c').value;
+        App.settings.template.newFileType = document.getElementById('set-new-file-type')?.value || 'cpp';
 
         const prereleaseEl = document.getElementById('set-updatesPrerelease');
         if (prereleaseEl) {

@@ -349,6 +349,34 @@
     background: var(--border);
 }
 
+/* A row that opens a submenu (tab-menu.js contextMenuRow): shown on hover, beside the row. */
+.tab-context-item.has-sub {
+    position: relative;
+    cursor: default;
+}
+
+.tab-context-arrow {
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1;
+}
+
+.tab-context-sub {
+    display: none;
+    position: absolute;
+    left: 100%;
+    top: -6px;
+}
+
+.tab-context-item.has-sub.flip > .tab-context-sub {
+    left: auto;
+    right: 100%;
+}
+
+.tab-context-item.has-sub:hover > .tab-context-sub {
+    display: block;
+}
+
 .explorer-context-menu .context-item {
     border-radius: 10px;
 }
