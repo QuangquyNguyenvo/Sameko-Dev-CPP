@@ -527,11 +527,13 @@ function switchDockedPanel(panelId) {
 
     const problemsTitle = problemsPanel.querySelector('.panel-title.problems');
     const testsTitle = problemsPanel.querySelector('.panel-title.tests');
+    const stressTitle = problemsPanel.querySelector('.panel-title.stress');
     const terminalTab = document.getElementById('docked-terminal-tab');
     const ioTab = document.getElementById('docked-io-tab');
 
     const problemsBody = problemsPanel.querySelector('.problems-body');
     const testsBody = document.getElementById('tests-results-list');
+    const stressBody = document.getElementById('stress-body');
     let ioView = problemsPanel.querySelector('.docked-io-view');
 
     // The docked terminal is shown by CSS from this attribute (see mountTerminalView).
@@ -540,12 +542,14 @@ function switchDockedPanel(panelId) {
     // Deactivate all headers
     problemsTitle?.classList.remove('active');
     testsTitle?.classList.remove('active');
+    stressTitle?.classList.remove('active');
     terminalTab?.classList.remove('active');
     ioTab?.classList.remove('active');
 
     // Hide all bodies
     if (problemsBody) problemsBody.style.display = 'none';
     if (testsBody) testsBody.style.display = 'none';
+    if (stressBody) stressBody.style.display = 'none';
     if (ioView) ioView.style.display = 'none';
 
     if (panelId === 'problems') {
@@ -554,6 +558,10 @@ function switchDockedPanel(panelId) {
     } else if (panelId === 'tests') {
         testsTitle?.classList.add('active');
         if (testsBody) testsBody.style.display = 'block';
+    } else if (panelId === 'stress') {
+        stressTitle?.classList.add('active');
+        if (stressBody) stressBody.style.display = '';
+        if (typeof onStressViewShown === 'function') onStressViewShown();
     } else if (panelId === 'terminal') {
         terminalTab?.classList.add('active');
         fitTerminal();

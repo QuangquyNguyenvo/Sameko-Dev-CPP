@@ -1,0 +1,492 @@
+/* ===== STRESS TAB (bottom panel; src/renderer/app/stress-test.js) =====
+ * The panel is wide and short (150 px by default), so the setup is a narrow column on the
+ * left and the run or the failing test takes the rest of the width. Colors are theme tokens
+ * only, like the TESTS list it sits next to. */
+
+/* Header: Start/Stop only on this tab; Run All / Delete All belong to TESTS. */
+.problems-panel .stress-run-btn {
+    display: none;
+}
+
+.problems-panel[data-view="stress"] .stress-run-btn {
+    display: flex;
+}
+
+.problems-panel[data-view="stress"] #btn-run-all-tests,
+.problems-panel[data-view="stress"] #btn-delete-all-tests {
+    display: none !important;
+}
+
+/* Same place as Run All on TESTS. Start ↔ Stop swaps color at once, without a blend between. */
+.stress-run-btn {
+    transition: filter 0.2s, transform 0.2s;
+}
+
+.stress-run-btn .stress-ico-stop,
+.stress-run-btn.running .stress-ico-start {
+    display: none;
+}
+
+.stress-run-btn.running .stress-ico-stop {
+    display: inline;
+}
+
+.stress-run-btn.running {
+    background: var(--danger, var(--error));
+    color: var(--btn-primary-text, white);
+    animation: none;
+}
+
+.stress-run-btn.stopping {
+    opacity: 0.7;
+}
+
+.panel-title.stress {
+    margin-left: 2px;
+}
+
+/* Kawaii Light: the header buttons' text (--bg-ocean-dark) is the same blue as their
+ * background, so Run All, Delete All and Start were unreadable; its primary-button text is white. */
+@container style(--component-style: kawaii-light) {
+    :root .run-all-btn,
+    :root .stress-btn.primary {
+        color: var(--btn-primary-text);
+    }
+}
+
+/* Sakura gives Run All dark text (themes.css); the primary buttons here follow it. */
+@container style(--component-style: sakura) {
+    :root .stress-btn.primary {
+        color: var(--text-primary);
+    }
+}
+
+/* ---- Body ---- */
+.stress-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    overflow: hidden;
+    container-type: inline-size;
+}
+
+.stress-layout {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    gap: 14px;
+    padding: 8px 12px 10px;
+}
+
+.stress-setup {
+    flex: 0 0 auto;
+    width: 268px;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) 28px;
+    align-items: center;
+    align-content: start;
+    gap: 6px 8px;
+    padding-right: 14px;
+    border-right: 1px solid var(--border);
+}
+
+.stress-label {
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.stress-limits {
+    grid-column: 2 / 4;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+
+.stress-select,
+.stress-num {
+    height: 28px;
+    min-width: 0;
+    padding: 0 8px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--btn-bg, var(--bg-panel));
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    transition: border-color 0.15s ease;
+}
+
+.stress-select {
+    width: 100%;
+    cursor: pointer;
+}
+
+.stress-num {
+    width: 76px;
+}
+
+.stress-num-short {
+    width: 58px;
+}
+
+.stress-select:hover,
+.stress-num:hover {
+    border-color: var(--border-strong, var(--accent));
+}
+
+.stress-select:focus,
+.stress-num:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.stress-select:disabled,
+.stress-num:disabled,
+.stress-icon-btn:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.stress-unit {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.stress-icon-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.stress-icon-btn:not(:disabled):hover {
+    background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+/* ---- Right side: idle, running, result ---- */
+.stress-main {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.stress-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 28px;
+    flex-wrap: wrap;
+}
+
+.stress-title {
+    font-family: 'Fredoka', 'Nunito', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stress-file {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--accent);
+}
+
+.stress-file-muted {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.stress-ratio {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 2px 12px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-primary);
+}
+
+.stress-ratio b {
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.stress-ratio-total {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+}
+
+.stress-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-muted) 16%, transparent);
+    color: var(--text-secondary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.stress-chip b {
+    color: var(--text-primary);
+    font-weight: 800;
+}
+
+.stress-progress {
+    height: 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-muted) 20%, transparent);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.stress-progress > span {
+    display: block;
+    height: 100%;
+    width: 0;
+    border-radius: inherit;
+    background: var(--accent);
+    transition: width 0.25s ease;
+}
+
+.stress-hint {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text-secondary);
+}
+
+.stress-hint b {
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.stress-need {
+    color: var(--warning-text, var(--text-primary));
+    font-weight: 700;
+}
+
+.stress-sep {
+    margin: 0 6px;
+    color: var(--text-muted);
+}
+
+.stress-spinner {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--accent) 25%, transparent);
+    border-top-color: var(--accent);
+    animation: stress-spin 0.8s linear infinite;
+}
+
+@keyframes stress-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.stress-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.stress-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 11px 4px 4px;
+    border-radius: 999px;
+    background: var(--bg-glass, color-mix(in srgb, var(--bg-panel) 80%, transparent));
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stress-step b {
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--btn-primary-text, white);
+    font-size: 11px;
+    font-weight: 800;
+}
+
+/* The summary boxes reuse the TESTS look (.test-results-summary); only tighter here. */
+.stress-summary {
+    margin-bottom: 0;
+    padding: 6px 10px;
+    flex-wrap: wrap;
+}
+
+.stress-actions {
+    display: flex;
+    gap: 6px;
+    margin-left: auto;
+}
+
+.stress-btn {
+    height: 26px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--btn-bg, var(--bg-panel));
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: filter 0.15s ease, border-color 0.15s ease;
+}
+
+.stress-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+}
+
+.stress-btn.primary {
+    border-color: transparent;
+    background: var(--bg-ocean-deep, var(--accent));
+    color: var(--bg-ocean-dark, white);
+}
+
+.stress-btn.primary:hover:not(:disabled) {
+    filter: brightness(1.1);
+}
+
+.stress-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.stress-details {
+    font-size: 12px;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---- The failing test: Input | Your output | Brute force ---- */
+.stress-case {
+    flex: 1;
+    min-height: 44px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.stress-col {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    border-top-width: 3px;
+    background: var(--bg-glass, color-mix(in srgb, var(--bg-panel) 80%, transparent));
+    overflow: hidden;
+}
+
+.stress-col.bad {
+    border-top-color: var(--danger, var(--error));
+}
+
+.stress-col.good {
+    border-top-color: var(--success);
+}
+
+.stress-col-title {
+    flex-shrink: 0;
+    padding: 3px 10px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.stress-pre {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: 2px 10px 6px;
+    overflow: auto;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: var(--panel-font-size, 13px);
+    line-height: 1.45;
+    color: var(--text-primary);
+    white-space: pre;
+    tab-size: 4;
+}
+
+.stress-line-diff {
+    display: inline-block;
+    min-width: 100%;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--danger, var(--error)) 20%, transparent);
+}
+
+.stress-cut {
+    color: var(--text-muted);
+}
+
+.stress-error-text {
+    flex: 1;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg-glass, transparent);
+    padding: 6px 10px;
+    font-size: 12px;
+    white-space: pre-wrap;
+}
+
+/* Narrow panel (split editor, small window): setup above, result below, one scroll. */
+@container (max-width: 640px) {
+    .stress-layout {
+        flex-direction: column;
+        gap: 8px;
+        overflow-y: auto;
+    }
+
+    .stress-setup {
+        width: auto;
+        padding-right: 0;
+        padding-bottom: 8px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .stress-case {
+        min-height: 110px;
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

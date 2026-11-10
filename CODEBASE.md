@@ -401,6 +401,17 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   clangd, live check, Format and the debugger. Settings › Compiler › Other Languages lists what was
   found (`languages-list` IPC) and saves `settings.languages.<id>.path`.
 
+**Stress test** (STRESS tab, `stress-test.js`)
+- Gen, brute force and solution are built like the tests (`variant: 'judge'`, so the solution
+  shares Run All's build). Each test: the generator runs with its seed as `argv[1]` (`runTest({ args })`,
+  passed on by the run launcher; plain words only), the brute force's output is the expected answer
+  and the solution is judged with the problem's limits and `compareMode`. Up to 4 workers like Run All;
+  a TLE from a crowded run is re-run alone. Stops at the first failure (lowest test number), the
+  test count or the time budget (`execution.stressTests`, `stressSeconds`). Seeds differ every run.
+- Holds `isBatchTesting` while it runs. Gen and brute are picked from the files next to the focused
+  tab (guessed from their names, `gen*` / `*brute*`); the failing test shows in the tab itself, and
+  "Add to tests" appends it to the tested tab's tests (never into the Input/Expected boxes directly).
+
 **Persistence**
 
 | Data | Where |
@@ -438,6 +449,7 @@ function from a later file. Search for the function name to find the exact spot.
 | `companion.js` | 643 | Competitive Companion, per-tab test state (`ccProblem`, `saveTestStateToTab`), test navigation |
 | `file-watch.js` | 118 | External file changes and the reload prompt |
 | `batch-tests.js` | 605 | `runAllTests`, single test, results list, `buildCompileFlags` |
+| `stress-test.js` | 726 | STRESS tab of the bottom panel: generator / brute force / solution loop, `startStressTest`, Add to tests |
 | `terminal-input.js` | 217 | Terminal input box, xterm setup |
 | `updates.js` | 341 | About tab, update status, portable detection, compiler check at startup, `showToast` |
 | `tab-menu.js` | 218 | Tab context menu, local-history settings fields |

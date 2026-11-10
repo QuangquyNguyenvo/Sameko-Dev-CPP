@@ -35,6 +35,8 @@ function loadTestStateFromTab(tab) {
     updateTestNavUI();
     updateDockedTestNavUI();
     renderTestResults();
+    // The STRESS tab lists the files next to the focused tab (stress-test.js).
+    if (typeof onStressTabChanged === 'function') onStressTabChanged();
 
     // Show the selected test (and its last result) without taking keyboard
     // focus away from the editor — this runs on every tab switch.

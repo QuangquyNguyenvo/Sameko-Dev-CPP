@@ -591,6 +591,48 @@ async function main() {
         assert.match(result.summary, /1 not judged/);
     });
 
+    await check('stress test: seeds the generator, stops at the first wrong test, adds it to TESTS', async () => {
+        const dir = path.join(profile, 'stress');
+        fs.mkdirSync(dir, { recursive: true });
+        // The generator prints its own argv[1]: proof that the seed reaches it (through the run
+        // launcher on Windows). The solution is wrong whenever seed % 7 == 5.
+        fs.writeFileSync(path.join(dir, 'gen.cpp'), '#include <cstdio>\n#include <cstdlib>\n'
+            + 'int main(int c, char** v) { long long s = c > 1 ? atoll(v[1]) : -1; printf("%lld %lld\\n", s, s % 7); }\n');
+        fs.writeFileSync(path.join(dir, 'brute.cpp'), '#include <cstdio>\n'
+            + 'int main() { long long s, r; if (scanf("%lld %lld", &s, &r) == 2) printf("%lld\\n", r); }\n');
+        fs.writeFileSync(path.join(dir, 'sol.cpp'), '#include <cstdio>\n'
+            + 'int main() { long long s, r; if (scanf("%lld %lld", &s, &r) == 2) printf("%lld\\n", r == 5 ? 4 : r); }\n');
+        const result = await page.evaluate(async (sol) => {
+            if (App.isSplit) closeSplit();
+            await openFileFromPath(sol);
+            showBottomPanel('stress');
+            await refreshStressFiles();
+            const picked = [document.getElementById('stress-gen').value, document.getElementById('stress-brute').value];
+            App.settings.execution.stressTests = 200;
+            await startStressTest();
+            const r = Stress.run.result;
+            const shown = document.getElementById('stress-main').textContent.replace(/\s+/g, ' ');
+            addStressCaseToTests();
+            return {
+                picked, kind: r.kind, title: r.title, verdict: r.verdict, input: r.input, output: r.output,
+                expected: r.expected, seed: r.seed, shown, tests: ccProblem.tests.map(t => t.input),
+                busy: isBatchTesting || Stress.running
+            };
+        }, path.join(dir, 'sol.cpp'));
+        assert.deepEqual(result.picked, ['gen.cpp', 'brute.cpp'], 'gen.cpp and brute.cpp are picked by name');
+        assert.equal(result.kind, 'fail', 'result: ' + (result.title || result.kind));
+        assert.equal(result.verdict, 'WA');
+        const [seed, rest] = result.input.trim().split(/\s+/).map(Number);
+        assert.equal(seed, result.seed, 'the generator got the seed as argv[1]');
+        assert.equal(rest, 5);
+        assert.equal(result.output.trim(), '4');
+        assert.equal(result.expected.trim(), '5');
+        assert.match(result.shown, /Your output/);
+        assert.match(result.shown, /Add to tests/);
+        assert.deepEqual(result.tests, [result.input], 'the failing test is now Test 1 of sol.cpp');
+        assert.equal(result.busy, false, 'Run All Tests is unblocked again');
+    });
+
     // ---- other languages: the machine's own Python (skipped without one) ------------------
     const python = (await page.evaluate(() => window.electronAPI.listLanguages())).find(l => l.id === 'python');
     if (!python || !python.found) {

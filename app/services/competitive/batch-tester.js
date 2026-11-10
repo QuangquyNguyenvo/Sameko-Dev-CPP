@@ -29,10 +29,13 @@ const languages = require('../compiler/languages');
  * @param {number} [options.memoryLimit] - Memory limit in MB (peak commit, as judges count it); none if 0
  * @param {string} [options.compare] - how output is judged ('tokens' by default, see app/shared/judge.js)
  * @param {string} [options.cwd] - Working directory
+ * @param {string[]} [options.args] - command-line arguments for the program (a stress-test
+ *   generator's seed): plain words only, anything else is dropped
  * @returns {Promise<import('../../shared/types').BatchTestResult>}
  */
-async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memoryLimit = 0, compare, cwd, debug = false, testMeta = null }) {
+async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memoryLimit = 0, compare, cwd, args = [], debug = false, testMeta = null }) {
     memoryLimit = Number.isFinite(+memoryLimit) && +memoryLimit > 0 ? Math.round(+memoryLimit) : 0;
+    const programArgs = programArguments(args);
     return new Promise((resolve) => {
         if (!exePath || !fs.existsSync(exePath)) {
             // Built a moment ago and gone now: an antivirus quarantined it (executor.js).
@@ -89,8 +92,8 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
         let testProcess;
         try {
             testProcess = launcher
-                ? spawn(launcher, [statsFile, command.file, String(Math.round(timeLimit)), String(memoryLimit), ...command.args], { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
-                : spawn(command.file, command.args, { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN });
+                ? spawn(launcher, [statsFile, command.file, String(Math.round(timeLimit)), String(memoryLimit), ...command.args, ...programArgs], { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+                : spawn(command.file, [...command.args, ...programArgs], { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN });
         } catch (err) {
             // Windows refused to create the process; Node throws ("spawn UNKNOWN") rather than
             // emitting 'error', which used to reject the whole Run All Tests.
@@ -365,6 +368,17 @@ async function runBatchTests({ exePath, tests, timeLimit = 3000, cwd, onProgress
 }
 
 /**
+ * The arguments a test may pass to the program: at most 8 plain words (letters, digits, _ . + -),
+ * which the Windows launcher can quote without escaping anything.
+ * @param {unknown} args
+ * @returns {string[]}
+ */
+function programArguments(args) {
+    if (!Array.isArray(args)) return [];
+    return args.map(a => String(a)).filter(a => /^[\w.+-]{1,64}$/.test(a)).slice(0, 8);
+}
+
+/**
  * Truncate string
  * @param {string} s
  * @param {number} maxLen
@@ -386,6 +400,7 @@ function hashText(text) {
 module.exports = {
     runTest,
     runBatchTests,
+    programArguments,
     normalizeOutput,
     compareOutputs,
 };

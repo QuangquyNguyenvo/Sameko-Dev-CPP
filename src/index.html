@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="styles/components/popups.css">
     <link rel="stylesheet" href="styles/components/discord-preview.css">
     <link rel="stylesheet" href="styles/components/markdown-preview.css">
+    <link rel="stylesheet" href="styles/components/stress-test.css">
     <link rel="stylesheet" href="styles/components/settings-languages.css">
     <link rel="stylesheet" href="styles/themes/theme-customizer.css">
     <link rel="stylesheet" href="vendor/monaco/editor.css">
@@ -1207,6 +1208,14 @@
                             <span class="problem-count hidden" id="problem-count">0</span>
                             <span class="panel-title tests" data-panel="tests">TESTS</span>
                             <span class="test-count" id="test-results-count" style="display:none">0/0</span>
+                            <span class="panel-title stress" data-panel="stress"
+                                title="Stress test: compare your solution with a brute force on random tests">STRESS</span>
+                            <!-- Shown only on the STRESS tab (stress-test.css). -->
+                            <button class="run-all-btn stress-run-btn" id="btn-stress-run" title="Start the stress test">
+                                <svg class="ico stress-ico-start" data-icon="play" data-weight="fill" width="12" height="12"><use href="#i-play-fill"/></svg>
+                                <svg class="ico stress-ico-stop" data-icon="stop" data-weight="fill" width="12" height="12"><use href="#i-stop-fill"/></svg>
+                                <span class="stress-run-label">Start</span>
+                            </button>
                             <button class="run-all-btn" id="btn-run-all-tests" title="Run all tests (Ctrl+Shift+F11)"
                                 style="display:none">
                                 <svg class="ico" data-icon="play" data-weight="fill" width="12" height="12"><use href="#i-play-fill"/></svg>
@@ -1224,6 +1233,33 @@
                         </div>
                         <div class="problems-body" id="problems-list"></div>
                         <div class="tests-results-body" id="tests-results-list" style="display:none"></div>
+                        <!-- STRESS tab (renderer/app/stress-test.js): setup on the left, run and result on the right. -->
+                        <div class="stress-body" id="stress-body" style="display:none">
+                            <div class="stress-layout">
+                                <div class="stress-setup">
+                                    <label class="stress-label" for="stress-gen"
+                                        title="Prints one random test. It gets the seed as its first argument (argv[1]), so a seed always gives the same test.">Generator</label>
+                                    <select class="stress-select" id="stress-gen"></select>
+                                    <button class="stress-icon-btn" id="stress-new-gen" title="New generator from a template">
+                                        <svg class="ico" data-icon="plus" width="13" height="13"><use href="#i-plus"/></svg>
+                                    </button>
+                                    <label class="stress-label" for="stress-brute"
+                                        title="A slow but surely correct solution. Its output is the expected answer.">Brute force</label>
+                                    <select class="stress-select" id="stress-brute"></select>
+                                    <button class="stress-icon-btn" id="stress-new-brute" title="New brute force from a template">
+                                        <svg class="ico" data-icon="plus" width="13" height="13"><use href="#i-plus"/></svg>
+                                    </button>
+                                    <label class="stress-label" for="stress-count">Tests</label>
+                                    <div class="stress-limits">
+                                        <input class="stress-num" id="stress-count" type="number" min="1" max="100000" step="1">
+                                        <label class="stress-label" for="stress-seconds" title="Stop after this many seconds">Max</label>
+                                        <input class="stress-num stress-num-short" id="stress-seconds" type="number" min="1" max="3600" step="1">
+                                        <span class="stress-unit">s</span>
+                                    </div>
+                                </div>
+                                <div class="stress-main" id="stress-main"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -1382,6 +1418,7 @@
     <script src="renderer/app/companion.js"></script>
     <script src="renderer/app/file-watch.js"></script>
     <script src="renderer/app/batch-tests.js"></script>
+    <script src="renderer/app/stress-test.js"></script>
     <script src="renderer/app/terminal-input.js"></script>
     <script src="renderer/app/updates.js"></script>
     <script src="renderer/app/tab-menu.js"></script>
