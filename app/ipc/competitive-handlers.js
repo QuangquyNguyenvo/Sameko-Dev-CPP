@@ -52,8 +52,8 @@ function registerHandlers() {
     });
 
     // Batch testing
-    ipcMain.handle('run-test', async (event, { exePath, input, expectedOutput, timeLimit, cwd }) => {
-        return await competitive.runTest({ exePath, input, expectedOutput, timeLimit, cwd });
+    ipcMain.handle('run-test', async (event, { exePath, input, expectedOutput, timeLimit, memoryLimit, compare, cwd }) => {
+        return await competitive.runTest({ exePath, input, expectedOutput, timeLimit, memoryLimit, compare, cwd });
     });
 
     // ==================== .sameko file handlers ====================

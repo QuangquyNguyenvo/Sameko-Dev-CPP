@@ -241,7 +241,7 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
 (`onclick="…"`) — attach listeners in JS.
 
 **Compile** (`buildActiveTab` in `renderer/app/build.js` → `compile` IPC → `executor.compile`)
-- Flags are assembled in the renderer by `buildCompileFlags()`; the default is `-O0 -g0`, and
+- Flags are assembled in the renderer by `buildCompileFlags()`; the default is `-O0 -g0` (tests: -O2), and
   `executor` prepends `-std=c++17` when no `-std=` is present.
 - A saved file is written to disk first; an untitled tab is compiled from
   `<temp>/cpp-ide/temp_code.cpp`.
@@ -363,8 +363,14 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   (`settings.execution.parallelTests`, default on); a test that timed out or used more than 60% of
   the limit is re-run alone. Each test goes through the run launcher, output is capped at 16 MB.
 - A test with a blank expected output is `RAN` (ran cleanly, not judged): not AC, not failed, and
-  it never marks a contest problem solved. A TLE from a build without -O1/-O2/-O3 gets a hint
-  that judges use -O2 (`addSlowBuildHint`).
+  it never marks a contest problem solved.
+- Judged like Codeforces: the tests are built with at least -O2 (`buildCompileFlags({ judge: true })`)
+  into their own `…-judge.exe` (`compile({ variant: 'judge' })`), so Build & Run keeps its -O0 build.
+  The launcher stops the program at the time limit itself, counted from the program's start; memory
+  is the peak commit (memory asked for, used or not), and the memory limit (the problem's from
+  Competitive Companion, else `execution.memoryLimitMB`, default 256, 0 = none) is a job limit:
+  over it is `MLE`. Output is compared word by word with real numbers within 1e-6
+  (`execution.compareMode` 'tokens'; 'lines' is the strict rule), in `app/shared/judge.js`.
 
 **Persistence**
 

@@ -4508,6 +4508,7 @@ body.split-active .editor-pane {
 }
 
 .test-result-item.status-TLE,
+.test-result-item.status-MLE,
 .test-result-item.status-RE {
     border-left-color: var(--warning);
 }
@@ -4589,7 +4590,8 @@ body.split-active .editor-pane {
     opacity: 0.92;
 }
 
-.test-result-status.TLE {
+.test-result-status.TLE,
+.test-result-status.MLE {
     background: var(--warning);
     color: var(--text-primary, #333);
     opacity: 0.92;

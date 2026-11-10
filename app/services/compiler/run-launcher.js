@@ -2,11 +2,19 @@
  * Sameko Dev C++ IDE - Run launcher (Windows)
  *
  * A tiny native helper that starts the user's program, waits for it, and
- * reports what the OS itself recorded: wall time, CPU time and peak working
- * set. It replaces sampling with `tasklist`, which cost ~150 ms per sample,
- * competed with the program being timed, and could not see a run shorter than
- * the sampling interval at all (so "Memory" was simply missing for most
- * competitive-programming runs, and "Time" included Node's own spawn overhead).
+ * reports what the OS itself recorded: wall time, CPU time and peak memory.
+ *
+ * Peak memory is the peak commit (PeakPagefileUsage): memory the program asked for, touched or
+ * not. Judges count it that way, so a 400 MB global array of which ten elements are used is
+ * 400 MB here as on Codeforces; the working set (pages touched, ~10 MB for that program) is
+ * written too, as wsKB. With a time limit the helper stops the program itself, so the limit is
+ * counted from the program's start, not from Node's spawn (an antivirus scan included). With a
+ * memory limit the job refuses allocations past it, and the run is reported as over the limit.
+ *
+ * It replaces sampling with `tasklist`, which cost ~150 ms per sample, competed with the program
+ * being timed, and could not see a run shorter than the sampling interval at all (so "Memory" was
+ * simply missing for most competitive-programming runs, and "Time" included Node's own spawn
+ * overhead).
  *
  * The helper is compiled once with the detected g++ into an app-owned temp
  * directory and reused until the compiler changes. The child inherits the
@@ -28,7 +36,7 @@ const { spawn } = require('child_process');
 const { getDetectedCompiler, getCompilerEnv } = require('./detector');
 const { IS_WIN, ensurePrivateDir, appTempDir } = require('../../shared/platform');
 
-const LAUNCHER_VERSION = 2; // bump when LAUNCHER_SOURCE changes
+const LAUNCHER_VERSION = 6; // bump when LAUNCHER_SOURCE changes
 
 const LAUNCHER_SOURCE = String.raw`
 #define UNICODE
@@ -38,21 +46,61 @@ const LAUNCHER_SOURCE = String.raw`
 #include <stdio.h>
 #include <string>
 
-// usage: sameko_run.exe <stats-file> <program.exe>
+// One argument, quoted when needed so CommandLineToArgvW / the CRT give it back unchanged.
+static void appendArg(std::wstring& cmd, const wchar_t* arg) {
+    std::wstring a(arg);
+    cmd += L' ';
+    if (!a.empty() && a.find_first_of(L" \t\n\v\"") == std::wstring::npos) { cmd += a; return; }
+    cmd += L'"';
+    for (size_t i = 0; ; ++i) {
+        size_t slashes = 0;
+        while (i < a.size() && a[i] == L'\\') { ++i; ++slashes; }
+        if (i == a.size()) { cmd.append(slashes * 2, L'\\'); break; }
+        if (a[i] == L'"') { cmd.append(slashes * 2 + 1, L'\\'); cmd += L'"'; }
+        else { cmd.append(slashes, L'\\'); cmd += a[i]; }
+    }
+    cmd += L'"';
+}
+
+// usage: sameko_run.exe <stats-file> <program.exe> [time-limit-ms] [memory-limit-mb] [program args...]
 int wmain(int argc, wchar_t** argv) {
     if (argc < 3) return 127;
+    DWORD timeLimit = argc > 3 ? (DWORD)_wtoi(argv[3]) : 0;
+    unsigned long long memLimitMB = argc > 4 ? (unsigned long long)_wtoi64(argv[4]) : 0;
 
     std::wstring cmd = L"\"";
     cmd += argv[2];
     cmd += L"\"";
+    // Arguments for the program itself: an interpreter's script (python a.py, java -cp dir Main)
+    // and a stress-test generator's seed. Quoted by the C runtime's rules, so any path survives.
+    for (int i = 5; i < argc; i++) appendArg(cmd, argv[i]);
 
     HANDLE job = CreateJobObjectW(NULL, NULL);
     if (job) {
         JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits;
         ZeroMemory(&limits, sizeof(limits));
         limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+        if (memLimitMB) {
+            limits.BasicLimitInformation.LimitFlags |= JOB_OBJECT_LIMIT_JOB_MEMORY;
+            limits.JobMemoryLimit = (SIZE_T)(memLimitMB * 1024ULL * 1024ULL);
+        }
         SetInformationJobObject(job, JobObjectExtendedLimitInformation, &limits, sizeof(limits));
     }
+    // The job posts a message here when an allocation hits the memory limit.
+    HANDLE port = NULL;
+    if (job && memLimitMB) {
+        port = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
+        if (port) {
+            JOBOBJECT_ASSOCIATE_COMPLETION_PORT assoc;
+            assoc.CompletionKey = job;
+            assoc.CompletionPort = port;
+            SetInformationJobObject(job, JobObjectAssociateCompletionPortInformation, &assoc, sizeof(assoc));
+        }
+    }
+
+    // Inherited by the program: a crash (abort() after bad_alloc, an access violation) exits at
+    // once instead of waiting seconds for Windows Error Reporting, which ran into the time limit.
+    SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX | SEM_NOOPENFILEERRORBOX);
 
     STARTUPINFOW si;
     ZeroMemory(&si, sizeof(si));
@@ -80,8 +128,21 @@ int wmain(int argc, wchar_t** argv) {
     QueryPerformanceFrequency(&freq);
     QueryPerformanceCounter(&t0);
     ResumeThread(pi.hThread);
-    WaitForSingleObject(pi.hProcess, INFINITE);
+    int timedOut = 0;
+    if (WaitForSingleObject(pi.hProcess, timeLimit ? timeLimit : INFINITE) == WAIT_TIMEOUT) {
+        timedOut = 1;
+        if (job) TerminateJobObject(job, 1); else TerminateProcess(pi.hProcess, 1);
+        WaitForSingleObject(pi.hProcess, 5000);
+    }
     QueryPerformanceCounter(&t1);
+
+    int memLimitHit = 0;
+    if (port) {
+        DWORD msg; ULONG_PTR key; LPOVERLAPPED ov;
+        while (GetQueuedCompletionStatus(port, &msg, &key, &ov, 0)) {
+            if (msg == JOB_OBJECT_MSG_JOB_MEMORY_LIMIT || msg == JOB_OBJECT_MSG_PROCESS_MEMORY_LIMIT) memLimitHit = 1;
+        }
+    }
 
     DWORD code = 0;
     GetExitCodeProcess(pi.hProcess, &code);
@@ -103,9 +164,10 @@ int wmain(int argc, wchar_t** argv) {
     double wallMs = (double)(t1.QuadPart - t0.QuadPart) * 1000.0 / (double)freq.QuadPart;
     FILE* f = _wfopen(argv[1], L"w");
     if (f) {
-        fprintf(f, "{\"wallMs\":%.3f,\"cpuMs\":%.3f,\"peakKB\":%llu}",
+        fprintf(f, "{\"wallMs\":%.3f,\"cpuMs\":%.3f,\"peakKB\":%llu,\"wsKB\":%llu,\"timedOut\":%d,\"memLimitHit\":%d}",
             wallMs, (double)cpu100ns / 10000.0,
-            (unsigned long long)(pmc.PeakWorkingSetSize / 1024));
+            (unsigned long long)(pmc.PeakPagefileUsage / 1024),
+            (unsigned long long)(pmc.PeakWorkingSetSize / 1024), timedOut, memLimitHit);
         fclose(f);
     }
 
@@ -191,7 +253,9 @@ function newStatsFile() {
 /**
  * Read and delete a stats file.
  * @param {string} file
- * @returns {{wallMs:number, cpuMs:number, peakKB:number}|{startError:number}|null} startError:
+ * @returns {{wallMs:number, cpuMs:number, peakKB:number, wsKB:number, timedOut:number, memLimitHit:number}|{startError:number}|null}
+ *   peakKB: peak commit; timedOut / memLimitHit: 1 when a limit given to the helper stopped the
+ *   program. startError:
  *   the program never started; CreateProcess failed with this Windows error code
  */
 function readStats(file) {

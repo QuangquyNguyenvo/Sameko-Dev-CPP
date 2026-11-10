@@ -54,6 +54,8 @@ const DEFAULT_SETTINGS = {
         parallelTests: true,   // batch tests run on a small worker pool
         timeLimitEnabled: false,
         timeLimitSeconds: 3,
+        memoryLimitMB: 256,    // Run All Tests; a Competitive Companion problem brings its own
+        compareMode: 'tokens', // 'tokens' like Codeforces' checkers, or 'lines' (strict)
         clearTerminal: true,
         showTerminalOnRun: true, // off: Build & Run leaves the panels as they are
         autoSendInput: true,

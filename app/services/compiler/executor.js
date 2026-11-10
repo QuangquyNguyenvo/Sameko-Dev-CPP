@@ -218,9 +218,11 @@ function sendToRenderer(channel, data) {
  * @param {string|null} options.filePath - Source file path (null for unsaved)
  * @param {string} options.content - Source code content
  * @param {string} [options.flags] - Compiler flags
+ * @param {string} [options.variant] - 'judge' for the -O2 build of Run All Tests: its own exe, so
+ *   switching between Run and the tests does not rebuild each time
  * @returns {Promise<import('../../shared/types').CompileResult>}
  */
-async function compile({ filePath, content, flags, useLLD, noBuildCache = false, singleFileMode = false, realtimeOutput = true, untitledId = '' }) {
+async function compile({ filePath, content, flags, useLLD, noBuildCache = false, singleFileMode = false, realtimeOutput = true, untitledId = '', variant = '' }) {
     const startTime = Date.now();
 
     const flagsCheck = validateCompilerFlags(flags);
@@ -302,7 +304,8 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
     const outputTag = usingTempFile
         ? ''
         : '-' + crypto.createHash('sha1').update(IS_LINUX ? path.resolve(actualFilePath) : path.resolve(actualFilePath).toLowerCase()).digest('hex').slice(0, 8);
-    const outputPath = path.join(buildsDir, baseName + outputTag + EXE_SUFFIX);
+    const variantTag = variant === 'judge' ? '-judge' : '';
+    const outputPath = path.join(buildsDir, baseName + outputTag + variantTag + EXE_SUFFIX);
 
     // ===== MULTI-FILE PROJECT SUPPORT (fast lookup) =====
     let sourceFiles = [actualFilePath];

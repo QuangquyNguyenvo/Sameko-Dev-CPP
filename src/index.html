@@ -566,7 +566,7 @@
                             </div>
                             <div class="setting-row">
                                 <label>Optimization <span class="tooltip"
-                                        title="None: Fast build, easy debug&#10;Fast: 2-3x faster runtime&#10;Fastest: Maximum speed">?</span></label>
+                                        title="None: Fast build, easy debug&#10;Fast: 2-3x faster runtime&#10;Fastest: Maximum speed&#10;Run All Tests always builds with at least -O2, like the judge">?</span></label>
                                 <select id="set-optimization">
                                     <option value="" selected>None (-O0)</option>
                                     <option value="-O2">Fast (-O2)</option>
@@ -632,6 +632,23 @@
                                         style="width:60px;margin-left:10px">
                                     <span>sec</span>
                                 </div>
+                            </div>
+                            <div class="setting-row">
+                                <label>Memory Limit <span class="tooltip"
+                                        title="Run All Tests: MLE above this, counted like the judge (memory the program asked for)&#10;Problems from Competitive Companion use their own limit&#10;0: no limit">?</span></label>
+                                <div class="setting-control">
+                                    <input type="number" id="set-memoryLimitMB" min="0" max="8192" value="256"
+                                        style="width:70px">
+                                    <span>MB</span>
+                                </div>
+                            </div>
+                            <div class="setting-row">
+                                <label>Compare Output <span class="tooltip"
+                                        title="Words: same words in order, however spaced or split into lines; real numbers within 1e-6 (like Codeforces)&#10;Exact lines: every line must match">?</span></label>
+                                <select id="set-compareMode">
+                                    <option value="tokens" selected>Words (like Codeforces)</option>
+                                    <option value="lines">Exact lines</option>
+                                </select>
                             </div>
                             <div class="setting-row">
                                 <label>Clear Terminal on Run</label>

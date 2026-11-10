@@ -25,10 +25,13 @@ const { getLauncherIfReady, newStatsFile, readStats } = require('../compiler/run
  * @param {string} options.input - Test input
  * @param {string} [options.expectedOutput] - Expected output for comparison
  * @param {number} [options.timeLimit=3000] - Time limit in ms
+ * @param {number} [options.memoryLimit] - Memory limit in MB (peak commit, as judges count it); none if 0
+ * @param {string} [options.compare] - how output is judged ('tokens' by default, see app/shared/judge.js)
  * @param {string} [options.cwd] - Working directory
  * @returns {Promise<import('../../shared/types').BatchTestResult>}
  */
-async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, debug = false, testMeta = null }) {
+async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memoryLimit = 0, compare, cwd, debug = false, testMeta = null }) {
+    memoryLimit = Number.isFinite(+memoryLimit) && +memoryLimit > 0 ? Math.round(+memoryLimit) : 0;
     return new Promise((resolve) => {
         if (!exePath || !fs.existsSync(exePath)) {
             // Built a moment ago and gone now: an antivirus quarantined it (executor.js).
@@ -75,7 +78,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
         let testProcess;
         try {
             testProcess = launcher
-                ? spawn(launcher, [statsFile, exePath], { cwd: workingDir, env: getCompilerEnv(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+                ? spawn(launcher, [statsFile, exePath, String(Math.round(timeLimit)), String(memoryLimit)], { cwd: workingDir, env: getCompilerEnv(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
                 : spawn(exePath, [], { cwd: workingDir, env: getCompilerEnv(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN });
         } catch (err) {
             // Windows refused to create the process; Node throws ("spawn UNKNOWN") rather than
@@ -133,12 +136,14 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
         let settled = false;
         let exitGrace = null;
         let forceFinish = null;
+        // The launcher stops the program at the limit itself, counted from the program's start;
+        // this timer is then only a backstop for a launcher that hangs.
         const timeout = setTimeout(() => {
             killed = true;
             debugInfo.timeoutKilled = true;
             killProcessTree(testProcess);
             forceFinish = setTimeout(() => settle(testProcess.exitCode, testProcess.signalCode || 'SIGKILL'), 1000);
-        }, timeLimit);
+        }, launcher ? timeLimit + 3000 : timeLimit);
 
         // Send input and start timing
         let startTime;
@@ -197,6 +202,10 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
             const timed = stats && Number.isFinite(stats.wallMs) ? stats : null;
             const executionTime = timed ? Math.round(timed.wallMs) : Date.now() - startTime;
             if (timed) peakMemoryKB = timed.peakKB;
+            if (timed && timed.timedOut) { killed = true; debugInfo.timeoutKilled = true; }
+            // Over the limit: the job refused an allocation (the program then crashes or exits
+            // with bad_alloc), or it stayed under the job's cap but peaked past the limit.
+            const overMemory = memoryLimit > 0 && ((timed && timed.memLimitHit) || peakMemoryKB > memoryLimit * 1024);
 
             debugInfo.exitCode = code;
             debugInfo.signal = signal || null;
@@ -213,6 +222,9 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
             } else if (killed) {
                 status = 'TLE';
                 details = 'Time limit exceeded';
+            } else if (overMemory) {
+                status = 'MLE';
+                details = `Memory limit exceeded (${memoryLimit} MB)`;
             } else if (outputTruncated) {
                 status = 'RE';
                 details = 'Output limit exceeded (more than 16 MB printed)';
@@ -240,7 +252,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, cwd, 
                     details = 'No expected output to compare with';
                 } else {
                     // Compare output using shared judge rules
-                    const compared = compareOutputs(output, expectedOutput);
+                    const compared = compareOutputs(output, expectedOutput, compare);
                     debugInfo.expectedNormHash = hashText(compared.expectedNorm);
                     debugInfo.actualNormHash = hashText(compared.actualNorm);
 

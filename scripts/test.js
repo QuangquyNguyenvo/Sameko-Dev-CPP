@@ -18,7 +18,8 @@ const STAGES = [
         ['theme manager', 'test-theme-manager.js'],
         ['customizer state', 'test-theme-customizer-state.js'],
         ['mi-parser', 'test-debugger.js', '--unit'],
-        ['run checks', 'test-run-checks.js']
+        ['run checks', 'test-run-checks.js'],
+        ['judge', '../app/services/competitive/judge-selftest.js']
     ],
     [
         ['gui', 'test-gui.js'],

@@ -24,11 +24,27 @@ function runJudgeSelfTests() {
     // Same meaning across different newline styles
     assert.strictEqual(compareOutputs('1\r\n2\r\n', '1\n2\n').matched, true);
 
-    // Extra blank line in middle is NOT ignored (strict, intentional)
-    assert.strictEqual(compareOutputs('1\n\n2', '1\n2').matched, false);
+    // 'lines': an extra blank line or a doubled space is a WA
+    assert.strictEqual(compareOutputs('1\n\n2', '1\n2', 'lines').matched, false);
+    assert.strictEqual(compareOutputs('1  2', '1 2', 'lines').matched, false);
+    assert.strictEqual(compareOutputs(' 42\n', '42', 'lines').matched, true);
 
-    // Leading/trailing full-output spaces are ignored by trim()
-    assert.strictEqual(compareOutputs(' 42\n', '42').matched, true);
+    // 'tokens' (default): the same words in order, as Codeforces' standard checkers judge
+    assert.strictEqual(compareOutputs('1\n\n2', '1\n2').matched, true);
+    assert.strictEqual(compareOutputs('1  2', '1 2').matched, true);
+    assert.strictEqual(compareOutputs('1 2 3', '1\n2\n3').matched, true);
+    assert.strictEqual(compareOutputs('1 2', '1 2 3').matched, false);
+    assert.strictEqual(compareOutputs('YES', 'yes').matched, false);
+    assert.strictEqual(compareOutputs('12', '012').matched, false);
+
+    // Real numbers within 1e-6, absolute or relative; integers exactly
+    assert.strictEqual(compareOutputs('0.3333333', '0.333333').matched, true);
+    assert.strictEqual(compareOutputs('0.3334', '0.333333').matched, false);
+    assert.strictEqual(compareOutputs('1000000.5', '1000000.0').matched, true);
+    assert.strictEqual(compareOutputs('2.0000001 x', '2.0 x').matched, true);
+    assert.strictEqual(compareOutputs('1e-9', '0.0').matched, true);
+    assert.strictEqual(compareOutputs('3.0', '3').matched, false);
+    assert.strictEqual(compareOutputs('abc', '1.5').matched, false);
 
     return true;
 }

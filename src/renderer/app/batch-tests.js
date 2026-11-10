@@ -54,7 +54,8 @@ function syncProblemStatusWithExplorer(tab = App.tabs.find(t => t.id === getPref
     const totalCount = ccProblem.tests.length;
 
     // Find if there is any failure in the current results
-    const hasRE = batchTestResults.some(r => r.status === 'RE');
+    // The explorer has no MLE state; a memory verdict shows as a runtime error there.
+    const hasRE = batchTestResults.some(r => r.status === 'RE' || r.status === 'MLE');
     const hasTLE = batchTestResults.some(r => r.status === 'TLE');
     const hasWA = batchTestResults.some(r => r.status === 'WA');
     const allAC = batchTestResults.filter(r => r.status === 'AC').length === totalCount;
@@ -155,7 +156,7 @@ async function runAllTests() {
     setStatus('Compiling...', '');
 
     try {
-        const compileFlags = buildCompileFlags();
+        const compileFlags = buildCompileFlags({ judge: true });
 
         const compileResult = await window.electronAPI.compile({
             filePath: tab.path,
@@ -164,7 +165,8 @@ async function runAllTests() {
             flags: compileFlags,
             singleFileMode: App.settings.compiler.singleFileMode !== false,
             useLLD: App.settings.compiler.useLLD !== false,
-            realtimeOutput: App.settings.execution.realtimeOutput !== false
+            realtimeOutput: App.settings.execution.realtimeOutput !== false,
+            variant: 'judge'
         });
 
         if (!compileResult.success) {
@@ -198,6 +200,7 @@ async function runAllTests() {
                     input: warmupTest.input || '',
                     expectedOutput: null,
                     timeLimit: timeLimit,
+                    ...judgeOptions(problem),
                     cwd: sourceDir
                 });
             } catch (_) {
@@ -225,6 +228,7 @@ async function runAllTests() {
                     input: test.input || '',
                     expectedOutput: test.output || '',
                     timeLimit: timeLimit,
+                    ...judgeOptions(problem),
                     cwd: sourceDir,
                     debug: true,
                     testMeta: { index: i, name: `Test ${i + 1}` }
@@ -254,6 +258,7 @@ async function runAllTests() {
                     input: tests[i].input || '',
                     expectedOutput: tests[i].output || '',
                     timeLimit: timeLimit,
+                    ...judgeOptions(problem),
                     cwd: sourceDir,
                     debug: true,
                     testMeta: { index: i, name: `Test ${i + 1}` }
@@ -264,8 +269,6 @@ async function runAllTests() {
                 results[i] = again;
             }
         }
-
-        addSlowBuildHint(results, compileFlags, timeLimit);
 
         // Report in test order, whatever order they finished in.
         const finalResults = [];
@@ -304,7 +307,6 @@ async function runAllTests() {
         const allPassed = passedCount === totalTests;
         const notJudged = ranCount ? `, ${ranCount} not judged (no expected output)` : '';
         log(`\n=== ${tab.name}: ${passedCount}/${totalTests} AC${notJudged} ===`, allPassed ? 'success' : 'warning');
-        if (results.some(r => r.slowBuildHint)) log(SLOW_BUILD_HINT, 'info');
         setStatus(`${passedCount}/${totalTests} AC`, allPassed ? 'success' : '');
 
         // Update UI
@@ -350,7 +352,7 @@ async function runSingleTestByIndex(testIndex) {
     try {
         setStatus(`Single test ${testIndex + 1}: compiling...`, '');
         const content = tabSourceText(tab);
-        const compileFlags = buildCompileFlags();
+        const compileFlags = buildCompileFlags({ judge: true });
         const compileResult = await window.electronAPI.compile({
             filePath: tab.path,
             untitledId: tab.path ? '' : tab.id,
@@ -358,7 +360,8 @@ async function runSingleTestByIndex(testIndex) {
             flags: compileFlags,
             singleFileMode: App.settings.compiler.singleFileMode !== false,
             useLLD: App.settings.compiler.useLLD !== false,
-            realtimeOutput: App.settings.execution.realtimeOutput !== false
+            realtimeOutput: App.settings.execution.realtimeOutput !== false,
+            variant: 'judge'
         });
 
         if (!compileResult.success) {
@@ -381,6 +384,7 @@ async function runSingleTestByIndex(testIndex) {
             input: test.input || '',
             expectedOutput: test.output || '',
             timeLimit: timeLimit,
+            ...judgeOptions(problem),
             cwd: sourceDir,
             debug: true,
             testMeta: { index: testIndex, name: `Test ${testIndex + 1}` }
@@ -389,7 +393,6 @@ async function runSingleTestByIndex(testIndex) {
         result.testIndex = testIndex;
         result.testName = `Test ${testIndex + 1}`;
         result.actualOutput = result.output ?? '';
-        addSlowBuildHint([result], compileFlags, timeLimit);
 
         const live = getPreferredTabId() === tab.id && ccProblem === problem;
         const owned = live ? batchTestResults : (tab.testState && tab.testState.problem === problem ? tab.testState.results : null);
@@ -414,7 +417,6 @@ async function runSingleTestByIndex(testIndex) {
             log(`Single Test ${testIndex + 1}: RAN (${timeStr}), no expected output`, 'info');
             setStatus(`Test ${testIndex + 1}: RAN`, '');
         } else {
-            if (result.slowBuildHint) log(SLOW_BUILD_HINT, 'info');
             log(`Single Test ${testIndex + 1}: ${result.status} (${timeStr})`, result.status === 'WA' ? 'error' : 'warning');
             setStatus(`Test ${testIndex + 1}: ${result.status}`, 'warning');
         }
@@ -618,19 +620,17 @@ function showTestsTab() {
     switchProblemsTab('tests');
 }
 
-// A time verdict from an unoptimized build misleads: judges compile with -O2, and STL-heavy code
-// runs ~3x slower at -O0 (sort + set + map + Dijkstra on n = 2e5 with the bundled GCC:
-// 760-870 ms at -O0, 270-330 ms at -O2). The default build is -O0 for fast compiles.
-const SLOW_BUILD_HINT = 'This build has no optimization (-O0). Judges use -O2, often several times faster: set Optimization to -O2 in Settings › Compiler to time it like the judge.';
-
-/** Flags TLE (or close-to-limit) results that came from a build without -O1/-O2/-O3/-Os/-Ofast. */
-function addSlowBuildHint(results, flags, timeLimit) {
-    if (/(^|\s)-O([123sz]|fast)(\s|$)/.test(flags || '')) return;
-    for (const r of results) {
-        if (!r || !(r.status === 'TLE' || (r.status === 'AC' && r.executionTime > timeLimit * 0.5))) continue;
-        r.slowBuildHint = true;
-        if (r.status === 'TLE') r.details = (r.details ? r.details + '\n' : '') + SLOW_BUILD_HINT;
-    }
+/**
+ * How a test is judged besides its time limit: the problem's memory limit (Competitive Companion
+ * sends one), else the one in Settings › Execution (0 = none); and the output comparison.
+ */
+function judgeOptions(problem) {
+    const fromProblem = Number(problem && problem.memoryLimit);
+    const fromSettings = Number(App.settings.execution.memoryLimitMB ?? 256);
+    return {
+        memoryLimit: fromProblem > 0 ? fromProblem : (fromSettings > 0 ? fromSettings : 0),
+        compare: App.settings.execution.compareMode === 'lines' ? 'lines' : 'tokens'
+    };
 }
 
 /**
@@ -643,8 +643,8 @@ function translateTestDetails(result) {
     if (typeof I18n === 'undefined' || !text) return text;
     // The two antivirus texts are whole templates with the folder in them (locale files).
     if (/^(The program built a moment ago is gone|Windows or an antivirus blocked)/.test(text)) return I18n.t(text);
-    const pieces = [result.crash && result.crash.name, result.crash && result.crash.hint, result.startErrorMessage, SLOW_BUILD_HINT,
-        'Runtime error', 'Time limit exceeded', 'No expected output to compare with',
+    const pieces = [result.crash && result.crash.name, result.crash && result.crash.hint, result.startErrorMessage,
+        'Runtime error', 'Time limit exceeded', 'Memory limit exceeded', 'No expected output to compare with',
         'Output limit exceeded (more than 16 MB printed)'];
     for (const piece of pieces) {
         if (piece && text.includes(piece)) text = text.replace(piece, I18n.t(piece));
@@ -652,7 +652,13 @@ function translateTestDetails(result) {
     return text;
 }
 
-function buildCompileFlags() {
+/**
+ * @param {{judge?: boolean}} [options] judge: for Run All Tests and single tests. Judges compile
+ *   with -O2, and STL-heavy code runs ~3x slower at -O0 (sort + set + map + Dijkstra on n = 2e5
+ *   with the bundled GCC: 760-870 ms at -O0, 270-330 ms at -O2), so a time verdict from the
+ *   default -O0 build misled. The tests get -O2 unless a higher level is set.
+ */
+function buildCompileFlags(options = {}) {
     const flags = [];
     if (App.settings.compiler.cppStandard) {
         flags.push(`-std=${App.settings.compiler.cppStandard}`);
@@ -664,7 +670,9 @@ function buildCompileFlags() {
     const fastDebugMode = App.settings.compiler.fastDebugMode !== false;
     const hasUserOptimization = !!App.settings.compiler.optimization;
 
-    if (hasUserOptimization) {
+    if (options.judge && (!hasUserOptimization || App.settings.compiler.optimization === '-O0')) {
+        flags.push('-O2');
+    } else if (hasUserOptimization) {
         flags.push(App.settings.compiler.optimization);
     } else if (fastDebugMode) {
         flags.push('-O0', '-g0');

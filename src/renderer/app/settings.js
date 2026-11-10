@@ -925,6 +925,8 @@ function openSettings() {
 
     document.getElementById('set-timeLimitEnabled').checked = App.settings.execution.timeLimitEnabled;
     document.getElementById('set-timeLimitSeconds').value = App.settings.execution.timeLimitSeconds;
+    document.getElementById('set-memoryLimitMB').value = App.settings.execution.memoryLimitMB ?? 256;
+    document.getElementById('set-compareMode').value = App.settings.execution.compareMode === 'lines' ? 'lines' : 'tokens';
     document.getElementById('set-clearTerminal').checked = App.settings.execution.clearTerminal;
     document.getElementById('set-showTerminalOnRun').checked = App.settings.execution.showTerminalOnRun !== false;
     document.getElementById('set-autoSendInput').checked = App.settings.execution.autoSendInput;
@@ -1080,6 +1082,9 @@ async function saveSettingsAndClose() {
 
         App.settings.execution.timeLimitEnabled = document.getElementById('set-timeLimitEnabled').checked;
         App.settings.execution.timeLimitSeconds = parseInt(document.getElementById('set-timeLimitSeconds').value);
+        const memoryLimitMB = parseInt(document.getElementById('set-memoryLimitMB').value, 10);
+        App.settings.execution.memoryLimitMB = Number.isFinite(memoryLimitMB) && memoryLimitMB >= 0 ? memoryLimitMB : 256;
+        App.settings.execution.compareMode = document.getElementById('set-compareMode').value === 'lines' ? 'lines' : 'tokens';
         App.settings.execution.clearTerminal = document.getElementById('set-clearTerminal').checked;
         App.settings.execution.showTerminalOnRun = document.getElementById('set-showTerminalOnRun').checked;
         App.settings.execution.autoSendInput = document.getElementById('set-autoSendInput').checked;
