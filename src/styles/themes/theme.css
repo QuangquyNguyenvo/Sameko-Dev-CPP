@@ -3347,22 +3347,23 @@ body.split-active .editor-pane {
     opacity: 0.5;
 }
 
-/* When terminal/IO is docked, increase problems panel height. A fixed 320px
+/* The bottom panel's default height (docked terminal or not; :root keeps the specificity the
+   rule had when it applied only with a docked tab). A fixed 320px
    minimum left the editor 8-10 lines on a 720px-high screen, so scale it with
    the window (it is still 320px from ~890px up) and let the user drag it lower. */
-.problems-panel:has(.docked-tab) {
+:root .problems-panel {
     height: clamp(180px, 36vh, 320px);
     min-height: 150px;
     max-height: none;
 }
 
-/* Panel head with docked tabs: flat tabs with an accent underline on the active one. */
-.problems-panel:has(.docked-tab) .panel-head {
+/* Bottom panel tabs: flat, with an accent underline on the active one. */
+:root .problems-panel .panel-head {
     gap: 2px;
     padding: 4px 10px 0 10px;
 }
 
-.problems-panel:has(.docked-tab) .panel-title {
+:root .problems-panel .panel-title {
     position: relative;
     font-family: 'Nunito', sans-serif;
     font-weight: 800;
@@ -3382,7 +3383,7 @@ body.split-active .editor-pane {
     gap: 6px;
 }
 
-.problems-panel:has(.docked-tab) .panel-title::after {
+:root .problems-panel .panel-title::after {
     content: '';
     position: absolute;
     left: 10px;
@@ -3395,21 +3396,21 @@ body.split-active .editor-pane {
     transition: transform 0.35s var(--ease-spring);
 }
 
-.problems-panel:has(.docked-tab) .panel-title:hover {
+:root .problems-panel .panel-title:hover {
     background: color-mix(in srgb, var(--text-primary) 7%, transparent);
     color: var(--text-primary);
 }
 
-.problems-panel:has(.docked-tab) .panel-title.active {
+:root .problems-panel .panel-title.active {
     color: var(--text-primary);
 }
 
-.problems-panel:has(.docked-tab) .panel-title.active::after {
+:root .problems-panel .panel-title.active::after {
     transform: scaleX(1);
 }
 
 /* Problem count badge */
-.problems-panel:has(.docked-tab) .problem-count {
+:root .problems-panel .problem-count {
     background: var(--bg-ocean-deep, #5ba3d0);
     color: var(--btn-primary-text, white);
     padding: 2px 8px;

@@ -485,3 +485,13 @@
     border-radius: 0;
     box-shadow: none;
 }
+
+/* Header menus (View, Run...): a gap between a command and its shortcut, which stays on one line. */
+.dropdown > .dropdown-item {
+    gap: 24px;
+}
+
+.dropdown > .dropdown-item > .key {
+    flex-shrink: 0;
+    white-space: nowrap;
+}

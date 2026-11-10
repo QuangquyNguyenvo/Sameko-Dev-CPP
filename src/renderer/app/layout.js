@@ -99,7 +99,6 @@ function initHeader() {
 
 function toggleIO() {
     if (DockingState.ioDocked) {
-        const problemsPanel = document.getElementById('problems-panel');
         const isIOActive = document.getElementById('docked-io-tab')?.classList.contains('active');
 
         if (App.showProblems && isBottomPanelCollapsed()) {
@@ -131,7 +130,6 @@ function toggleIO() {
 }
 function toggleTerm() {
     if (DockingState.terminalDocked) {
-        const problemsPanel = document.getElementById('problems-panel');
         const isTerminalActive = document.getElementById('docked-terminal-tab')?.classList.contains('active');
 
         if (App.showProblems && isBottomPanelCollapsed()) {
@@ -428,6 +426,57 @@ function mountTerminalView(where) {
     fitTerminal();
 }
 
+/**
+ * The tab a docked Terminal or I/O gets in the bottom panel's head, after PROBLEMS and its count
+ * (I/O after the terminal's tab): a click shows it, its × or dragging it out undocks it.
+ * @param {HTMLElement} problemsPanel
+ * @param {{id: string, view: 'terminal'|'io', label: string, undock: () => void}} tab
+ */
+function addDockedTab(problemsPanel, { id, view, label, undock }) {
+    const head = problemsPanel.querySelector('.panel-head');
+    if (!head || document.getElementById(id)) return;
+
+    const el = document.createElement('span');
+    el.className = `panel-title ${view} docked-tab`;
+    el.id = id;
+    el.draggable = true;
+    el.append(label + ' ');
+    const close = document.createElement('span');
+    close.className = 'dock-undock';
+    close.title = 'Drag to detach';
+    close.textContent = '×';
+    el.appendChild(close);
+
+    const anchor = (view === 'io' && document.getElementById('docked-terminal-tab'))
+        || head.querySelector('.problem-count') || head.querySelector('.panel-title');
+    anchor?.after(el);
+
+    el.onclick = (e) => {
+        if (e.target === close) undock();
+        else switchDockedPanel(view);
+    };
+    el.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('application/x-sameko-panel', 'undock-' + view);
+        e.dataTransfer.effectAllowed = 'move';
+        el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', () => {
+        el.classList.remove('dragging');
+        undock();
+    });
+}
+
+/**
+ * After Terminal or I/O leaves the bottom panel: keep the tab that was shown, unless it was the
+ * one that left (then TESTS when there are tests, else PROBLEMS). One body is shown at a time.
+ * @param {string|undefined} shown the panel's view before undocking
+ * @param {'terminal'|'io'} leaving
+ */
+function showBottomViewAfterUndock(shown, leaving) {
+    if (shown && shown !== leaving) switchProblemsTab(shown);
+    else switchProblemsTab(ccProblem?.tests?.length > 0 ? 'tests' : 'problems');
+}
+
 /** @param {{open?: boolean}} [opts] open the bottom panel on the terminal (not when restoring at startup) */
 function dockTerminalToProblems({ open = true } = {}) {
     if (DockingState.terminalDocked) return;
@@ -444,61 +493,7 @@ function dockTerminalToProblems({ open = true } = {}) {
     terminalSection.classList.add('docked-away');
     if (resizerTerm) resizerTerm.classList.add('docked-away');
 
-    // Add Terminal tab to the panel-head, right after PROBLEMS
-    const panelHead = problemsPanel.querySelector('.panel-head');
-    if (panelHead) {
-        const terminalTab = document.createElement('span');
-        terminalTab.className = 'panel-title terminal docked-tab';
-        terminalTab.id = 'docked-terminal-tab';
-        terminalTab.innerHTML = 'TERMINAL <span class="dock-undock" title="Drag to detach">×</span>';
-        terminalTab.setAttribute('draggable', 'true');
-
-
-        const problemCount = panelHead.querySelector('.problem-count');
-        if (problemCount) {
-            problemCount.after(terminalTab);
-        } else {
-            const problemsTitle = panelHead.querySelector('.panel-title');
-            if (problemsTitle) {
-                problemsTitle.after(terminalTab);
-            }
-        }
-
-
-        const problemsTitle = panelHead.querySelector('.panel-title.problems');
-        if (problemsTitle) {
-            problemsTitle.classList.add('active');
-        }
-
-        // Click to switch tabs
-        terminalTab.onclick = (e) => {
-            if (e.target.classList.contains('dock-undock')) {
-                undockTerminal();
-                return;
-            }
-            switchDockedPanel('terminal');
-        };
-
-
-        const problemsTitleEl = panelHead.querySelector('.panel-title.problems');
-        if (problemsTitleEl) {
-            problemsTitleEl.onclick = () => switchDockedPanel('problems');
-        }
-
-        // Drag to undock
-        terminalTab.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('application/x-sameko-panel', 'undock-terminal');
-            e.dataTransfer.effectAllowed = 'move';
-            terminalTab.classList.add('dragging');
-        });
-
-        terminalTab.addEventListener('dragend', () => {
-            terminalTab.classList.remove('dragging');
-            undockTerminal();
-        });
-    }
-
-    // Show terminal, hide problems body
+    addDockedTab(problemsPanel, { id: 'docked-terminal-tab', view: 'terminal', label: 'TERMINAL', undock: undockTerminal });
     switchDockedPanel('terminal');
 
     DockingState.terminalDocked = true;
@@ -517,7 +512,6 @@ function dockTerminalToProblems({ open = true } = {}) {
         updateUI();
     }
 
-    log('Terminal docked to Problems', 'info');
     refreshEditorLayout();
 }
 
@@ -584,24 +578,14 @@ function undockTerminal() {
     const problemsPanel = document.getElementById('problems-panel');
     const resizerTerm = document.getElementById('resizer-term');
 
+    // The bottom panel's view when the terminal leaves it: kept unless it was the terminal.
+    const view = problemsPanel?.dataset.view;
     mountTerminalView('section');
-    if (problemsPanel) problemsPanel.dataset.view = 'problems';
 
     terminalSection?.classList.remove('docked-away');
     resizerTerm?.classList.remove('docked-away');
 
-    const terminalTab = document.getElementById('docked-terminal-tab');
-    terminalTab?.remove();
-
-    // Show problems body
-    const problemsBody = problemsPanel?.querySelector('.problems-body');
-    if (problemsBody) problemsBody.style.display = '';
-
-    const problemsTitle = problemsPanel?.querySelector('.panel-title.problems');
-    if (problemsTitle) {
-        problemsTitle.classList.remove('active');
-        problemsTitle.onclick = null; // Remove click handler
-    }
+    document.getElementById('docked-terminal-tab')?.remove();
 
     DockingState.terminalDocked = false;
 
@@ -611,13 +595,8 @@ function undockTerminal() {
         saveSettings();
     }
 
-    // Refresh tests list if has tests
-    if (ccProblem?.tests?.length > 0) {
-        renderTestResults();
-        switchProblemsTab('tests');
-    }
+    showBottomViewAfterUndock(view, 'terminal');
 
-    log('Terminal undocked', 'info');
     refreshEditorLayout();
     fitTerminal();
 }
@@ -655,47 +634,7 @@ function dockIOToProblems() {
         if (expectedDiff) expectedSlot.appendChild(expectedDiff);
     }
 
-    const panelHead = problemsPanel.querySelector('.panel-head');
-    if (panelHead) {
-        const ioTab = document.createElement('span');
-        ioTab.className = 'panel-title io docked-tab';
-        ioTab.id = 'docked-io-tab';
-        ioTab.innerHTML = 'I/O <span class="dock-undock" title="Drag to detach">×</span>';
-        ioTab.setAttribute('draggable', 'true');
-
-
-        const terminalTab = document.getElementById('docked-terminal-tab');
-        const problemCount = panelHead.querySelector('.problem-count');
-        if (terminalTab) {
-            terminalTab.after(ioTab);
-        } else if (problemCount) {
-            problemCount.after(ioTab);
-        } else {
-            const problemsTitle = panelHead.querySelector('.panel-title');
-            if (problemsTitle) problemsTitle.after(ioTab);
-        }
-
-        // Click to switch tabs
-        ioTab.onclick = (e) => {
-            if (e.target.classList.contains('dock-undock')) {
-                undockIO();
-                return;
-            }
-            switchDockedPanel('io');
-        };
-
-        // Drag to undock
-        ioTab.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('application/x-sameko-panel', 'undock-io');
-            e.dataTransfer.effectAllowed = 'move';
-            ioTab.classList.add('dragging');
-        });
-
-        ioTab.addEventListener('dragend', () => {
-            ioTab.classList.remove('dragging');
-            undockIO();
-        });
-    }
+    addDockedTab(problemsPanel, { id: 'docked-io-tab', view: 'io', label: 'I/O', undock: undockIO });
 
     DockingState.ioDocked = true;
 
@@ -710,7 +649,6 @@ function dockIOToProblems() {
         updateUI();
     }
 
-    log('I/O docked to Problems', 'info');
     refreshEditorLayout();
 }
 
@@ -741,16 +679,9 @@ function undockIO() {
     ioSection?.classList.remove('docked-away');
     resizerIO?.classList.remove('docked-away');
 
-    const ioTab = document.getElementById('docked-io-tab');
-    ioTab?.remove();
-
-    const dockedView = problemsPanel?.querySelector('.docked-io-view');
-    dockedView?.remove();
-
-    if (!DockingState.terminalDocked) {
-        const problemsBody = problemsPanel?.querySelector('.problems-body');
-        if (problemsBody) problemsBody.style.display = '';
-    }
+    const view = problemsPanel?.dataset.view;
+    document.getElementById('docked-io-tab')?.remove();
+    problemsPanel?.querySelector('.docked-io-view')?.remove();
 
     DockingState.ioDocked = false;
 
@@ -760,13 +691,8 @@ function undockIO() {
         saveSettings();
     }
 
-    // Refresh tests list if has tests
-    if (ccProblem?.tests?.length > 0) {
-        renderTestResults();
-        switchProblemsTab('tests');
-    }
+    showBottomViewAfterUndock(view, 'io');
 
-    log('I/O undocked', 'info');
     refreshEditorLayout();
 }
 

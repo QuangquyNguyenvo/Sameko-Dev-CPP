@@ -972,7 +972,7 @@
 }
 
 /* Problem count badge in dark themes */
-[data-theme-variant="dark"] .problems-panel:has(.docked-tab) .problem-count {
+[data-theme-variant="dark"] .problems-panel .panel-head .problem-count {
     background: var(--bg-ocean-deep);
     color: var(--bg-ocean-dark);
 }
