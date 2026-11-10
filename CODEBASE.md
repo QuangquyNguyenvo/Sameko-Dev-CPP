@@ -370,6 +370,7 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
 
 | Data | Where |
 |---|---|
+| (zip build) | `userData` is `data\` next to the exe (`app/core/portable.js`, before anything reads it); first start copies settings, snippets and state from %APPDATA%. No uninstaller next to the exe = zip build: updates are only announced, with a download link |
 | Settings, window bounds | `userData/settings.json` via `app/shared/settings-store.js` (+ `settings.json.bak`); `windowBounds` belongs to main |
 | Checkpoints of saved files | `userData/local-history/<sha256(path)>/<timestamp>.snapshot`, pruned by age ("Delete After") |
 | Session (open tabs, unsaved text, each tab's test cases) | `userData/state/session.json`, every 30 s and 5 s after an edit |

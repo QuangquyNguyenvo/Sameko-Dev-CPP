@@ -8,6 +8,8 @@ const __T0 = process.hrtime.bigint();
 const __ms = () => Number(process.hrtime.bigint() - __T0) / 1e6;
 
 const { app } = require('electron');
+// The zip build keeps its data next to the exe; before anything reads userData (the lock too).
+require('./core/portable').setup();
 const { initializeApp, setupAppEvents, startDeferredCompilerWork } = require('./core/app-lifecycle');
 
 if (process.platform === 'win32') {

@@ -49,7 +49,7 @@ function registerUpdateHandlers() {
 
     // Get app info (portable detection)
     ipcMain.handle('get-app-info', () => {
-        const isPortable = process.env.PORTABLE_EXECUTABLE_DIR !== undefined;
+        const isPortable = require('../core/portable').isPortable();
         return {
             isPortable: isPortable,
             version: require('electron').app.getVersion()

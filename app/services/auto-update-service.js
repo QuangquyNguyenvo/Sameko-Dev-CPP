@@ -79,8 +79,9 @@ class AutoUpdateService {
         // Pre-releases are opt-in (Settings > About); set again before every check.
         autoUpdater.allowPrerelease = this.wantsPrerelease();
 
-        // Auto-download updates in background
-        autoUpdater.autoDownload = true;
+        // Auto-download updates in background. The zip build only says a new version is out
+        // (with a download link): its installer would install into another folder.
+        autoUpdater.autoDownload = !require('../core/portable').isPortable();
 
         // Configure update check
         // Do NOT install silently on quit - require explicit restart
@@ -193,7 +194,8 @@ class AutoUpdateService {
                 releaseDate: info.releaseDate,
                 isPrerelease: info.version.includes('beta') || info.version.includes('alpha')
             });
-            this.sendStatusToRenderer('download-started');
+            // The zip build does not download (autoDownload is off there): no progress bar at 0%.
+            if (this.updater.autoDownload) this.sendStatusToRenderer('download-started');
         });
 
         // No update available
@@ -371,6 +373,10 @@ class AutoUpdateService {
             log.warn('[AutoUpdate] No update downloaded yet');
             return;
         }
+        if (require('../core/portable').isPortable()) {
+            log.warn('[AutoUpdate] Portable build: not installing, the user downloads the new zip');
+            return;
+        }
         log.info('[AutoUpdate] Quitting and installing update...');
 
         // setImmediate: the IPC call that asked for this returns first.
@@ -484,7 +490,7 @@ class AutoUpdateService {
      * launch.
      */
     checkPendingUpdate() {
-        if (!IS_WIN) return;
+        if (!IS_WIN || require('../core/portable').isPortable()) return;
 
         const fs = require('fs');
         const path = require('path');
