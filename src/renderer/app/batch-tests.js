@@ -441,6 +441,18 @@ async function runSingleTestByIndex(testIndex) {
     }
 }
 
+/** "23 ms", "1.01 s" for a test's run time. */
+function formatTestTime(ms) {
+    return ms >= 1000 ? (ms / 1000).toFixed(2) + ' s' : Math.round(ms) + ' ms';
+}
+
+/** Highlights the TESTS row of the test shown in the Input/Expected boxes (ccTestIndex). */
+function markSelectedTestRow() {
+    document.querySelectorAll('#tests-results-list .test-result-item').forEach(item => {
+        item.classList.toggle('selected', Number(item.dataset.index) === ccTestIndex);
+    });
+}
+
 function renderTestResults() {
     const container = document.getElementById('tests-results-list');
     const countEl = document.getElementById('test-results-count');
@@ -487,13 +499,19 @@ function renderTestResults() {
         const allPassed = passed === total && total > 0;
         const totalTime = results.reduce((s, r) => s + (r.executionTime || 0), 0);
         const summaryClass = allPassed ? 'test-results-summary all-passed' : 'test-results-summary has-failed';
+        // One segment per test, in its verdict's color.
+        const bar = tests.map((_, idx) => {
+            const r = results.find(x => x.testIndex === idx);
+            return `<span class="${r ? escHtml(r.status) : 'pending'}"></span>`;
+        }).join('');
         html += `
                 <div class="${summaryClass}">
                     <span class="test-summary-ratio">${passed}/${total}</span>
                     <span class="test-summary-stat passed">✓ ${passed} passed</span>
                     <span class="test-summary-stat failed">✗ ${executed - passed - notJudged} failed</span>
                     ${notJudged ? `<span class="test-summary-stat">${notJudged} not judged</span>` : ''}
-                    <span class="test-summary-stat total">${totalTime}ms</span>
+                    <span class="test-summary-stat total">${formatTestTime(totalTime)}</span>
+                    <div class="test-summary-bar">${bar}</div>
                 </div>
                 `;
     }
@@ -505,15 +523,15 @@ function renderTestResults() {
 
         let status = 'PENDING';
         let timeStr = '';
+        let memStr = '';
         let details = '';
         let statusClass = 'pending';
 
         if (result) {
             status = result.status;
             statusClass = result.status;
-            timeStr = result.executionTime >= 1000
-                ? (result.executionTime / 1000).toFixed(2) + 's'
-                : result.executionTime + 'ms';
+            timeStr = formatTestTime(result.executionTime || 0);
+            if (result.peakMemoryKB > 0) memStr = (result.peakMemoryKB / 1024).toFixed(1) + ' MB';
             details = translateTestDetails(result);
         } else {
             // Format sample inputs for display if no result
@@ -522,7 +540,8 @@ function renderTestResults() {
         }
 
         const isAC = result && result.status === 'AC';
-        const itemClass = `test-result-item status-${escHtml(statusClass)}${isAC ? ' item-ac' : ''}`;
+        const selected = typeof ccTestIndex === 'number' && ccTestIndex === idx;
+        const itemClass = `test-result-item status-${escHtml(statusClass)}${isAC ? ' item-ac' : ''}${selected ? ' selected' : ''}`;
 
         html += `
                 <div class="${itemClass}" data-index="${idx}">
@@ -531,7 +550,10 @@ function renderTestResults() {
                         <span class="test-result-title">Test ${idx + 1}</span>
                         <span class="test-result-details" title="${escHtml(details)}">${escHtml(details)}</span>
                     </div>
-                    <span class="test-result-time">${timeStr}</span>
+                    <span class="test-result-meta">
+                        <span class="test-result-time">${timeStr}</span>
+                        <span class="test-result-mem">${memStr}</span>
+                    </span>
                     <button class="test-run-btn" data-run-index="${idx}" title="Run this test case">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                             <polygon points="8 5 19 12 8 19 8 5"></polygon>

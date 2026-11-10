@@ -571,6 +571,7 @@ function switchTestCase(index) {
     if (expectedArea) expectedArea.value = test.output || '';
 
     updateTestNavUI();
+    if (typeof markSelectedTestRow === 'function') markSelectedTestRow();
     updateDockedTestNavUI();
 
     // Show diff if we have batch test result for this test
