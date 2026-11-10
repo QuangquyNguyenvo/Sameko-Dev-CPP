@@ -64,7 +64,7 @@
         "clean-start": "npm run clean && npm start",
         "build": "npm run build:win && npm run build:appimage",
         "prebuild:win": "node scripts/build-monaco.js",
-        "build:win": "electron-builder --win nsis zip",
+        "build:win": "node scripts/build-win.js",
         "build:setup": "node scripts/build-setup.js",
         "prebuild:appimage": "node scripts/build-monaco.js",
         "build:appimage": "node scripts/build-appimage.js",
@@ -152,6 +152,7 @@
         ],
         "asar": true,
         "npmRebuild": false,
+        "afterPack": "scripts/toolchain-package.js",
         "electronLanguages": [
             "en-US"
         ],

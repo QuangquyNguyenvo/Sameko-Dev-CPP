@@ -201,6 +201,21 @@ in October 2026.)
   alone: with UTF-8 its string printing breaks).
   Runtime DLLs a user's program may need (`libgomp`, `libquadmath`, `libatomic`, `libssp` and
   their dependency `libdl`) are kept on purpose.
+- `npm run build:win` is `scripts/build-win.js`: the NSIS installer with the toolchain split out,
+  then the zip packed from that same `win-unpacked` (`--prepackaged`) with the toolchain put back:
+  electron-builder writes `resources/app-update.yml` (where to look for updates) only in a run
+  that builds the installer, so a zip built in a run of its own never saw an update. The `afterPack` hook `scripts/toolchain-package.js` (active only with
+  `SAMEKO_SPLIT_TOOLCHAIN=1`) names the filtered toolchain by content
+  (`gcc-<version>-<hash>`), packs it once into `build/toolchain/<id>.7z` (~60 MB) and moves it out
+  of the app package. `installer/installer.nsh` extracts it only when
+  `resources/Sameko-GCC/.sameko-toolchain` names another id (or is missing), and on an update its
+  uninstaller keeps that folder. An update with the same GCC takes ~20 s instead of ~1 min;
+  installed paths are unchanged. A plain `electron-builder --win nsis` still packs the toolchain
+  in the app package (the installer then drops the stamp). Updates from 1.4.x reinstall it once,
+  since their uninstaller removes the whole folder.
+- "Restart to update" runs the installer with its progress page only (Welcome/Finish skipped),
+  unless the install folder does not contain the product name (a `/S /D=` deployment): the wizard
+  would move it into a subfolder, so that one is updated silently.
 - Linux: AppImage, deb, tar.gz; `npm run build:appimage` builds the AppImage via
   `scripts/build-appimage.js`. Linux uses the system `g++`/`gdb`/`clangd`/`astyle`.
 

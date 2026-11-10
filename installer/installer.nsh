@@ -7,6 +7,13 @@
 ; MUI_TEXTCOLOR when each page is inserted, so the Welcome page, the header strip and the Finish
 ; page that follow all take them.
 
+; The toolchain as its own archive (scripts/toolchain-package.js, written by scripts/build-win.js):
+; extracted only when the installed one differs, kept by the uninstaller on an update. Without it
+; (a plain `electron-builder --win nsis`) the toolchain is part of the app package as before.
+!if /FileExists "${PROJECT_DIR}\build\toolchain\toolchain.nsh"
+  !include "${PROJECT_DIR}\build\toolchain\toolchain.nsh"
+!endif
+
 !macro samekoColours
   !ifdef MUI_BGCOLOR
     !undef MUI_BGCOLOR
@@ -43,6 +50,49 @@
   LangString samekoUpdatingText 1033 "Reopens in about a minute."
   LangString samekoUpdatingText 1066 "Tự mở lại sau khoảng 1 phút."
   LangString samekoUpdatingText 2052 "约一分钟后自动重新打开。"
+  ; Nsis7z replaces %s with the extraction progress.
+  LangString samekoInstallingGcc 1033 "Installing the GCC compiler... %s"
+  LangString samekoInstallingGcc 1066 "Đang cài trình biên dịch GCC... %s"
+  LangString samekoInstallingGcc 2052 "正在安装 GCC 编译器... %s"
+!macroend
+
+; The uninstaller. On an update it removes everything but the toolchain, which the new installer
+; keeps when its .sameko-toolchain stamp names the id it carries (customInstall); a toolchain
+; without a stamp is removed with the rest. A real uninstall removes the whole folder.
+!macro customRemoveFiles
+  SetOutPath $TEMP
+  ${if} ${isUpdated}
+  ${andIf} ${FileExists} "$INSTDIR\resources\Sameko-GCC\.sameko-toolchain"
+    FindFirst $R0 $R1 "$INSTDIR\*.*"
+    samekoRemoveTop:
+      StrCmp $R1 "" samekoRemoveTopDone
+      ${if} $R1 != "."
+      ${andIf} $R1 != ".."
+      ${andIf} $R1 != "resources"
+        RMDir /r "$INSTDIR\$R1"
+        Delete "$INSTDIR\$R1"
+      ${endIf}
+      FindNext $R0 $R1
+      Goto samekoRemoveTop
+    samekoRemoveTopDone:
+    FindClose $R0
+
+    FindFirst $R0 $R1 "$INSTDIR\resources\*.*"
+    samekoRemoveRes:
+      StrCmp $R1 "" samekoRemoveResDone
+      ${if} $R1 != "."
+      ${andIf} $R1 != ".."
+      ${andIf} $R1 != "Sameko-GCC"
+        RMDir /r "$INSTDIR\resources\$R1"
+        Delete "$INSTDIR\resources\$R1"
+      ${endIf}
+      FindNext $R0 $R1
+      Goto samekoRemoveRes
+    samekoRemoveResDone:
+    FindClose $R0
+  ${else}
+    RMDir /r $INSTDIR
+  ${endIf}
 !macroend
 
 ; "Restart to update" (app/services/auto-update-service.js) runs this installer with --updated
@@ -87,6 +137,43 @@
 !macroend
 
 !macro customInstall
+  ; The toolchain: kept from the previous install when its stamp names the same id, otherwise
+  ; replaced. The stamp is written last, so an extraction cut short is redone next time.
+  !ifdef SAMEKO_TOOLCHAIN_ID
+    StrCpy $R8 "$INSTDIR\resources\Sameko-GCC"
+    StrCpy $R7 ""
+    ClearErrors
+    FileOpen $R9 "$R8\.sameko-toolchain" r
+    ${ifNot} ${Errors}
+      FileRead $R9 $R7
+      FileClose $R9
+    ${endIf}
+    ${if} $R7 != "${SAMEKO_TOOLCHAIN_ID}"
+    ${orIfNot} ${FileExists} "$R8\bin\g++.exe"
+      RMDir /r "$R8"
+      CreateDirectory "$R8"
+      !ifdef COMPRESS
+        SetCompress off
+      !endif
+      File "/oname=$PLUGINSDIR\toolchain.7z" "${SAMEKO_TOOLCHAIN_7Z}"
+      !ifdef COMPRESS
+        SetCompress "${COMPRESS}"
+      !endif
+      SetOutPath "$R8"
+      Nsis7z::ExtractWithDetails "$PLUGINSDIR\toolchain.7z" "$(samekoInstallingGcc)"
+      SetOutPath "$INSTDIR"
+      Delete "$PLUGINSDIR\toolchain.7z"
+      ${if} ${FileExists} "$R8\bin\g++.exe"
+        FileOpen $R9 "$R8\.sameko-toolchain" w
+        FileWrite $R9 "${SAMEKO_TOOLCHAIN_ID}"
+        FileClose $R9
+      ${endIf}
+    ${endIf}
+  !else
+    ; This package carries the toolchain itself: whatever stamp is there no longer describes it.
+    Delete "$INSTDIR\resources\Sameko-GCC\.sameko-toolchain"
+  !endif
+
   ${if} ${isUpdated}
     ${if} ${Silent}
       Banner::destroy

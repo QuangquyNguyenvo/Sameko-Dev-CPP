@@ -138,6 +138,9 @@ The IDE ships its own GCC so users install nothing. To develop with it, put the 
    page, without which nothing builds for a Windows user whose folder name has letters such as
    `ễ` (`C:\Users\Nguyễn\...` is both `%TEMP%` and the default install folder).
    `scripts/check-toolchain-deps.js` fails until it is done.
+5. `npm run build:win` packs the toolchain into its own archive (`build/toolchain/`, once per
+   toolchain, a few minutes), so that updates which keep the same GCC do not reinstall it. Any
+   change to the files in `Sameko-GCC/` gives it a new id, and the next update reinstalls it.
 
 Without it the IDE falls back to a system compiler (`C:\TDM-GCC-64`, `C:\MinGW`,
 `C:\msys64\mingw64`, or `g++` on `PATH`). Optional tools picked up from `Sameko-GCC/bin` when
