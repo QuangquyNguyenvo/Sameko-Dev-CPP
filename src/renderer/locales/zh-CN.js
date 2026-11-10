@@ -1103,6 +1103,7 @@
     'Not found': '未找到',
     'Path to the compiler or interpreter': '编译器或解释器的路径',
     '{0} is not a source file the app can build. Switch to the solution\'s tab (C/C++, Python, Java, Kotlin, Rust, Go, Pascal or JavaScript).': '{0} 不是可编译的源文件。请切换到解答所在的标签页（C/C++、Python、Java、Kotlin、Rust、Go、Pascal 或 JavaScript）。',
+    'Performance Mode turns the minimap off': '性能模式已关闭缩略图',
     'Reset Layout': '重置布局',
     'Layout reset': '布局已重置',
     'Not a source file': '不是源文件',

@@ -175,8 +175,20 @@ function readLanguageInputs(asSettings = false) {
     return out;
 }
 
+/** Performance Mode turns the minimap off: its switch is greyed out then, not left looking on. */
+function syncMinimapSwitch() {
+    const perf = !!document.getElementById('set-performanceMode')?.checked;
+    const box = document.getElementById('set-minimap');
+    const row = box?.closest('.setting-row');
+    if (!box || !row) return;
+    box.disabled = perf;
+    row.style.opacity = perf ? '0.55' : '';
+    row.title = perf ? 'Performance Mode turns the minimap off' : '';
+}
+
 function initSettings() {
     document.getElementById('btn-settings').onclick = openSettings;
+    document.getElementById('set-performanceMode')?.addEventListener('change', syncMinimapSwitch);
     document.getElementById('settings-close').onclick = closeSettings;
     document.getElementById('settings-overlay').onclick = e => {
         if (e.target.id === 'settings-overlay') closeSettings();
@@ -1007,6 +1019,7 @@ function openSettings() {
     selectThemeFromCarousel(App.settings.appearance.theme, true);
     document.getElementById('set-editorColorScheme').value = App.settings.editor.colorScheme || 'auto';
     document.getElementById('set-performanceMode').checked = App.settings.appearance.performanceMode || false;
+    syncMinimapSwitch();
     document.getElementById('set-cursorTrail').checked = App.settings.appearance.cursorTrail !== false;
 
     document.getElementById('set-animatedBackground').checked = App.settings.appearance.animatedBackground !== false;

@@ -1080,6 +1080,7 @@
     'Not found': 'Không tìm thấy',
     'Path to the compiler or interpreter': 'Đường dẫn tới compiler hoặc trình thông dịch',
     '{0} is not a source file the app can build. Switch to the solution\'s tab (C/C++, Python, Java, Kotlin, Rust, Go, Pascal or JavaScript).': '{0} không phải file mã nguồn app build được. Hãy chuyển sang tab của lời giải (C/C++, Python, Java, Kotlin, Rust, Go, Pascal hoặc JavaScript).',
+    'Performance Mode turns the minimap off': 'Performance Mode đang tắt minimap',
     'Reset Layout': 'Đặt lại bố cục',
     'Layout reset': 'Đã đặt lại bố cục',
     'Not a source file': 'Không phải file mã nguồn',
