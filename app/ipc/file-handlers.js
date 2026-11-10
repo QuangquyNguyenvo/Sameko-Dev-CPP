@@ -19,6 +19,17 @@ let mainWindow = null;
 const MAX_OPEN_BYTES = 16 * 1024 * 1024;
 
 const SOURCE_EXTENSIONS = ['cpp', 'c', 'h', 'hpp', 'cc', 'cxx', 'hh', 'hxx'];
+// Built with a compiler found on the machine (app/services/compiler/languages.js).
+const OTHER_LANGUAGE_FILTERS = [
+    { name: 'Python', extensions: ['py'] },
+    { name: 'Java', extensions: ['java'] },
+    { name: 'Kotlin', extensions: ['kt'] },
+    { name: 'Rust', extensions: ['rs'] },
+    { name: 'Go', extensions: ['go'] },
+    { name: 'Pascal', extensions: ['pas', 'pp'] },
+    { name: 'JavaScript', extensions: ['js'] },
+];
+const OTHER_SOURCE_EXTENSIONS = OTHER_LANGUAGE_FILTERS.flatMap(f => f.extensions);
 // Write-ups and test data that sit next to solutions.
 const TEXT_EXTENSIONS = ['txt', 'md', 'inp', 'in', 'out', 'ans', 'ok', 'log', 'csv', 'json'];
 const ALL_FILES = { name: 'All Files', extensions: ['*'] };
@@ -29,6 +40,7 @@ function saveFilters(defaultPath) {
         { name: 'C++ Source', extensions: ['cpp', 'cc', 'cxx'] },
         { name: 'C Source', extensions: ['c'] },
         { name: 'Header', extensions: ['h', 'hpp', 'hh', 'hxx'] },
+        ...OTHER_LANGUAGE_FILTERS,
         { name: 'Text', extensions: ['txt'] },
         { name: 'Markdown', extensions: ['md'] },
         { name: 'Test Data', extensions: ['inp', 'in', 'out', 'ans', 'ok'] },
@@ -256,8 +268,9 @@ function registerHandlers() {
             defaultPath: openDialogDir(options?.defaultPath),
             properties: ['openFile', 'multiSelections'],
             filters: [
-                { name: 'Code, Text & Test Data', extensions: [...SOURCE_EXTENSIONS, ...TEXT_EXTENSIONS] },
+                { name: 'Code, Text & Test Data', extensions: [...SOURCE_EXTENSIONS, ...OTHER_SOURCE_EXTENSIONS, ...TEXT_EXTENSIONS] },
                 { name: 'C/C++ Files', extensions: SOURCE_EXTENSIONS },
+                { name: 'Python, Java, Kotlin, Rust, Go, Pascal, JavaScript', extensions: OTHER_SOURCE_EXTENSIONS },
                 { name: 'Text & Test Data (.txt .md .inp .out …)', extensions: TEXT_EXTENSIONS },
                 ALL_FILES
             ]

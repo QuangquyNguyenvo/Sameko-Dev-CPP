@@ -404,17 +404,46 @@ function fileExtension(name) {
     return dot > 0 ? base.slice(dot + 1).toLowerCase() : '';
 }
 
+/**
+ * Languages other than C/C++ the app builds and runs, with a compiler or interpreter found on
+ * the machine (app/services/compiler/languages.js): extension -> [Monaco language id, name].
+ * They get Build & Run, Run All Tests and the stress test; clangd, live check, Format and the
+ * debugger stay C/C++ only (isCppTab).
+ */
+const OTHER_LANGUAGES = {
+    py: ['python', 'Python'], java: ['java', 'Java'], kt: ['kotlin', 'Kotlin'], rs: ['rust', 'Rust'],
+    go: ['go', 'Go'], pas: ['pascal', 'Pascal'], pp: ['pascal', 'Pascal'],
+    js: ['javascript', 'JavaScript'], mjs: ['javascript', 'JavaScript'], cjs: ['javascript', 'JavaScript'],
+};
+
 /** Monaco language id for a file name or path. */
 function languageForFile(name) {
     const ext = fileExtension(name);
     if (!ext || CPP_EXTENSIONS.has(ext)) return 'cpp';
     if (ext === 'md' || ext === 'markdown') return 'markdown';
+    if (OTHER_LANGUAGES[ext]) return OTHER_LANGUAGES[ext][0];
     return 'sameko-text';
 }
 
 /** Whether C++ tooling (build, live check, format) applies to the tab. */
 function isCppTab(tab) {
     return !tab || languageForFile(tab.path || tab.name) === 'cpp';
+}
+
+/**
+ * Whether the tab can be built and run: C/C++ or another language, saved or not (an untitled tab
+ * is built from a temp file with the extension of its name, untitled.py and so on).
+ */
+function isBuildableTab(tab) {
+    if (!tab) return false;
+    if (isCppTab(tab)) return true;
+    return !!OTHER_LANGUAGES[fileExtension(tab.path || tab.name)];
+}
+
+/** "Python", "Rust"... for a tab of another language, else null. */
+function otherLanguageName(tab) {
+    const entry = tab && OTHER_LANGUAGES[fileExtension(tab.path || tab.name)];
+    return entry ? entry[1] : null;
 }
 
 /** After a rename or Save As the extension may have changed. */

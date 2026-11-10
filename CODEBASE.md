@@ -70,6 +70,7 @@ and `window.open` are denied in `app/windows/main-window.js`.
 | `compiler/detector.js` | Finds the bundled and system compilers; resolves app/writable base paths. |
 | `compiler/executor.js` | Spawns g++, runs the program, streams output. |
 | `compiler/pch-manager.js`, `compiler/warmup.js` | Precompiled-header cache; startup warm-up. |
+| `compiler/languages.js` | Python, Java, Kotlin, Rust, Go, Pascal, JavaScript: finds the machine's compiler/interpreter (PATH, the registry's PATH, usual folders, `settings.languages.<id>.path`), builds into `<temp>/cpp-ide-builds/lang/`, and `runCommand()` turns a build into the command that starts it. |
 | `compiler/run-launcher.js` | Builds (once per toolchain) and locates `sameko_run.exe`, the Windows helper that runs a program and reports its wall time, CPU time and peak memory. |
 | `debugger/gdb-session.js` | Drives GDB over the MI protocol. |
 | `debugger/mi-parser.js` | Pure GDB/MI output parser (unit-tested by `scripts/test-debugger.js`). |
@@ -328,7 +329,8 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
 
 **Tabs and editors**
 - `languageForFile()` (`core.js`) picks the model language from the extension: C/C++ and untitled
-  tabs are `cpp`, `.md` is `markdown`, everything else `plaintext`. `isCppTab()` gates Build,
+  tabs are `cpp`, `.md` is `markdown`, the other languages their Monaco id (`OTHER_LANGUAGES`),
+  everything else `plaintext`. `isCppTab()` gates Build,
   live check, Format and clangd; `.md`/`.txt` wrap lines and text files do not flag non-ASCII
   letters. `renderTabs()` re-syncs the language after a rename or Save As.
 - Markdown preview (`src/features/markdown/markdown-preview.js`): `createEditor` attaches one
@@ -371,6 +373,33 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   Competitive Companion, else `execution.memoryLimitMB`, default 256, 0 = none) is a job limit:
   over it is `MLE`. Output is compared word by word with real numbers within 1e-6
   (`execution.compareMode` 'tokens'; 'lines' is the strict rule), in `app/shared/judge.js`.
+
+**Other languages** (`app/services/compiler/languages.js`)
+- `executor.compile` hands a file whose extension is not C/C++ (`languageOfFile`) to
+  `languages.build`. An untitled tab sends its name's extension (`untitledExt`) and is written to
+  `<temp>/cpp-ide/untitled-<tab id>/Main.<ext>` (Java: named after the public class); other
+  untitled tabs are C++ (`temp_code-<tab id>.cpp`). The + button's right-click menu and
+  Settings › Code Template › New File create these tabs (`newFile(ext)`, `NEW_FILE_STARTERS`).
+  Nothing is bundled: the tool comes from
+  Settings › Compiler › Other Languages, else PATH (the process's and the registry's, read with
+  PowerShell so a tool installed after start is found), the tool's home variable and its usual
+  folders. The Microsoft Store `python.exe` stub is skipped unless it runs Python 3.
+- Output per source: `<temp>/cpp-ide-builds/lang/<ascii name>-<hash of path>/` (40 kept). Rust
+  (`-O`, 256 MB stack by link arg), Go (`GOTOOLCHAIN=local`, `CGO_ENABLED=0`) and Free Pascal
+  (`-O2`, ASCII 8.3 paths because fpc uses the ANSI file API) leave `prog.exe`; Python and
+  JavaScript are syntax-checked (`compile()` / `node --check`) and Java/Kotlin compiled, and leave
+  `run.json` (`{tool, args}`). Compile errors become `problems` (each compiler's format), which
+  `build.js` shows instead of parsing GCC lines. In-memory cache: same tool, flags and text.
+- `runCommand(artifact, {memoryLimit, interactive})` is used by `executor.run`, `runExternal` and
+  `batch-tester.runTest`: an exe is itself; `run.json` becomes the interpreter plus arguments,
+  passed through the run launcher (which quotes arguments by the CRT rules). Python gets
+  `PYTHONUTF8`/`PYTHONIOENCODING` (UTF-8 output) and `-u` in the terminal; a JVM gets
+  `-Xss64m -XX:+UseSerialGC -Xms8m` and the memory limit as `-Xmx` (its default initial heap commits
+  1/64 of the RAM, which a 256 MB limit refused).
+- Renderer: `OTHER_LANGUAGES` / `languageForFile` (`core.js`) set the Monaco language;
+  `isBuildableTab` gates Build & Run, Run All Tests and the stress test, `isCppTab` still gates
+  clangd, live check, Format and the debugger. Settings › Compiler › Other Languages lists what was
+  found (`languages-list` IPC) and saves `settings.languages.<id>.path`.
 
 **Persistence**
 

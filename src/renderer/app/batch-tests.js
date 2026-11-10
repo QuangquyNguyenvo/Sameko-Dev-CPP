@@ -120,6 +120,10 @@ async function runAllTests() {
         log('No file is currently open!', 'error');
         return;
     }
+    if (!isBuildableTab(tab)) {
+        log(notBuildableMessage(tab), 'warning');
+        return;
+    }
     const problem = ccProblem;
     const tests = problem.tests.slice();
     const content = tabSourceText(tab);
@@ -161,6 +165,7 @@ async function runAllTests() {
         const compileResult = await window.electronAPI.compile({
             filePath: tab.path,
             untitledId: tab.path ? '' : tab.id,
+            untitledExt: tab.path ? '' : fileExtension(tab.name),
             content: content,
             flags: compileFlags,
             singleFileMode: App.settings.compiler.singleFileMode !== false,
@@ -345,6 +350,10 @@ async function runSingleTestByIndex(testIndex) {
         log('No file is currently open!', 'error');
         return;
     }
+    if (!isBuildableTab(tab)) {
+        log(notBuildableMessage(tab), 'warning');
+        return;
+    }
 
     const runBtn = document.querySelector(`.test-run-btn[data-run-index="${testIndex}"]`);
     if (runBtn) runBtn.classList.add('running');
@@ -356,6 +365,7 @@ async function runSingleTestByIndex(testIndex) {
         const compileResult = await window.electronAPI.compile({
             filePath: tab.path,
             untitledId: tab.path ? '' : tab.id,
+            untitledExt: tab.path ? '' : fileExtension(tab.name),
             content: content,
             flags: compileFlags,
             singleFileMode: App.settings.compiler.singleFileMode !== false,

@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="styles/components/popups.css">
     <link rel="stylesheet" href="styles/components/discord-preview.css">
     <link rel="stylesheet" href="styles/components/markdown-preview.css">
+    <link rel="stylesheet" href="styles/components/settings-languages.css">
     <link rel="stylesheet" href="styles/themes/theme-customizer.css">
     <link rel="stylesheet" href="vendor/monaco/editor.css">
     <link rel="stylesheet" href="../node_modules/@xterm/xterm/css/xterm.css">
@@ -614,6 +615,17 @@
                                 <label>Clear Compiler Cache <span class="tooltip"
                                         title="Clear Precompiled Header (PCH) cache to fix compile slowness or issues.">?</span></label>
                                 <button class="action-btn danger" id="btn-clear-pch" style="padding: 6px 12px; font-size: 11px; width: auto; border-radius: var(--radius-sm);">Clear PCH Cache</button>
+                            </div>
+                            <!-- Other languages (renderer/app/settings.js renderLanguageSettings, app/services/compiler/languages.js) -->
+                            <div class="setting-section-divider"></div>
+                            <h3 style="margin-top: 20px;">Other Languages <span class="tooltip"
+                                    title="Uses the compiler or interpreter already installed on this computer&#10;Leave a path empty to find it automatically&#10;IntelliSense, live check, Format and the debugger are C/C++ only">?</span></h3>
+                            <div class="languages-card">
+                                <div id="languages-list"></div>
+                                <div class="languages-foot">
+                                    <span>Installed something new?</span>
+                                    <button class="action-btn" id="btn-detect-languages" style="padding: 6px 12px; font-size: 11px; width: auto; border-radius: var(--radius-sm);">Detect Again</button>
+                                </div>
                             </div>
                         </div>
 

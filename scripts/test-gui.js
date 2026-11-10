@@ -591,6 +591,41 @@ async function main() {
         assert.match(result.summary, /1 not judged/);
     });
 
+    // ---- other languages: the machine's own Python (skipped without one) ------------------
+    const python = (await page.evaluate(() => window.electronAPI.listLanguages())).find(l => l.id === 'python');
+    if (!python || !python.found) {
+        console.log('  SKIP  other languages: no Python on this machine');
+    } else {
+        await check('other languages: a Python file is highlighted, judged, and its syntax error goes to Problems', async () => {
+            const dir = path.join(profile, 'py');
+            fs.mkdirSync(dir, { recursive: true });
+            fs.writeFileSync(path.join(dir, 'sum.py'), 'a, b = map(int, input().split())\nprint(a + b)\n');
+            fs.writeFileSync(path.join(dir, 'bad.py'), 'x = 1\nprint((x, 2)\n');
+            const result = await page.evaluate(async ({ sum, bad }) => {
+                if (App.isSplit) closeSplit();
+                await openFileFromPath(sum);
+                const tab = App.tabs.find(t => t.id === App.activeTabId);
+                const language = tab.model.getLanguageId();
+                ccProblem = { name: 'Python check', tests: [{ input: '3 4', output: '7' }, { input: '1 1', output: '3' }] };
+                await runAllTests();
+                const statuses = batchTestResults.map(r => r.status);
+                await openFileFromPath(bad);
+                await compileOnly();
+                const problems = App.problems.map(p => [p.line, p.type]);
+                const status = document.getElementById('status-std')?.textContent;
+                await renderLanguageSettings();
+                const rows = [...document.querySelectorAll('#languages-list .language-row')].map(r => r.textContent.replace(/\s+/g, ' ').trim());
+                return { language, statuses, problems, status, rows };
+            }, { sum: path.join(dir, 'sum.py'), bad: path.join(dir, 'bad.py') });
+            assert.equal(result.language, 'python');
+            assert.deepEqual(result.statuses, ['AC', 'WA']);
+            assert.deepEqual(result.problems, [[2, 'error']], 'the unclosed ( on line 2');
+            assert.equal(result.status, 'Python');
+            assert.equal(result.rows.length, 7, 'one row per language');
+            assert.ok(result.rows.some(r => r.startsWith('Python') && !/Not found/.test(r)), 'Python is found: ' + result.rows.join(' | '));
+        });
+    }
+
     // ---- find widget, Escape, fonts -------------------------------------------------
     await check('find widget: buttons use browser tooltips and Close stays clickable (#71)', async () => {
         await page.evaluate(() => { if (App.isSplit) closeSplit(); newFile(); App.editor.focus(); });

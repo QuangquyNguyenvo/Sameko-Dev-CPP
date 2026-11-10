@@ -1,0 +1,77 @@
+/* Settings › Compiler › Other Languages (renderer/app/settings.js renderLanguageSettings):
+ * one card, a compact row per language, the Detect Again button at its foot. */
+
+.languages-card {
+    background: var(--bg-panel);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 16px;
+    padding: 6px 0;
+}
+
+.language-row {
+    display: grid;
+    grid-template-columns: 8px 150px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 8px 18px;
+}
+
+.language-row + .language-row {
+    border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+}
+
+.language-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--text-primary) 25%, transparent);
+}
+
+.language-row.found .language-dot {
+    background: var(--success);
+}
+
+.language-name {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.language-status {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+    font-weight: 500;
+    color: color-mix(in srgb, var(--text-primary) 50%, transparent);
+}
+
+.language-status.found {
+    color: var(--success);
+}
+
+.language-row .language-path {
+    width: 100%;
+    min-width: 0;
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.language-row:not(.found) .language-path:placeholder-shown {
+    opacity: 0.7;
+}
+
+.languages-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 6px;
+    padding: 10px 18px 4px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+    font-size: 12px;
+    color: color-mix(in srgb, var(--text-primary) 68%, transparent);
+}

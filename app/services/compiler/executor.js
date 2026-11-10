@@ -15,6 +15,7 @@ const { StringDecoder } = require('string_decoder');
 const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getWritableBasePath, getUnbufferObjectPath } = require('./detector');
 const { ensurePCH } = require('./pch-manager');
 const { getLauncherIfReady, newStatsFile, readStats } = require('./run-launcher');
+const languages = require('./languages');
 const { validateCompilerFlags, splitFlags, joinFlags } = require('../../shared/validators');
 const { describeExit, describeStartError } = require('../../shared/exit-codes');
 const { EXE_SUFFIX, IS_WIN, IS_MAC, IS_LINUX, ensurePrivateDir, readProcMemoryKB, which, appTempDir } = require('../../shared/platform');
@@ -222,7 +223,7 @@ function sendToRenderer(channel, data) {
  *   switching between Run and the tests does not rebuild each time
  * @returns {Promise<import('../../shared/types').CompileResult>}
  */
-async function compile({ filePath, content, flags, useLLD, noBuildCache = false, singleFileMode = false, realtimeOutput = true, untitledId = '', variant = '' }) {
+async function compile({ filePath, content, flags, useLLD, noBuildCache = false, singleFileMode = false, realtimeOutput = true, untitledId = '', untitledExt = '', variant = '' }) {
     const startTime = Date.now();
 
     const flagsCheck = validateCompilerFlags(flags);
@@ -244,6 +245,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
         // Minimal pause to allow process teardown
         await new Promise(r => setTimeout(r, 10));
     }
+    languages.cancelBuild();
 
     // Terminate any running process and release executable locks
     stopProcess();
@@ -265,8 +267,18 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
         // One source (and so one .exe) per untitled tab: building another untitled
         // tab must not replace the program Run Only starts for this one.
         const tag = String(untitledId || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
-        actualFilePath = path.join(tempDir, tag ? `temp_code-${tag}.cpp` : 'temp_code.cpp');
-        usingTempFile = true;
+        const ext = String(untitledExt || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (ext && languages.languageOfFile('x.' + ext)) {
+            // An untitled tab of another language: its own folder, so the file can be named as its
+            // compiler wants (Java: after the public class).
+            const javaClass = ext === 'java' && (String(content).match(/\bpublic\s+(?:final\s+|abstract\s+)*class\s+([A-Za-z_$][\w$]*)/) || [])[1];
+            const folder = path.join(tempDir, `untitled-${tag || 'tab'}`);
+            fs.mkdirSync(folder, { recursive: true });
+            actualFilePath = path.join(folder, `${javaClass || 'Main'}.${ext}`);
+        } else {
+            actualFilePath = path.join(tempDir, tag ? `temp_code-${tag}.cpp` : 'temp_code.cpp');
+            usingTempFile = true;
+        }
     }
 
     // OPTIMIZATION: Only write file if different
@@ -285,6 +297,15 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
         if (updateFileWatcherMtimeCallback) {
             updateFileWatcherMtimeCallback(actualFilePath);
         }
+    }
+
+    // Python, Java, Kotlin, Rust, Go, Pascal, JavaScript: their own compiler, found on the machine
+    // (languages.js). An untitled tab is one of them when its name says so (untitledExt), else C++.
+    const language = usingTempFile ? null : languages.languageOfFile(actualFilePath);
+    if (language) {
+        const built = await languages.build(language, { src: actualFilePath, content, startTime });
+        if (built.success && built.outputPath && !languages.isRunFile(built.outputPath)) builtThisSession.add(built.outputPath);
+        return built;
     }
 
     const dir = path.dirname(actualFilePath);
@@ -552,17 +573,24 @@ async function runExternal({ exePath, cwd }) {
         return { success: false, error: missingExeMessage(exePath) };
     }
 
+    let command;
+    try {
+        command = languages.runCommand(exePath, { interactive: true });
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
     const workingDir = cwd || path.dirname(exePath);
-    const env = getCompilerEnv();
+    const env = { ...getCompilerEnv(), ...command.env };
     const startTime = Date.now();
 
-    if (IS_WIN) return runExternalWindows({ exePath, workingDir, env, startTime });
-    if (IS_MAC) return runExternalMac({ exePath, workingDir, env, startTime });
-    return runExternalLinux({ exePath, workingDir, env, startTime });
+    if (IS_WIN) return runExternalWindows({ command, workingDir, env, startTime });
+    if (IS_MAC) return runExternalMac({ command, workingDir, env, startTime });
+    return runExternalLinux({ command, workingDir, env, startTime });
 }
 
-/** Env var that carries the program path into the external console. */
+/** Env vars that carry the program path (and an interpreter's arguments) into the external console. */
 const WIN_RUN_EXE_VAR = 'SAMEKO_RUN_EXE';
+const WIN_RUN_ARGS_VAR = 'SAMEKO_RUN_ARGS';
 
 /**
  * Build the cmd.exe command line for the external console run on Windows.
@@ -575,14 +603,18 @@ const WIN_RUN_EXE_VAR = 'SAMEKO_RUN_EXE';
  * runs with `/v:off`, so it never expands the `!...!` itself, even when the
  * user enabled DelayedExpansion in the registry. Both use `/d` (no AutoRun).
  *
- * @param {{ pause?: boolean, newWindow?: boolean }} [opts] - tests turn off
+ * The arguments of an interpreted program (python, java) travel the same way in
+ * `SAMEKO_RUN_ARGS`, already quoted for the program's command line; they are only
+ * referenced when there are some (an undefined `!VAR!` stays as literal text).
+ *
+ * @param {{ pause?: boolean, newWindow?: boolean, withArgs?: boolean }} [opts] - tests turn off
  *   the final `pause` and the new window so they do not block.
  * @returns {string} the argument for `cmd.exe /d /v:off /s /c "<here>"`
  */
-function buildWindowsRunnerCommand({ pause = true, newWindow = true } = {}) {
+function buildWindowsRunnerCommand({ pause = true, newWindow = true, withArgs = false } = {}) {
     const inner = [
         'cls',
-        `"!${WIN_RUN_EXE_VAR}!"`,
+        `"!${WIN_RUN_EXE_VAR}!"${withArgs ? ` !${WIN_RUN_ARGS_VAR}!` : ''}`,
         'echo.',
         'echo.',
         'echo --------------------------------',
@@ -592,21 +624,30 @@ function buildWindowsRunnerCommand({ pause = true, newWindow = true } = {}) {
     return `start "" ${newWindow ? '' : '/b '}/wait cmd /d /v:on /c "${inner}"`;
 }
 
+/** One argument quoted for a Windows command line (the CRT's rules: backslashes before a quote double). */
+function quoteWindowsArg(arg) {
+    const a = String(arg);
+    if (a && !/[\s"]/.test(a)) return a;
+    return '"' + a.replace(/(\\*)"/g, '$1$1\\"').replace(/(\\+)$/, '$1$1') + '"';
+}
+
 /**
  * Windows implementation: open a dedicated console window, wait until it closes.
  * @returns {Promise<import('../../shared/types').RunResult>}
  */
-async function runExternalWindows({ exePath, workingDir, env, startTime }) {
+async function runExternalWindows({ command, workingDir, env, startTime }) {
+    const exePath = command.file;
     const exeName = path.basename(exePath);
+    const withArgs = command.args.length > 0;
     let peakMemoryKB = 0;
     let memoryPollInterval = null;
 
     // Open in a dedicated external CMD window and wait for it to fully close.
     // `start /wait` keeps this outer cmd alive until the window is closed.
     const externalShell = spawn(process.env.ComSpec || 'cmd.exe',
-        ['/d', '/v:off', '/s', '/c', `"${buildWindowsRunnerCommand()}"`], {
+        ['/d', '/v:off', '/s', '/c', `"${buildWindowsRunnerCommand({ withArgs })}"`], {
             cwd: workingDir,
-            env: { ...env, [WIN_RUN_EXE_VAR]: exePath },
+            env: { ...env, [WIN_RUN_EXE_VAR]: exePath, ...(withArgs ? { [WIN_RUN_ARGS_VAR]: command.args.map(quoteWindowsArg).join(' ') } : {}) },
             windowsHide: false,
             windowsVerbatimArguments: true,
             stdio: 'ignore',
@@ -615,8 +656,9 @@ async function runExternalWindows({ exePath, workingDir, env, startTime }) {
     // Windows-only: on POSIX the program runs as a grandchild of the terminal
     // emulator (see phase-05), so we have no reliable pid to sample. External
     // runs therefore report peakMemoryKB = 0 on Linux/macOS by design.
+    // By image name, so not for an interpreter: every python.exe on the machine would count.
     const pollExternalMemory = () => {
-        if (process.platform !== 'win32') return;
+        if (process.platform !== 'win32' || command.interpreted) return;
         // execFile, not exec: the name may contain `&` / `%`, so no shell.
         execFile('tasklist', ['/FI', `IMAGENAME eq ${exeName}`, '/FO', 'CSV', '/NH'],
             { windowsHide: true }, (err, stdout) => {
@@ -677,9 +719,10 @@ async function runExternalWindows({ exePath, workingDir, env, startTime }) {
  *
  * @param {string} exePath
  * @param {string} workingDir
+ * @param {string[]} [args] - an interpreter's arguments (python3 /path/a.py)
  * @returns {string}
  */
-function buildPosixRunnerScript(exePath, workingDir) {
+function buildPosixRunnerScript(exePath, workingDir, args = []) {
     const q = (s) => `'${String(s).replace(/'/g, `'\\''`)}'`;
     return [
         '#!/usr/bin/env bash',
@@ -687,7 +730,7 @@ function buildPosixRunnerScript(exePath, workingDir) {
         'rm -f -- "$0"',
         `cd ${q(workingDir)} || exit 1`,
         'clear',
-        `${q(exePath)}`,
+        [exePath, ...args].map(q).join(' '),
         'CODE=$?',
         'echo',
         'echo "--------------------------------"',
@@ -744,7 +787,7 @@ function findLinuxTerminal() {
  * terminal emulator is installed.
  * @returns {Promise<import('../../shared/types').RunResult>}
  */
-async function runExternalLinux({ exePath, workingDir, env, startTime }) {
+async function runExternalLinux({ command, workingDir, env, startTime }) {
     sweepStaleRunnerScripts();
 
     const term = findLinuxTerminal();
@@ -758,7 +801,7 @@ async function runExternalLinux({ exePath, workingDir, env, startTime }) {
 
     const scriptPath = path.join(os.tmpdir(), `sameko-run-${process.pid}-${Date.now()}.sh`);
     try {
-        fs.writeFileSync(scriptPath, buildPosixRunnerScript(exePath, workingDir), { mode: 0o700 });
+        fs.writeFileSync(scriptPath, buildPosixRunnerScript(command.file, workingDir, command.args), { mode: 0o700 });
     } catch (err) {
         return { success: false, error: `Failed to prepare runner script: ${err.message}` };
     }
@@ -805,11 +848,11 @@ async function runExternalLinux({ exePath, workingDir, env, startTime }) {
  * immediately, so there is no reliable exit signal.
  * @returns {Promise<import('../../shared/types').RunResult>}
  */
-async function runExternalMac({ exePath, workingDir, env, startTime }) {
+async function runExternalMac({ command, workingDir, env, startTime }) {
     sweepStaleRunnerScripts();
     const scriptPath = path.join(os.tmpdir(), `sameko-run-${process.pid}-${Date.now()}.command`);
     try {
-        fs.writeFileSync(scriptPath, buildPosixRunnerScript(exePath, workingDir), { mode: 0o700 });
+        fs.writeFileSync(scriptPath, buildPosixRunnerScript(command.file, workingDir, command.args), { mode: 0o700 });
     } catch (err) {
         return { success: false, error: `Failed to prepare runner script: ${err.message}` };
     }
@@ -846,13 +889,23 @@ async function run({ exePath, cwd }) {
     // Windows: run through the native launcher when it is available. It
     // reports the exact wall time and peak memory of the program itself, so no
     // sampling is needed (see run-launcher.js).
+    // A Python/Java/Node program is its interpreter plus arguments (languages.js); C++ is the exe.
+    let command;
+    try {
+        command = languages.runCommand(exePath, { interactive: true });
+    } catch (err) {
+        return { success: false, error: err.message };
+    }
+    const runEnv = { ...env, ...command.env };
+
     const launcher = getLauncherIfReady();
     const statsFile = launcher ? newStatsFile() : null;
 
     try {
         runningProcess = launcher
-            ? spawn(launcher, [statsFile, exePath], { cwd: workingDir, env: env, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
-            : spawn(exePath, [], { cwd: workingDir, env: env, stdio: ['pipe', 'pipe', 'pipe'] });
+            ? spawn(launcher, command.args.length ? [statsFile, command.file, '0', '0', ...command.args] : [statsFile, exePath],
+                { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+            : spawn(command.file, command.args, { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (err) {
         // Windows refused to create the process. Node throws ("spawn UNKNOWN") instead of
         // emitting 'error': an antivirus block, or a file that is not a program. The renderer

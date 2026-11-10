@@ -125,6 +125,56 @@ function saveSettings() {
     }
 }
 
+let languageListSeq = 0;
+
+/**
+ * Settings › Compiler › Other Languages: per language, what was found on this computer and a
+ * path to use instead. The paths are saved as settings.languages.<id>.path, which the main
+ * process reads at each build (app/services/compiler/languages.js).
+ * @param {Object<string,string>} [typed] - the paths in the boxes now, to check before saving
+ */
+async function renderLanguageSettings(typed) {
+    const list = document.getElementById('languages-list');
+    if (!list || !window.electronAPI?.listLanguages) return;
+    const seq = ++languageListSeq;
+    const saved = App.settings.languages || {};
+    const values = typed || Object.fromEntries(Object.entries(saved).map(([id, v]) => [id, (v && v.path) || '']));
+    if (!list.children.length) list.innerHTML = '<p class="setting-desc">Looking for compilers...</p>';
+    let languages = [];
+    try {
+        languages = await window.electronAPI.listLanguages(typed || null);
+    } catch (err) {
+        list.innerHTML = `<p class="setting-desc">${escHtml(String(err && err.message || err))}</p>`;
+        return;
+    }
+    if (seq !== languageListSeq) return;   // a newer request is on its way
+    list.innerHTML = languages.map((l) => {
+        const hint = l.found ? l.path : l.error;
+        const status = l.found
+            ? `<span class="language-status found" translate="no" title="${escHtml(hint)}">${escHtml(l.version || '')}</span>`
+            : `<span class="language-status" title="${escHtml(hint)}">Not found</span>`;
+        return `<div class="language-row${l.found ? ' found' : ''}">
+            <span class="language-dot"></span>
+            <span class="language-name"><span translate="no">${escHtml(l.name)}</span>${status}</span>
+            <input type="text" class="language-path" data-lang="${escHtml(l.id)}" spellcheck="false"
+                placeholder="${escHtml(l.found ? l.path : 'Path to the compiler or interpreter')}" value="${escHtml(values[l.id] || '')}">
+        </div>`;
+    }).join('');
+}
+
+/** The Other Languages boxes as { id: path } (asSettings: { id: { path } }, empty ones left out). */
+function readLanguageInputs(asSettings = false) {
+    const out = {};
+    document.querySelectorAll('#languages-list .language-path').forEach((input) => {
+        const value = input.value.trim().replace(/^"(.*)"$/, '$1');
+        if (asSettings) { if (value) out[input.dataset.lang] = { path: value }; }
+        else out[input.dataset.lang] = value;
+    });
+    // The list may not be rendered yet (Settings closed before it arrived): keep what was saved.
+    if (asSettings && !document.querySelector('#languages-list .language-path')) return App.settings.languages || {};
+    return out;
+}
+
 function initSettings() {
     document.getElementById('btn-settings').onclick = openSettings;
     document.getElementById('settings-close').onclick = closeSettings;
@@ -147,6 +197,8 @@ function initSettings() {
     }
 
     initSettingsSearch();
+    const detectLanguages = document.getElementById('btn-detect-languages');
+    if (detectLanguages) detectLanguages.onclick = () => renderLanguageSettings(readLanguageInputs());
 
     // Tab switching
     document.querySelectorAll('.settings-tab').forEach(tab => {
@@ -922,6 +974,7 @@ function openSettings() {
     if (largeStackToggle) largeStackToggle.checked = App.settings.compiler.largeStack !== false;
     const extraFlagsInput = document.getElementById('set-extraFlags');
     if (extraFlagsInput) extraFlagsInput.value = App.settings.compiler.extraFlags || '';
+    renderLanguageSettings();
 
     document.getElementById('set-timeLimitEnabled').checked = App.settings.execution.timeLimitEnabled;
     document.getElementById('set-timeLimitSeconds').value = App.settings.execution.timeLimitSeconds;
@@ -1079,6 +1132,7 @@ async function saveSettingsAndClose() {
         if (largeStackToggle) App.settings.compiler.largeStack = largeStackToggle.checked;
         const extraFlagsInput = document.getElementById('set-extraFlags');
         if (extraFlagsInput) App.settings.compiler.extraFlags = extraFlagsInput.value.trim();
+        App.settings.languages = readLanguageInputs(true);
 
         App.settings.execution.timeLimitEnabled = document.getElementById('set-timeLimitEnabled').checked;
         App.settings.execution.timeLimitSeconds = parseInt(document.getElementById('set-timeLimitSeconds').value);

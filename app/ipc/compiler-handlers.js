@@ -28,8 +28,8 @@ function setMainWindow(window) {
  */
 function registerHandlers() {
     // Compile
-    ipcMain.handle(IPC.COMPILER.COMPILE, async (event, { filePath, content, flags, useLLD, noBuildCache, singleFileMode, realtimeOutput, untitledId, variant }) => {
-        return await compiler.compile({ filePath, content, flags, useLLD, noBuildCache, singleFileMode, realtimeOutput, untitledId, variant });
+    ipcMain.handle(IPC.COMPILER.COMPILE, async (event, { filePath, content, flags, useLLD, noBuildCache, singleFileMode, realtimeOutput, untitledId, untitledExt, variant }) => {
+        return await compiler.compile({ filePath, content, flags, useLLD, noBuildCache, singleFileMode, realtimeOutput, untitledId, untitledExt, variant });
     });
 
     // Run
@@ -59,6 +59,11 @@ function registerHandlers() {
     // Size, line count and first lines of a test input file, for its preview
     ipcMain.handle(IPC.COMPILER.INPUT_FILE_INFO, async (event, filePath) => {
         return compiler.inputFileInfo(filePath);
+    });
+
+    // Python, Java, Rust... and the compiler or interpreter found for each (Settings › Compiler)
+    ipcMain.handle(IPC.COMPILER.LANGUAGES, async (event, typed) => {
+        return require('../services/compiler/languages').listLanguages(typed);
     });
 
     // Get compiler status (for startup check)

@@ -16,6 +16,7 @@ const { describeExit, describeStartError } = require('../../shared/exit-codes');
 const { wasBuiltThisSession } = require('../compiler/executor');
 const { IS_WIN, IS_LINUX, readProcMemoryKB, killProcessTree } = require('../../shared/platform');
 const { getLauncherIfReady, newStatsFile, readStats } = require('../compiler/run-launcher');
+const languages = require('../compiler/languages');
 
 /**
  * Run a single test case
@@ -63,6 +64,16 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
             stderrPreview: '',
         };
 
+        // Python/Java/Node: the interpreter and its arguments (languages.js); C++: the exe itself.
+        let command;
+        try {
+            command = languages.runCommand(exePath, { memoryLimit });
+        } catch (err) {
+            resolve({ status: 'RE', error: err.message, details: err.message, executionTime: 0 });
+            return;
+        }
+        const runEnv = { ...getCompilerEnv(), ...command.env };
+
         const workingDir = cwd || path.dirname(exePath);
         let output = '';
         let errorOutput = '';
@@ -78,8 +89,8 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
         let testProcess;
         try {
             testProcess = launcher
-                ? spawn(launcher, [statsFile, exePath, String(Math.round(timeLimit)), String(memoryLimit)], { cwd: workingDir, env: getCompilerEnv(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
-                : spawn(exePath, [], { cwd: workingDir, env: getCompilerEnv(), stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN });
+                ? spawn(launcher, [statsFile, command.file, String(Math.round(timeLimit)), String(memoryLimit), ...command.args], { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+                : spawn(command.file, command.args, { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN });
         } catch (err) {
             // Windows refused to create the process; Node throws ("spawn UNKNOWN") rather than
             // emitting 'error', which used to reject the whole Run All Tests.

@@ -117,7 +117,7 @@ function updateLanguageStatus() {
     const language = tab ? languageForFile(tab.path || tab.name) : 'cpp';
     const std = App.settings.compiler.cppStandard;
     label.textContent = language === 'markdown' ? 'Markdown'
-        : language !== 'cpp' ? 'Plain Text'
+        : language !== 'cpp' ? (otherLanguageName(tab) || 'Plain Text')
         : std ? std.toUpperCase() : 'C++';
     label.title = language === 'cpp' ? 'C++ standard (Settings › Compiler)' : 'File type';
     updateIndentStatus();

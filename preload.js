@@ -58,6 +58,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     sendInput: (input) => ipcRenderer.invoke('send-input', input),
     sendInputFile: (filePath) => ipcRenderer.invoke('send-input-file', filePath),
     inputFileInfo: (filePath) => ipcRenderer.invoke('input-file-info', filePath),
+    listLanguages: (typed) => ipcRenderer.invoke('languages-list', typed),
     stopProcess: () => ipcRenderer.invoke('stop-process'),
     getCompilerStatus: () => ipcRenderer.invoke('get-compiler-status'),
     cleanPCHCache: (options) => ipcRenderer.invoke('clean-pch-cache', options),

@@ -1299,7 +1299,10 @@
         let tab = activeTab();
         if (!tab) { sys('⚠ Open a C++ file before debugging.', 'error'); return; }
         if (typeof isCppTab === 'function' && !isCppTab(tab)) {
-            sys(`⚠ ${tab.name} is not a C/C++ file. Switch to the solution's tab to debug it.`, 'error');
+            const other = typeof otherLanguageName === 'function' ? otherLanguageName(tab) : null;
+            sys(other
+                ? `⚠ The debugger is for C/C++ only. Run ${tab.name} with Build & Run (F11) instead.`
+                : `⚠ ${tab.name} is not a C/C++ file. Switch to the solution's tab to debug it.`, 'error');
             return;
         }
         if (!tab.path) {

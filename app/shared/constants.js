@@ -41,6 +41,7 @@ const IPC = {
         SEND_INPUT: 'send-input',
         SEND_INPUT_FILE: 'send-input-file',
         INPUT_FILE_INFO: 'input-file-info',
+        LANGUAGES: 'languages-list',
     },
 
     // Debugger (GDB/MI)

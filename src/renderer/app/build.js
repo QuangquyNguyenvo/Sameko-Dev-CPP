@@ -76,7 +76,7 @@ async function buildActiveTab({ runAfter }) {
     const tab = App.tabs.find(t => t.id === getPreferredTabId());
     const editor = getActiveEditor();
     if (!tab) { log('No file open', 'warning'); return; }
-    if (!isCppTab(tab)) { log(`${tab.name} is not a C/C++ file. Switch to the solution's tab to ${verb.toLowerCase()} it.`, 'warning'); return; }
+    if (!isBuildableTab(tab)) { log(notBuildableMessage(tab), 'warning'); return; }
 
     setBuildingState(true);
     let built = false;
@@ -126,6 +126,7 @@ async function buildActiveTab({ runAfter }) {
         const r = await window.electronAPI.compile({
             filePath: tab.path,
             untitledId: tab.path ? '' : tab.id,
+            untitledExt: tab.path ? '' : fileExtension(tab.name),
             content: tab.content,
             flags: buildCompileFlags(),
             singleFileMode: App.settings.compiler.singleFileMode !== false,
@@ -145,7 +146,8 @@ async function buildActiveTab({ runAfter }) {
             log(r.cached ? `${verb} OK (${ms}ms, source unchanged: reused the last build)` : `${verb} OK (${ms}ms)`, 'success');
             if (r.warnings) {
                 log(r.warnings, 'warning');
-                parseProblems(r.warnings, 'warning');
+                if (Array.isArray(r.problems)) addProblems(r.problems.filter(p => p.type !== 'error'));
+                else parseProblems(r.warnings, 'warning');
             }
             setStatus(`${verb}: ${ms}ms`, 'success');
             if (window.Motion) Motion.buildResult(document.getElementById('btn-buildrun'), true);
@@ -168,7 +170,9 @@ async function buildActiveTab({ runAfter }) {
                 log('Hint: This may require multi-file linking. Retry with Single-file mode OFF in Compiler settings.', 'warning');
             }
 
-            parseProblems(r.error, 'error');
+            // Other languages come with their problems read from their compiler's own format.
+            if (Array.isArray(r.problems)) addProblems(r.problems);
+            else parseProblems(r.error, 'error');
             hasBuildProblems = true; // Lock problems list from live-check overwrite
             highlightErrorLines(tab);
             setStatus(`${verb} failed`, 'error');
@@ -434,7 +438,7 @@ function clearProblems(tabId = null) {
 async function revealProblem(p) {
     const key = p.file ? pathKey(p.file) : '';
     let tab = key ? App.tabs.find(t => t.path && pathKey(t.path) === key) : null;
-    if (!tab && p.file && /^(?:[a-zA-Z]:[\\/]|[\\/])/.test(p.file) && !/[\\/]temp_code(?:-[\w-]+)?\.cpp$/i.test(p.file)) {
+    if (!tab && p.file && /^(?:[a-zA-Z]:[\\/]|[\\/])/.test(p.file) && !/[\\/](?:temp_code(?:-[\w-]+)?\.cpp|untitled-[\w-]+[\\/][^\\/]+)$/i.test(p.file)) {
         // A header the problem is in, not open yet.
         await openFileFromPath(p.file);
         tab = App.tabs.find(t => t.path && pathKey(t.path) === key) || null;
@@ -457,14 +461,22 @@ async function revealProblem(p) {
     editor.focus();
 }
 
+/**
+ * Why a tab cannot be built, for the terminal and the STRESS tab.
+ */
+function notBuildableMessage(tab) {
+    return `${tab.name} is not a source file the app can build. Switch to the solution's tab (C/C++, Python, Java, Kotlin, Rust, Go, Pascal or JavaScript).`;
+}
+
 function parseProblems(text, type) {
     const lines = text.split('\n');
     const regex = /(.+):(\d+):(\d+):\s*(error|warning):\s*(.+)/;
+    const found = [];
 
     lines.forEach(line => {
         const m = line.match(regex);
         if (m) {
-            App.problems.push({
+            found.push({
                 file: m[1],
                 line: parseInt(m[2]),
                 col: parseInt(m[3]),
@@ -473,6 +485,14 @@ function parseProblems(text, type) {
             });
         }
     });
+    addProblems(found);
+}
+
+/** Problems found by a build ({file, line, col, type, message}) into the Problems list. */
+function addProblems(list) {
+    for (const p of list || []) {
+        if (p && p.file) App.problems.push({ file: p.file, line: Number(p.line) || 1, col: Number(p.col) || 1, type: p.type || 'error', message: String(p.message || '') });
+    }
 
     if (App.problems.length > 0) {
         App.showProblems = true;
