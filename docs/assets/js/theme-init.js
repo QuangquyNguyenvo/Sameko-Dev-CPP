@@ -5,6 +5,11 @@
         location.replace('https://sameko.dev' + (location.pathname.replace(/^\/Sameko-Dev-CPP/i, '') || '/') + location.search + location.hash);
         return;
     }
+    // One host only: www is the same site, so keep visitors and crawlers on the bare domain.
+    if (location.hostname === 'www.sameko.dev') {
+        location.replace('https://sameko.dev' + location.pathname + location.search + location.hash);
+        return;
+    }
     document.documentElement.classList.add('has-home-motion');
     let stored = null;
     try { stored = localStorage.getItem('theme'); } catch (error) { /* Storage may be disabled. */ }

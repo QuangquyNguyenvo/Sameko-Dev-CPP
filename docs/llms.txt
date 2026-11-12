@@ -15,10 +15,13 @@ It is aimed at beginners, students and competitive programmers. Key facts:
 - Interface in English, Tiếng Việt and 简体中文; optional Vim Mode.
 - No ads, no account, no telemetry.
 - Official downloads are only on sameko.dev and github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases; forks of the repository are not official builds.
+- Not the same program as Dev-C++ (Bloodshed / Orwell / Embarcadero): Sameko Dev C++ is an independent, newer IDE and a modern alternative to it, not a fork.
 - Named after the VTuber Sameko Saba as an unofficial fan project; it is not affiliated with her.
 
 ## Docs
 
+- [Sameko Dev C++ vs Dev-C++](https://sameko.dev/dev-cpp-alternative): how it differs from Dev-C++ (compiler, standards, shortcuts, platforms), a feature comparison with Code::Blocks, VS Code and CLion, and how to move over
+- [Trang chủ tiếng Việt](https://sameko.dev/vi) and [So sánh với Dev-C++](https://sameko.dev/thay-the-dev-cpp): Vietnamese versions of the home page and the comparison
 - [Wiki (English)](https://sameko.dev/wiki): installation, first project, requirements, compiler settings, shortcuts, themes, debugger, snippets, Competitive Companion, troubleshooting
 - [Wiki (Tiếng Việt)](https://sameko.dev/wiki-vi): Vietnamese version of the wiki
 - [Release notes](https://sameko.dev/wiki#whats-new): what changed in 1.4.0, 1.3.2 and 1.3.1

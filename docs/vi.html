@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="assets/js/theme-init.js"></script>
+
+    <link rel="stylesheet" href="assets/css/fonts.css">
+    <link rel="preload" href="assets/fonts/quicksand-700.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="assets/fonts/quicksand-500.woff2" as="font" type="font/woff2" crossorigin>
+
+    <title>Sameko Dev C++ | Tải IDE C++ miễn phí cho học sinh và lập trình thi đấu</title>
+    <meta name="description"
+        content="IDE C++ miễn phí cho lập trình thi đấu và học tập: tải Sameko Dev C++, có sẵn GCC 16, clangd và GDB trên Windows. Có cả AppImage cho Linux.">
+    <meta name="author" content="QuangquyNguyenvo">
+    <meta name="google-site-verification" content="qhHZsB3wWbPMabTTEiDGclupbVZCNy1GHtSfSX8JC74" />
+    <meta name="google-site-verification" content="hicbny1fy3tMA3dvY0VtqTfdX8-ImsSURm8oVDjf52A" />
+    <meta name="theme-color" content="#88c9ea">
+    <meta name="robots" content="index, follow">
+
+    <link rel="icon" href="assets/favicon-32.png" sizes="32x32">
+    <link rel="icon" href="assets/logo-48.png" sizes="48x48">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="canonical" href="https://sameko.dev/vi">
+    <link rel="alternate" hreflang="en" href="https://sameko.dev/">
+    <link rel="alternate" hreflang="vi" href="https://sameko.dev/vi">
+    <link rel="alternate" hreflang="x-default" href="https://sameko.dev/">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://sameko.dev/vi">
+    <meta property="og:title" content="Sameko Dev C++ | Tải IDE C++ miễn phí cho học sinh và lập trình thi đấu">
+    <meta property="og:description"
+        content="IDE C++ miễn phí cho lập trình thi đấu và học tập: tải Sameko Dev C++, có sẵn GCC 16, clangd và GDB trên Windows. Có cả AppImage cho Linux.">
+    <meta property="og:image"
+        content="https://sameko.dev/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Hình minh họa linh vật Sameko Dev C++">
+    <meta property="og:locale" content="vi_VN">
+    <meta property="og:locale:alternate" content="en_US">
+    <meta property="og:site_name" content="Sameko Dev C++">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Sameko Dev C++ | Tải IDE C++ miễn phí cho học sinh và lập trình thi đấu">
+    <meta name="twitter:description"
+        content="IDE C++ miễn phí cho lập trình thi đấu và học tập: tải Sameko Dev C++, có sẵn GCC 16, clangd và GDB trên Windows. Có cả AppImage cho Linux.">
+    <meta name="twitter:image"
+        content="https://sameko.dev/assets/og-image.png">
+    <meta name="twitter:image:alt" content="Hình minh họa linh vật Sameko Dev C++">
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://sameko.dev/vi#software",
+            "name": "Sameko Dev C++",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Windows 10, Windows 11, Linux x64",
+            "description": "IDE C++ miễn phí, có sẵn GCC 16, clangd và GDB trên Windows; bản Linux dùng công cụ biên dịch cài sẵn trên máy. Hỗ trợ C++26.",
+            "url": "https://sameko.dev/",
+            "author": { "@type": "Person", "name": "QuangquyNguyenvo", "url": "https://github.com/QuangquyNguyenvo" },
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "isAccessibleForFree": true,
+            "downloadUrl": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases",
+            "softwareVersion": "1.4.0",
+            "datePublished": "2026-10-04",
+            "dateModified": "2026-11-13",
+            "releaseNotes": "https://sameko.dev/wiki#whats-new",
+            "softwareHelp": { "@type": "CreativeWork", "url": "https://sameko.dev/wiki" },
+            "image": "https://sameko.dev/assets/og-image.png",
+            "featureList": "Bản Windows có sẵn GCC 16, clangd và GDB; bản Linux dùng công cụ biên dịch của hệ thống; Monaco Editor; hỗ trợ C++26; Competitive Companion; bản portable cho Windows",
+            "license": "https://opensource.org/license/mit",
+            "sameAs": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP"
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://sameko.dev/vi#website",
+            "name": "Sameko Dev C++",
+            "url": "https://sameko.dev/",
+            "alternateName": "Sameko IDE",
+            "inLanguage": "vi"
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://sameko.dev/vi#faq",
+            "about": { "@id": "https://sameko.dev/vi#software" },
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "Miễn phí thật không?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Có. Sameko Dev C++ dùng giấy phép MIT, không quảng cáo, không cần tài khoản và không thu thập dữ liệu." }
+              },
+              {
+                "@type": "Question",
+                "name": "Sameko Dev C++ có phải là Dev-C++ không?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Không. Dev-C++ là một IDE khác (Bloodshed, sau này là Orwell và Embarcadero). Sameko Dev C++ là dự án độc lập, mới hơn, xây trên trình soạn thảo Monaco: vẫn đơn giản kiểu mở file là chạy, nhưng có GCC 16, IntelliSense clangd, debugger GDB và theme." }
+              },
+              {
+                "@type": "Question",
+                "name": "Có phải cài compiler không?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Trên Windows thì không: GCC 16, clangd và GDB đã có sẵn. Trên Linux, hãy cài g++, gdb và clangd từ distro của bạn." }
+              },
+              {
+                "@type": "Question",
+                "name": "Có chạy được từ USB không?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Có. Bản zip portable chạy từ thư mục bất kỳ, không cần quyền admin và không sửa registry." }
+              },
+              {
+                "@type": "Question",
+                "name": "Dùng được những chuẩn C++ nào?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Từ C++98 đến C++26 (mặc định là C++17). Đổi trong Cài đặt → Compiler." }
+              },
+              {
+                "@type": "Question",
+                "name": "Windows Defender chặn file tải về.",
+                "acceptedAnswer": { "@type": "Answer", "text": "Đây là báo động giả thường gặp với app Electron mới. Chọn \"More info\" → \"Run anyway\", hoặc bấm chuột phải file .exe → Properties → Unblock." }
+              },
+              {
+                "@type": "Question",
+                "name": "Tự làm theme được không?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Được. Bấm vào bất kỳ phần nào của giao diện trong Theme Customizer để đổi màu, thêm ảnh hoặc video nền, rồi export theme." }
+              }
+            ]
+          }
+        ]
+    }
+    </script>
+
+    <link rel="preconnect" href="https://api.github.com">
+    <link rel="preload" as="image" href="assets/a.webp" type="image/webp">
+    <link rel="stylesheet" href="assets/css/tokens.css">
+    <link rel="stylesheet" href="assets/css/home.css">
+    <link rel="stylesheet" href="assets/css/homepage.css">
+    <noscript>
+        <style>.hero__actions .dropdown-wrapper { display: none; }</style>
+    </noscript>
+</head>
+
+<body class="sameko-home">
+    <a class="skip-link" href="#main">Chuyển đến nội dung</a>
+    <div class="scroll-progress" aria-hidden="true"><span></span></div>
+
+    <button class="scroll-top" id="scroll-top" aria-label="Lên đầu trang" title="Lên đầu trang">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </button>
+
+    <nav class="nav">
+        <div class="wrap nav__inner">
+            <a class="nav__brand" href="#" aria-label="Sameko Dev C++">
+                <img src="assets/logo-48.png" alt="" width="32" height="32">
+                <span>Sameko Dev C++</span>
+            </a>
+            <div class="nav__links">
+                <a href="#features">Tính năng</a>
+                <a href="#benchmark">Tốc độ</a>
+                <a href="#comparison">So sánh</a>
+                <a href="wiki-vi.html">Wiki</a>
+                <a href="#faq">FAQ</a>
+            </div>
+            <div class="nav__actions">
+                <button class="theme-toggle" id="theme-toggle" aria-label="Bật/tắt chế độ tối" title="Chuyển chế độ tối/sáng">
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="5"></circle>
+                        <line x1="12" y1="1" x2="12" y2="3"></line>
+                        <line x1="12" y1="21" x2="12" y2="23"></line>
+                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                        <line x1="1" y1="12" x2="3" y2="12"></line>
+                        <line x1="21" y1="12" x2="23" y2="12"></line>
+                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                    </svg>
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+                <a class="btn btn--primary" href="#download-trigger">Tải về</a>
+            </div>
+        </div>
+    </nav>
+
+    <main id="main">
+
+        <!-- HERO -->
+        <div class="hero-stage">
+        <header class="hero-band">
+            <div class="hero__art" aria-hidden="true">
+                <span class="hero__word">C++</span>
+                <span class="shape shape--circle" style="--x:4%;--y:16%;--sz:46px;--c:var(--shape-sky);--d:7s"></span>
+                <span class="shape shape--star" style="--x:43%;--y:7%;--sz:50px;--c:var(--shape-butter);--d:9s"><svg viewBox="0 0 48 48"><path d="M24 5l5.4 11.6 12.7 1.5-9.4 8.7 2.5 12.6L24 33.1l-11.2 6.3 2.5-12.6-9.4-8.7 12.7-1.5z"/></svg></span>
+                <span class="shape shape--pill" style="--x:7%;--y:80%;--sz:72px;--c:var(--shape-white);--d:8s;--r:-14deg"></span>
+                <span class="shape shape--ring" style="--x:46%;--y:84%;--sz:40px;--c:var(--shape-sky);--d:10s"></span>
+                <span class="shape shape--heart" style="--x:93%;--y:10%;--sz:42px;--c:var(--shape-butter);--d:6s"><svg viewBox="0 0 48 48"><path d="M24 40S7 29.5 7 17.8A8.8 8.8 0 0 1 24 13a8.8 8.8 0 0 1 17 4.8C41 29.5 24 40 24 40z"/></svg></span>
+                <span class="shape shape--spark" style="--x:51%;--y:46%;--sz:34px;--c:var(--shape-sky);--d:7.5s"><svg viewBox="0 0 48 48"><path d="M24 4c1.8 11 6.6 16.2 19 20-12.4 3.8-17.2 9-19 20-1.8-11-6.6-16.2-19-20 12.4-3.8 17.2-9 19-20z"/></svg></span>
+                <span class="shape shape--squircle" style="--x:91%;--y:78%;--sz:38px;--c:var(--shape-butter);--d:9.5s;--r:18deg"></span>
+                <span class="shape shape--circle" style="--x:27%;--y:5%;--sz:22px;--c:var(--shape-white);--d:6.5s"></span>
+                <span class="shape shape--spark" style="--x:70%;--y:90%;--sz:26px;--c:var(--shape-butter);--d:8.5s"><svg viewBox="0 0 48 48"><path d="M24 4c1.8 11 6.6 16.2 19 20-12.4 3.8-17.2 9-19 20-1.8-11-6.6-16.2-19-20 12.4-3.8 17.2-9 19-20z"/></svg></span>
+                <span class="shape shape--circle" style="--x:1.5%;--y:52%;--sz:18px;--c:var(--shape-butter);--d:7s"></span>
+            </div>
+            <div class="wrap hero__inner">
+                <div class="hero__content">
+                    <span class="badge hero__badge" id="hero-badge">Miễn phí &amp; mã nguồn mở</span>
+
+                    <h1 class="h-display hero__title">
+                        <span>Code. Chạy.</span>
+                        <span>Theo cách của <span class="hl hero__highlight">bạn.<svg class="hl__squiggle" viewBox="0 0 220 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 14C24 4 40 22 60 13S96 4 116 13s36 9 56 0 32-7 44-2"/></svg><svg class="hl__shine" viewBox="0 0 40 40" aria-hidden="true"><path pathLength="1" d="M9 31 4 22M20 26 19 12M31 29l7-9"/></svg></span></span>
+                    </h1>
+
+                    <p class="lede hero__lede">IDE C++ dùng được ngay. Windows có sẵn GCC&nbsp;16, clangd và GDB.</p>
+
+                    <div class="hero__actions">
+                        <div class="dropdown-wrapper">
+                            <button id="download-trigger" class="btn btn--primary" aria-haspopup="true"
+                                aria-expanded="false" aria-controls="download-menu">
+                                <svg class="icon" viewBox="0 0 24 24">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Tải về
+                                <svg class="chevron icon" viewBox="0 0 24 24" style="width: 16px; margin-right: 0;">
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+                            <div class="drop-menu" id="download-menu" popover="manual" aria-label="Tải Sameko">
+                                <div class="drop-group drop-group--win">
+                                    <p class="drop-group__label">Windows</p>
+
+                                    <a id="dl-installer" class="drop-item" target="_blank" rel="noopener"
+                                        href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases">
+                                        <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                                            <rect x="9" y="9" width="6" height="6"></rect>
+                                            <line x1="9" y1="1" x2="9" y2="4"></line>
+                                            <line x1="15" y1="1" x2="15" y2="4"></line>
+                                            <line x1="9" y1="20" x2="9" y2="23"></line>
+                                            <line x1="15" y1="20" x2="15" y2="23"></line>
+                                            <line x1="20" y1="9" x2="23" y2="9"></line>
+                                            <line x1="20" y1="14" x2="23" y2="14"></line>
+                                            <line x1="1" y1="9" x2="4" y2="9"></line>
+                                            <line x1="1" y1="14" x2="4" y2="14"></line>
+                                        </svg>
+                                        <div class="item-content">
+                                            <div class="item-top">
+                                                <span class="drop-title">Bộ cài</span>
+                                                <span class="badge-rec">Khuyên dùng</span>
+                                            </div>
+                                            <span class="drop-desc">.exe &middot; Tự cập nhật &middot; Dễ nhất</span>
+                                        </div>
+                                        <span class="drop-size"></span>
+                                    </a>
+
+                                    <a id="dl-portable" class="drop-item" target="_blank" rel="noopener"
+                                        href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases">
+                                        <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <path
+                                                d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                                            </path>
+                                        </svg>
+                                        <div class="item-content">
+                                            <div class="item-top">
+                                                <span class="drop-title">Portable</span>
+                                            </div>
+                                            <span class="drop-desc">.zip &middot; Giải nén là chạy &middot; Mang theo
+                                                USB được</span>
+                                        </div>
+                                        <span class="drop-size"></span>
+                                    </a>
+                                </div>
+
+                                <div class="drop-group drop-group--linux">
+                                    <p class="drop-group__label">Linux</p>
+
+                                    <a id="dl-appimage" class="drop-item" target="_blank" rel="noopener"
+                                        href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases">
+                                        <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <path d="M12 2 3 7v10l9 5 9-5V7z"></path>
+                                            <path d="M3 7l9 5 9-5"></path>
+                                            <path d="M12 12v10"></path>
+                                        </svg>
+                                        <div class="item-content">
+                                            <div class="item-top">
+                                                <span class="drop-title">AppImage</span>
+                                                <span class="badge-rec">Khuyên dùng</span>
+                                            </div>
+                                            <span class="drop-desc">chmod +x rồi chạy &middot; mọi distro</span>
+                                        </div>
+                                        <span class="drop-size"></span>
+                                    </a>
+
+                                    <a id="dl-deb" class="drop-item" target="_blank" rel="noopener"
+                                        href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases">
+                                        <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                        </svg>
+                                        <div class="item-content">
+                                            <div class="item-top">
+                                                <span class="drop-title">Debian / Ubuntu</span>
+                                            </div>
+                                            <span class="drop-desc">.deb &middot; sudo apt install ./file.deb</span>
+                                        </div>
+                                        <span class="drop-size"></span>
+                                    </a>
+
+                                    <a id="dl-targz" class="drop-item" target="_blank" rel="noopener"
+                                        href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases">
+                                        <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                            stroke-width="2">
+                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                        </svg>
+                                        <div class="item-content">
+                                            <div class="item-top">
+                                                <span class="drop-title">Tarball</span>
+                                            </div>
+                                            <span class="drop-desc">.tar.gz &middot; giải nén thủ công</span>
+                                        </div>
+                                        <span class="drop-size"></span>
+                                    </a>
+                                </div>
+                                <div class="drop-group drop-group--github">
+                                    <a class="drop-item" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases" target="_blank" rel="noopener">
+                                        <svg class="item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5M12 15V3"/></svg>
+                                        <div class="item-content"><span class="drop-title">Mọi bản tải trên GitHub</span><span class="drop-desc">Các bản phát hành, file nén &amp; phiên bản khác</span></div>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <a target="_blank" rel="noopener noreferrer"
+                            href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP" class="btn btn--ghost">
+                            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path
+                                    d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22">
+                                </path>
+                            </svg>
+                            GitHub
+                        </a>
+                    </div>
+
+                    <p class="dl-hint" id="dl-hint">Windows 10/11 &middot; Linux x64 &middot; Miễn phí &amp; mã nguồn mở</p>
+                    <noscript><p class="dl-hint">Chọn bộ cài hoặc bản portable từ trang GitHub releases ở trên.</p></noscript>
+                </div>
+
+                <div class="hero__visual">
+                    <span class="hero__sun" aria-hidden="true"></span>
+                    <span class="hero__spark hero__spark--1" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.6 8.4L23 11l-8.4 2.6L12 22l-2.6-8.4L1 11l8.4-2.6z" /></svg>
+                    </span>
+                    <span class="hero__spark hero__spark--2" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.6 8.4L23 11l-8.4 2.6L12 22l-2.6-8.4L1 11l8.4-2.6z" /></svg>
+                    </span>
+                    <img src="assets/a.webp" alt="Sameko Saba, tranh minh họa của Nuu (@XD_zow)" width="600" height="848"
+                        srcset="assets/a-320.webp 320w, assets/a-480.webp 480w, assets/a.webp 600w"
+                        sizes="(max-width: 900px) 290px, 400px"
+                        fetchpriority="high" decoding="async">
+                    <span class="hero__chip hero__chip--ac" aria-hidden="true"><b>AC</b> 3 / 3 test</span>
+                    <span class="hero__chip hero__chip--lint" aria-hidden="true"><i></i> clangd &middot; 0 lỗi</span>
+                    <span class="hero__sticker hero__sticker--compiler"><span class="sticker-dot" aria-hidden="true"></span> GCC 16 có sẵn</span>
+                    <span class="hero__sticker hero__sticker--run"><kbd>F11</kbd> là chạy luôn</span>
+                </div>
+            </div>
+            <a class="hero__scroll" href="#benchmark" aria-label="Cuộn xuống phần tiếp theo"><span></span></a>
+        </header>
+        </div>
+
+        <!-- 01 · SPEED -->
+        <section id="benchmark" class="band">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">Tốc độ</span>
+                    <h2 class="h-section">Đỡ chờ.<br>Giải bài nhiều hơn.</h2>
+                    <p class="lede">Compile + link một file dùng <code>&lt;bits/stdc++.h&gt;</code>, trên cùng một máy.</p>
+                </div>
+
+                <div class="bench">
+                    <div class="bench__score">
+                        <span class="bench__value"><span id="bench-number">500</span><small>ms</small></span>
+                        <span class="bench__caption">Sameko, GCC&nbsp;16 + build cache</span>
+                    </div>
+                    <ul class="bench__bars" id="benchmark-card">
+                        <li class="is-me" style="--w: 20%"><span>Sameko</span><i class="bar"></i><b>500 ms</b></li>
+                        <li style="--w: 48%"><span>Dev-C++ 6.3</span><i class="bar"></i><b>1200 ms</b></li>
+                        <li style="--w: 60%"><span>Dev-C++ 5.11</span><i class="bar"></i><b>1500 ms</b></li>
+                        <li style="--w: 72%"><span>Code::Blocks</span><i class="bar"></i><b>1800 ms</b></li>
+                        <li style="--w: 100%"><span>VS Code</span><i class="bar"></i><b>2500+ ms</b></li>
+                    </ul>
+                </div>
+
+                <ul class="std-row" aria-label="Các chuẩn C++ được hỗ trợ">
+                    <li>C++98</li><li>C++11</li><li>C++14</li><li class="is-default">C++17</li><li>C++20</li><li>C++23</li><li class="is-new">C++26</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 02 · START -->
+        <section id="how-it-works" class="band band--alt">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">Bắt đầu</span>
+                    <h2 class="h-section">Ba bước.<br>Vậy thôi.</h2>
+                    <p class="lede">Không cần cài MinGW, không PATH, không <code>tasks.json</code>.</p>
+                </div>
+
+                <ol class="steps">
+                    <li class="steps__item">
+                        <span class="steps__num">1</span>
+                        <h3>Tải về</h3>
+                        <p>Toolchain có sẵn bên trong.</p>
+                    </li>
+                    <li class="steps__item">
+                        <span class="steps__num">2</span>
+                        <h3>Mở một file <code>.cpp</code></h3>
+                        <p>clangd khởi động ngay.</p>
+                    </li>
+                    <li class="steps__item">
+                        <span class="steps__num">3</span>
+                        <h3>Nhấn <kbd>F11</kbd></h3>
+                        <p>Compile, chạy, xong.</p>
+                    </li>
+                </ol>
+            </div>
+        </section>
+
+        <!-- 03 · FEATURES: the section pins while text and window change together -->
+        <section id="features" class="band">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">Tính năng</span>
+                    <h2 class="h-section">Một IDE nhỏ xinh.<br>Đủ cho cả buổi code.</h2>
+                    <p class="lede">Một buổi code với Sameko trông thế này.</p>
+                </div>
+
+                <div class="story" data-chapter="0">
+                    <div class="story__text">
+                        <div class="story__tabs" role="group" aria-label="Các chương tính năng">
+                            <button type="button" data-go="0" aria-current="true"><b>01</b> Viết &amp; chạy</button>
+                            <button type="button" data-go="1"><b>02</b> Kiểm tra &amp; sửa lỗi</button>
+                            <button type="button" data-go="2"><b>03</b> Theo cách của bạn</button>
+                        </div>
+                        <div class="story__chapters">
+                            <article class="chapter" data-chapter-index="0">
+                                <h3>Viết &amp; chạy</h3>
+                                <p>Có ý tưởng, ra kết quả, chỉ trong nửa giây.</p>
+                                <ul class="chapter__tags"><li>Build 500&nbsp;ms</li><li>IntelliSense clangd</li><li>Competitive Companion</li></ul>
+                            </article>
+                            <article class="chapter" data-chapter-index="1">
+                                <h3>Kiểm tra &amp; sửa lỗi</h3>
+                                <p>Theo dõi từng giá trị thay đổi, từng dòng một.</p>
+                                <ul class="chapter__tags"><li>Debugger GDB</li><li>Auto dry run</li><li>Lùi một bước</li></ul>
+                            </article>
+                            <article class="chapter" data-chapter-index="2">
+                                <h3>Theo cách của bạn</h3>
+                                <p>Màu của bạn, template của bạn, lịch sử của bạn.</p>
+                                <ul class="chapter__tags"><li>6 theme + trình tùy chỉnh</li><li>Snippet</li><li>Checkpoint</li></ul>
+                            </article>
+                        </div>
+                    </div>
+
+                    <div class="story__stage" aria-hidden="true">
+                        <span class="story__blob story__blob--sky"></span>
+                        <span class="story__blob story__blob--butter"></span>
+                        <span class="story__num" data-story-num>01</span>
+                        <div class="ide" data-ide-theme="kawaii-light">
+                            <div class="ide__bar">
+                                <span class="ide__dots"><i></i><i></i><i></i></span>
+                                <span class="ide__tab">solution.cpp</span>
+                                <span class="ide__status"><i></i><b data-status>Sẵn sàng</b></span>
+                            </div>
+                            <div class="ide__body">
+                                <span class="ide__exec"></span>
+                                <ol class="ide__code">
+                                    <li><span class="t-kw">#include</span> <span class="t-str">&lt;bits/stdc++.h&gt;</span></li>
+                                    <li><span class="t-kw">using namespace</span> std;</li>
+                                    <li>&nbsp;</li>
+                                    <li><span class="t-type">int</span> <span class="t-fn">main</span>() {</li>
+                                    <li>&nbsp;&nbsp;<span class="t-type">int</span> n = <span class="t-num">5</span>, sum = <span class="t-num">0</span>;</li>
+                                    <li>&nbsp;&nbsp;<span class="t-type">vector</span>&lt;<span class="t-type">int</span>&gt; a = {<span class="t-num">4</span>, <span class="t-num">8</span>, <span class="t-num">15</span>, <span class="t-num">16</span>, <span class="t-num">23</span>};</li>
+                                    <li>&nbsp;&nbsp;<span class="t-kw">for</span> (<span class="t-type">int</span> i = <span class="t-num">0</span>; i &lt; n; ++i)</li>
+                                    <li class="ide__line--bp">&nbsp;&nbsp;&nbsp;&nbsp;sum += a[i];</li>
+                                    <li>&nbsp;&nbsp;cout &lt;&lt; sum &lt;&lt; <span class="t-str">'\n'</span>;</li>
+                                    <li>}</li>
+                                </ol>
+                                <span class="ide__stamp">Build OK!</span>
+                                <span class="ide__suggest"><b>snippet</b> bfs <em>&#9166;</em></span>
+                            </div>
+
+                            <div class="ide__panels">
+                                <div class="ide__panel" data-panel="0">
+                                    <p class="ide__term"><span>&gt;</span> g++ -std=c++17 -O2 solution.cpp</p>
+                                    <p class="ide__term ide__term--ok"><span>&#10003;</span> Build xong trong <b>0.48 s</b> &middot; kết quả: 66</p>
+                                    <ul class="ide__tests">
+                                        <li><b>AC</b> Test 1</li><li><b>AC</b> Test 2</li><li><b>AC</b> Test 3</li>
+                                    </ul>
+                                </div>
+                                <div class="ide__panel" data-panel="1">
+                                    <ul class="ide__watch">
+                                        <li><span>i</span><b data-watch="i">0</b></li>
+                                        <li><span>a[i]</span><b data-watch="ai">4</b></li>
+                                        <li><span>sum</span><b data-watch="sum">4</b></li>
+                                    </ul>
+                                    <p class="ide__dbg"><span>&#9646;&#9646;</span> Dừng ở dòng 8 &middot; <em>Lùi</em> &middot; <em>Bước</em></p>
+                                </div>
+                                <div class="ide__panel" data-panel="2">
+                                    <ul class="ide__themes">
+                                        <li data-swatch="kawaii-light">Kawaii Light</li>
+                                        <li data-swatch="sakura">Sakura</li>
+                                        <li data-swatch="kawaii-dark">Kawaii Dark</li>
+                                        <li data-swatch="nord">Nord</li>
+                                    </ul>
+                                    <p class="ide__term"><span>&#9719;</span> Đã lưu checkpoint &middot; 2 phút trước</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- UNDER THE HOOD: one scrolling line instead of eight cards -->
+        <section id="tech-stack" class="stack" aria-label="Xây dựng trên">
+            <ul class="stack__line">
+                <li>GCC 16</li><li>clangd</li><li>GDB</li><li>Monaco</li><li>Tree-sitter</li><li>Electron</li><li>xterm.js</li><li>AStyle</li>
+                <li aria-hidden="true">GCC 16</li><li aria-hidden="true">clangd</li><li aria-hidden="true">GDB</li><li aria-hidden="true">Monaco</li>
+            </ul>
+        </section>
+
+        <!-- 04 · COMPARE -->
+        <section id="comparison" class="band band--alt">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">So sánh</span>
+                    <h2 class="h-section">So kè với các IDE khác.</h2>
+                    <p class="lede">Những gì có ngay khi cài xong.</p>
+                </div>
+
+                <div class="cmp">
+                    <table class="cmp__table">
+                        <caption class="sr-only">So sánh tính năng giữa Sameko Dev C++, Dev-C++, Code::Blocks,
+                            VS Code và CLion ở cấu hình mặc định</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Có sẵn khi cài</th>
+                                <th scope="col" class="cmp__me">Sameko Dev C++</th>
+                                <th scope="col">Dev-C++</th>
+                                <th scope="col">Code::Blocks</th>
+                                <th scope="col">VS Code</th>
+                                <th scope="col">CLion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">Có sẵn compiler</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> GCC&nbsp;16</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> TDM-GCC&nbsp;9.2</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Gói MinGW</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Không.</span> Cài riêng</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> MinGW trên Windows</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Build đầu tiên trên Windows</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Mở file <code>.cpp</code></td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Với TDM-GCC</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Chọn compiler</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Không.</span> Compiler + extension + task</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Profile toolchain</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Gợi ý code</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> clangd</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Code Insight</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Có sẵn</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Extension C++</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Có sẵn</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Competitive Companion</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Có sẵn</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Không</span></td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Không</span></td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Extension</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Không</span></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Test cho online judge</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Chạy tất cả + verdict</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Nhập tay</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Nhập tay</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Extensions</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Tự cấu hình</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Debug từng dòng</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> GDB + watch</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> GDB</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> GDB/CDB</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Cấu hình launch</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> GDB/LLDB</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Lịch sử file</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Checkpoint</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Không có tài liệu.</span></td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Không có tài liệu.</span></td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Timeline</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Local History</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Portable</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Zip</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Ứng dụng portable</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Zip không cần cài</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Chế độ portable</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Toolchain cài riêng</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="cmp__legend"><span><i class="cmp__yes">&check;</i> Có sẵn</span><span><i class="cmp__part">~</i> Sau khi cấu hình</span><span><i class="cmp__no">&times;</i> Không có</span></p>
+            </div>
+        </section>
+
+        <!-- 05 · KEYS -->
+        <section id="shortcuts" class="band">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">Ưu tiên bàn phím</span>
+                    <h2 class="h-section">Tay không rời<br>bàn phím.</h2>
+                    <p class="lede">Đổi phím tắt nào cũng được trong Cài đặt.</p>
+                </div>
+
+                <ul class="keys">
+                    <li><span class="keys__combo"><kbd>F9</kbd></span><span class="keys__label">Compile</span></li>
+                    <li><span class="keys__combo"><kbd>F10</kbd></span><span class="keys__label">Chạy</span></li>
+                    <li class="is-hero"><span class="keys__combo"><kbd>F11</kbd></span><span class="keys__label">Compile &amp; chạy</span></li>
+                    <li><span class="keys__combo"><kbd>Shift</kbd><kbd>F5</kbd></span><span class="keys__label">Dừng</span></li>
+                    <li><span class="keys__combo"><kbd>Ctrl</kbd><kbd>N</kbd></span><span class="keys__label">File mới</span></li>
+                    <li><span class="keys__combo"><kbd>Ctrl</kbd><kbd>S</kbd></span><span class="keys__label">Lưu</span></li>
+                    <li><span class="keys__combo"><kbd>Ctrl</kbd><kbd>Shift</kbd><kbd>A</kbd></span><span class="keys__label">Định dạng</span></li>
+                    <li><span class="keys__combo"><kbd>Ctrl</kbd><kbd>J</kbd></span><span class="keys__label">Panel</span></li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- 06 · FAQ -->
+        <section id="faq" class="band band--alt">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">FAQ</span>
+                    <h2 class="h-section">Hỏi nhanh, đáp gọn.</h2>
+                </div>
+
+                <div class="faq-list">
+                    <div class="faq-item">
+                        <button class="faq-question" aria-expanded="false">
+                            <span>Miễn phí thật không?</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="faq-answer"><div class="faq-answer__inner">
+                            <p>Có. Giấy phép MIT, không quảng cáo, không cần tài khoản, không thu thập dữ liệu.</p></div>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <button class="faq-question" aria-expanded="false">
+                            <span>Sameko Dev C++ có phải là Dev-C++ không?</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="faq-answer"><div class="faq-answer__inner">
+                            <p>Không. Dev-C++ là một IDE khác (Bloodshed, sau này là Orwell và Embarcadero). Sameko Dev C++ là dự án độc lập, mới hơn, xây trên trình soạn thảo Monaco: vẫn đơn giản kiểu mở file là chạy, nhưng có GCC&nbsp;16, IntelliSense clangd, debugger GDB và theme. <a href="thay-the-dev-cpp.html">Xem so sánh đầy đủ</a>.</p></div>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <button class="faq-question" aria-expanded="false">
+                            <span>Có phải cài compiler không?</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="faq-answer"><div class="faq-answer__inner">
+                            <p>Trên Windows thì không: GCC&nbsp;16, clangd và GDB đã có sẵn. Trên Linux, hãy cài <code>g++</code>, <code>gdb</code> và <code>clangd</code> từ distro của bạn.</p></div>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <button class="faq-question" aria-expanded="false">
+                            <span>Có chạy được từ USB không?</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="faq-answer"><div class="faq-answer__inner">
+                            <p>Có. Bản zip portable chạy từ thư mục bất kỳ, không cần quyền admin và không sửa registry.</p></div>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <button class="faq-question" aria-expanded="false">
+                            <span>Dùng được những chuẩn C++ nào?</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="faq-answer"><div class="faq-answer__inner">
+                            <p>Từ C++98 đến C++26 (mặc định là C++17). Đổi trong Cài đặt &rarr; Compiler.</p></div>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <button class="faq-question" aria-expanded="false">
+                            <span>Windows Defender chặn file tải về.</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="faq-answer"><div class="faq-answer__inner">
+                            <p>Đây là báo động giả thường gặp với app Electron mới. Chọn &ldquo;More info&rdquo; &rarr; &ldquo;Run anyway&rdquo;, hoặc bấm chuột phải file .exe &rarr; Properties &rarr; Unblock.</p></div>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <button class="faq-question" aria-expanded="false">
+                            <span>Tự làm theme được không?</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="faq-answer"><div class="faq-answer__inner">
+                            <p>Được. Bấm vào bất kỳ phần nào của giao diện trong Theme Customizer để đổi màu, thêm ảnh hoặc video nền, rồi export theme.</p></div>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <button class="faq-question" aria-expanded="false">
+                            <span>Vì sao tên là Sameko?</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="faq-answer"><div class="faq-answer__inner">
+                            <p>Tên này lấy theo Sameko Saba. Cô ấy đã tiếp thêm động lực cho mình khi làm app này, và mình nghe karaoke stream của cô ấy rất nhiều trong lúc làm. Sameko Dev C++ là dự án fan miễn phí, không chính thức. Nó không liên quan gì đến cô ấy và mình không kiếm tiền từ nó.</p>
+                            <p><b>Saba, if you ever see this:</b> hi! I wanted to ask your permission, but I couldn't find a way to message you. I'd also love to make a Saba theme for the app, but I haven't, because I wanted to ask you first. If you'd rather I change the name or anything else, please email me at <a href="mailto:nguyenvoquangquy.it@gmail.com">nguyenvoquangquy.it@gmail.com</a> and I'll do it right away.</p></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA (also carries the open-source links) -->
+        <section id="cta" class="band band--cta">
+            <div class="wrap cta">
+                <h2 class="h-section">Bớt cài đặt.<br><span class="hl">Thêm chất riêng.<svg class="hl__squiggle" viewBox="0 0 220 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 14C24 4 40 22 60 13S96 4 116 13s36 9 56 0 32-7 44-2"/></svg></span></h2>
+                <p class="lede">Miễn phí, portable và mã nguồn mở.</p>
+                <div class="cta__actions">
+                    <a href="#download-trigger" class="btn btn--primary btn--lg">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Tải về
+                    </a>
+                    <a href="wiki-vi.html" class="btn btn--ghost btn--lg">Đọc tài liệu</a>
+                </div>
+                <ul class="cta__links">
+                    <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP" target="_blank" rel="noopener">Mã nguồn</a></li>
+                    <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues" target="_blank" rel="noopener">Báo lỗi</a></li>
+                    <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Đóng góp</a></li>
+                </ul>
+            </div>
+        </section>
+    </main>
+
+    <footer class="foot">
+        <div class="wrap">
+            <div class="foot__cols">
+                <div class="foot__brand">
+                    <a class="nav__brand" href="#">
+                        <img src="assets/logo-48.png" alt="" width="32" height="32">
+                        Sameko Dev C++
+                    </a>
+                    <p>IDE C++ miễn phí, gọn nhẹ, hợp cho thi đấu và lớp học.</p>
+                </div>
+
+                <div class="foot__col">
+                    <h3>Sản phẩm</h3>
+                    <ul>
+                        <li><a href="#features">Tính năng</a></li>
+                        <li><a href="#benchmark">Tốc độ</a></li>
+                        <li><a href="#comparison">So sánh</a></li>
+                        <li><a href="#download-trigger">Tải về</a></li>
+                        <li><a href="thay-the-dev-cpp.html">Thay thế Dev-C++</a></li>
+                        <li><a href="index.html" lang="en" hreflang="en">English</a></li>
+                    </ul>
+                </div>
+
+                <div class="foot__col">
+                    <h3>Tài liệu</h3>
+                    <ul>
+                        <li><a href="wiki.html">Wiki (English)</a></li>
+                        <li><a href="wiki-vi.html">Wiki (Tiếng Việt)</a></li>
+                        <li><a href="#faq">FAQ</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/CHANGELOG.md"
+                                target="_blank" rel="noopener">Changelog</a></li>
+                    </ul>
+                </div>
+
+                <div class="foot__col">
+                    <h3>Dự án</h3>
+                    <ul>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP" target="_blank"
+                                rel="noopener">GitHub</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues" target="_blank"
+                                rel="noopener">Báo lỗi</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases" target="_blank"
+                                rel="noopener">Bản phát hành</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/CONTRIBUTING.md"
+                                target="_blank" rel="noopener">Đóng góp</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="foot__bottom">
+                <p>&copy; 2026 Sameko Dev C++ &middot; Giấy phép MIT</p>
+                <p>Làm bằng &#128153; tại Việt Nam bởi QuangquyNguyenvo</p>
+                <p class="foot__credit">Tranh Saba do <a href="https://x.com/XD_zow" target="_blank" rel="noopener">Nuu (@XD_zow)</a> vẽ. Sameko Dev C++ là dự án fan không chính thức, không liên quan đến Sameko Saba.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="assets/js/gsap.min.js"></script>
+    <script src="assets/js/ScrollTrigger.min.js"></script>
+    <script src="script.js"></script>
+    <script src="assets/js/comparison.js"></script>
+    <script src="assets/js/homepage.js"></script>
+</body>
+
+</html>

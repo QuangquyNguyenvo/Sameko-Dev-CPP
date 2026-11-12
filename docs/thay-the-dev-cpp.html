@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="assets/js/theme-init.js"></script>
+    <link rel="stylesheet" href="assets/css/fonts.css">
+    <title>Thay thế Dev-C++ | Sameko Dev C++, IDE C++ miễn phí đời mới</title>
+    <meta name="description" content="Đang tìm phần mềm thay thế Dev-C++? Sameko Dev C++ vẫn mở file, nhấn F11 là chạy, nhưng có GCC 16, C++26, gợi ý code clangd, debugger GDB và theme. Miễn phí.">
+    <meta name="author" content="QuangquyNguyenvo">
+    <meta name="theme-color" content="#88c9ea">
+    <meta name="robots" content="index, follow">
+    <link rel="icon" href="assets/favicon-32.png" sizes="32x32">
+    <link rel="icon" href="assets/logo-48.png" sizes="48x48">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="canonical" href="https://sameko.dev/thay-the-dev-cpp">
+    <link rel="alternate" hreflang="en" href="https://sameko.dev/dev-cpp-alternative">
+    <link rel="alternate" hreflang="vi" href="https://sameko.dev/thay-the-dev-cpp">
+    <link rel="alternate" hreflang="x-default" href="https://sameko.dev/dev-cpp-alternative">
+    <meta property="og:locale" content="vi_VN">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://sameko.dev/thay-the-dev-cpp">
+    <meta property="og:title" content="Thay thế Dev-C++ | Sameko Dev C++, IDE C++ miễn phí đời mới">
+    <meta property="og:description" content="Đang tìm phần mềm thay thế Dev-C++? Sameko Dev C++ vẫn mở file, nhấn F11 là chạy, nhưng có GCC 16, C++26, gợi ý code clangd, debugger GDB và theme. Miễn phí.">
+    <meta property="og:image" content="https://sameko.dev/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Minh họa linh vật Sameko Dev C++">
+    <meta property="og:site_name" content="Sameko Dev C++">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Thay thế Dev-C++ | Sameko Dev C++, IDE C++ miễn phí đời mới">
+    <meta name="twitter:description" content="Đang tìm phần mềm thay thế Dev-C++? Sameko Dev C++ vẫn mở file, nhấn F11 là chạy, nhưng có GCC 16, C++26, gợi ý code clangd, debugger GDB và theme. Miễn phí.">
+    <meta name="twitter:image" content="https://sameko.dev/assets/og-image.png">
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://sameko.dev/thay-the-dev-cpp#page",
+      "url": "https://sameko.dev/thay-the-dev-cpp",
+      "name": "Thay thế Dev-C++ | Sameko Dev C++, IDE C++ miễn phí đời mới",
+      "description": "Đang tìm phần mềm thay thế Dev-C++? Sameko Dev C++ vẫn mở file, nhấn F11 là chạy, nhưng có GCC 16, C++26, gợi ý code clangd, debugger GDB và theme. Miễn phí.",
+      "inLanguage": "vi",
+      "isPartOf": {
+        "@id": "https://sameko.dev/#website"
+      },
+      "about": {
+        "@id": "https://sameko.dev/#software"
+      },
+      "dateModified": "2026-11-13"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Sameko Dev C++",
+          "item": "https://sameko.dev/vi"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Thay thế Dev-C++",
+          "item": "https://sameko.dev/thay-the-dev-cpp"
+        }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Sameko Dev C++ có phải bản mới của Dev-C++ không?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Không. Dev-C++ là một IDE khác, do Bloodshed làm ra, sau đó Orwell rồi Embarcadero phát triển tiếp. Sameko Dev C++ là dự án độc lập, viết mới từ đầu trên Electron và trình soạn thảo Monaco. Nó không phải bản fork và không dùng chung dòng code nào với Dev-C++."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Phím tắt quen của Dev-C++ còn dùng được không?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Mấy phím chính thì y nguyên: F9 để compile, F10 để chạy, F11 để compile rồi chạy luôn. Shift+F5 để dừng chương trình. Muốn đổi phím nào thì vào Cài đặt."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Mở lại file cũ từ Dev-C++ được không?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Được. File .cpp và .h chỉ là file chữ, mở ra là dùng, không phải chuyển đổi gì."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Có phải cài compiler riêng không?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Trên Windows thì không. GCC 16, clangd và GDB nằm sẵn trong bản tải về, giống như Dev-C++ đi kèm TDM-GCC. Trên Linux thì app dùng g++, gdb và clangd cài từ distro của bạn."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Có miễn phí như Dev-C++ không?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Có. Sameko Dev C++ là mã nguồn mở, giấy phép MIT, không quảng cáo, không cần tài khoản, không thu thập dữ liệu."
+          }
+        }
+      ]
+    }
+  ]
+}
+    </script>
+    <link rel="stylesheet" href="assets/css/tokens.css">
+    <link rel="stylesheet" href="assets/css/home.css">
+    <link rel="stylesheet" href="assets/css/homepage.css">
+    <style>
+        .alt-hero { padding-top: clamp(96px, 14vw, 150px); }
+        .alt-prose { max-width: 70ch; margin-inline: auto; }
+        .alt-prose h2 { margin-top: 2.2em; }
+        .alt-prose h2:first-child { margin-top: 0; }
+        .alt-prose h3 { margin-top: 1.6em; margin-bottom: .3em; }
+        .alt-prose p, .alt-prose li { line-height: 1.7; }
+        .alt-prose ul, .alt-prose ol { padding-left: 1.3em; margin-block: .8em; }
+        .alt-prose p { margin-block: .8em; }
+        .alt-prose a { text-decoration: underline; }
+        .alt-nowrap { white-space: nowrap; }
+        .alt-note { font-size: .9em; opacity: .75; }
+    </style>
+</head>
+
+<body class="sameko-home">
+    <a class="skip-link" href="#main">Chuyển đến nội dung</a>
+
+    <nav class="nav">
+        <div class="wrap nav__inner">
+            <a class="nav__brand" href="vi.html" aria-label="Trang chủ Sameko Dev C++">
+                <img src="assets/logo-48.png" alt="" width="32" height="32">
+                <span>Sameko Dev C++</span>
+            </a>
+            <div class="nav__links">
+                <a href="vi.html#features">Tính năng</a>
+                <a href="vi.html#benchmark">Tốc độ</a>
+                <a href="#compare">So sánh</a>
+                <a href="wiki-vi.html">Wiki</a>
+                <a href="#faq">FAQ</a>
+            </div>
+            <div class="nav__actions">
+                <a class="btn btn--primary" href="vi.html#download-trigger">Tải về</a>
+            </div>
+        </div>
+    </nav>
+
+    <main id="main">
+        <header class="band alt-hero">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">Thay thế Dev-C++</span>
+                    <h1 class="h-display">Quen Dev&#8209;C++? Thử bản đời mới.</h1>
+                    <p class="lede">Sameko Dev C++ giữ đúng cái làm Dev-C++ dễ dùng: mở file <code>.cpp</code>, nhấn <span class="alt-nowrap"><kbd>F11</kbd>,</span> thấy chương trình chạy. Còn compiler, trình soạn thảo và debugger thì mới hết.</p>
+                </div>
+                <div class="cta__actions">
+                    <a href="vi.html#download-trigger" class="btn btn--primary btn--lg">Tải Sameko Dev C++</a>
+                    <a href="#compare" class="btn btn--ghost btn--lg">Xem bảng so sánh</a>
+                </div>
+            </div>
+        </header>
+
+        <section class="band band--alt">
+            <div class="wrap alt-prose">
+                <h2 class="h-section">Hai phần mềm khác nhau.</h2>
+                <p><strong>Dev-C++</strong> là IDE quen thuộc trên Windows mà nhiều trường vẫn đang dạy. Bloodshed làm ra nó, sau đó Orwell rồi Embarcadero phát triển tiếp. Bản hiện tại đi kèm TDM-GCC&nbsp;9.2.</p>
+                <p><strong>Sameko Dev C++</strong> là một IDE khác, mới hơn, tên gần giống và cùng mục tiêu: cài xong là code được ngay. Đây là dự án mã nguồn mở độc lập, không phải bản fork của Dev-C++, xây trên Monaco (trình soạn thảo bên trong VS&nbsp;Code).</p>
+
+                <h2 class="h-section">Những thứ vẫn y như cũ.</h2>
+                <ul>
+                    <li><strong>Không phải thiết lập gì.</strong> Compiler nằm sẵn trong bản tải về. Cài, mở file, chạy.</li>
+                    <li><strong>Phím tắt quen tay.</strong> <kbd>F9</kbd> compile, <kbd>F10</kbd> chạy, <kbd>F11</kbd> compile rồi chạy luôn.</li>
+                    <li><strong>Một file là đủ.</strong> Một file <code>.cpp</code> là một chương trình, không cần tạo project.</li>
+                    <li><strong>Portable.</strong> Bản zip chạy thẳng từ USB, không cần quyền admin. Hợp với máy phòng thi, phòng máy ở trường.</li>
+                    <li><strong>Miễn phí.</strong> Mã nguồn mở, không tài khoản, không quảng cáo.</li>
+                </ul>
+
+                <h2 class="h-section">Những thứ khác đi.</h2>
+                <h3>Compiler mới</h3>
+                <p>Sameko Dev C++ đi kèm GCC&nbsp;16 trên Windows, dùng được từ C++98 đến C++26. Dev-C++ đi kèm TDM-GCC&nbsp;9.2, ra đời trước khi C++20 và C++23 hoàn thiện, nên phần lớn tính năng của hai chuẩn này không dùng được nếu bạn không tự thay compiler.</p>
+                <h3>Báo lỗi ngay lúc gõ</h3>
+                <p>clangd kiểm tra code trong lúc bạn viết và gạch chân chỗ sai trước khi compile. Gợi ý code hiểu được template, STL và các kiểu bạn tự định nghĩa.</p>
+                <h3>Làm ra cho online judge</h3>
+                <p>Test case nằm ngay cạnh code, Output và Expected đặt cạnh nhau. Chạy hết các test một lượt là thấy verdict, thời gian và bộ nhớ của từng test. Competitive Companion lấy đề và test từ các online judge về giúp bạn.</p>
+                <h3>Debugger ngay trong trình soạn thảo</h3>
+                <p>GDB với breakpoint đặt ở lề, watch và call stack.</p>
+                <h3>Windows và Linux</h3>
+                <p>Dev-C++ chạy trên Windows. Sameko Dev C++ có thêm bản AppImage cho Linux, dùng compiler cài sẵn trên máy.</p>
+                <h3>Mấy thứ còn lại</h3>
+                <p>Lịch sử file với checkpoint, snippet, tự định dạng code khi lưu, xem trước Markdown, giao diện tối và trình chỉnh theme, cùng giao diện Tiếng Việt, English và &#31616;&#20307;&#20013;&#25991;.</p>
+            </div>
+        </section>
+
+        <section id="compare" class="band">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">So sánh</span>
+                    <h2 class="h-section">Sameko Dev C++ và Dev-C++.</h2>
+                    <p class="lede">Mỗi bên có gì ngay khi cài xong, đặt cạnh Code::Blocks, VS&nbsp;Code và CLion.</p>
+                </div>
+
+                <div class="cmp">
+                    <table class="cmp__table">
+                        <caption class="sr-only">So sánh tính năng giữa Sameko Dev C++, Dev-C++, Code::Blocks,
+                            VS Code và CLion ở cấu hình mặc định</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Có sẵn khi cài</th>
+                                <th scope="col" class="cmp__me">Sameko Dev C++</th>
+                                <th scope="col">Dev-C++</th>
+                                <th scope="col">Code::Blocks</th>
+                                <th scope="col">VS Code</th>
+                                <th scope="col">CLion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">Có sẵn compiler</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> GCC&nbsp;16</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> TDM-GCC&nbsp;9.2</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Gói MinGW</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Không.</span> Cài riêng</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> MinGW trên Windows</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Build đầu tiên trên Windows</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Mở file <code>.cpp</code></td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Với TDM-GCC</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Chọn compiler</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Không.</span> Compiler + extension + task</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Profile toolchain</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Gợi ý code</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> clangd</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Code Insight</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Có sẵn</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Extension C++</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Có sẵn</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Competitive Companion</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Có sẵn</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Không</span></td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Không</span></td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Extension</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Không</span></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Test cho online judge</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Chạy tất cả + verdict</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Nhập tay</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Nhập tay</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Extensions</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Tự cấu hình</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Debug từng dòng</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> GDB + watch</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> GDB</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> GDB/CDB</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Cấu hình launch</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> GDB/LLDB</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Lịch sử file</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Checkpoint</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Không có tài liệu.</span></td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Không có tài liệu.</span></td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Timeline</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Local History</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Portable</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Zip</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Có.</span> Ứng dụng portable</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Zip không cần cài</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Chế độ portable</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Một phần.</span> Toolchain cài riêng</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="cmp__legend"><span><i class="cmp__yes">&check;</i> Có sẵn</span><span><i class="cmp__part">~</i> Sau khi cấu hình</span><span><i class="cmp__no">&times;</i> Không có</span></p>
+            </div>
+        </section>
+
+        <section class="band band--alt">
+            <div class="wrap alt-prose">
+                <h2 class="h-section">Chuyển từ Dev-C++ sang.</h2>
+                <ol>
+                    <li><a href="vi.html#download-trigger">Tải Sameko Dev C++</a>: bản cài, hoặc bản zip portable nếu máy không cho cài phần mềm.</li>
+                    <li>Mở một file <code>.cpp</code> bạn đang có. Không phải chuyển đổi gì.</li>
+                    <li>Nhấn <kbd>F11</kbd>. Lần build đầu dùng luôn GCC&nbsp;16 có sẵn.</li>
+                    <li>Nếu lớp học hay judge yêu cầu chuẩn cũ hơn, chọn lại trong Cài đặt &rarr; Compiler.</li>
+                </ol>
+                <p>Hai IDE cài song song được, không đụng cài đặt hay compiler của nhau.</p>
+
+                <h2 class="h-section" id="faq">Hỏi đáp.</h2>
+                <h3>Sameko Dev C++ có phải bản mới của Dev-C++ không?</h3>
+                <p>Không. Dev-C++ là một IDE khác, do Bloodshed làm ra, sau đó Orwell rồi Embarcadero phát triển tiếp. Sameko Dev C++ là dự án độc lập, viết mới từ đầu trên Electron và trình soạn thảo Monaco. Nó không phải bản fork và không dùng chung dòng code nào với Dev-C++.</p>
+                <h3>Phím tắt quen của Dev-C++ còn dùng được không?</h3>
+                <p>Mấy phím chính thì y nguyên: F9 để compile, F10 để chạy, F11 để compile rồi chạy luôn. Shift+F5 để dừng chương trình. Muốn đổi phím nào thì vào Cài đặt.</p>
+                <h3>Mở lại file cũ từ Dev-C++ được không?</h3>
+                <p>Được. File .cpp và .h chỉ là file chữ, mở ra là dùng, không phải chuyển đổi gì.</p>
+                <h3>Có phải cài compiler riêng không?</h3>
+                <p>Trên Windows thì không. GCC 16, clangd và GDB nằm sẵn trong bản tải về, giống như Dev-C++ đi kèm TDM-GCC. Trên Linux thì app dùng g++, gdb và clangd cài từ distro của bạn.</p>
+                <h3>Có miễn phí như Dev-C++ không?</h3>
+                <p>Có. Sameko Dev C++ là mã nguồn mở, giấy phép MIT, không quảng cáo, không cần tài khoản, không thu thập dữ liệu.</p>
+                <p class="alt-note">Dev-C++ là sản phẩm của các tác giả tương ứng. Sameko Dev C++ không liên quan đến Bloodshed, Orwell hay Embarcadero. Bảng so sánh mô tả bản cài mặc định, kiểm tra lần cuối vào tháng 11/2026.</p>
+            </div>
+        </section>
+
+        <section id="cta" class="band band--cta">
+            <div class="wrap cta">
+                <h2 class="h-section">Cài thử, để cạnh Dev-C++.</h2>
+                <p class="lede">Miễn phí, portable và mã nguồn mở.</p>
+                <div class="cta__actions">
+                    <a href="vi.html#download-trigger" class="btn btn--primary btn--lg">Tải về</a>
+                    <a href="wiki-vi.html" class="btn btn--ghost btn--lg">Đọc tài liệu</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+
+    <footer class="foot">
+        <div class="wrap">
+            <div class="foot__cols">
+                <div class="foot__brand">
+                    <a class="nav__brand" href="vi.html#">
+                        <img src="assets/logo-48.png" alt="" width="32" height="32">
+                        Sameko Dev C++
+                    </a>
+                    <p>IDE C++ miễn phí, gọn nhẹ, hợp cho thi đấu và lớp học.</p>
+                </div>
+
+                <div class="foot__col">
+                    <h3>Sản phẩm</h3>
+                    <ul>
+                        <li><a href="vi.html#features">Tính năng</a></li>
+                        <li><a href="vi.html#benchmark">Tốc độ</a></li>
+                        <li><a href="vi.html#comparison">So sánh</a></li>
+                        <li><a href="vi.html#download-trigger">Tải về</a></li>
+                        <li><a href="thay-the-dev-cpp.html">Thay thế Dev-C++</a></li>
+                        <li><a href="dev-cpp-alternative.html" lang="en" hreflang="en">English</a></li>
+                    </ul>
+                </div>
+
+                <div class="foot__col">
+                    <h3>Tài liệu</h3>
+                    <ul>
+                        <li><a href="wiki.html">Wiki (English)</a></li>
+                        <li><a href="wiki-vi.html">Wiki (Tiếng Việt)</a></li>
+                        <li><a href="vi.html#faq">FAQ</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/CHANGELOG.md"
+                                target="_blank" rel="noopener">Changelog</a></li>
+                    </ul>
+                </div>
+
+                <div class="foot__col">
+                    <h3>Dự án</h3>
+                    <ul>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP" target="_blank"
+                                rel="noopener">GitHub</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues" target="_blank"
+                                rel="noopener">Báo lỗi</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases" target="_blank"
+                                rel="noopener">Bản phát hành</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/CONTRIBUTING.md"
+                                target="_blank" rel="noopener">Đóng góp</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="foot__bottom">
+                <p>&copy; 2026 Sameko Dev C++ &middot; Giấy phép MIT</p>
+                <p>Làm bằng &#128153; tại Việt Nam bởi QuangquyNguyenvo</p>
+                <p class="foot__credit">Tranh Saba do <a href="https://x.com/XD_zow" target="_blank" rel="noopener">Nuu (@XD_zow)</a> vẽ. Sameko Dev C++ là dự án fan không chính thức, không liên quan đến Sameko Saba.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

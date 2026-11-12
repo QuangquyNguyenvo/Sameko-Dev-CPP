@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="assets/js/theme-init.js"></script>
+    <link rel="stylesheet" href="assets/css/fonts.css">
+    <title>Dev-C++ Alternative | Sameko Dev C++, a Modern Free C++ IDE</title>
+    <meta name="description" content="Looking for a Dev-C++ alternative? Sameko Dev C++ keeps the open-a-file, press-F11 workflow and adds GCC 16, C++26, clangd completion, a GDB debugger and themes. Free.">
+    <meta name="author" content="QuangquyNguyenvo">
+    <meta name="theme-color" content="#88c9ea">
+    <meta name="robots" content="index, follow">
+    <link rel="icon" href="assets/favicon-32.png" sizes="32x32">
+    <link rel="icon" href="assets/logo-48.png" sizes="48x48">
+    <link rel="apple-touch-icon" href="assets/icon-192.png">
+    <link rel="canonical" href="https://sameko.dev/dev-cpp-alternative">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://sameko.dev/dev-cpp-alternative">
+    <meta property="og:title" content="Dev-C++ Alternative | Sameko Dev C++, a Modern Free C++ IDE">
+    <meta property="og:description" content="Looking for a Dev-C++ alternative? Sameko Dev C++ keeps the open-a-file, press-F11 workflow and adds GCC 16, C++26, clangd completion, a GDB debugger and themes. Free.">
+    <meta property="og:image" content="https://sameko.dev/assets/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Sameko Dev C++ mascot illustration">
+    <meta property="og:site_name" content="Sameko Dev C++">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Dev-C++ Alternative | Sameko Dev C++, a Modern Free C++ IDE">
+    <meta name="twitter:description" content="Looking for a Dev-C++ alternative? Sameko Dev C++ keeps the open-a-file, press-F11 workflow and adds GCC 16, C++26, clangd completion, a GDB debugger and themes. Free.">
+    <meta name="twitter:image" content="https://sameko.dev/assets/og-image.png">
+    <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": "https://sameko.dev/dev-cpp-alternative#page",
+      "url": "https://sameko.dev/dev-cpp-alternative",
+      "name": "Dev-C++ Alternative | Sameko Dev C++, a Modern Free C++ IDE",
+      "description": "Looking for a Dev-C++ alternative? Sameko Dev C++ keeps the open-a-file, press-F11 workflow and adds GCC 16, C++26, clangd completion, a GDB debugger and themes. Free.",
+      "inLanguage": "en",
+      "isPartOf": {
+        "@id": "https://sameko.dev/#website"
+      },
+      "about": {
+        "@id": "https://sameko.dev/#software"
+      },
+      "dateModified": "2026-11-13"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Sameko Dev C++",
+          "item": "https://sameko.dev/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Dev-C++ alternative",
+          "item": "https://sameko.dev/dev-cpp-alternative"
+        }
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Is Sameko Dev C++ a new version of Dev-C++?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Dev-C++ is a separate IDE, started by Bloodshed and continued by Orwell and Embarcadero. Sameko Dev C++ is an independent project written from scratch on Electron and the Monaco editor. It is not a fork and shares no code with Dev-C++."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do the Dev-C++ shortcuts still work?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "The main ones do: F9 compiles, F10 runs and F11 compiles and runs, the same as in Dev-C++. Shift+F5 stops the program. Shortcuts can be changed in Settings."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I open my old Dev-C++ files?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Your .cpp and .h files are plain text and open as they are. There is nothing to convert."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does it need a separate compiler install?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Not on Windows. GCC 16, clangd and GDB come in the download, the same way Dev-C++ ships with TDM-GCC. On Linux it uses the g++, gdb and clangd from your distribution."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is it free like Dev-C++?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Sameko Dev C++ is open source under the MIT license, with no ads, no account and no telemetry."
+          }
+        }
+      ]
+    }
+  ]
+}
+    </script>
+    <link rel="stylesheet" href="assets/css/tokens.css">
+    <link rel="stylesheet" href="assets/css/home.css">
+    <link rel="stylesheet" href="assets/css/homepage.css">
+    <style>
+        .alt-hero { padding-top: clamp(96px, 14vw, 150px); }
+        .alt-prose { max-width: 70ch; margin-inline: auto; }
+        .alt-prose h2 { margin-top: 2.2em; }
+        .alt-prose h2:first-child { margin-top: 0; }
+        .alt-prose h3 { margin-top: 1.6em; margin-bottom: .3em; }
+        .alt-prose p, .alt-prose li { line-height: 1.7; }
+        .alt-prose ul, .alt-prose ol { padding-left: 1.3em; margin-block: .8em; }
+        .alt-prose p { margin-block: .8em; }
+        .alt-prose a { text-decoration: underline; }
+        .alt-nowrap { white-space: nowrap; }
+        .alt-note { font-size: .9em; opacity: .75; }
+    </style>
+</head>
+
+<body class="sameko-home">
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <nav class="nav">
+        <div class="wrap nav__inner">
+            <a class="nav__brand" href="./" aria-label="Sameko Dev C++ home">
+                <img src="assets/logo-48.png" alt="" width="32" height="32">
+                <span>Sameko Dev C++</span>
+            </a>
+            <div class="nav__links">
+                <a href="./#features">Features</a>
+                <a href="./#benchmark">Speed</a>
+                <a href="#compare">Compare</a>
+                <a href="wiki.html">Wiki</a>
+                <a href="#faq">FAQ</a>
+            </div>
+            <div class="nav__actions">
+                <a class="btn btn--primary" href="./#download-trigger">Download</a>
+            </div>
+        </div>
+    </nav>
+
+    <main id="main">
+        <header class="band alt-hero">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">Dev-C++ alternative</span>
+                    <h1 class="h-display">A modern alternative to Dev&#8209;C++.</h1>
+                    <p class="lede">Sameko Dev C++ keeps what made Dev-C++ easy: open a <code>.cpp</code> file, press <span class="alt-nowrap"><kbd>F11</kbd>,</span> see it run. The compiler, the editor and the debugger are the parts that are new.</p>
+                </div>
+                <div class="cta__actions">
+                    <a href="./#download-trigger" class="btn btn--primary btn--lg">Download Sameko Dev C++</a>
+                    <a href="#compare" class="btn btn--ghost btn--lg">See the comparison</a>
+                </div>
+            </div>
+        </header>
+
+        <section class="band band--alt">
+            <div class="wrap alt-prose">
+                <h2 class="h-section">Two different programs.</h2>
+                <p><strong>Dev-C++</strong> is the classic Windows IDE that many schools still teach with. It was created by Bloodshed and later continued by Orwell and then Embarcadero. It ships with TDM-GCC&nbsp;9.2.</p>
+                <p><strong>Sameko Dev C++</strong> is a separate, newer IDE with a similar name and the same goal: a C++ editor that works the moment it is installed. It is an independent open-source project, not a fork of Dev-C++, built on the Monaco editor (the editor inside VS&nbsp;Code).</p>
+
+                <h2 class="h-section">What stays the same.</h2>
+                <ul>
+                    <li><strong>No setup.</strong> The compiler is in the download. Install, open a file, run.</li>
+                    <li><strong>The same keys.</strong> <kbd>F9</kbd> compiles, <kbd>F10</kbd> runs, <kbd>F11</kbd> compiles and runs.</li>
+                    <li><strong>Single files first.</strong> One <code>.cpp</code> file is a program. No project to create.</li>
+                    <li><strong>Portable.</strong> A zip that runs from a USB drive without admin rights.</li>
+                    <li><strong>Free.</strong> Open source, no account, no ads.</li>
+                </ul>
+
+                <h2 class="h-section">What is different.</h2>
+                <h3>A current compiler</h3>
+                <p>Sameko Dev C++ bundles GCC&nbsp;16 on Windows and supports C++98 through C++26. Dev-C++ ships with TDM-GCC&nbsp;9.2, which was released before C++20 and C++23 were finished, so most features of those standards are missing there unless you replace the compiler yourself.</p>
+                <h3>Errors while you type</h3>
+                <p>clangd checks the code as you write and underlines mistakes before you compile. Completion understands templates, the STL and your own types.</p>
+                <h3>Made for online judges</h3>
+                <p>Test cases live next to the code, with Output and Expected side by side. Run every test at once and see the verdict, time and memory for each. Competitive Companion imports problems and tests from online judges.</p>
+                <h3>A debugger in the editor</h3>
+                <p>GDB with breakpoints in the margin, watches and the call stack.</p>
+                <h3>Windows and Linux</h3>
+                <p>Dev-C++ runs on Windows. Sameko Dev C++ also has a Linux AppImage, which uses the compiler installed on the system.</p>
+                <h3>The rest</h3>
+                <p>Local history with checkpoints, snippets, code formatting on save, a Markdown preview, a dark mode and a theme editor, and an interface in English, Ti&#7871;ng Vi&#7879;t and &#31616;&#20307;&#20013;&#25991;.</p>
+            </div>
+        </section>
+
+        <section id="compare" class="band">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">Compare</span>
+                    <h2 class="h-section">Sameko Dev C++ vs Dev-C++.</h2>
+                    <p class="lede">What each one gives you out of the box, next to Code::Blocks, VS&nbsp;Code and CLion.</p>
+                </div>
+
+                <div class="cmp">
+                    <table class="cmp__table">
+                        <caption class="sr-only">Feature comparison between Sameko Dev C++, Dev-C++, Code::Blocks,
+                            VS Code and CLion in their default configurations</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Out of the box</th>
+                                <th scope="col" class="cmp__me">Sameko Dev C++</th>
+                                <th scope="col">Dev-C++</th>
+                                <th scope="col">Code::Blocks</th>
+                                <th scope="col">VS Code</th>
+                                <th scope="col">CLion</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th scope="row">Compiler included</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> GCC&nbsp;16</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> TDM-GCC&nbsp;9.2</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Partly.</span> MinGW bundle</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">No.</span> Install separately</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Partly.</span> MinGW on Windows</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">First Windows build</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> Open a <code>.cpp</code></td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> With TDM-GCC</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Partly.</span> Pick a compiler</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">No.</span> Compiler + extension + task</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Partly.</span> Toolchain profile</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Code completion</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> clangd</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> Code Insight</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> Built in</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Partly.</span> C++ extension</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> Built in</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Competitive Companion</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> Built in</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">No</span></td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">No</span></td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Partly.</span> Extension</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">No</span></td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Online-judge tests</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> Run All + verdicts</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Partly.</span> Manual input</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Partly.</span> Manual input</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Partly.</span> Extensions</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Partly.</span> Custom setup</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Source debugger</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> GDB + watches</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> GDB</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> GDB/CDB</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Partly.</span> Launch config</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> GDB/LLDB</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Local history</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> Checkpoints</td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Not documented.</span></td>
+                                <td><span class="cmp__no" aria-hidden="true">&times;</span><span class="sr-only">Not documented.</span></td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> Timeline</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> Local History</td>
+                            </tr>
+                            <tr>
+                                <th scope="row">Portable</th>
+                                <td class="cmp__me"><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> Zip</td>
+                                <td><span class="cmp__yes" aria-hidden="true">&check;</span><span class="sr-only">Yes.</span> Portable app</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Partly.</span> No-setup zip</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Partly.</span> Portable mode</td>
+                                <td><span class="cmp__part" aria-hidden="true">~</span><span class="sr-only">Partly.</span> Toolchain separate</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="cmp__legend"><span><i class="cmp__yes">&check;</i> Included</span><span><i class="cmp__part">~</i> After setup</span><span><i class="cmp__no">&times;</i> Not included</span></p>
+            </div>
+        </section>
+
+        <section class="band band--alt">
+            <div class="wrap alt-prose">
+                <h2 class="h-section">Moving from Dev-C++.</h2>
+                <ol>
+                    <li><a href="./#download-trigger">Download Sameko Dev C++</a>: the installer, or the portable zip if you cannot install software on the machine.</li>
+                    <li>Open one of your existing <code>.cpp</code> files. Nothing needs converting.</li>
+                    <li>Press <kbd>F11</kbd>. The first build uses the bundled GCC&nbsp;16.</li>
+                    <li>If your course or judge expects an older standard, pick it in Settings &rarr; Compiler.</li>
+                </ol>
+                <p>Both IDEs can stay installed side by side; they do not share settings or a compiler.</p>
+
+                <h2 class="h-section" id="faq">Questions.</h2>
+                <h3>Is Sameko Dev C++ a new version of Dev-C++?</h3>
+                <p>No. Dev-C++ is a separate IDE, started by Bloodshed and continued by Orwell and Embarcadero. Sameko Dev C++ is an independent project written from scratch on Electron and the Monaco editor. It is not a fork and shares no code with Dev-C++.</p>
+                <h3>Do the Dev-C++ shortcuts still work?</h3>
+                <p>The main ones do: F9 compiles, F10 runs and F11 compiles and runs, the same as in Dev-C++. Shift+F5 stops the program. Shortcuts can be changed in Settings.</p>
+                <h3>Can I open my old Dev-C++ files?</h3>
+                <p>Yes. Your .cpp and .h files are plain text and open as they are. There is nothing to convert.</p>
+                <h3>Does it need a separate compiler install?</h3>
+                <p>Not on Windows. GCC 16, clangd and GDB come in the download, the same way Dev-C++ ships with TDM-GCC. On Linux it uses the g++, gdb and clangd from your distribution.</p>
+                <h3>Is it free like Dev-C++?</h3>
+                <p>Yes. Sameko Dev C++ is open source under the MIT license, with no ads, no account and no telemetry.</p>
+                <p class="alt-note">Dev-C++ is the work of its respective authors. Sameko Dev C++ is not affiliated with Bloodshed, Orwell or Embarcadero. The comparison describes default installs and was last checked in November 2026.</p>
+            </div>
+        </section>
+
+        <section id="cta" class="band band--cta">
+            <div class="wrap cta">
+                <h2 class="h-section">Try it next to Dev-C++.</h2>
+                <p class="lede">Free, portable and open source.</p>
+                <div class="cta__actions">
+                    <a href="./#download-trigger" class="btn btn--primary btn--lg">Download</a>
+                    <a href="wiki.html" class="btn btn--ghost btn--lg">Read the docs</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="foot">
+        <div class="wrap">
+            <div class="foot__cols">
+                <div class="foot__brand">
+                    <a class="nav__brand" href="./#">
+                        <img src="assets/logo-48.png" alt="" width="32" height="32">
+                        Sameko Dev C++
+                    </a>
+                    <p>A free, portable C++ IDE for contests and classrooms.</p>
+                </div>
+
+                <div class="foot__col">
+                    <h3>Product</h3>
+                    <ul>
+                        <li><a href="./#features">Features</a></li>
+                        <li><a href="./#benchmark">Speed</a></li>
+                        <li><a href="./#comparison">Compare</a></li>
+                        <li><a href="./#download-trigger">Download</a></li>
+                        <li><a href="dev-cpp-alternative.html">Dev-C++ alternative</a></li>
+                        <li><a href="thay-the-dev-cpp.html" lang="vi" hreflang="vi">Ti&#7871;ng Vi&#7879;t</a></li>
+                    </ul>
+                </div>
+
+                <div class="foot__col">
+                    <h3>Docs</h3>
+                    <ul>
+                        <li><a href="wiki.html">Wiki (English)</a></li>
+                        <li><a href="wiki-vi.html">Wiki (Ti&#7871;ng Vi&#7879;t)</a></li>
+                        <li><a href="./#faq">FAQ</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/CHANGELOG.md"
+                                target="_blank" rel="noopener">Changelog</a></li>
+                    </ul>
+                </div>
+
+                <div class="foot__col">
+                    <h3>Project</h3>
+                    <ul>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP" target="_blank"
+                                rel="noopener">GitHub</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues" target="_blank"
+                                rel="noopener">Report a bug</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases" target="_blank"
+                                rel="noopener">Releases</a></li>
+                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/CONTRIBUTING.md"
+                                target="_blank" rel="noopener">Contributing</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="foot__bottom">
+                <p>&copy; 2026 Sameko Dev C++ &middot; MIT License</p>
+                <p>Made with &#128153; in Vietnam by QuangquyNguyenvo</p>
+                <p class="foot__credit">Saba illustration by <a href="https://x.com/XD_zow" target="_blank" rel="noopener">Nuu (@XD_zow)</a>. Sameko Dev C++ is an unofficial fan project, not affiliated with Sameko Saba.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>
