@@ -2771,6 +2771,12 @@ body.split-active .editor-pane {
 }
 
 /* ===== MONACO EDITOR CUSTOMIZATIONS ===== */
+/* Like Monaco's hidden textarea, the native EditContext input must not draw
+   the generic tabindex focus outline behind the current line. */
+.monaco-editor .native-edit-context:focus {
+    outline: none !important;
+}
+
 /* Hide the overview ruler decorations (the circle indicator) */
 .monaco-editor .decorationsOverviewRuler {
     display: none !important;
