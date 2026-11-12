@@ -157,8 +157,18 @@ function fillCheckerSelects() {
     fillCheckerSelect(document.getElementById('stress-checker'));
 }
 
-/** Creates checker.cpp (or checker2.cpp…) next to the solution from the template and opens it. */
+/**
+ * Creates checker.cpp (or checker2.cpp…) next to the solution from the template and opens it.
+ * A second click while one is being made does nothing (it made checker2 and checker3).
+ */
+let checkerCreating = false;
 async function createCheckerFile() {
+    if (checkerCreating) return;
+    checkerCreating = true;
+    try { await createCheckerFileNow(); } finally { checkerCreating = false; }
+}
+
+async function createCheckerFileNow() {
     const tab = App.tabs.find(t => t.id === getPreferredTabId());
     if (!tab || !tab.path) {
         showToast('Save this file first: the checker goes in its folder.', 'warning');

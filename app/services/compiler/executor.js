@@ -117,7 +117,20 @@ const UNCACHEABLE_FLAG = /^(-I|-iquote|-isystem|-idirafter|-include|-imacros|-L|
  * adds include/library paths, linker scripts or response files.
  */
 function buildCacheKey(compilerExe, args, content, dir, extraInputs = []) {
-    if (/#\s*include\s*"/.test(content)) return null;
+    // A quoted include is a local file the key cannot see, except the bundled testlib.h
+    // (checkers, generators) when no testlib.h of the user's is next to the source: its text
+    // is fixed, and its size and time go into the key.
+    let testlibStamp = '';
+    for (const inc of content.match(/#\s*include\s*"[^"]*"/g) || []) {
+        const name = inc.slice(inc.indexOf('"') + 1, -1).trim();
+        if (name !== 'testlib.h' || fs.existsSync(path.join(dir, name))) return null;
+        const bundled = testlibIncludeDir();
+        if (!bundled) return null;
+        try {
+            const st = fs.statSync(path.join(bundled, name));
+            testlibStamp = `${st.size}:${st.mtimeMs}`;
+        } catch (_) { return null; }
+    }
     // `#include MACRO`, `#include_next`, `#import` and `#embed` read files whose
     // name or content the key cannot follow.
     if (/#\s*(?:include\s*[^\s<"]|include_next\b|import\b|embed\b)/.test(content)) return null;
@@ -139,7 +152,7 @@ function buildCacheKey(compilerExe, args, content, dir, extraInputs = []) {
         compilerStamp = `${st.size}:${st.mtimeMs}`;
     } catch (_) { return null; }
     return crypto.createHash('sha1')
-        .update(JSON.stringify([compilerExe, compilerStamp, args, content]))
+        .update(JSON.stringify([compilerExe, compilerStamp, args, content, testlibStamp]))
         .digest('hex');
 }
 
@@ -394,16 +407,17 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
 
     const unbufferObj = getUnbufferObjectPath();
 
+    // `#include "testlib.h"` (checkers, generators): the bundled copy, after every other
+    // include folder so a testlib.h next to the source wins (competitive/checker.js). Before
+    // '-pipe': flags after it are the user's, and buildCacheKey treats those as uncacheable.
+    const testlibDir = testlibIncludeDir();
     const args = [
         ...sourceFiles,
         '-o', outputPath,
         '-I', dir,
+        ...(testlibDir ? ['-idirafter', testlibDir] : []),
         '-pipe'
     ];
-    // `#include "testlib.h"` (checkers, generators): the bundled copy, after every other
-    // include folder so a testlib.h next to the source wins (competitive/checker.js).
-    const testlibDir = testlibIncludeDir();
-    if (testlibDir) args.push('-idirafter', testlibDir);
 
     // Link the realtime-output shim (unit-buffers std::cout/cerr) so program
     // output appears line-by-line in the terminal. Skipped when the user
