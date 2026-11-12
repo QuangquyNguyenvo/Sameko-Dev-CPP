@@ -10,7 +10,9 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const source = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'renderer', 'ui', 'theme-manager.js'), 'utf8');
+// ThemeManager is two renderer scripts: the object, then the builtin theme data added to it.
+const source = ['theme-manager.js', 'theme-manager-builtins.js']
+    .map((name) => fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'renderer', 'ui', name), 'utf8')).join('\n');
 const tokenSource = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'renderer', 'ui', 'theme-tokens.js'), 'utf8');
 
 function clone(value) {

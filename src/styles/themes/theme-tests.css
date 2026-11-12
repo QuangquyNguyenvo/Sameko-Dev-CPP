@@ -1,0 +1,711 @@
+/* ===== RUN ALL TESTS BUTTON (in Problems Panel) ===== */
+.run-all-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 12px;
+    background: var(--bg-ocean-deep);
+    border: none;
+    border-radius: 10px;
+    color: var(--bg-ocean-dark, white);
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: filter 0.2s, transform 0.2s, background 0.2s;
+    margin-left: auto;
+    margin-right: 8px;
+}
+
+.run-all-btn:hover {
+    filter: brightness(1.1);
+    transform: scale(1.02);
+}
+
+.run-all-btn:active {
+    transform: scale(0.95);
+}
+
+.run-all-btn.running {
+    background: var(--warning);
+    animation: pulse 1s infinite;
+}
+
+.run-all-btn svg {
+    flex-shrink: 0;
+}
+
+.run-all-btn.danger {
+    background: var(--error, #e74c3c);
+    margin-left: 0;
+}
+
+.run-all-btn.danger:hover {
+    background: #c0392b;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+/* ===== TESTS TAB IN PROBLEMS PANEL ===== */
+.panel-title.tests {
+    margin-left: 8px;
+}
+
+.panel-title.active {
+    background: var(--bg-ocean-medium);
+    color: var(--text-primary);
+}
+
+/* NOTE: do not add flex-grow rules to .problems-panel based on content
+   (e.g. has-tests / auto-expand). The panel uses an explicit height +
+   resizer; a flex-grow override locks the height larger than max-height
+   and breaks the resizer because flex-basis replaces height in flex layout. */
+
+.test-count {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: rgba(163, 217, 165, 0.2);
+    color: var(--success);
+}
+
+.tests-results-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 12px;
+}
+
+/* ===== TEST RESULT ITEMS =====
+ * One compact row per test: verdict | name and why | time and memory | run, delete.
+ * The test shown in the Input/Expected boxes is outlined (.selected). */
+.test-result-item {
+    display: grid;
+    grid-template-columns: 56px minmax(0, 1fr) auto auto auto;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 10px 8px 12px;
+    background: var(--bg-glass, rgba(255, 255, 255, 0.6));
+    border-radius: 12px;
+    border-left: 3px solid var(--border, rgba(136, 201, 234, 0.35));
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.test-result-item:hover {
+    background: var(--bg-glass-heavy, rgba(255, 255, 255, 0.9));
+}
+
+.test-result-item.selected {
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.test-result-item:hover .test-delete-btn,
+.test-result-item:hover .test-run-btn,
+.test-result-item.selected .test-run-btn,
+.test-result-item.selected .test-delete-btn {
+    opacity: 1;
+}
+
+.test-result-item.status-pending {
+    border-left-color: var(--text-muted);
+}
+
+.test-result-item.status-AC {
+    border-left-color: var(--success);
+}
+
+.test-result-item.status-WA {
+    border-left-color: var(--danger, var(--error));
+}
+
+.test-result-item.status-TLE,
+.test-result-item.status-MLE,
+.test-result-item.status-RE {
+    border-left-color: var(--warning);
+}
+
+.test-result-item.status-CE {
+    border-left-color: var(--text-muted);
+}
+
+.test-run-btn,
+.test-delete-btn {
+    opacity: 0.35;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: opacity 0.15s ease, background 0.15s ease, transform 0.15s ease;
+    flex-shrink: 0;
+}
+
+.test-run-btn {
+    color: var(--accent, #5eb7e0);
+}
+
+.test-run-btn:hover {
+    opacity: 1;
+    background: color-mix(in srgb, var(--accent, #5eb7e0) 16%, transparent);
+    transform: translateY(-1px);
+}
+
+.test-run-btn.running {
+    opacity: 1;
+    background: color-mix(in srgb, var(--warning, #fcd5ce) 28%, transparent);
+}
+
+.test-delete-btn {
+    color: var(--error, #e74c3c);
+}
+
+.test-delete-btn:hover {
+    opacity: 1;
+    background: rgba(231, 76, 60, 0.15);
+    transform: translateY(-1px);
+}
+
+.test-result-status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    padding: 4px 10px;
+    border-radius: 999px;
+    min-width: 44px;
+    box-sizing: border-box;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.test-result-status.pending {
+    background: color-mix(in srgb, var(--text-muted) 18%, transparent);
+    color: var(--test-pending, var(--text-secondary));
+}
+
+/* Ran without an expected output to compare with: not a verdict, so neither green nor red. */
+.test-result-status.RAN {
+    background: color-mix(in srgb, var(--text-muted) 32%, transparent);
+    color: var(--text-secondary);
+}
+
+.test-result-status.AC {
+    background: var(--success);
+    color: var(--btn-primary-text, white);
+    opacity: 0.92;
+}
+
+.test-result-status.WA {
+    background: var(--danger, var(--error));
+    color: var(--btn-primary-text, white);
+    opacity: 0.92;
+}
+
+.test-result-status.TLE,
+.test-result-status.MLE {
+    background: var(--warning);
+    color: var(--text-primary, #333);
+    opacity: 0.92;
+}
+
+.test-result-status.RE {
+    background: var(--warning);
+    color: var(--text-primary, #333);
+    opacity: 0.92;
+}
+
+.test-result-status.CE {
+    background: var(--text-muted);
+    color: var(--btn-primary-text, white);
+    opacity: 0.85;
+}
+
+.test-result-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.test-result-title {
+    font-weight: 800;
+    font-size: 13.5px;
+    color: var(--text-primary);
+}
+
+.test-result-details {
+    font-size: 12px;
+    color: var(--text-muted);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+}
+
+.test-result-details:empty {
+    display: none;
+}
+
+/* Time over memory, right-aligned, like a judge's verdict line. */
+.test-result-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 1px;
+    min-width: 64px;
+}
+
+.test-result-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.test-result-mem {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.test-result-mem:empty {
+    display: none;
+}
+
+/* Test Results Summary */
+.test-results-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    padding: 10px 14px;
+    border-radius: 14px;
+    margin-bottom: 10px;
+    border: 1px solid transparent;
+    background: var(--bg-glass, rgba(255, 255, 255, 0.6));
+}
+
+.test-results-summary.all-passed {
+    background: color-mix(in srgb, var(--success) 8%, var(--bg-glass, transparent));
+    border-color: color-mix(in srgb, var(--success) 30%, transparent);
+}
+
+.test-results-summary.has-failed {
+    background: color-mix(in srgb, var(--danger, var(--error)) 6%, var(--bg-glass, transparent));
+    border-color: color-mix(in srgb, var(--danger, var(--error)) 26%, transparent);
+}
+
+.test-summary-ratio {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text-primary);
+    padding: 0 4px 0 0;
+}
+
+.test-results-summary.all-passed .test-summary-ratio {
+    color: var(--test-pass, var(--success));
+}
+
+.test-results-summary.has-failed .test-summary-ratio {
+    color: var(--test-fail, var(--danger, var(--error)));
+}
+
+/* One segment per test, colored by its verdict (batch-tests.js renderTestResults). */
+.test-summary-bar {
+    flex-basis: 100%;
+    display: flex;
+    gap: 3px;
+    height: 6px;
+}
+
+.test-summary-bar > span {
+    flex: 1;
+    min-width: 4px;
+    border-radius: 3px;
+    background: color-mix(in srgb, var(--text-muted) 28%, transparent);
+}
+
+.test-summary-bar > .AC {
+    background: var(--success);
+}
+
+.test-summary-bar > .WA {
+    background: var(--danger, var(--error));
+}
+
+.test-summary-bar > .TLE,
+.test-summary-bar > .MLE,
+.test-summary-bar > .RE {
+    background: var(--warning);
+}
+
+.test-summary-bar > .RAN,
+.test-summary-bar > .CE {
+    background: color-mix(in srgb, var(--text-muted) 60%, transparent);
+}
+
+.test-summary-stat {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 999px;
+}
+
+.test-summary-stat.passed {
+    color: var(--test-pass, var(--success));
+    background: color-mix(in srgb, var(--success) 12%, transparent);
+}
+
+.test-summary-stat.failed {
+    color: var(--test-fail, var(--danger));
+    background: color-mix(in srgb, var(--danger, var(--error)) 12%, transparent);
+}
+
+.test-summary-stat.total {
+    color: var(--text-secondary);
+    margin-left: auto;
+    background: color-mix(in srgb, var(--bg-panel, #fff) 74%, transparent);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* ===== RESPONSIVE - IO PANEL ===== */
+/* Make IO panel elements compact but readable */
+.io-panel .panel-head {
+    gap: 6px;
+    padding: 6px 10px;
+}
+
+.io-panel .panel-title {
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 6px;
+}
+
+/* Ultra compact for very narrow panels */
+@container (max-width: 200px) {
+    .test-nav-label {
+        display: none;
+    }
+}
+
+/* ===== TEMPLATE SETTINGS ===== */
+/* --text-muted is too faint for a sentence on the panel; this stays readable in every theme. */
+.setting-desc {
+    font-size: 12px;
+    line-height: 1.5;
+    color: color-mix(in srgb, var(--text-primary) 68%, transparent);
+    margin-bottom: 12px;
+}
+
+/* The description and the New File choice share one line, so the editor below gets the height. */
+.template-intro {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    margin-bottom: 12px;
+}
+
+.template-intro .setting-desc {
+    margin: 0;
+}
+
+.template-new-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.template-new-file select {
+    height: 32px;
+    padding: 0 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* The template is one card in the style of .setting-row: file name and actions on top,
+ * the editor below it filling the rest of the panel (settings.js fitTemplateEditor). */
+.template-editor {
+    background: var(--bg-panel);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+}
+
+[data-theme-variant="dark"] .template-editor {
+    background: var(--bg-input);
+    border-color: var(--border);
+}
+
+.template-editor:focus-within {
+    border-color: var(--accent);
+}
+
+.template-editor-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 12px 10px 18px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.template-editor-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* C++ / C switch: the active file reads like an open tab, the other one is dimmed. */
+.template-langs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 3px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+.template-lang {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 11px 4px 5px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.template-lang:hover {
+    color: var(--text-primary);
+}
+
+.template-lang.active {
+    background: var(--editor-bg);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+/* The other languages' templates: a third tab after C++ and C, its language picked from an
+ * invisible <select> laid over it (settings.js switchTemplateLang fills the badge and name). */
+.template-other {
+    position: relative;
+    padding-right: 9px;
+}
+
+.template-other select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    opacity: 0;
+    cursor: pointer;
+    font: inherit;
+}
+
+.template-other select option {
+    background: var(--bg-panel);
+    color: var(--text-primary);
+}
+
+.template-other-caret {
+    margin-left: -2px;
+    opacity: 0.7;
+    transition: transform 0.15s ease;
+}
+
+.template-other:hover .template-other-caret {
+    transform: translateY(1px);
+}
+
+.template-other:focus-within {
+    box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+
+.template-lang:not(.active) .template-language {
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-muted);
+}
+
+.template-language {
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    font-family: 'Fredoka', sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.template-editor-lines {
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.template-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.template-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    color: var(--text-secondary);
+    font-family: 'Fredoka', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.template-action:hover {
+    background: var(--bg-button-hover);
+    border-color: var(--accent);
+    color: var(--text-primary);
+}
+
+#template-editor-container {
+    width: 100%;
+    height: 180px;
+    background: var(--editor-bg);
+}
+
+.btn-keybindings-reset {
+    padding: 8px 16px;
+    background: var(--bg-button, #e8f4fc);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.btn-keybindings-reset:hover {
+    background: var(--bg-button-hover, #d8ecf8);
+    border-color: var(--bg-ocean-medium);
+    color: var(--text-primary);
+}
+
+/* ===== KEYBINDINGS SETTINGS ===== */
+.keybindings-list {
+    max-height: 350px;
+    overflow-y: auto;
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg-glass, rgba(255, 255, 255, 0.5));
+}
+
+.keybinding-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+}
+
+.keybinding-item:last-child {
+    border-bottom: none;
+}
+
+.keybinding-item:hover {
+    background: var(--bg-ocean-light, rgba(136, 201, 234, 0.1));
+}
+
+.keybinding-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.keybinding-key {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    background: var(--bg-button, #e8f4fc);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+    min-width: 100px;
+    justify-content: center;
+}
+
+.keybinding-key:hover {
+    background: var(--bg-ocean-light);
+    border-color: var(--bg-ocean-deep);
+    color: var(--text-primary);
+}
+
+.keybinding-key.editing {
+    background: var(--bg-ocean-deep);
+    border-color: var(--bg-ocean-deep);
+    color: var(--btn-primary-text, white);
+    animation: pulse 1s infinite;
+}
+
+.keybindings-actions {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-end;
+}
+

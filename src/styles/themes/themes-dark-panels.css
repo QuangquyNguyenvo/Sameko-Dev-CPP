@@ -1,0 +1,460 @@
+/* ============================================================================
+   SETTINGS POPUP - DARK THEME OVERRIDES
+   ============================================================================ */
+/* Settings sidebar */
+[data-theme-variant="dark"] .settings-sidebar {
+    background: var(--bg-button);
+    border-color: var(--border);
+}
+
+/* Settings container background */
+[data-theme-variant="dark"] .settings-container {
+    background: var(--bg-panel);
+}
+
+/* Settings header background */
+[data-theme-variant="dark"] .settings-header {
+    background: var(--bg-panel);
+}
+
+/* Settings tab buttons */
+[data-theme-variant="dark"] .settings-tab {
+    color: var(--text-secondary);
+}
+
+[data-theme-variant="dark"] .settings-tab:hover {
+    background: var(--bg-button-hover);
+    color: var(--text-primary);
+}
+
+[data-theme-variant="dark"] .settings-tab.active {
+    background: var(--bg-ocean-deep) !important;
+    color: var(--btn-primary-text, #fff) !important;
+    box-shadow: none;
+}
+
+[data-theme-variant="dark"] .settings-tab.active svg {
+    color: var(--btn-primary-text, #fff);
+}
+
+/* Settings content area */
+[data-theme-variant="dark"] .settings-content {
+    background: var(--bg-button);
+    border-color: var(--border);
+}
+
+/* Settings panel h3 titles — token-driven. Each dark builtin's
+   --settings-section-color equals its former hardcoded value, so builtins are
+   unchanged; custom dark themes now follow their own section color. */
+[data-theme-variant="dark"] .settings-panel h3 {
+    color: var(--settings-section-color) !important;
+    border-bottom-color: var(--border);
+}
+
+/* Setting row background */
+[data-theme-variant="dark"] .setting-row {
+    background: var(--bg-input);
+    border-color: var(--border);
+}
+
+[data-theme-variant="dark"] .setting-row:hover {
+    background: var(--bg-button);
+    border-color: var(--border-strong);
+}
+
+/* Setting row labels - ensure text is readable. Each dark builtin's former
+   hardcoded value equals its --text-primary, so this is byte-identical for
+   builtins and adaptive for custom dark themes. */
+[data-theme-variant="dark"] .setting-row label:first-child,
+[data-theme-variant="dark"] .setting-row>label:not(.switch) {
+    color: var(--text-primary) !important;
+}
+
+/* Appearance controls h3 */
+[data-theme-variant="dark"] .appearance-controls h3 {
+    color: var(--text-secondary);
+}
+
+/* Preview bg controls */
+[data-theme-variant="dark"] .preview-bg-controls {
+    background: var(--bg-input);
+    border-color: var(--border);
+}
+
+[data-theme-variant="dark"] .bg-control-row label {
+    color: var(--text-secondary);
+}
+
+/* Preview window for dark themes - remove glow, use theme colors */
+[data-theme-variant="dark"] .preview-window {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-color: var(--border);
+    background: var(--bg-panel);
+    /* Ensure preview is clear and not affected by backdrop-filter */
+    isolation: isolate;
+    position: relative;
+    z-index: 101;
+    transform: translateZ(0);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Universal rule: Remove backdrop-filter from settings overlay for all themes to keep preview clear */
+[data-theme] .settings-overlay {
+    backdrop-filter: none !important;
+}
+
+[data-theme-variant="dark"] .preview-header {
+    background: var(--bg-header);
+}
+
+[data-theme-variant="dark"] .preview-body {
+    background: var(--bg-input);
+}
+
+/* Settings footer */
+[data-theme-variant="dark"] .settings-footer {
+    background: var(--bg-panel);
+}
+
+/* Settings close button */
+[data-theme-variant="dark"] .settings-close {
+    background: var(--bg-button);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
+[data-theme-variant="dark"] .settings-close:hover {
+    background: var(--error);
+    border-color: var(--error);
+    color: white;
+}
+
+/* ============================================================================
+   CC POPUP DARK THEME STYLES
+   ============================================================================ */
+[data-theme-variant="dark"] .cc-overlay {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+[data-theme-variant="dark"] .cc-popup {
+    background: var(--bg-panel);
+    border-color: var(--border-strong);
+}
+
+[data-theme-variant="dark"] .cc-header {
+    background: var(--bg-panel);
+    border-bottom-color: var(--border);
+}
+
+[data-theme-variant="dark"] .cc-header h2 {
+    color: var(--text-primary);
+}
+
+[data-theme-variant="dark"] .cc-header h2 svg {
+    color: var(--bg-ocean-deep);
+}
+
+[data-theme-variant="dark"] .cc-close {
+    background: var(--bg-button);
+    border-color: var(--border);
+    color: var(--text-muted);
+}
+
+[data-theme-variant="dark"] .cc-close:hover {
+    background: var(--error);
+    border-color: var(--error);
+    color: white;
+}
+
+[data-theme-variant="dark"] .cc-body {
+    background: var(--bg-input);
+}
+
+[data-theme-variant="dark"] .cc-step-num {
+    background: var(--bg-ocean-deep);
+    color: var(--btn-primary-text, #fff);
+    box-shadow: none;
+}
+
+[data-theme-variant="dark"] .cc-step-text {
+    color: var(--text-primary);
+}
+
+[data-theme-variant="dark"] .cc-step-text strong {
+    color: var(--accent);
+}
+
+[data-theme-variant="dark"] .cc-footer {
+    background: var(--bg-panel);
+    border-top-color: var(--border);
+}
+
+[data-theme-variant="dark"] .cc-btn.secondary {
+    background: var(--bg-button);
+    border-color: var(--border);
+    color: var(--text-secondary);
+}
+
+[data-theme-variant="dark"] .cc-btn.secondary:hover {
+    background: var(--bg-button-hover);
+    color: var(--text-primary);
+}
+
+[data-theme-variant="dark"] .cc-btn.primary {
+    background: var(--bg-ocean-deep);
+    border-color: var(--bg-ocean-deep);
+    color: var(--bg-ocean-dark);
+    box-shadow: none;
+}
+
+[data-theme-variant="dark"] .cc-btn.primary:hover {
+    filter: brightness(1.1);
+}
+
+/* CC Step dark theme overrides */
+[data-theme-variant="dark"] .cc-step {
+    background: var(--bg-button);
+    border-color: var(--border);
+}
+
+[data-theme-variant="dark"] .cc-step:hover {
+    background: var(--bg-button-hover);
+    border-color: var(--border-strong);
+}
+
+/* ============================================================================
+   TEST NAVIGATION DARK THEME STYLES
+   ============================================================================ */
+[data-theme-variant="dark"] .test-nav {
+    background: var(--bg-button);
+    border-color: var(--border);
+    box-shadow: none;
+}
+
+[data-theme-variant="dark"] .test-nav-btn,
+[data-theme-variant="dark"] .test-nav-btn:hover {
+    background: var(--bg-ocean-deep);
+    border-color: var(--bg-ocean-deep);
+    color: var(--bg-ocean-dark);
+}
+
+[data-theme-variant="dark"] .test-nav-label {
+    color: var(--text-primary);
+}
+
+/* ============================================================================
+   DIFF COMPARISON DARK THEME STYLES
+   ============================================================================ */
+[data-theme-variant="dark"] .diff-verdict.verdict-pass {
+    background: linear-gradient(135deg, rgba(104, 211, 145, 0.2) 0%, rgba(80, 250, 123, 0.2) 100%);
+    color: var(--success);
+    border-color: var(--success);
+}
+
+[data-theme-variant="dark"] .diff-verdict.verdict-fail {
+    background: linear-gradient(135deg, rgba(255, 85, 85, 0.2) 0%, rgba(255, 121, 198, 0.2) 100%);
+    color: var(--error);
+    border-color: var(--error);
+}
+
+[data-theme-variant="dark"] .diff-line.correct {
+    background: rgba(80, 250, 123, 0.1);
+    border-left-color: var(--success);
+}
+
+[data-theme-variant="dark"] .diff-line.correct .diff-line-content {
+    color: var(--success);
+}
+
+[data-theme-variant="dark"] .diff-line.incorrect {
+    background: rgba(255, 85, 85, 0.1);
+    border-left-color: var(--error);
+}
+
+[data-theme-variant="dark"] .diff-line.incorrect .diff-line-content {
+    color: var(--error);
+}
+
+[data-theme-variant="dark"] .diff-actual {
+    color: var(--error);
+    background: rgba(255, 85, 85, 0.15);
+}
+
+@container style(--component-style: sakura) {
+    :root .diff-actual {
+        color: var(--error);
+        background: rgba(255, 85, 85, 0.15);
+    }
+}
+
+
+/* Character-level diff for dark themes */
+[data-theme-variant="dark"] .char-correct {
+    background: rgba(80, 250, 123, 0.3);
+    color: var(--success);
+}
+
+@container style(--component-style: sakura) {
+    :root .char-correct {
+        background: rgba(80, 250, 123, 0.3);
+        color: var(--success);
+    }
+}
+
+
+[data-theme-variant="dark"] .char-incorrect {
+    background: rgba(255, 85, 85, 0.35);
+    color: var(--error);
+}
+
+@container style(--component-style: sakura) {
+    :root .char-incorrect {
+        background: rgba(255, 85, 85, 0.35);
+        color: var(--error);
+    }
+}
+
+
+/* Line-level diff for dark themes */
+[data-theme-variant="dark"] .line-correct {
+    background: rgba(80, 250, 123, 0.25);
+    color: var(--success);
+}
+
+@container style(--component-style: sakura) {
+    :root .line-correct {
+        background: rgba(80, 250, 123, 0.25);
+        color: var(--success);
+    }
+}
+
+
+[data-theme-variant="dark"] .line-incorrect {
+    background: rgba(255, 85, 85, 0.3);
+    color: var(--error);
+}
+
+@container style(--component-style: sakura) {
+    :root .line-incorrect {
+        background: rgba(255, 85, 85, 0.3);
+        color: var(--error);
+    }
+
+
+    /* ===== SAKURA TEST RESULTS - Darker text for light background =====
+       Now token-driven: summary passed/failed and status.pending are handled by the
+       base rules reading --test-pass/--test-fail/--test-pending (set for sakura in
+       ThemeManager), so those per-theme overrides were removed. The translucent AC/WA
+       chips keep sakura's distinct light-chip style but reference the tokens. */
+    :root .test-result-status.AC {
+        background: rgba(45, 138, 45, 0.15);
+        color: var(--test-pass);
+    }
+
+
+    :root .test-result-status.WA {
+        background: rgba(192, 57, 43, 0.15);
+        color: var(--test-fail);
+    }
+
+
+    :root .test-result-item.item-ac {
+        background: rgba(45, 138, 45, 0.08);
+        border-left: 3px solid var(--test-pass);
+    }
+
+
+    :root .run-all-btn {
+        color: var(--text-primary);
+    }
+
+
+    :root .run-all-btn.danger {
+        background: var(--test-fail);
+        color: white;
+    }
+}
+
+
+/* ===== DOCK TABS - Dark Theme ===== */
+[data-theme-variant="dark"] .dock-tabs {
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme-variant="dark"] .dock-tab {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-muted);
+}
+
+[data-theme-variant="dark"] .dock-tab:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+}
+
+[data-theme-variant="dark"] .dock-tab.active {
+    background: var(--bg-primary);
+    border-bottom-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+[data-theme-variant="dark"] .dock-drop-indicator {
+    outline-color: var(--accent) !important;
+    background: rgba(136, 201, 234, 0.1) !important;
+}
+
+/* Docked terminal view - dark themes */
+[data-theme-variant="dark"] .problems-panel .terminal-body {
+    background: var(--bg-secondary, #1e1e1e);
+    color: var(--text-primary);
+}
+
+/* Problem count badge in dark themes */
+[data-theme-variant="dark"] .problems-panel .panel-head .problem-count {
+    background: var(--bg-ocean-deep);
+    color: var(--bg-ocean-dark);
+}
+
+/* Undock button hover in dark themes */
+[data-theme-variant="dark"] .dock-undock {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme-variant="dark"] .dock-undock:hover {
+    background: var(--error);
+}
+
+/* Docked I/O view for dark themes */
+[data-theme-variant="dark"] .docked-io-view {
+    background: var(--bg-secondary, #1e1e1e);
+}
+
+[data-theme-variant="dark"] .docked-io-header {
+    color: var(--text-muted);
+    background: var(--bg-glass-heavy);
+    border-bottom-color: var(--border);
+}
+
+[data-theme-variant="dark"] .docked-io-textarea {
+    color: var(--text-primary);
+    background: var(--editor-bg);
+}
+
+[data-theme-variant="dark"] .docked-io-textarea::placeholder {
+    color: var(--text-muted);
+}
+
+[data-theme-variant="dark"] .docked-io-divider {
+    background: var(--border);
+}
+
+/* Fix Nord sidebar text color contrast (nord's --text-primary = #eceff4) */
+@container style(--component-style: nord) {
+    :root .settings-tab {
+        color: var(--text-primary) !important;
+    }
+}
+
+

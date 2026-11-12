@@ -14,7 +14,9 @@ const ThemeTokens = sandbox.window.ThemeTokens;
 assert(ThemeTokens, 'ThemeTokens should be exposed by the renderer script');
 
 const themeManagerPath = path.join(__dirname, '..', '..', 'src', 'renderer', 'ui', 'theme-manager.js');
-const themeManagerSource = fs.readFileSync(themeManagerPath, 'utf8');
+// ThemeManager is two renderer scripts: the object, then the builtin theme data added to it.
+const themeManagerSource = fs.readFileSync(themeManagerPath, 'utf8') + '\n'
+    + fs.readFileSync(path.join(path.dirname(themeManagerPath), 'theme-manager-builtins.js'), 'utf8');
 vm.runInNewContext(themeManagerSource, sandbox, { filename: themeManagerPath });
 const ThemeManager = sandbox.window.ThemeManager;
 assert(ThemeManager, 'ThemeManager should be exposed by the renderer script');

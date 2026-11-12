@@ -1,0 +1,426 @@
+/* ============================================================================
+   SAKURA THEME COMPONENT OVERRIDES
+   Pink pastel with dark rose editor - requires special handling
+   ============================================================================ */
+
+/* Sakura Header - already covered by [data-theme] rule above */
+
+@container style(--component-style: sakura) {
+    :root .logo {
+        background: var(--bg-ocean-deep);
+        border: 2px solid var(--border);
+        color: white;
+    }
+
+
+    :root .menu-group {
+        background: var(--bg-button);
+        border: 1px solid var(--border);
+    }
+
+
+    :root .menu-btn {
+        color: var(--text-secondary);
+    }
+
+
+    :root .menu-btn:hover {
+        background: var(--bg-button-hover);
+        color: var(--text-primary);
+    }
+
+
+    :root .menu-btn.active {
+        background: var(--bg-ocean-deep);
+        color: white;
+    }
+
+
+    /* Sakura Tabs */
+    :root .tab {
+        background: var(--bg-button);
+        border: 2px solid var(--border);
+        color: var(--text-secondary);
+    }
+
+
+    :root .tab:hover {
+        border-color: var(--accent);
+        color: var(--text-primary);
+    }
+
+
+    :root .tab.active {
+        background: var(--bg-ocean-medium);
+        border-color: var(--accent);
+        color: var(--text-primary);
+    }
+
+
+    :root .tab-add {
+        background: var(--bg-button);
+        border-color: var(--border);
+        color: var(--accent);
+    }
+
+
+    /* Sakura Toggle & Action buttons */
+    :root .toggle-btn {
+        background: var(--bg-button);
+        color: var(--accent);
+        border: 1px solid var(--border);
+    }
+
+
+    :root .toggle-btn:hover {
+        background: var(--bg-button-hover);
+    }
+
+
+    :root .toggle-btn.active {
+        background: var(--accent);
+        color: white;
+    }
+
+
+    :root .action-btn {
+        background: var(--bg-button);
+        border-color: var(--border);
+        color: var(--text-primary);
+    }
+
+
+    :root .action-btn.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: white;
+    }
+
+
+    /* Sakura Editor & Panels */
+    :root .editor-section {
+        background: var(--editor-bg);
+        border: 2px solid var(--border) !important;
+    }
+
+
+    :root .editor-pane {
+        background: var(--editor-bg);
+    }
+
+
+    :root .editor-area {
+        background-color: var(--editor-bg);
+        background-image: var(--editor-bg-image, none);
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        border: none !important;
+    }
+
+
+    :root .terminal-section {
+        background: var(--bg-panel);
+        border: 2px solid var(--border);
+    }
+
+
+    :root .terminal-body {
+        background: var(--terminal-bg);
+        color: var(--terminal-text);
+    }
+
+
+    :root .terminal-input {
+        background: var(--terminal-bg);
+        border-top-color: var(--border);
+    }
+
+
+    :root .terminal-input input,
+    :root .terminal-input textarea {
+        color: var(--terminal-text);
+    }
+
+
+    /* Sakura IO Panels */
+    :root .io-panel {
+        background: var(--bg-panel);
+        border: 2px solid var(--border);
+    }
+
+
+    /* Sakura Expected Panel - Use correct background variable */
+    :root .io-panel.io-panel-expected {
+        background: var(--editor-bg) !important;
+        color: var(--terminal-text);
+    }
+
+
+    :root .io-panel.io-panel-expected .diff-display {
+        background: transparent;
+        color: var(--terminal-text);
+    }
+
+
+    :root .io-section {
+        border-color: var(--border);
+    }
+
+
+    /* Custom Diff Overrides for Sakura */
+    :root .diff-line.match-compact {
+        background: rgba(163, 217, 165, 0.25) !important;
+    }
+
+
+    :root .diff-line.mismatch-compact {
+        background: rgba(255, 120, 150, 0.25) !important;
+    }
+
+
+    :root .panel-head {
+        background: var(--bg-glass-heavy);
+        border-bottom: 2px solid var(--border);
+    }
+
+
+    :root .panel-title {
+        color: var(--text-secondary);
+    }
+
+
+    :root .panel-textarea {
+        background: var(--editor-bg);
+        color: var(--terminal-text);
+    }
+
+
+    /* Sakura Problems Panel */
+    :root .problems-panel {
+        background: var(--bg-panel);
+        border-top: 2px solid var(--border);
+    }
+
+
+    /* Sakura Status Bar */
+    :root .status-bar {
+        background: var(--bg-header-statusbar);
+        border-top-color: var(--border);
+        color: var(--text-secondary);
+    }
+
+
+    /* Sakura Dropdowns */
+    :root .dropdown {
+        background: var(--bg-panel);
+        border-color: var(--border);
+    }
+
+
+    :root .dropdown-item {
+        color: var(--text-primary);
+    }
+
+
+    :root .dropdown-item:hover {
+        background: var(--bg-button-hover);
+    }
+
+
+    /* Sakura Settings Popup */
+    :root .settings-popup {
+        background: var(--bg-panel);
+        border-color: var(--border);
+    }
+
+
+    :root .settings-header {
+        background: var(--bg-ocean-medium);
+        border-bottom-color: var(--border);
+    }
+
+
+    :root .settings-header h2 {
+        color: var(--text-primary);
+    }
+
+
+    :root .settings-sidebar {
+        background: var(--bg-button);
+        border-color: var(--border);
+    }
+
+
+    :root .settings-content {
+        background: var(--bg-panel);
+    }
+
+
+    :root .settings-tab {
+        color: var(--text-secondary);
+    }
+
+
+    /* Sakura Preview Window - Make it more solid to avoid blur effect */
+    :root .preview-window {
+        background: linear-gradient(135deg, #fff5f8 0%, #fff0f5 100%) !important;
+        /* Use solid colors instead of transparent rgba */
+        position: relative;
+        z-index: 10;
+        /* Ensure it's not affected by backdrop-filter */
+        isolation: isolate;
+    }
+
+
+    /* Remove backdrop blur completely for sakura theme to make preview crystal clear */
+    :root .settings-overlay {
+        backdrop-filter: none !important;
+        /* Lighter overlay for sakura */
+        background: rgba(255, 182, 193, 0.3) !important;
+    }
+
+
+    :root .settings-tab.active {
+        background: var(--accent);
+        color: white;
+    }
+
+
+    :root .settings-tab.active svg {
+        color: white;
+    }
+
+
+    :root .settings-section h3 {
+        color: var(--accent);
+        border-bottom-color: var(--border);
+    }
+
+
+    :root .settings-footer {
+        background: var(--bg-ocean-medium);
+        border-top-color: var(--border);
+    }
+
+
+    :root .setting-row {
+        background: var(--bg-button);
+        border-color: var(--border);
+    }
+
+
+    :root .setting-row label {
+        color: var(--text-secondary);
+    }
+
+
+    /* Sakura Form Controls */
+    :root select,
+    :root input[type="text"],
+    :root input[type="number"] {
+        background: var(--bg-input);
+        border-color: var(--border);
+        color: var(--text-primary);
+    }
+
+
+    :root select:focus,
+    :root input:focus {
+        border-color: var(--accent);
+    }
+
+
+    /* Sakura Docked Views */
+    :root .docked-io-view {
+        background: var(--terminal-bg);
+    }
+
+
+    :root .docked-io-header-bar {
+        background: rgba(45, 31, 47, 0.9);
+        border-bottom-color: rgba(255, 105, 180, 0.3);
+    }
+
+
+    :root .docked-io-title {
+        color: var(--terminal-text);
+    }
+
+
+    :root .docked-test-nav .docked-nav-btn {
+        background: rgba(255, 105, 180, 0.2);
+        color: var(--accent);
+    }
+
+
+    :root .docked-test-nav .docked-nav-btn:hover {
+        background: var(--accent);
+        color: white;
+    }
+
+
+    :root .docked-test-label {
+        background: rgba(255, 105, 180, 0.2);
+        color: var(--terminal-text);
+    }
+
+
+    :root .docked-io-header {
+        color: var(--accent);
+        background: rgba(45, 31, 47, 0.8);
+        border-bottom-color: rgba(255, 105, 180, 0.2);
+    }
+
+
+    :root .docked-io-textarea {
+        color: var(--terminal-text);
+        background: var(--editor-bg);
+    }
+
+
+    :root .docked-io-textarea::placeholder {
+        color: rgba(248, 232, 240, 0.4);
+    }
+
+
+    :root .docked-io-divider {
+        background: rgba(255, 105, 180, 0.3);
+    }
+
+
+    :root .problems-panel .terminal-body {
+        background: var(--terminal-bg);
+        color: var(--terminal-text);
+    }
+
+
+    /* Sakura CC Popup */
+    :root .cc-step-num {
+        background: var(--accent);
+        color: #fff;
+    }
+
+
+    :root .cc-step-text {
+        color: var(--text-primary);
+    }
+
+
+    :root .cc-step-text strong {
+        color: var(--accent);
+    }
+
+
+    /* Sakura Scrollbars */
+    :root ::-webkit-scrollbar-thumb {
+        background-color: rgba(255, 105, 180, 0.4);
+    }
+
+
+    :root ::-webkit-scrollbar-thumb:hover {
+        background-color: var(--accent);
+    }
+}
+
+

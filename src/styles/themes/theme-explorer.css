@@ -1,0 +1,1105 @@
+/* ===== FILE EXPLORER SIDEBAR ===== */
+.explorer-sidebar {
+    width: 200px;
+    min-width: 150px;
+    max-width: 400px;
+    background: var(--bg-glass-heavy, #f5faff);
+    border: 2px solid var(--border, #c8e4f5);
+    border-radius: 16px;
+    margin: 12px 0 12px 12px;
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 50;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    transition: width 0.2s var(--transition-timing), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.explorer-sidebar.visible {
+    display: flex;
+}
+
+.explorer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    background: var(--bg-panel, #e8f4fc);
+    border-bottom: 2px solid var(--border, #e0f0ff);
+    flex-shrink: 0;
+}
+
+.explorer-title {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-secondary, #7eb8c5);
+}
+
+.explorer-actions {
+    display: flex;
+    gap: 4px;
+}
+
+.explorer-action-btn {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-secondary, #7eb8c5);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.explorer-action-btn:hover {
+    background: color-mix(in srgb, var(--accent, #88c9ea) 16%, transparent);
+    color: var(--text-primary, #2a5a75);
+}
+
+.explorer-tree {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 8px 0;
+}
+
+/* Explorer Empty State */
+.explorer-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--text-muted, #8abac5);
+}
+
+.explorer-empty-icon {
+    margin-bottom: 10px;
+    color: var(--accent);
+    opacity: 0.85;
+}
+
+.explorer-empty .explorer-empty-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--text-secondary);
+    margin: 0 0 4px;
+}
+
+.explorer-empty .explorer-empty-hint {
+    font-size: 11.5px;
+    line-height: 1.45;
+    max-width: 180px;
+    margin: 0 0 16px;
+}
+
+.explorer-open-btn {
+    padding: 8px 16px;
+    background: color-mix(in srgb, var(--accent, #88c9ea) 28%, transparent);
+    border: 1.5px solid color-mix(in srgb, var(--accent, #88c9ea) 34%, transparent);
+    border-radius: 12px;
+    color: var(--text-primary, #2a5a75);
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.explorer-open-btn:hover {
+    background: color-mix(in srgb, var(--accent, #88c9ea) 46%, transparent);
+    border-color: color-mix(in srgb, var(--accent, #88c9ea) 56%, transparent);
+    color: var(--text-primary, #2a5a75);
+}
+
+/* Explorer Folder Header */
+.explorer-folder-header {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1.5px solid color-mix(in srgb, var(--border, #e0f0ff) 84%, transparent);
+    margin-bottom: 6px;
+}
+
+.explorer-folder-name {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-primary, #2a5a75);
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    display: block;
+}
+
+/* Explorer Items */
+.explorer-items {
+    font-size: 13.5px;
+}
+
+.explorer-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    color: var(--text-primary, #2a5a75);
+    transition: background 0.12s, color 0.12s, transform 0.1s, box-shadow 0.12s;
+    user-select: none;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+}
+
+.explorer-item:hover {
+    background: color-mix(in srgb, var(--accent, #88c9ea) 16%, transparent);
+}
+
+.explorer-item.active {
+    background: color-mix(in srgb, var(--accent, #88c9ea) 28%, transparent);
+    color: var(--text-primary, #2a5a75);
+    box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--accent, #88c9ea) 60%, transparent);
+}
+
+.explorer-item-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+}
+
+.explorer-item.folder.expanded .explorer-item-arrow {
+    transform: rotate(90deg);
+}
+
+.explorer-item-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 13.5px;
+    font-weight: 600;
+}
+
+.explorer-icon {
+    flex-shrink: 0;
+}
+
+.explorer-icon.folder-closed,
+.explorer-icon.folder-open,
+.icon-collection {
+    fill: currentColor;
+}
+
+.explorer-icon.file-icon path {
+    fill: currentColor;
+}
+
+.explorer-icon.file-icon polyline {
+    fill: currentColor;
+    fill-opacity: 0.65;
+}
+
+.icon-contest {
+    fill: #ffa726;
+}
+
+/* Thinner, cleaner strokes for all explorer, collection, and contest SVGs (reduced thickness by ~1px) */
+.explorer-sidebar svg,
+.explorer-sidebar svg *,
+.explorer-icon,
+.explorer-icon *,
+.icon-collection,
+.icon-collection *,
+.icon-contest,
+.icon-contest *,
+.icon-note,
+.icon-note *,
+.icon-pin,
+.icon-pin *,
+.icon-unpin,
+.icon-unpin *,
+.icon-approach,
+.icon-approach *,
+.icon-check,
+.icon-check *,
+.icon-cross,
+.icon-cross *,
+.icon-clock,
+.icon-clock *,
+.icon-timer,
+.icon-timer *,
+.icon-memory,
+.icon-memory *,
+.icon-warning,
+.icon-warning *,
+.icon-arrow,
+.icon-arrow *,
+.icon-recent,
+.icon-recent *,
+.icon-submenu,
+.icon-submenu *,
+.icon-close,
+.icon-close * {
+    stroke-width: 1.6px !important;
+}
+
+/* Dynamic colors for collection icons */
+.cat-section-title .icon-collection {
+    color: var(--folder-icon-closed, #f0c674) !important;
+}
+
+.explorer-icon.folder-closed {
+    color: var(--folder-icon-closed, #f0c674);
+}
+
+.explorer-icon.folder-open {
+    color: var(--folder-icon-open, #f5b942);
+}
+
+.explorer-children {
+    /* Children container for nested items */
+    display: block;
+}
+
+/* Explorer Resizer */
+.explorer-resizer {
+    width: 4px;
+    background: transparent;
+    cursor: col-resize;
+    display: none;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 51;
+    transition: background 0.2s;
+}
+
+.explorer-resizer.visible {
+    display: block;
+}
+
+.explorer-resizer:hover,
+.explorer-resizer:active {
+    background: var(--bg-ocean-deep, #88c9ea);
+}
+
+/* Explorer Toggle Button in Header */
+.toggle-btn.explorer-toggle {
+    margin-right: 4px;
+    -webkit-app-region: no-drag;
+    cursor: pointer;
+}
+
+.toggle-btn.explorer-toggle svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Explorer toggle - visible */
+.toggle-btn.explorer-toggle.active {
+    background: var(--bg-ocean-medium, rgba(188, 226, 245, 0.5));
+    color: var(--accent, #88c9ea);
+}
+
+/* ===== COMPACT DIFF VISUALIZATION ===== */
+.diff-hint {
+    font-family: 'Nunito', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    opacity: 0.7;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.diff-hint::before {
+    content: '✎';
+    font-size: 11px;
+}
+
+.diff-line {
+    padding: 3px 6px;
+    border-radius: 6px;
+    margin-bottom: 2px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: var(--panel-font-size, 13px);
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-x: auto;
+}
+
+/* Match case: Green text + subtle background */
+.diff-line.match-compact {
+    color: var(--success);
+    /* Make text green as requested */
+    background: rgba(46, 204, 113, 0.05);
+    /* Very subtle green bg */
+    border-left: 2px solid var(--success);
+    /* Green border indicator */
+    padding-left: 8px;
+    font-weight: 600;
+    /* Make it pop a bit more */
+}
+
+/* Mismatch case */
+.diff-line.diff-skip {
+    opacity: 0.6;
+    font-style: italic;
+}
+
+.diff-line.mismatch-compact {
+    background: rgba(231, 76, 60, 0.10);
+    border-left: 2px solid var(--danger);
+    padding: 4px 8px 4px 10px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: baseline;
+    gap: 6px;
+}
+
+/* The wrong value (Actual) -> Strikethrough + Red */
+.diff-wrong {
+    color: var(--danger);
+    opacity: 0.92;
+}
+
+/* Character-level wrong chunk (actual) */
+.diff-char-wrong {
+    text-decoration: line-through;
+    background: rgba(231, 76, 60, 0.28);
+    border-radius: 4px;
+    padding: 0 2px;
+}
+
+/* Character-level expected chunk */
+.diff-char-right {
+    color: #9be15d;
+    font-weight: 800;
+    background: rgba(46, 204, 113, 0.24);
+    border-radius: 4px;
+    padding: 0 2px;
+}
+
+/* Placeholder for empty diff side */
+.diff-char-placeholder {
+    opacity: 0.55;
+    font-style: italic;
+}
+
+/* The arrow */
+.diff-arrow {
+    color: var(--text-muted);
+    font-weight: bold;
+    user-select: none;
+}
+
+/* The correct values (Expected) -> Green */
+.diff-right {
+    color: var(--success);
+    font-weight: 700;
+}
+
+/* Fix text color in diff view for better visibility on dark backgrounds */
+#expected-diff {
+    color: var(--text-primary);
+    background: transparent;
+}
+
+/* Extra lines (Trailing junk) -> Red */
+.diff-extra {
+    color: var(--danger);
+    font-style: italic;
+    font-weight: 600;
+    opacity: 1;
+}
+
+/* Missing lines -> Orange/Warning color for better visibility */
+.diff-missing {
+    color: var(--warning, #8f8157);
+    font-style: italic;
+    font-weight: 600;
+    opacity: 1;
+}
+
+.diff-actual .diff-label {
+    color: var(--danger);
+}
+
+.diff-actual.missing {
+    color: var(--warning, #ffc107);
+    font-weight: 600;
+    opacity: 1;
+}
+
+/* Dark theme adjustments for diff colors - Better visibility on dark backgrounds */
+[data-theme-variant="dark"] .diff-extra {
+    color: #ff6b6b;
+    /* Brighter red for dark themes */
+}
+
+[data-theme-variant="dark"] .diff-missing {
+    color: #ffd93d;
+    /* Brighter yellow/orange for dark themes */
+}
+
+[data-theme-variant="dark"] .diff-actual.missing {
+    color: #ffd93d;
+    /* Brighter yellow/orange for dark themes */
+}
+
+/* Dark theme adjustments for explorer */
+[data-theme-variant="dark"] .explorer-empty {
+    color: var(--text-muted, rgba(255, 255, 255, 0.5));
+}
+
+/* File Markers - active-solving indicator */
+.explorer-item.marked {
+    background: rgba(255, 193, 7, 0.15);
+    border-left: 3px solid var(--warning, #ffc107);
+    margin-left: -3px;
+}
+
+.explorer-item.marked:hover {
+    background: rgba(255, 193, 7, 0.25);
+}
+
+.explorer-marker {
+    font-size: 12px;
+    margin-right: 4px;
+    animation: pulse-marker 2s infinite;
+}
+
+@keyframes pulse-marker {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.explorer-mark-btn {
+    font-size: 8px;
+    color: var(--text-muted, #8abac5);
+    margin-left: auto;
+    padding: 2px 6px;
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 0.15s, color 0.15s;
+}
+
+.explorer-item:hover .explorer-mark-btn {
+    opacity: 0.6;
+}
+
+.explorer-mark-btn:hover {
+    opacity: 1 !important;
+    color: var(--warning, #ffc107);
+}
+
+/* Context Menu */
+.explorer-context-menu {
+    position: fixed;
+    background: color-mix(in srgb, var(--bg-panel, #f5faff) 92%, transparent);
+    border: 1px solid color-mix(in srgb, var(--border, #e0f0ff) 88%, transparent);
+    border-radius: 10px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+    z-index: 99999;
+    min-width: 170px;
+    padding: 6px;
+    animation: fadeIn 0.1s ease;
+    backdrop-filter: blur(10px);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.explorer-context-menu .context-item {
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-primary, #2a5a75);
+    transition: background 0.1s;
+    white-space: nowrap;
+}
+
+.explorer-context-menu .context-item:hover {
+    background: color-mix(in srgb, var(--accent, #88c9ea) 16%, transparent);
+}
+
+.explorer-context-menu .context-item.danger {
+    color: var(--text-primary, #2a5a75);
+}
+
+.explorer-context-menu .context-item.danger:hover {
+    color: var(--error, #ef5350);
+    background: color-mix(in srgb, var(--error, #ef5350) 10%, transparent);
+}
+
+/* Dark theme context menu */
+
+
+/* Status Dot in file tree */
+.explorer-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-right: 6px;
+}
+
+/* Status-based row styling */
+.explorer-item.has-status {
+    position: relative;
+}
+
+/* Selection & clipboard states */
+.explorer-item.selected {
+    background: var(--bg-ocean-light, rgba(100, 181, 246, 0.18)) !important;
+    outline: 1px solid var(--accent, #64b5f6);
+    outline-offset: -1px;
+}
+
+.explorer-item.cut {
+    opacity: 0.45;
+}
+
+.explorer-item.status-working {
+    background: rgba(255, 193, 7, 0.1);
+}
+
+.explorer-item.status-done {
+    background: rgba(76, 175, 80, 0.1);
+}
+
+.explorer-item.status-stuck {
+    background: rgba(244, 67, 54, 0.1);
+}
+
+.explorer-item.status-review {
+    background: rgba(33, 150, 243, 0.1);
+}
+
+/* Context menu improvements */
+.explorer-context-menu .context-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.explorer-context-menu .context-item.active {
+    background: var(--bg-ocean-light, #eff8fe);
+    font-weight: 500;
+}
+
+.context-separator {
+    height: 1px;
+    background: var(--border, #e0f0ff);
+    margin: 4px 0;
+}
+
+.status-dot-mini {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* Context Menu Submenu */
+.context-item.has-submenu {
+    position: relative;
+    justify-content: space-between;
+}
+
+.submenu-arrow {
+    margin-left: auto;
+    opacity: 0.6;
+    font-size: 12px;
+}
+
+.context-submenu {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    margin-left: 4px;
+    background: var(--bg-panel, #f5faff);
+    border: 1px solid var(--border, #e0f0ff);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    z-index: 100000;
+    min-width: max-content;
+    padding: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(-8px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.context-submenu.visible {
+    opacity: 1;
+    pointer-events: all;
+    transform: translateX(0);
+}
+
+/* Dark theme submenu */
+[data-theme-variant="dark"] .context-submenu {
+    background: var(--bg-secondary, #2a2f3a);
+    border-color: var(--border, rgba(255, 255, 255, 0.1));
+}
+
+/* Note Icon in File Tree */
+.explorer-note-icon {
+    font-size: 14px;
+    margin-left: 6px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.explorer-item:hover .explorer-note-icon {
+    opacity: 1;
+}
+
+/* Note Dialog Overlay */
+.note-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--z-dialog);
+    animation: fadeIn 0.2s ease;
+}
+
+/* Note Dialog */
+.note-dialog {
+    background: var(--bg-panel, #ffffff);
+    border: 2px solid var(--border, #e0f0ff);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    min-width: 400px;
+    max-width: 600px;
+    animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.note-dialog-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border, #e0f0ff);
+}
+
+.note-dialog-header h3 {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary, #2a5a75);
+    margin: 0;
+}
+
+.note-dialog-close {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: var(--text-secondary, #7eb8c5);
+    cursor: pointer;
+    font-size: 18px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.note-dialog-close:hover {
+    background: var(--error, #ff8fab);
+    color: var(--btn-primary-text, white);
+}
+
+.note-dialog-body {
+    padding: 20px;
+}
+
+.note-dialog-input {
+    width: 100%;
+    min-height: 120px;
+    padding: 12px;
+    background: var(--bg-input, #ffffff);
+    border: 2px solid var(--border, #e0f0ff);
+    border-radius: 12px;
+    color: var(--text-primary, #2a5a75);
+    font-family: 'Nunito', sans-serif;
+    font-size: 14px;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.note-dialog-input:focus {
+    border-color: var(--accent, #88c9ea);
+    outline: none;
+}
+
+.note-dialog-footer {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    padding: 12px 20px;
+    border-top: 1px solid var(--border, #e0f0ff);
+}
+
+.note-dialog-btn {
+    padding: 8px 20px;
+    border: 2px solid var(--border, #e0f0ff);
+    border-radius: 12px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s, transform 0.2s;
+}
+
+.note-dialog-cancel {
+    background: transparent;
+    color: var(--text-secondary, #7eb8c5);
+}
+
+.note-dialog-cancel:hover {
+    background: var(--bg-ocean-light, #eff8fe);
+    color: var(--text-primary, #2a5a75);
+}
+
+.note-dialog-save {
+    background: var(--accent, #88c9ea);
+    border-color: var(--accent, #88c9ea);
+    color: var(--btn-primary-text, white);
+}
+
+.note-dialog-save:hover {
+    background: var(--accent-hover, #5eb7e0);
+    border-color: var(--accent-hover, #5eb7e0);
+    transform: translateY(-1px);
+}
+
+/* Dark theme note dialog */
+[data-theme-variant="dark"] .note-dialog {
+    background: var(--bg-secondary, #2a2f3a);
+    border-color: var(--border, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme-variant="dark"] .note-dialog-header h3 {
+    color: var(--text-primary, #e0e0e0);
+}
+
+[data-theme-variant="dark"] .note-dialog-input {
+    background: var(--bg-primary, #1e1e1e);
+    border-color: var(--border, rgba(255, 255, 255, 0.1));
+    color: var(--text-primary, #e0e0e0);
+}
+
+[data-theme-variant="dark"] .note-dialog-header,
+[data-theme-variant="dark"] .note-dialog-footer {
+    border-color: var(--border, rgba(255, 255, 255, 0.1));
+}
+
+/* Mark button - small dot that appears on hover */
+.explorer-mark-btn {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--text-muted, #8abac5);
+    margin-left: auto;
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 0.15s, background 0.15s;
+    flex-shrink: 0;
+}
+
+.explorer-item:hover .explorer-mark-btn {
+    opacity: 0.4;
+}
+
+.explorer-mark-btn:hover {
+    opacity: 1 !important;
+    background: var(--warning, #ffc107) !important;
+}
+
+/* Dark theme adjustments */
+[data-theme-variant="dark"] .context-separator {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme-variant="dark"] .explorer-context-menu .context-item.active {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Companion files grouping */
+.explorer-companions {
+    border-left: 1px solid var(--border, #e0f0ff);
+    margin-left: 28px;
+}
+
+.explorer-item.companion {
+    opacity: 0.8;
+    font-size: 12px;
+}
+
+.explorer-item.companion:hover {
+    opacity: 1;
+}
+
+.companion-count {
+    font-size: 10px;
+    background: var(--accent, #88c9ea);
+    color: var(--btn-primary-text, white);
+    padding: 1px 5px;
+    border-radius: 10px;
+    margin-left: 4px;
+}
+
+.explorer-item.has-companions {
+    font-weight: 500;
+}
+
+/* Dark theme companion styles */
+[data-theme-variant="dark"] .explorer-companions {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* ==================== NEW FEATURES ==================== */
+
+/* FILE ARROW FOR COLLAPSIBLE FILES */
+.explorer-file-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+    margin-right: 2px;
+}
+
+.explorer-item.file.expanded .explorer-file-arrow {
+    transform: rotate(90deg);
+}
+
+.explorer-file-spacer {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+    margin-right: 2px;
+}
+
+/* FILE CHILDREN CONTAINER */
+.explorer-file-children {
+    display: block;
+    border-left: 1px solid var(--border, rgba(136, 201, 234, 0.2));
+    margin-left: 24px;
+    padding-left: 0;
+}
+
+/* APPROACH ITEMS */
+.explorer-item.approach {
+    opacity: 0.85;
+    font-size: 11px;
+    padding: 4px 8px;
+    background: rgba(156, 39, 176, 0.05);
+}
+
+.explorer-item.approach:hover {
+    opacity: 1;
+    background: rgba(156, 39, 176, 0.12);
+}
+
+.explorer-item.approach.current {
+    background: rgba(156, 39, 176, 0.15);
+    font-weight: 600;
+    opacity: 1;
+}
+
+.explorer-icon.approach-icon {
+    flex-shrink: 0;
+}
+
+.approach-status {
+    font-size: 11px;
+    margin-left: 4px;
+    opacity: 0.8;
+}
+
+.current-marker {
+    font-size: 11px;
+    color: var(--success, #4caf50);
+    margin-left: auto;
+    font-weight: bold;
+}
+
+/* CHILD COUNT BADGE */
+.child-count {
+    font-size: 9px;
+    background: var(--accent, #88c9ea);
+    color: var(--btn-primary-text, white);
+    padding: 1px 5px;
+    border-radius: 10px;
+    margin-left: 4px;
+    font-weight: 600;
+}
+
+/* FILES WITH CHILDREN */
+.explorer-item.file.has-children {
+    font-weight: 500;
+}
+
+/* DARK THEME FOR APPROACHES */
+[data-theme-variant="dark"] .explorer-item.approach {
+    background: rgba(156, 39, 176, 0.1);
+}
+
+[data-theme-variant="dark"] .explorer-item.approach:hover {
+    background: rgba(156, 39, 176, 0.18);
+}
+
+[data-theme-variant="dark"] .explorer-item.approach.current {
+    background: rgba(156, 39, 176, 0.25);
+}
+
+[data-theme-variant="dark"] .explorer-file-children {
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* PIN & RECENT SECTIONS (Placeholder - to be implemented) */
+.explorer-pinned-section,
+.explorer-recent-section {
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border, #e0f0ff);
+}
+
+.explorer-section-title {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted, #8abac5);
+    padding: 4px 12px;
+    margin-bottom: 2px;
+}
+
+[data-theme-variant="dark"] .explorer-pinned-section,
+[data-theme-variant="dark"] .explorer-recent-section {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* INPUT DIALOG */
+.input-dialog {
+    min-width: 350px;
+}
+
+.input-dialog-field {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 14px;
+    border: 2px solid var(--border, #e0f0ff);
+    border-radius: 10px;
+    background: var(--bg-button, #f5faff);
+    color: var(--text-primary, #2a5a75);
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input-dialog-field:focus {
+    border-color: var(--accent, #88c9ea);
+}
+
+[data-theme-variant="dark"] .input-dialog-field {
+    background: var(--bg-secondary, #2a2f3a);
+    border-color: var(--border, rgba(255, 255, 255, 0.15));
+}
+
+/* SECTION TITLE WITH ICONS */
+.explorer-section-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.explorer-section-title svg {
+    opacity: 0.7;
+}
+
+/* NOTE TOOLTIP POPUP */
+.explorer-note-icon {
+    cursor: pointer;
+    position: relative;
+}
+
+.explorer-note-icon:hover::after {
+    content: attr(data-note);
+    position: absolute;
+    left: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 8px;
+    padding: 8px 12px;
+    background: var(--bg-panel, #ffffff);
+    border: 1px solid var(--border, #e0f0ff);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-size: 12px;
+    color: var(--text-primary, #2a5a75);
+    white-space: pre-wrap;
+    max-width: 250px;
+    z-index: 1000;
+}
+
+[data-theme-variant="dark"] .explorer-note-icon:hover::after {
+    background: var(--bg-secondary, #2a2f3a);
+    border-color: var(--border, rgba(255, 255, 255, 0.15));
+}
+
