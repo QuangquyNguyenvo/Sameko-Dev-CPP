@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="styles/components/discord-preview.css">
     <link rel="stylesheet" href="styles/components/markdown-preview.css">
     <link rel="stylesheet" href="styles/components/stress-test.css">
+    <link rel="stylesheet" href="styles/components/oj-submit.css">
     <link rel="stylesheet" href="styles/components/settings-languages.css">
     <link rel="stylesheet" href="styles/themes/theme-customizer.css">
     <link rel="stylesheet" href="vendor/monaco/editor.css">
@@ -176,6 +177,7 @@
             <div class="dropdown-item" data-action="buildrun"><span>Build & Run</span><span class="key">F11</span></div>
             <div class="dropdown-item" data-action="run"><span>Run</span><span class="key">F10</span></div>
             <div class="dropdown-item" data-action="gettests"><span>Get Tests from OJ</span></div>
+            <div class="dropdown-item" data-action="submittooj"><span>Submit to Online Judge</span><span class="key">Ctrl+Alt+S</span></div>
             <div class="dropdown-sep"></div>
             <div class="dropdown-item" data-action="debugstart"><span>Start Debugging</span><span class="key">F5</span></div>
             <div class="dropdown-item" data-action="debugstepover"><span>Step Over</span><span class="key">F10</span></div>
@@ -239,6 +241,19 @@
                                 <option value="append">Append new tests</option>
                             </select>
                         </div>
+                    </div>
+                    <!-- Sameko extension: fetch a problem from the browser (renderer/app/oj-submit.js). -->
+                    <div class="oj-ext" id="oj-ext">
+                        <div class="oj-ext-head">
+                            <span class="oj-ext-title">Sameko extension</span>
+                            <span class="oj-ext-state" id="oj-ext-state" data-state="off">Not connected</span>
+                        </div>
+                        <button class="cc-btn secondary oj-ext-current" id="oj-fetch-current">Get problem from browser</button>
+                        <div class="oj-ext-row">
+                            <input class="oj-ext-url" id="oj-fetch-url" type="url" spellcheck="false" placeholder="Problem URL">
+                            <button class="cc-btn primary" id="oj-fetch-url-btn">Fetch</button>
+                        </div>
+                        <div class="oj-ext-msg" id="oj-ext-msg" hidden></div>
                     </div>
                 </div>
                 <div class="cc-footer">
@@ -910,9 +925,9 @@
                                         Import from File(s)
                                     </button>
                                 </div>
-                                <div class="snippets-list-container">
-                                    <div id="snippets-list"></div>
-                                </div>
+                                <p class="snippets-status" id="snippets-status" role="status" hidden></p>
+                                <div class="snippet-filters" id="snippet-filters" role="tablist" aria-label="Language"></div>
+                                <div id="snippets-list"></div>
                             </div>
                         </div>
 
@@ -1070,41 +1085,40 @@
                     </button>
                 </div>
                 <div class="snippet-editor-body">
-                    <div class="snippet-field">
-                        <label for="snippet-trigger-input">Trigger Keyword</label>
-                        <input type="text" id="snippet-trigger-input" placeholder="e.g., fori, bfs, dfs..." />
-                    </div>
-                    <div class="snippet-field">
-                        <label for="snippet-content-editor">Snippet Content</label>
-                        <div id="snippet-content-editor"
-                            style="height: 300px; border: 1px solid var(--border-color); border-radius: 6px; background: #1e1e1e;">
+                    <div class="snippet-fields-row">
+                        <div class="snippet-field snippet-field-trigger">
+                            <label for="snippet-trigger-input">Trigger Keyword</label>
+                            <input type="text" id="snippet-trigger-input" placeholder="e.g., fori, bfs, dfs..." spellcheck="false" autocomplete="off" />
+                        </div>
+                        <div class="snippet-field snippet-field-lang">
+                            <label for="snippet-lang-select">Language <span class="tooltip"
+                                    title="The snippet is suggested only in files of this language">?</span></label>
+                            <select id="snippet-lang-select" translate="no"></select>
                         </div>
                     </div>
-                    <!-- Snippet Tips -->
-                    <div class="snippet-tips">
-                        <div class="tips-header">
+                    <div class="snippet-field snippet-field-content">
+                        <label>Snippet Content</label>
+                        <div id="snippet-content-editor" translate="no"></div>
+                    </div>
+                    <p class="snippet-error" id="snippet-error" role="alert" hidden></p>
+                    <details class="snippet-tips">
+                        <summary>
                             <svg class="ico" data-icon="info" data-weight="duo" width="14" height="14"><use href="#i-info-duo"/></svg>
-                            Snippet Tips (Smart Template)
-                        </div>
-                        <div class="tips-content">
-                            • <code>${1:ten_bien}</code> : Tab stop #1, press Tab to jump here. Has default content.<br>
-                            • <code>${2}</code> : Tab stop #2, press Tab again to go here.<br>
-                            • <code>${0}</code> : Final tab stop (usually placed inside brackets { }).
-                            <div class="tips-examples">
-                                <strong>Examples:</strong><br>
-                                1. Loop:
-                                <pre>for(int i=0; i<${1:n}; i++) {\n    ${0}\n}</pre>
-                                2. Output / Vector:
-                                <pre>cout<<${1:res}<<"\\n";\nvector<${1:int}> ${2:v};</pre>
-                                3. Quick function:
-                                <pre>${1:void} ${2:solve}() {\n    ${0}\n}</pre>
-                            </div>
-                        </div>
-                    </div>
+                            Tab stops
+                        </summary>
+                        <ul class="tips-content">
+                            <li><code translate="no">${1:n}</code> The cursor lands here first, on the text n. Tab jumps on.</li>
+                            <li><code translate="no">${2}</code> The next Tab stop, empty.</li>
+                            <li><code translate="no">${0}</code> Where the cursor ends.</li>
+                        </ul>
+                        <pre class="tips-example" translate="no">for (int i = 0; i &lt; ${1:n}; i++) {
+    ${0}
+}</pre>
+                    </details>
                 </div>
                 <div class="snippet-editor-footer">
-                    <button class="btn-secondary" id="btn-cancel-snippet">Cancel</button>
-                    <button class="btn-primary" id="btn-save-snippet">Save Snippet</button>
+                    <button class="btn-reset" id="btn-cancel-snippet">Cancel</button>
+                    <button class="btn-save" id="btn-save-snippet">Save Snippet</button>
                 </div>
             </div>
         </div>
@@ -1242,22 +1256,32 @@
                             <span class="test-count" id="test-results-count" style="display:none">0/0</span>
                             <span class="panel-title stress" data-panel="stress"
                                 title="Stress test: compare your solution with a brute force on random tests">STRESS</span>
+                            <!-- Everything after this is right-aligned (oj-submit.css). -->
+                            <span class="panel-actions-spacer"></span>
                             <!-- Shown only on the STRESS tab (stress-test.css). -->
                             <button class="run-all-btn stress-run-btn" id="btn-stress-run" title="Start the stress test">
                                 <svg class="ico stress-ico-start" data-icon="play" data-weight="fill" width="12" height="12"><use href="#i-play-fill"/></svg>
                                 <svg class="ico stress-ico-stop" data-icon="stop" data-weight="fill" width="12" height="12"><use href="#i-stop-fill"/></svg>
                                 <span class="stress-run-label">Start</span>
                             </button>
+                            <button class="run-all-btn danger" id="btn-delete-all-tests" title="Delete all test cases"
+                                aria-label="Delete all test cases" style="display:none">
+                                <svg class="ico" data-icon="trash" width="13" height="13"><use href="#i-trash"/></svg>
+                            </button>
                             <button class="run-all-btn" id="btn-run-all-tests" title="Run all tests (Ctrl+Shift+F11)"
                                 style="display:none">
                                 <svg class="ico" data-icon="play" data-weight="fill" width="12" height="12"><use href="#i-play-fill"/></svg>
                                 Run All
                             </button>
-                            <button class="run-all-btn danger" id="btn-delete-all-tests" title="Delete all test cases"
-                                style="display:none">
-                                <svg class="ico" data-icon="trash" width="12" height="12"><use href="#i-trash"/></svg>
-                                Delete All
-                            </button>
+                            <!-- Submit to the online judge through the Sameko extension (renderer/app/oj-submit.js);
+                                 the chip shows the focused tab's last submission. -->
+                            <span class="oj-submit-group" id="oj-submit-group">
+                                <button class="oj-verdict" id="oj-verdict" hidden></button>
+                                <button class="run-all-btn oj-submit-btn" id="btn-oj-submit" title="Submit to the online judge (Ctrl+Alt+S)">
+                                    <svg class="ico" data-icon="paper-plane-right" data-weight="fill" width="12" height="12"><use href="#i-paper-plane-right-fill"/></svg>
+                                    Submit
+                                </button>
+                            </span>
                             <button class="panel-collapse" id="collapse-problems" title="Collapse or expand the panel">
                                 <svg class="ico" data-icon="caret-down"><use href="#i-caret-down"/></svg>
                             </button>
@@ -1451,6 +1475,7 @@
     <script src="renderer/app/file-watch.js"></script>
     <script src="renderer/app/batch-tests.js"></script>
     <script src="renderer/app/stress-test.js"></script>
+    <script src="renderer/app/oj-submit.js"></script>
     <script src="renderer/app/terminal-input.js"></script>
     <script src="renderer/app/updates.js"></script>
     <script src="renderer/app/tab-menu.js"></script>

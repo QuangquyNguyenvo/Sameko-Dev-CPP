@@ -1,0 +1,238 @@
+/* ===== SUBMIT TO ONLINE JUDGE (src/renderer/app/oj-submit.js) =====
+ * The Submit button and the verdict chip sit in the bottom panel's header, before Run All;
+ * the Sameko extension section is part of the Get Tests popup (#cc-overlay). Theme tokens only. */
+
+/* Header actions, right-aligned by the spacer: [trash] [Run All] | [verdict] [Submit].
+ * The three do different things, so they do not look alike: Run All is the filled button,
+ * Submit (it leaves the machine) is outlined and set apart by a divider, and Delete All is a
+ * quiet icon that turns red on hover (it asks before deleting). */
+.problems-panel .panel-actions-spacer {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.problems-panel .panel-actions-spacer ~ .run-all-btn {
+    margin-left: 0;
+}
+
+.problems-panel #btn-delete-all-tests {
+    padding: 5px 7px;
+    margin-right: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.problems-panel #btn-delete-all-tests:hover {
+    background: color-mix(in srgb, var(--error) 16%, transparent);
+    color: var(--error);
+    filter: none;
+}
+
+.problems-panel .oj-submit-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 4px;
+    margin-right: 8px;
+    padding-left: 12px;
+    border-left: 1px solid color-mix(in srgb, var(--text-secondary) 35%, transparent);
+    min-width: 0;
+}
+
+.problems-panel #btn-oj-submit {
+    background: transparent;
+    color: var(--accent);
+    box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+
+.problems-panel #btn-oj-submit:hover {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    filter: none;
+}
+
+.problems-panel[data-view="stress"] .oj-submit-group {
+    display: none;
+}
+
+.oj-submit-group .oj-submit-btn {
+    margin: 0;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* Verdict chip: progress in the accent colour, AC green, the rest red or amber. */
+.oj-verdict {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 260px;
+    min-width: 0;
+    padding: 3px 9px;
+    border-radius: 999px;
+    border: 1.5px solid var(--oj-chip, var(--accent));
+    background: color-mix(in srgb, var(--oj-chip, var(--accent)) 16%, transparent);
+    color: var(--text-primary);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.3;
+    cursor: default;
+    white-space: nowrap;
+}
+
+.oj-verdict[hidden] {
+    display: none;
+}
+
+.oj-verdict.has-link {
+    cursor: pointer;
+}
+
+.oj-verdict.has-link:hover {
+    background: color-mix(in srgb, var(--oj-chip, var(--accent)) 26%, transparent);
+}
+
+.oj-verdict[data-kind="ac"] { --oj-chip: var(--success); }
+.oj-verdict[data-kind="bad"] { --oj-chip: var(--error); }
+.oj-verdict[data-kind="warn"] { --oj-chip: var(--warning); }
+
+.oj-verdict[data-kind="progress"] .oj-verdict-code::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    vertical-align: 1px;
+    animation: pulse 1s infinite;
+}
+
+.oj-verdict-code {
+    flex-shrink: 0;
+}
+
+.oj-verdict-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+/* ---- Problem URL dialog (the app's small text dialog plus a hint) ---- */
+.oj-url-dialog {
+    width: min(460px, calc(100vw - 32px));
+}
+
+.oj-url-dialog .input-dialog-field {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.oj-url-hint {
+    margin: 0 0 10px;
+    color: var(--text-secondary);
+    font-size: 12.5px;
+    line-height: 1.45;
+}
+
+.oj-url-error {
+    margin: 8px 0 0;
+    color: var(--error);
+    font-size: 12px;
+}
+
+/* ---- Get Tests popup: the Sameko extension section ---- */
+.cc-popup .cc-body {
+    max-height: calc(100vh - 190px);
+    overflow-y: auto;
+}
+
+.oj-ext {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: var(--bg-button);
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.oj-ext-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.oj-ext-title {
+    color: var(--text-secondary);
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.oj-ext-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.oj-ext-state::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-muted);
+}
+
+.oj-ext-state[data-state="on"] { color: var(--success); }
+.oj-ext-state[data-state="on"]::before { background: var(--success); }
+.oj-ext-state[data-state="pending"] { color: var(--warning); }
+.oj-ext-state[data-state="pending"]::before { background: var(--warning); }
+
+.oj-ext .cc-btn {
+    padding: 8px 16px;
+    font-size: 12.5px;
+}
+
+.oj-ext-current {
+    width: 100%;
+}
+
+.oj-ext-row {
+    display: flex;
+    gap: 8px;
+}
+
+.oj-ext-url {
+    flex: 1;
+    min-width: 0;
+    padding: 7px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: var(--editor-bg);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 12.5px;
+}
+
+.oj-ext-url:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.oj-ext-msg {
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+
+.oj-ext-msg[data-kind="error"] { color: var(--error); }
+.oj-ext-msg[data-kind="warn"] { color: var(--warning); }

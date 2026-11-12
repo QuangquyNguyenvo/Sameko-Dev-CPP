@@ -603,7 +603,9 @@ function renderStressView() {
                 <span class="stress-chip" title="Run time of your solution">${stressMs(r.time)}</span>
                 <span class="stress-file stress-file-muted" translate="no">${escHtml(run.solName)}</span>
                 <span class="stress-actions">
-                    <button class="stress-btn primary" id="stress-add" ${r.addedAs ? 'disabled' : ''}>${r.addedAs ? `Added as Test ${r.addedAs}` : 'Add to tests'}</button>
+                    ${r.addedAs
+                        ? `<span class="stress-added"><span aria-hidden="true">✓</span><span>Added as Test ${r.addedAs}</span></span>`
+                        : '<button class="stress-btn primary" id="stress-add">Add to tests</button>'}
                     <button class="stress-btn" id="stress-copy">Copy input</button>
                 </span>
             </div>

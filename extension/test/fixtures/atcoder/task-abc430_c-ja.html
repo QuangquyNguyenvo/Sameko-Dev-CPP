@@ -1,0 +1,288 @@
+<!-- Real page: https://atcoder.jp/contests/abc430/tasks/abc430_c?lang=ja, fetched anonymously 2026-11-11; scripts/styles/footer stripped, csrf token blanked. -->
+
+<!DOCTYPE html>
+<html>
+<head>
+	<title>C - Truck Driver</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<script>
+		var LANG = "ja";
+		var userScreenName = "";
+		var csrfToken = "FIXTURE"
+	</script>
+
+		</head>
+
+<body>
+
+<div id="main-div" class="float-container">
+
+	<nav class="navbar navbar-inverse navbar-fixed-top">
+		<div class="container-fluid">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse" aria-expanded="false">
+					<span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="/home"></a>
+			</div>
+			<div class="collapse navbar-collapse" id="navbar-collapse">
+				<ul class="nav navbar-nav">
+				
+					<li><a class="contest-title" href="/contests/abc430">AtCoder Beginner Contest 430</a></li>
+				
+				</ul>
+				<ul class="nav navbar-nav navbar-right">
+					
+					<li class="dropdown">
+						<a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">
+							<img src='//img.atcoder.jp/assets/top/img/flag-lang/ja.png'> 日本語 <span class="caret"></span>
+						</a>
+						<ul class="dropdown-menu">
+							<li><a href="/contests/abc430/tasks/abc430_c?lang=ja"><img src='//img.atcoder.jp/assets/top/img/flag-lang/ja.png'> 日本語</a></li>
+							<li><a href="/contests/abc430/tasks/abc430_c?lang=en"><img src='//img.atcoder.jp/assets/top/img/flag-lang/en.png'> English</a></li>
+						</ul>
+					</li>
+
+						<li><a href="/register?continue=https%3A%2F%2Fatcoder.jp%2Fcontests%2Fabc430%2Ftasks%2Fabc430_c%3Flang%3Dja">新規登録</a></li>
+						<li><a href="/login?continue=https%3A%2F%2Fatcoder.jp%2Fcontests%2Fabc430%2Ftasks%2Fabc430_c%3Flang%3Dja">ログイン</a></li>
+					
+				</ul>
+			</div>
+		</div>
+	</nav>
+
+	<form method="POST" name="form_logout" action="/logout?continue=https%3A%2F%2Fatcoder.jp%2Fcontests%2Fabc430%2Ftasks%2Fabc430_c%3Flang%3Dja">
+		<input type="hidden" name="csrf_token" value="FIXTURE" />
+	</form>
+	<div id="main-container" class="container"
+		 	style="padding-top:50px;">
+
+<div class="row">
+	<div id="contest-nav-tabs" class="col-sm-12 mb-2 cnvtb-fixed">
+	<div>
+		<small class="contest-duration">
+			
+				コンテスト時間:
+				<a href='http://www.timeanddate.com/worldclock/fixedtime.html?iso=20251101T2100&p1=248' target='blank'><time class='fixtime fixtime-full'>2025-11-01 21:00:00+0900</time></a> ~ <a href='http://www.timeanddate.com/worldclock/fixedtime.html?iso=20251101T2240&p1=248' target='blank'><time class='fixtime fixtime-full'>2025-11-01 22:40:00+0900</time></a> 
+				(100分)
+			
+		</small>
+		<small class="back-to-home pull-right"><a href="/home">AtCoderホームへ戻る</a></small>
+	</div>
+	<ul class="nav nav-tabs">
+		<li><a href="/contests/abc430"><span class="glyphicon glyphicon-home" aria-hidden="true"></span> トップ</a></li>
+
+			<li class="active"><a href="/contests/abc430/tasks"><span class="glyphicon glyphicon-tasks" aria-hidden="true"></span> 問題</a></li>
+
+			<li><a href="/contests/abc430/clarifications"><span class="glyphicon glyphicon-question-sign" aria-hidden="true"></span> 質問 <span id="clar-badge" class="badge" ></span></a></li>
+
+			<li>
+				<a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false"><span class="glyphicon glyphicon-list" aria-hidden="true"></span> 提出結果<span class="caret"></span></a>
+				<ul class="dropdown-menu">
+					<li><a href="/contests/abc430/submissions"><span class="glyphicon glyphicon-globe" aria-hidden="true"></span> すべての提出</a></li>
+					
+				</ul>
+			</li>
+
+					<li><a href="/contests/abc430/standings"><span class="glyphicon glyphicon-sort-by-attributes-alt" aria-hidden="true"></span> 順位表</a></li>
+
+					<li><a href="/contests/abc430/standings/virtual"><span class="glyphicon glyphicon-sort-by-attributes-alt" aria-hidden="true"></span> バーチャル順位表</a></li>
+
+			<li><a href="/contests/abc430/editorial"><span class="glyphicon glyphicon-book" aria-hidden="true"></span> 解説</a></li>
+
+		<li class="pull-right"><a id="fix-cnvtb" href="javascript:void(0)"><span class="glyphicon glyphicon-pushpin" aria-hidden="true"></span></a></li>
+	</ul>
+</div>
+	<div class="col-sm-12">
+		<span class="h2">
+			C - Truck Driver
+			<a class="btn btn-default btn-sm" href="/contests/abc430/tasks/abc430_c/editorial">解説</a>
+		</span>
+		<span id="task-lang-btn" class="pull-right"><span data-lang="ja"><img src='//img.atcoder.jp/assets/top/img/flag-lang/ja.png'></span> / <span data-lang="en"><img src='//img.atcoder.jp/assets/top/img/flag-lang/en.png'></span></span>
+		
+		<hr/>
+		<p>
+			実行時間制限: 2 sec / メモリ制限: 1024 MiB
+
+		</p>
+
+		<div id="task-statement">
+
+			<span class="lang">
+<span class="lang-ja">
+<p>配点 : <var>300</var> 点</p>
+
+<div class="part">
+<section>
+<h3>問題文</h3><blockquote>
+<p>AtCoder 国には「トラック運転手は <var>A</var> 分以上運転する際には <var>B</var> 分以上の休憩を取らなければならない」というルールがあります。</p>
+</blockquote>
+<p><code>a</code>, <code>b</code> からなる長さ <var>N</var> の文字列 <var>S</var> と正整数 <var>A,B</var> が与えられます。以下の条件を全て満たす整数組 <var>(l,r)</var> の個数を求めてください。</p>
+<ul>
+<li><var>1\leq l \leq r \leq N</var></li>
+<li><var>S</var> の <var>l</var> 文字目から <var>r</var> 文字目までに含まれる <code>a</code> の個数が <var>A</var> 以上</li>
+<li><var>S</var> の <var>l</var> 文字目から <var>r</var> 文字目までに含まれる <code>b</code> の個数が <var>B</var> 未満</li>
+</ul>
+</section>
+</div>
+
+<div class="part">
+<section>
+<h3>制約</h3><ul>
+<li><var>1\leq N \leq 3\times 10^5</var></li>
+<li><var>1 \leq A,B \leq N</var></li>
+<li><var>S</var> は <code>a</code>, <code>b</code> のみからなる長さ <var>N</var> の文字列</li>
+<li>与えられる数値は全て整数</li>
+</ul>
+</section>
+</div>
+
+<hr />
+<div class="io-style">
+<div class="part">
+<section>
+<h3>入力</h3><p>入力は以下の形式で標準入力から与えられる。</p>
+<pre><var>N</var> <var>A</var> <var>B</var>
+<var>S</var>
+</pre>
+</section>
+</div>
+
+<div class="part">
+<section>
+<h3>出力</h3><p>答えを出力せよ。</p>
+</section>
+</div>
+</div>
+
+<hr />
+<div class="part">
+<section>
+<h3>入力例 1</h3><pre>11 4 2
+abbaaabaaba
+</pre>
+</section>
+</div>
+
+<div class="part">
+<section>
+<h3>出力例 1</h3><pre>3
+</pre>
+<p>条件を満たす <var>(l,r)</var> の組は <var>(4,8),(4,9),(5,9)</var> の <var>3</var> 個です。</p>
+</section>
+</div>
+
+<hr />
+<div class="part">
+<section>
+<h3>入力例 2</h3><pre>13 1 2
+bbbbbbbbbbbbb
+</pre>
+</section>
+</div>
+
+<div class="part">
+<section>
+<h3>出力例 2</h3><pre>0
+</pre>
+<p>条件を満たす <var>(l,r)</var> の組は存在しません。</p></section>
+</div>
+</span>
+<span class="lang-en">
+<p>Score : <var>300</var> points</p>
+
+<div class="part">
+<section>
+<h3>Problem Statement</h3><blockquote>
+<p>In AtCoder Country, there is a rule that "a truck driver must take a break of at least <var>B</var> minutes when driving for <var>A</var> minutes or more."</p>
+</blockquote>
+<p>You are given a string <var>S</var> of length <var>N</var> consisting of <code>a</code> and <code>b</code>, and positive integers <var>A</var> and <var>B</var>. Find the number of integer pairs <var>(l,r)</var> that satisfy all of the following conditions.</p>
+<ul>
+<li><var>1\leq l \leq r \leq N</var></li>
+<li>The number of <code>a</code> in the substring from the <var>l</var>-th character through the <var>r</var>-th character of <var>S</var> is greater than or equal to <var>A</var>.</li>
+<li>The number of <code>b</code> in the substring from the <var>l</var>-th character through the <var>r</var>-th character of <var>S</var> is less than <var>B</var>.</li>
+</ul>
+</section>
+</div>
+
+<div class="part">
+<section>
+<h3>Constraints</h3><ul>
+<li><var>1\leq N \leq 3\times 10^5</var></li>
+<li><var>1 \leq A,B \leq N</var></li>
+<li><var>S</var> is a string of length <var>N</var> consisting of <code>a</code> and <code>b</code>.</li>
+<li>All input numbers are integers.</li>
+</ul>
+</section>
+</div>
+
+<hr />
+<div class="io-style">
+<div class="part">
+<section>
+<h3>Input</h3><p>The input is given from Standard Input in the following format:</p>
+<pre><var>N</var> <var>A</var> <var>B</var>
+<var>S</var>
+</pre>
+</section>
+</div>
+
+<div class="part">
+<section>
+<h3>Output</h3><p>Print the answer.</p>
+</section>
+</div>
+</div>
+
+<hr />
+<div class="part">
+<section>
+<h3>Sample Input 1</h3><pre>11 4 2
+abbaaabaaba
+</pre>
+</section>
+</div>
+
+<div class="part">
+<section>
+<h3>Sample Output 1</h3><pre>3
+</pre>
+<p>The pairs <var>(l,r)</var> that satisfy the conditions are <var>(4,8),(4,9),(5,9)</var>, which is three pairs.</p>
+</section>
+</div>
+
+<hr />
+<div class="part">
+<section>
+<h3>Sample Input 2</h3><pre>13 1 2
+bbbbbbbbbbbbb
+</pre>
+</section>
+</div>
+
+<div class="part">
+<section>
+<h3>Sample Output 2</h3><pre>0
+</pre>
+<p>There are no pairs <var>(l,r)</var> that satisfy the conditions.</p></section>
+</div>
+</span>
+</span>
+
+		</div>
+
+	</div>
+</div>
+
+			<hr>
+
+	</div> 
+	<hr>
+</div> 
+
+	<p id="fixed-server-timer" class="contest-timer"></p>
+	<div id="scroll-page-top" style="display:none;"><span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span> ページトップ</div>
+
+</body>
+</html>
+

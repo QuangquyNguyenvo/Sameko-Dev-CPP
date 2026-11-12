@@ -28,7 +28,7 @@ function saveTestStateToTab(tab) {
 function loadTestStateFromTab(tab) {
     const st = tab && tab.testState;
     ccProblem = st ? st.problem : null;
-    ccTestIndex = st ? (st.index || 0) : 0;
+    ccTestIndex = st ? (st.index ?? 0) : 0;   // -1: no test selected (boxes are the user's own)
     batchTestResults = st ? (st.results || []) : [];
     const count = ccProblem?.tests?.length || 0;
     if (count > 0) ccTestIndex = Math.min(ccTestIndex, count - 1);
@@ -37,13 +37,15 @@ function loadTestStateFromTab(tab) {
     renderTestResults();
     // The STRESS tab lists the files next to the focused tab (stress-test.js).
     if (typeof onStressTabChanged === 'function') onStressTabChanged();
+    // The verdict chip shows this tab's last submission (oj-submit.js).
+    if (typeof renderOjVerdictChip === 'function') renderOjVerdictChip();
 
     // Show the selected test (and its last result) without taking keyboard
     // focus away from the editor — this runs on every tab switch.
     const inputArea = document.getElementById('input-area');
     const expectedArea = document.getElementById('expected-area');
     const diffDisplay = document.getElementById('expected-diff');
-    if (count > 0) {
+    if (count > 0 && ccTestIndex >= 0) {
         const test = ccProblem.tests[ccTestIndex];
         if (inputArea) inputArea.value = test.input || '';
         if (expectedArea) expectedArea.value = test.output || '';
@@ -181,7 +183,7 @@ function addTestCase() {
 }
 
 async function deleteTestCase() {
-    if (!ccProblem || !ccProblem.tests || ccProblem.tests.length === 0) return;
+    if (!ccProblem || !ccProblem.tests || ccProblem.tests.length === 0 || ccTestIndex < 0) return;
 
     const confirmed = await showConfirmDialog({
         title: 'Delete Test Case',
@@ -310,6 +312,13 @@ async function startCCServer(silent = false) {
 }
 
 async function handleProblemReceived(problem) {
+    // From the Sameko extension (oj-submit.js): drop the transport fields, and a problem sent
+    // automatically for a page an open tab already has. An automatic one leaves the panels and focus alone.
+    const quiet = problem?.auto === true;
+    if (problem?.via === 'sameko') {
+        problem = ojAcceptProblem(problem);
+        if (!problem) return;
+    }
 
     if (!ccHasReceivedProblem) {
         ccHasReceivedProblem = true;
@@ -336,7 +345,7 @@ async function handleProblemReceived(problem) {
             // Replace all tests
             ccProblem = problem;
         }
-        ccTestIndex = 0;
+        ccTestIndex = -1;
     } else {
         // Create a new tab that owns this problem's tests (setActive() below
         // makes them the live ones).
@@ -441,7 +450,7 @@ async function handleProblemReceived(problem) {
             content: template,
             original: targetPath ? template : '',
             modified: !targetPath,
-            testState: { problem, index: 0, results: [] }
+            testState: { problem, index: -1, results: [] }
         });
 
         // setActive() saves the tab being left (text, scroll position, I/O
@@ -451,15 +460,11 @@ async function handleProblemReceived(problem) {
         updateUI();
     }
 
-    // Load first test into UI
+    // The tests go to the TESTS panel only. The Input / Expected boxes are left alone and no
+    // test is selected, so Run still reads what the user types in the console; a test is used
+    // when the user picks it (TESTS row, the arrows) or presses Run All.
     const testCount = ccProblem?.tests?.length || 0;
-    if (testCount > 0) {
-        const inputArea = document.getElementById('input-area');
-        const expectedArea = document.getElementById('expected-area');
-
-        if (inputArea) inputArea.value = ccProblem.tests[0].input || '';
-        if (expectedArea) expectedArea.value = ccProblem.tests[0].output || '';
-    }
+    ccTestIndex = -1;
 
     // Clear any stale Expected/Actual comparison from a previous problem/run
     resetTestRunResults();
@@ -467,7 +472,7 @@ async function handleProblemReceived(problem) {
     updateTestNavUI();
     renderTestResults(); // Initialize list
 
-    if (!App.showIO) toggleIO();
+    if (!App.showIO && !quiet) toggleIO();
 
     const timeLimit = problem.timeLimit ? `${problem.timeLimit}ms` : '-';
     const memLimit = problem.memoryLimit ? `${problem.memoryLimit}MB` : '-';
@@ -489,7 +494,7 @@ async function handleProblemReceived(problem) {
 
     setTimeout(() => {
         if (App.editor) {
-            App.editor.focus();
+            if (!quiet) App.editor.focus();
             App.editor.layout();
         }
     }, 100);
@@ -611,6 +616,8 @@ function nextTestCase() {
 
 function prevTestCase() {
     if (ccProblem && ccProblem.tests && ccProblem.tests.length > 0) {
-        switchTestCase((ccTestIndex - 1 + ccProblem.tests.length) % ccProblem.tests.length);
+        // From "no test selected" (-1) the previous test is the last one.
+        const n = ccProblem.tests.length;
+        switchTestCase(ccTestIndex < 0 ? n - 1 : (ccTestIndex - 1 + n) % n);
     }
 }

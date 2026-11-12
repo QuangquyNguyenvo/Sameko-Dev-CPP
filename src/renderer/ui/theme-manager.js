@@ -1553,6 +1553,8 @@ const ThemeManager = {
             ? editorScheme
             : themeId;
         this._applyMonacoTheme(monacoThemeId);
+        // The Sameko browser extension's popup follows the theme (deferred; oj-submit.js).
+        if (typeof scheduleOjThemeSnapshot === 'function') scheduleOjThemeSnapshot();
     },
 
     /**

@@ -1,0 +1,3 @@
+Fredoka and Nunito are copied from the Sameko Dev C++ app (src/assets/fonts) and are
+licensed under the SIL Open Font License, Version 1.1 (https://openfontlicense.org).
+Fredoka: Copyright The Fredoka Project Authors. Nunito: Copyright The Nunito Project Authors.

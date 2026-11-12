@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sameko Dev C++ Companion</title>
+  <link rel="stylesheet" href="../popup/ui.css">
+  <link rel="stylesheet" href="welcome.css">
+</head>
+<body>
+  <main class="wrap">
+    <img class="hero-icon" src="../icons/icon-128.png" alt="" width="88" height="88">
+    <h1 class="hero-title" translate="no">Sameko Dev C++</h1>
+
+    <!-- One line that says what to do now; it changes by itself as the app is found and approves. -->
+    <section class="status" data-state="checking" aria-live="polite">
+      <p class="status-line"><span class="dot" aria-hidden="true"></span><span class="status-title" data-i18n="statusChecking">Looking for Sameko Dev C++…</span></p>
+      <div class="status-actions">
+        <a class="btn btn-primary status-getapp" href="https://sameko.dev" hidden data-i18n="actionGetApp">Get the app</a>
+        <button type="button" class="btn btn-primary status-retry" hidden data-i18n="actionRetry">Try again</button>
+      </div>
+    </section>
+
+    <ul class="sites" hidden></ul>
+
+    <p class="foot muted" data-i18n="welcomePrivacy">Passwords and cookies stay in your browser.</p>
+  </main>
+
+  <script src="../popup/ui.js"></script>
+  <script src="welcome.js"></script>
+</body>
+</html>

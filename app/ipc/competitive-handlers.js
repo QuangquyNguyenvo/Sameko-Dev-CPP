@@ -6,10 +6,11 @@
 
 'use strict';
 
-const { ipcMain } = require('electron');
+const { ipcMain, app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const competitive = require('../services/competitive');
+const { IPC } = require('../shared/constants');
 // Synchronous like the reads, so a read-sameko that follows a write-sameko
 // always sees it (an async write could still be pending when the read runs).
 const { writeFileAtomicSync } = require('../shared/fs-atomic');
@@ -41,9 +42,36 @@ function setMainWindow(window) {
 /**
  * Register all competitive programming IPC handlers
  */
+function send(channel, data) {
+    if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, data);
+}
+
 function registerHandlers() {
+    // Sameko Companion extension: lives on the CC server, so it starts with it.
+    // Creating it does no I/O (approved origins are read on the first request).
+    competitive.configureBridge({
+        stateDir: path.join(app.getPath('userData'), 'state'),
+        appInfo: { name: 'Sameko Dev C++', version: app.getVersion() },
+        onStatusChange: (status) => send(IPC.EVENTS.OJ_BRIDGE_STATUS, status),
+        onSubmitStatus: (ev) => send(IPC.EVENTS.OJ_SUBMIT_STATUS, ev),
+        onFetchFailed: (ev) => send(IPC.EVENTS.OJ_FETCH_FAILED, ev),
+        onPairRequest: (req) => send(IPC.EVENTS.OJ_PAIR_REQUEST, req),
+    });
+
+    ipcMain.handle(IPC.OJ.STATUS, async () => competitive.getBridge().getStatus());
+    ipcMain.handle(IPC.OJ.SUBMIT, async (event, job) => competitive.getBridge().submit(job));
+    ipcMain.handle(IPC.OJ.FETCH_PROBLEM, async (event, req) => competitive.getBridge().fetchProblem(req));
+    ipcMain.handle(IPC.OJ.PAIR_RESPOND, async (event, r) => competitive.getBridge().respondPair(r));
+    ipcMain.handle(IPC.OJ.SET_THEME, async (event, t) => competitive.getBridge().setTheme(t));
+
     // CP Companion server control
     ipcMain.handle('cc-start-server', async () => {
+        // A profile under the temp folder is a test or probe run (see AGENTS.md "Verifying a
+        // change"). It must not listen on the real port: the developer's own browser extension
+        // would connect to it, and a test that exercises Submit could reach a real judge.
+        const profile = path.resolve(app.getPath('userData')).toLowerCase();
+        const temp = path.resolve(require('os').tmpdir()).toLowerCase();
+        if (profile.startsWith(temp + path.sep)) return await competitive.startServer({ port: 0 });
         return await competitive.startServer();
     });
 

@@ -170,7 +170,10 @@ window.registerCppIntellisense = function (monaco) {
         const SNIPPETS = window.BUILTIN_SNIPPETS;
         const settings = (typeof App !== 'undefined' && App.settings) || {};
         const hidden = new Set(Array.isArray(settings.hiddenSnippets) ? settings.hiddenSnippets : []);
-        if (Array.isArray(settings.snippets)) settings.snippets.forEach(s => hidden.add(s.trigger));
+        // User snippets of the file's language only (snippet-editor.js snippetAppliesTo).
+        const applies = (s) => typeof snippetAppliesTo !== 'function' || snippetAppliesTo(s, languageId);
+        const userSnippets = Array.isArray(settings.snippets) ? settings.snippets.filter(applies) : [];
+        userSnippets.forEach(s => hidden.add(s.trigger));
         const langSnippets = (languageId === 'cpp') ? SNIPPETS.cpp : SNIPPETS.c;
         [...SNIPPETS.common, ...langSnippets].forEach(s => {
             if (!s.expr && !statementOK) return;
@@ -187,16 +190,14 @@ window.registerCppIntellisense = function (monaco) {
         // everywhere the built-in went, `sort(all|)` included.
         const exprTriggers = new Set([...SNIPPETS.common, ...langSnippets].filter(s => s.expr).map(s => s.label));
         const insideParentheses = /\([^)]*$/.test(textUntilPosition);
-        if (Array.isArray(settings.snippets)) {
-            settings.snippets.forEach(s => {
-                if (!statementOK && insideParentheses && !exprTriggers.has(s.trigger)) return;
-                suggestions.push({
-                    label: s.trigger, kind: monaco.languages.CompletionItemKind.Snippet,
-                    insertText: s.content, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-                    documentation: s.name || 'Custom Snippet', range: range
-                });
+        userSnippets.forEach(s => {
+            if (!statementOK && insideParentheses && !exprTriggers.has(s.trigger)) return;
+            suggestions.push({
+                label: s.trigger, kind: monaco.languages.CompletionItemKind.Snippet,
+                insertText: s.content, insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                documentation: s.name || 'Custom Snippet', range: range
             });
-        }
+        });
 
         const cppKeywords = [
             'int', 'long', 'void', 'char', 'bool', 'return', 'break', 'continue', 'struct', 'const',

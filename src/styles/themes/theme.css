@@ -4579,9 +4579,10 @@ body.split-active .editor-pane {
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.02em;
-    padding: 4px 0;
+    padding: 4px 10px;
     border-radius: 999px;
-    min-width: 0;
+    min-width: 44px;
+    box-sizing: border-box;
     text-align: center;
     flex-shrink: 0;
 }

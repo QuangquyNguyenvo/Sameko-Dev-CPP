@@ -115,6 +115,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ccOpenExtensionPage: () => ipcRenderer.invoke('cc-open-extension-page'),
     onProblemReceived: (callback) => ipcRenderer.on('problem-received', (event, data) => callback(data)),
 
+    // Sameko Companion browser extension: submit to online judges, fetch problems (extension/PROTOCOL.md §5)
+    ojBridgeStatus: () => ipcRenderer.invoke('oj-bridge-status'),
+    onOjBridgeStatus: (cb) => ipcRenderer.on('oj-bridge-status-changed', (e, d) => cb(d)),
+    ojSubmit: (job) => ipcRenderer.invoke('oj-submit', job),
+    ojFetchProblem: (req) => ipcRenderer.invoke('oj-fetch-problem', req),
+    onOjSubmitStatus: (cb) => ipcRenderer.on('oj-submit-status', (e, d) => cb(d)),
+    onOjFetchFailed: (cb) => ipcRenderer.on('oj-fetch-failed', (e, d) => cb(d)),
+    onOjPairRequest: (cb) => ipcRenderer.on('oj-pair-request', (e, d) => cb(d)),
+    ojPairRespond: (r) => ipcRenderer.invoke('oj-pair-respond', r),
+    ojSetTheme: (t) => ipcRenderer.invoke('oj-set-theme', t),
+
     // File watcher - detect external changes
     watchFile: (filePath) => ipcRenderer.invoke('watch-file', filePath),
     unwatchFile: (filePath) => ipcRenderer.invoke('unwatch-file', filePath),

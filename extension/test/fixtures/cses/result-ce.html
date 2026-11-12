@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!-- RECONSTRUCTED, not fetched (login-only page). Compile error (no test table; compiler report in a <pre>).
+     Header/skeleton/title-block copied from the real task-1068 fixture; logged-in account link is a guess.
+     Sources: userscript "Submit Text on CSES" (greasyfork 557074: input[name=file], select#lang, match cses.fi/problemset/submit/*),
+     cses-cli wiki (status/result vocabulary, -l language / -o option such as C++11/C++17), cses.fi/howto (language list:
+     C++ -> C++11/17/20/23, Python3 -> CPython3/PyPy3, Rust -> 2018/2021), and the author's memory of the site. -->
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CSES - Submission details</title></head>
+<body class="with-sidebar norm-width">
+  <div class="header">
+    <div>
+      <a href="/" class="logo"><img src="/logo.png?1" alt="CSES"></a>
+      <div class="controls">
+        <a class="account" href="/user/12345">someuser</a>
+        <span>&mdash;</span>
+        <a href="/logout">Logout</a>
+      </div>
+    </div>
+  </div>
+  <div class="skeleton">
+  <div class="navigation">
+    <div class="title-block">
+      <h3><a href="/problemset/list/">CSES Problem Set</a></h3>
+      <h1>Weird Algorithm</h1>
+      <ul class="nav">
+<li><a href="/problemset/task/1068/">Task</a></li>
+<li><a href="/problemset/submit/1068/">Submit</a></li>
+<li><a href="/problemset/result/1068/">Results</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="content-wrapper">
+  <div class="content">
+<h1 class="hide">Submission details</h1>
+<table class="summary-table narrow">
+<tr><td>Task:</td><td><a href="/problemset/task/1068/">Weird Algorithm</a></td></tr>
+<tr><td>Sender:</td><td>someuser</td></tr>
+<tr><td>Submission time:</td><td>2026-11-11 14:40:07</td></tr>
+<tr><td>Language:</td><td>C++17</td></tr>
+<tr><td>Status:</td><td>READY</td></tr>
+<tr><td>Result:</td><td class="failed">COMPILE ERROR</td></tr>
+</table><h3>Compiler report</h3>
+<pre>input/code.cpp: In function &#39;int main()&#39;:
+input/code.cpp:3:5: error: &#39;x&#39; was not declared in this scope
+</pre>
+  </div>
+  </div>
+  </div>
+</body>
+</html>

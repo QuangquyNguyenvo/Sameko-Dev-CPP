@@ -1,0 +1,60 @@
+<!-- RECONSTRUCTED (needs a login, cannot be fetched anonymously): https://codeforces.com/contest/1900/submit.
+     Field names/ids from open-source submitters: njlane314/cfx src/browser/connector.js (form with submittedProblemIndex,
+     programTypeId, source, cf-turnstile-response; .lang-chooser profile link), LumaKernel/cf-fast-submit main.user.js
+     (form.submit-form, #editor Ace, #toggleEditorCheckbox, #sourceCodeTextarea, input[name=sourceFile], input.submit,
+     tabSize, ftaa/bfaa), agrawal-d/cph-submit and langningchen/cph-ng (sourceCodeTextarea, select submittedProblemIndex,
+     .submit button), xalanq/cf-tool client/submit.go (POST fields, span.error). Language option texts are the real
+     2026 labels from the public status filter (programTypeForInvoker); the numeric values are illustrative. -->
+<!DOCTYPE html><html><head><meta name="utc_offset" content="+03:00"/><title>Submit - Codeforces Round 911 (Div. 2) - Codeforces</title></head>
+<body><div id="body">
+<div id="header"><div class="lang-chooser">
+  <div style="text-align: right;"><a href="?locale=en">en</a> <a href="?locale=ru">ru</a></div>
+  <div ><a href="/profile/sameko_tester">sameko_tester</a> | <a href="/4c1f0e2d9a7b3c5e/logout">Logout</a></div>
+</div></div>
+<div id="sidebar"><div class="roundbox sidebox"><div class="caption titled">&rarr; Last submissions</div>
+  <table class="rtable smaller"><tr><th>Submission</th><th>Time</th><th>Verdict</th></tr>
+  <tr><td><a href="/contest/1900/submission/398100001">398100001</a></td><td>Nov/11/2026 09:10</td><td>Accepted</td></tr></table>
+</div></div>
+<div id="pageContent">
+<form class="submit-form" method="post" action="?csrf_token=ca80ea1bfb22c382f62e81c4de41e59b" enctype="multipart/form-data">
+  <input type="hidden" name="csrf_token" value="ca80ea1bfb22c382f62e81c4de41e59b"/>
+  <input type="hidden" name="ftaa" value=""/><input type="hidden" name="bfaa" value=""/>
+  <input type="hidden" name="action" value="submitSolutionFormSubmitted"/>
+  <input type="hidden" name="contestId" value="1900"/>
+  <table class="table-form">
+    <tr><td class="field-name">Problem:</td><td>
+      <select name="submittedProblemIndex" style="width:400px;">
+        <option value="">Choose problem</option>
+        <option value="A" data-time-limit="1" data-memory-limit="256" data-input-file="" data-output-file="">A - Cover in Water</option>
+        <option value="B" data-time-limit="2" data-memory-limit="256" data-input-file="" data-output-file="">B - Laura and Operations</option>
+        <option value="C" data-time-limit="2.5" data-memory-limit="256" data-input-file="" data-output-file="">C - Anji's Binary Tree</option>
+      </select><span class="error for__submittedProblemIndex"></span></td></tr>
+    <tr><td class="field-name">Language:</td><td>
+      <select style="width:300px;" name="programTypeId">
+        <option value="43">GNU C11</option>
+        <option value="52">Clang++17 Diagnostics</option>
+        <option value="80">Clang++20 Diagnostics</option>
+        <option value="54">C++17 (GCC 7-32)</option>
+        <option value="89">C++20 (GCC 13-64)</option>
+        <option value="91" selected="selected">C++23 (GCC 14-64, msys2)</option>
+        <option value="65">C# 8</option><option value="79">C# 10</option><option value="96">C# 13</option><option value="9">Mono C#</option>
+        <option value="32">Go</option>
+        <option value="60">Java 8</option><option value="87">Java 21</option>
+        <option value="83">Kotlin 1.7</option><option value="88">Kotlin 1.9</option><option value="99">Kotlin 2.2</option>
+        <option value="3">Delphi</option><option value="4">FPC</option><option value="51">PascalABC.NET</option>
+        <option value="7">Python 2</option><option value="31">Python 3</option><option value="40">PyPy 2</option><option value="41">PyPy 3</option><option value="70">PyPy 3-64</option>
+        <option value="75">Rust 2021</option><option value="98">Rust 2024</option>
+        <option value="34">JavaScript</option><option value="55">Node.js</option>
+      </select><span class="error for__programTypeId"></span></td></tr>
+    <tr><td class="field-name">Source code:</td><td>
+      <div id="editor" class="ace_editor" style="height:400px"></div>
+      <textarea id="sourceCodeTextarea" name="source" style="display:none"></textarea>
+      <div><label><input type="checkbox" id="toggleEditorCheckbox"/> Switch off editor</label></div>
+      <div class="tabSizeDiv">Tab size: <input type="text" id="tabSizeInput" name="tabSize" value="4"/></div>
+      <span class="error for__source"></span></td></tr>
+    <tr><td class="field-name">Or choose file:</td><td><input name="sourceFile" type="file"/><span class="error for__sourceFile"></span></td></tr>
+    <tr><td colspan="2"><div class="cf-turnstile" data-sitekey="0x4AAAAAAAexample"><input type="hidden" name="cf-turnstile-response" value=""/></div></td></tr>
+    <tr><td colspan="2"><input class="submit" type="submit" value="Submit" id="singlePageSubmitButton"/></td></tr>
+  </table>
+</form>
+</div></div></body></html>

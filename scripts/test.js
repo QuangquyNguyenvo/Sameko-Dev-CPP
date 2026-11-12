@@ -19,9 +19,13 @@ const STAGES = [
         ['customizer state', 'test-theme-customizer-state.js'],
         ['mi-parser', 'test-debugger.js', '--unit'],
         ['run checks', 'test-run-checks.js'],
+        ['oj bridge', 'test-oj-bridge.js'],
+        ['oj round trip', 'test-oj-roundtrip.js'],
+        ['extension', '../extension/test/run.js'],
         ['judge', '../app/services/competitive/judge-selftest.js']
     ],
     [
+        ['extension adapters', '../extension/test/adapter-fixtures.js'],
         ['gui', 'test-gui.js'],
         ['theme customizer gui', 'test-theme-customizer-gui.js'],
         ['gdb e2e', 'test-debugger.js', '--e2e']

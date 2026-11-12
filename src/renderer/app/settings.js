@@ -1341,7 +1341,8 @@ const KEYBINDING_LABELS = {
     copyLineDown: 'Copy Line Down',
     uiZoomIn: 'Interface Scale: Larger',
     uiZoomOut: 'Interface Scale: Smaller',
-    uiZoomReset: 'Interface Scale: Auto'
+    uiZoomReset: 'Interface Scale: Auto',
+    submitToOJ: 'Submit to Online Judge'
 };
 
 let editingKeybinding = null;

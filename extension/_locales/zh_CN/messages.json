@@ -1,0 +1,113 @@
+{
+  "extName": {
+    "message": "Sameko Dev C++ Companion"
+  },
+  "extDescription": {
+    "message": "在你自己的浏览器会话中，从 Sameko Dev C++ 向在线评测网站提交代码，并把题目发送到应用。"
+  },
+  "extActionTitle": {
+    "message": "Sameko Dev C++ Companion"
+  },
+  "stateOpened": {
+    "message": "已打开"
+  },
+  "stateFilled": {
+    "message": "已填写"
+  },
+  "stateSubmitted": {
+    "message": "已提交"
+  },
+  "stateJudging": {
+    "message": "评测中"
+  },
+  "stateDone": {
+    "message": "完成"
+  },
+  "stateFailed": {
+    "message": "失败"
+  },
+  "verdictPartial": {
+    "message": "部分正确"
+  },
+  "verdictOther": {
+    "message": "其他"
+  },
+  "stConnected": {
+    "message": "已连接"
+  },
+  "stWaiting": {
+    "message": "等待中"
+  },
+  "stDenied": {
+    "message": "已拒绝"
+  },
+  "stOffline": {
+    "message": "未连接"
+  },
+  "stUpdate": {
+    "message": "需要更新"
+  },
+  "noticeOffline": {
+    "message": "请打开 Sameko Dev C++"
+  },
+  "noticeWaiting": {
+    "message": "请在 Sameko Dev C++ 中点击“允许”"
+  },
+  "noticeDenied": {
+    "message": "连接被拒绝"
+  },
+  "noticeProtocol": {
+    "message": "请更新 Sameko Dev C++ 和此扩展"
+  },
+  "noticePort": {
+    "message": "端口 27121 被其他程序占用"
+  },
+  "actionGetApp": {
+    "message": "获取应用"
+  },
+  "actionRetry": {
+    "message": "重试"
+  },
+  "sendButton": {
+    "message": "发送到应用"
+  },
+  "sendNeedPage": {
+    "message": "请打开题目页面"
+  },
+  "sendSending": {
+    "message": "发送中…"
+  },
+  "sendOk": {
+    "message": "已发送"
+  },
+  "sendFail": {
+    "message": "发送失败"
+  },
+  "settingAutoSend": {
+    "message": "打开题目时自动发送"
+  },
+  "settingAutoSubmit": {
+    "message": "自动提交"
+  },
+  "settingBackground": {
+    "message": "在后台标签页提交"
+  },
+  "statusChecking": {
+    "message": "正在查找 Sameko Dev C++…"
+  },
+  "statusReady": {
+    "message": "已就绪"
+  },
+  "welcomePrivacy": {
+    "message": "密码和 Cookie 不会离开浏览器。"
+  },
+  "toastSent": {
+    "message": "已发送到 Sameko Dev C++"
+  },
+  "toastOffline": {
+    "message": "Sameko Dev C++ 未运行"
+  },
+  "toastSubmitting": {
+    "message": "正在提交…"
+  }
+}

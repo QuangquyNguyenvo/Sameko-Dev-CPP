@@ -1,0 +1,113 @@
+{
+  "extName": {
+    "message": "Sameko Dev C++ Companion"
+  },
+  "extDescription": {
+    "message": "Submit từ Sameko Dev C++ lên các online judge ngay trong phiên trình duyệt của bạn, và gửi đề bài về app."
+  },
+  "extActionTitle": {
+    "message": "Sameko Dev C++ Companion"
+  },
+  "stateOpened": {
+    "message": "Đã mở"
+  },
+  "stateFilled": {
+    "message": "Đã điền"
+  },
+  "stateSubmitted": {
+    "message": "Đã submit"
+  },
+  "stateJudging": {
+    "message": "Đang chấm"
+  },
+  "stateDone": {
+    "message": "Xong"
+  },
+  "stateFailed": {
+    "message": "Thất bại"
+  },
+  "verdictPartial": {
+    "message": "Một phần"
+  },
+  "verdictOther": {
+    "message": "Khác"
+  },
+  "stConnected": {
+    "message": "Đã kết nối"
+  },
+  "stWaiting": {
+    "message": "Đang chờ"
+  },
+  "stDenied": {
+    "message": "Bị từ chối"
+  },
+  "stOffline": {
+    "message": "Chưa kết nối"
+  },
+  "stUpdate": {
+    "message": "Cần cập nhật"
+  },
+  "noticeOffline": {
+    "message": "Hãy mở Sameko Dev C++"
+  },
+  "noticeWaiting": {
+    "message": "Bấm Cho phép trong Sameko Dev C++"
+  },
+  "noticeDenied": {
+    "message": "Kết nối bị từ chối"
+  },
+  "noticeProtocol": {
+    "message": "Hãy cập nhật Sameko Dev C++ và extension này"
+  },
+  "noticePort": {
+    "message": "Chương trình khác đang dùng cổng 27121"
+  },
+  "actionGetApp": {
+    "message": "Tải app"
+  },
+  "actionRetry": {
+    "message": "Thử lại"
+  },
+  "sendButton": {
+    "message": "Gửi đề về app"
+  },
+  "sendNeedPage": {
+    "message": "Hãy mở một trang đề"
+  },
+  "sendSending": {
+    "message": "Đang gửi…"
+  },
+  "sendOk": {
+    "message": "Đã gửi"
+  },
+  "sendFail": {
+    "message": "Không gửi được"
+  },
+  "settingAutoSend": {
+    "message": "Tự gửi đề khi mở trang"
+  },
+  "settingAutoSubmit": {
+    "message": "Tự submit"
+  },
+  "settingBackground": {
+    "message": "Submit ở tab nền"
+  },
+  "statusChecking": {
+    "message": "Đang tìm Sameko Dev C++…"
+  },
+  "statusReady": {
+    "message": "Sẵn sàng"
+  },
+  "welcomePrivacy": {
+    "message": "Mật khẩu và cookie không rời khỏi trình duyệt."
+  },
+  "toastSent": {
+    "message": "Đã gửi về Sameko Dev C++"
+  },
+  "toastOffline": {
+    "message": "Sameko Dev C++ chưa chạy"
+  },
+  "toastSubmitting": {
+    "message": "Đang submit…"
+  }
+}

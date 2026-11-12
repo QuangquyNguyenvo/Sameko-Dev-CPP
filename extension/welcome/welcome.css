@@ -1,0 +1,20 @@
+/* Welcome page (opened once on install): the icon, one status line that tells the user what to
+ * do now, and the supported sites once connected. Colours and buttons come from popup/ui.css. */
+body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.wrap { width: min(420px, 100%); display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+.hero-icon { border-radius: 22px; }
+.hero-title { font: 600 26px/1.2 var(--font-display); }
+
+.status { --c: var(--text-muted); display: flex; flex-direction: column; align-items: center; gap: 12px; margin-top: 6px; }
+.status[data-state="connected"] { --c: var(--success); }
+.status[data-state="unpaired"] { --c: var(--warning); }
+.status[data-state="denied"], .status[data-state="disconnected"] { --c: var(--error); }
+.status-line { display: inline-flex; align-items: center; gap: 9px; font: 600 16px/1.35 var(--font-display); }
+.status-actions { display: flex; gap: 8px; }
+.status-actions:not(:has(:not([hidden]))) { display: none; }
+.status-actions .btn { min-height: 38px; padding: 8px 20px; font-size: 14px; }
+
+.sites { list-style: none; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 4px; }
+.site { padding: 3px 12px; border-radius: 999px; background: var(--hover-bg); font-size: 13px; }
+
+.foot { margin-top: 10px; font-size: 12px; }

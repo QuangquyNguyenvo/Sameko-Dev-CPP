@@ -123,7 +123,7 @@ the order of §9.
 | Feature | File | Global |
 |---|---|---|
 | Completion + hover (clangd, snippets) | `features/suggestions/cpp-suggestions.js` | `registerCppIntellisense` |
-| Snippet settings list | `features/snippets/snippet-editor.js` | `renderSnippetsList`, `editSnippet` |
+| Snippets: settings list, per-language `lang` (none = C/C++), suggestions outside C/C++ | `features/snippets/snippet-editor.js` | `renderSnippetsList`, `editSnippet`, `snippetAppliesTo`, `registerSnippetCompletions` |
 | Local history / checkpoints | `features/local-history/history-manager.js` | `LocalHistory` |
 | Explorer, categories, contest mode | `features/file-explorer/file-explorer.js` | `FileExplorer` |
 | Terminal output (xterm, display only; xterm.js is loaded with `loadScript` when the page is idle or on the first write, earlier writes are queued) | `features/terminal/terminal-manager.js` | `TerminalManager` |
@@ -452,6 +452,7 @@ function from a later file. Search for the function name to find the exact spot.
 | `file-watch.js` | 118 | External file changes and the reload prompt |
 | `batch-tests.js` | 605 | `runAllTests`, single test, results list, `buildCompileFlags` |
 | `stress-test.js` | 726 | STRESS tab of the bottom panel: generator / brute force / solution loop, `startStressTest`, Add to tests |
+| `oj-submit.js` | 536 | Submit to an online judge through the Sameko browser extension (`submitToOJ`, verdict chip per tab in `tab.ojSubmission`), the extension section of the Get Tests popup, pairing prompt, theme snapshot for the extension |
 | `terminal-input.js` | 217 | Terminal input box, xterm setup |
 | `updates.js` | 341 | About tab, update status, portable detection, compiler check at startup, `showToast` |
 | `tab-menu.js` | 218 | Tab context menu, local-history settings fields |
@@ -473,9 +474,48 @@ meanwhile cannot mix two files.
 | An IPC channel | `app/shared/constants.js` → `app/ipc/*-handlers.js` → `preload.js` |
 | Window, splash, dev server | `app/windows/` |
 | Competitive Companion / judging | `app/services/competitive/`, `app/ipc/competitive-handlers.js`, `app/shared/judge.js` |
+| Submit to OJ / Sameko browser extension | `extension/` (contract: `extension/PROTOCOL.md`), `app/services/competitive/extension-bridge.js`, `src/renderer/app/oj-submit.js` |
 | Formatting | `app/services/formatter/`, `app/ipc/format-handlers.js` |
 | Global UI state and init | `src/renderer/app/core.js` |
 | Tabs, settings, shortcuts, panels, tests | the matching file in `src/renderer/app/` (see §9) |
 | Explorer, terminal, debugger UI, checkpoints, completion | the loaded file under `src/features/` (see §4) |
 | Theme colors / tokens / CSS | `theme-manager.js` / `theme-tokens.js` / `src/styles/themes/*.css` |
 | Limits, flags, ports | `app/shared/constants.js` |
+
+## 11. Browser extension — `extension/`
+
+"Sameko Dev C++ Companion", Manifest V3, plain JS, no build step (load unpacked from the folder).
+It submits the focused tab's code to an online judge inside the user's own logged-in browser tab,
+reports the verdict back, and sends problems / sample tests to the app. The contract with the app
+is `extension/PROTOCOL.md`; change it in the same commit as the code on either side.
+
+```
+renderer oj-submit.js ─IPC─► main extension-bridge.js ◄─HTTP 127.0.0.1:27121 /sameko/v1/*─► background/bridge.js
+                                                                                              background/jobs.js ─► content/main.js ─► adapters/<id>.js
+```
+
+| File | Contents |
+|---|---|
+| `manifest.json` | Hosts of every supported judge appear twice: `host_permissions` and `content_scripts.matches`. The worker loads adapters from the content-script list. |
+| `shared/adapters.js` | `SamekoAdapters` registry (`register`, `get`, `byUrl`, `classifyUrl`, `list`) and pure helpers: `pickLanguage`, `normalizeVerdict`, `isPendingVerdict`, `parseTimeMs`, `parseMemoryKb`. Loaded by the worker and by pages. |
+| `adapters/<id>.js` | One judge each (`codeforces`, `atcoder`, `cses`, `dmoj` = VNOJ + LQDOJ + dmoj.ca). Pure `classify` / `submitUrl`; DOM `parseProblem`, `isLoggedIn`, `fillAndSubmit`, `readVerdict`, optional `readSubmitError`. No DOM access at load time. |
+| `background/bridge.js` | `hello` / long poll (`POST …/poll`) / `events` client, pairing loop, reconnect and the 30 s alarm, cached theme snapshot, connection state (`disconnected`, `unpaired`, `denied`, `connected`). |
+| `background/jobs.js` | Submit job per tab (`fill` → `watch`, stored in `chrome.storage.session`), tab reuse, timeouts, `fetchProblem`, auto-send, MAIN-world `setEditorText`. |
+| `background/service-worker.js` | Wires bridge + jobs to `chrome.*` events. |
+| `content/main.js`, `content/page-world.js` | On judge pages: asks the worker `whoami`, runs the adapter stage with the `h` helpers, watches the verdict. `page-world.js` sets Ace / CodeMirror / Monaco text in the page's own world. |
+| `popup/`, `welcome/`, `_locales/` | Popup (state, toggles, recent submissions) and first-install page, coloured from the app's theme snapshot; en / vi / zh_CN. |
+| `test/run.js` | Node suite with a fake `chrome` (`fake-chrome.js`) and a stub app (`stub-app.js`); in `npm test` as `extension`. |
+| `test/adapter-fixtures.js` | Runs `test/adapters/<id>.cases.js` against saved judge HTML in `test/fixtures/<id>/` (Electron DOM); in `npm test` as `extension adapters`. |
+| `test/mock-oj/`, `test/make-dev.js`, `test/e2e.js` | A local fake judge with a complete adapter (the worked example), a dev copy of the extension that includes it (`extension/.dev/`), and a real-browser end-to-end run (`node extension/test/e2e.js`, not in `npm test`). |
+
+Messages inside the extension — content → worker: `whoami`, `pageInfo`, `filled`, `submitted`,
+`verdict`, `failed`, `setEditorText`; worker → content: `getProblem`; popup → worker:
+`popup:getState`, `popup:sendProblem`, `popup:retry`, `popup:setSetting`.
+
+**Adding a judge:** copy `test/mock-oj/adapter.js` to `adapters/<id>.js`, add its hosts to both
+lists in `manifest.json`, save real page HTML under `test/fixtures/<id>/`, write
+`test/adapters/<id>.cases.js`. Nothing in the app changes: the extension tells the app which hosts
+it supports in `hello`.
+
+**Releases:** the extension ships through the browser stores only. Never publish a GitHub Release
+for it: the app's auto-update and the winget workflow both read this repository's releases.

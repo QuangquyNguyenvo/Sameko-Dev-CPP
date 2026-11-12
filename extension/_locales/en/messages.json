@@ -1,0 +1,113 @@
+{
+  "extName": {
+    "message": "Sameko Dev C++ Companion"
+  },
+  "extDescription": {
+    "message": "Submit from Sameko Dev C++ to online judges in your own browser session, and send problems to the app."
+  },
+  "extActionTitle": {
+    "message": "Sameko Dev C++ Companion"
+  },
+  "stateOpened": {
+    "message": "Opened"
+  },
+  "stateFilled": {
+    "message": "Filled"
+  },
+  "stateSubmitted": {
+    "message": "Submitted"
+  },
+  "stateJudging": {
+    "message": "Judging"
+  },
+  "stateDone": {
+    "message": "Done"
+  },
+  "stateFailed": {
+    "message": "Failed"
+  },
+  "verdictPartial": {
+    "message": "Partial"
+  },
+  "verdictOther": {
+    "message": "Other"
+  },
+  "stConnected": {
+    "message": "Connected"
+  },
+  "stWaiting": {
+    "message": "Waiting"
+  },
+  "stDenied": {
+    "message": "Denied"
+  },
+  "stOffline": {
+    "message": "Offline"
+  },
+  "stUpdate": {
+    "message": "Update needed"
+  },
+  "noticeOffline": {
+    "message": "Open Sameko Dev C++"
+  },
+  "noticeWaiting": {
+    "message": "Click Allow in Sameko Dev C++"
+  },
+  "noticeDenied": {
+    "message": "Connection denied"
+  },
+  "noticeProtocol": {
+    "message": "Update Sameko Dev C++ and this extension"
+  },
+  "noticePort": {
+    "message": "Another program is using port 27121"
+  },
+  "actionGetApp": {
+    "message": "Get the app"
+  },
+  "actionRetry": {
+    "message": "Try again"
+  },
+  "sendButton": {
+    "message": "Send to app"
+  },
+  "sendNeedPage": {
+    "message": "Open a problem page"
+  },
+  "sendSending": {
+    "message": "Sending…"
+  },
+  "sendOk": {
+    "message": "Sent"
+  },
+  "sendFail": {
+    "message": "Could not send"
+  },
+  "settingAutoSend": {
+    "message": "Auto-send problems"
+  },
+  "settingAutoSubmit": {
+    "message": "Auto-submit"
+  },
+  "settingBackground": {
+    "message": "Submit in a background tab"
+  },
+  "statusChecking": {
+    "message": "Looking for Sameko Dev C++…"
+  },
+  "statusReady": {
+    "message": "Ready"
+  },
+  "welcomePrivacy": {
+    "message": "Passwords and cookies stay in your browser."
+  },
+  "toastSent": {
+    "message": "Sent to Sameko Dev C++"
+  },
+  "toastOffline": {
+    "message": "Sameko Dev C++ is not running"
+  },
+  "toastSubmitting": {
+    "message": "Submitting…"
+  }
+}

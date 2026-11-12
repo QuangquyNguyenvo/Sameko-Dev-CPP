@@ -149,10 +149,11 @@ int main() {
         copyLineDown: 'Shift+Alt+Down',
         uiZoomIn: 'Ctrl+=',
         uiZoomOut: 'Ctrl+-',
-        uiZoomReset: 'Ctrl+0'
+        uiZoomReset: 'Ctrl+0',
+        submitToOJ: 'Ctrl+Alt+S'
     },
     snippets: [
-        { trigger: 'hello', name: 'Hello World', content: '#include <iostream>\nusing namespace std;\n\nint main() {\n\tcout << "Hello World!";\n\treturn 0;\n}', isBuiltin: true },
+        { trigger: 'hello', name: 'Hello World', content: '#include <iostream>\nusing namespace std;\n\nint main() {\n\tcout << "Hello World!";\n\treturn 0;\n}', lang: 'cpp' },
     ],
     // Triggers of built-in snippets (window.BUILTIN_SNIPPETS) the user hid in Settings › Snippets.
     hiddenSnippets: [],
@@ -789,6 +790,7 @@ function initMonaco(onReady, onLoadError) {
         if (typeof registerCppIntellisense === 'function') {
             registerCppIntellisense(monaco);
         }
+        if (typeof registerSnippetCompletions === 'function') registerSnippetCompletions(monaco);
 
         if (typeof onReady === 'function') onReady();
     }, (err) => {

@@ -52,6 +52,7 @@ const ACTION_HANDLERS = {
     'uiZoomIn': () => stepUiScale(1),
     'uiZoomOut': () => stepUiScale(-1),
     'uiZoomReset': () => setUiScale('auto'),
+    'submitToOJ': () => submitToOJ(),
 };
 
 /** Ctrl+Tab / Ctrl+Shift+Tab: the next or previous tab in the tab bar, wrapping around. */
@@ -149,6 +150,7 @@ function updateMenuShortcutLabels() {
         'toggleproblems': 'toggleProblems',
         'settings': 'settings',
         'spliteditor': 'toggleSplit',
+        'submittooj': 'submitToOJ',
     };
 
     const bindings = getEffectiveKeybindings();

@@ -101,7 +101,7 @@ function buildSessionRestoreSummary(session) {
 
 function restoredTestState(tabData) {
     const p = tabData && tabData.tests;
-    return (p && Array.isArray(p.tests) && p.tests.length) ? { problem: p, index: 0, results: [] } : null;
+    return (p && Array.isArray(p.tests) && p.tests.length) ? { problem: p, index: -1, results: [] } : null;   // no test selected: the Input box stays the user's
 }
 
 /**

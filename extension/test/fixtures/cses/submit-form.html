@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<!-- RECONSTRUCTED, not fetched (login-only page). Submit form at /problemset/submit/1068/.
+     Header/skeleton/title-block copied from the real task-1068 fixture; logged-in account link is a guess.
+     Sources: userscript "Submit Text on CSES" (greasyfork 557074: input[name=file], select#lang, match cses.fi/problemset/submit/*),
+     cses-cli wiki (status/result vocabulary, -l language / -o option such as C++11/C++17), cses.fi/howto (language list:
+     C++ -> C++11/17/20/23, Python3 -> CPython3/PyPy3, Rust -> 2018/2021), and the author's memory of the site. -->
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CSES - Submit solution</title></head>
+<body class="with-sidebar norm-width">
+  <div class="header">
+    <div>
+      <a href="/" class="logo"><img src="/logo.png?1" alt="CSES"></a>
+      <div class="controls">
+        <a class="account" href="/user/12345">someuser</a>
+        <span>&mdash;</span>
+        <a href="/logout">Logout</a>
+      </div>
+    </div>
+  </div>
+  <div class="skeleton">
+  <div class="navigation">
+    <div class="title-block">
+      <h3><a href="/problemset/list/">CSES Problem Set</a></h3>
+      <h1>Weird Algorithm</h1>
+      <ul class="nav">
+<li><a href="/problemset/task/1068/">Task</a></li>
+<li><a href="/problemset/submit/1068/" class="current">Submit</a></li>
+<li><a href="/problemset/result/1068/">Results</a></li>
+<li><a href="/problemset/stats/1068/">Statistics</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="content-wrapper">
+  <div class="content">
+
+<form action="/course/send.php" method="post" enctype="multipart/form-data">
+<input type="hidden" name="csrf_token" value="0123456789abcdef0123456789abcdef">
+<input type="hidden" name="task" value="1068">
+<input type="hidden" name="course" value="problemset">
+<div class="control-set"><label for="file">Select file:</label>
+<div><input type="file" name="file" id="file"></div></div>
+<div class="control-set"><label for="lang">Language:</label>
+<div><select name="lang" id="lang">
+<option value="" selected>Select language</option>
+<option value="Assembly">Assembly</option>
+<option value="C">C</option>
+<option value="C++">C++</option>
+<option value="Haskell">Haskell</option>
+<option value="Java">Java</option>
+<option value="Node.js">Node.js</option>
+<option value="Pascal">Pascal</option>
+<option value="Python2">Python2</option>
+<option value="Python3">Python3</option>
+<option value="Ruby">Ruby</option>
+<option value="Rust">Rust</option>
+<option value="Scala">Scala</option>
+</select></div></div>
+<div class="control-set"><label for="option">Option:</label>
+<div><select name="option" id="option">
+<!-- filled by page JS after #lang changes; this is the state after choosing C++ -->
+<option value="C++11">C++11</option>
+<option value="C++17" selected>C++17</option>
+<option value="C++20">C++20</option>
+<option value="C++23">C++23</option>
+</select></div></div>
+<input type="submit" value="Submit">
+</form>
+  </div>
+  </div>
+  </div>
+</body>
+</html>

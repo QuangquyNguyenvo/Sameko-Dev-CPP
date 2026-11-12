@@ -387,6 +387,21 @@
     cursor: default;
 }
 
+/* After "Add to tests": a quiet confirmation in place of the button. */
+.stress-added {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 32px;
+    padding: 0 12px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+    color: var(--success);
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
 .stress-details {
     font-size: 13px;
     color: var(--text-secondary);
@@ -410,28 +425,40 @@
     min-height: 0;
     min-width: 0;
     border-radius: 10px;
-    border: 1px solid var(--border);
-    border-top-width: 3px;
+    border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
     background: var(--bg-glass, color-mix(in srgb, var(--bg-panel) 80%, transparent));
     overflow: hidden;
 }
 
-.stress-col.bad {
-    border-top-color: var(--danger, var(--error));
-}
-
-.stress-col.good {
-    border-top-color: var(--success);
-}
-
+/* The column's role is a coloured dot before its title, not a coloured frame. */
 .stress-col-title {
     flex-shrink: 0;
-    padding: 4px 12px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 12px 4px;
     font-size: 12px;
     font-weight: 800;
     letter-spacing: 0.03em;
     text-transform: uppercase;
     color: var(--text-secondary);
+}
+
+.stress-col.bad .stress-col-title::before,
+.stress-col.good .stress-col-title::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.stress-col.bad .stress-col-title::before {
+    background: var(--danger, var(--error));
+}
+
+.stress-col.good .stress-col-title::before {
+    background: var(--success);
 }
 
 .stress-pre {
@@ -448,11 +475,20 @@
     tab-size: 4;
 }
 
+/* A line that differs: red in your output, green in the brute force's (the expected one). */
 .stress-line-diff {
     display: inline-block;
     min-width: 100%;
-    border-radius: 3px;
-    background: color-mix(in srgb, var(--danger, var(--error)) 20%, transparent);
+    margin-left: -6px;
+    padding-left: 4px;
+    border-left: 2px solid var(--danger, var(--error));
+    border-radius: 0 3px 3px 0;
+    background: color-mix(in srgb, var(--danger, var(--error)) 14%, transparent);
+}
+
+.stress-col.good .stress-line-diff {
+    border-left-color: var(--success);
+    background: color-mix(in srgb, var(--success) 14%, transparent);
 }
 
 .stress-cut {

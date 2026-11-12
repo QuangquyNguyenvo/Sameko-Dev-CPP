@@ -99,10 +99,23 @@ const IPC = {
         ASSET_IMPORT: 'theme-asset-import',
     },
 
+    // Sameko Companion browser extension (online judge submit / fetch, extension/PROTOCOL.md §5)
+    OJ: {
+        STATUS: 'oj-bridge-status',
+        SUBMIT: 'oj-submit',
+        FETCH_PROBLEM: 'oj-fetch-problem',
+        PAIR_RESPOND: 'oj-pair-respond',
+        SET_THEME: 'oj-set-theme',
+    },
+
     // Renderer Events (Main -> Renderer)
     EVENTS: {
         FILE_OPENED: 'file-opened',
         FILE_CHANGED_EXTERNAL: 'file-changed-external',
+        OJ_BRIDGE_STATUS: 'oj-bridge-status-changed',
+        OJ_SUBMIT_STATUS: 'oj-submit-status',
+        OJ_FETCH_FAILED: 'oj-fetch-failed',
+        OJ_PAIR_REQUEST: 'oj-pair-request',
     },
 };
 

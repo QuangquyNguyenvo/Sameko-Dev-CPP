@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sameko Dev C++ Companion</title>
+  <link rel="stylesheet" href="ui.css">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header class="popup-header">
+    <img class="popup-icon" src="../icons/icon-48.png" alt="" width="28" height="28">
+    <h1 class="popup-title" translate="no">Sameko Dev C++</h1>
+    <span class="connection" data-state="disconnected"><span class="dot" aria-hidden="true"></span><span class="connection-label">…</span></span>
+  </header>
+
+  <!-- Shown only while something is needed from the user. -->
+  <section class="notice" hidden aria-live="polite">
+    <p class="notice-text"></p>
+    <a class="btn btn-primary connection-link" href="https://sameko.dev" hidden data-i18n="actionGetApp">Get the app</a>
+    <button type="button" class="btn btn-primary connection-retry" hidden data-i18n="actionRetry">Try again</button>
+  </section>
+
+  <button type="button" class="btn btn-primary send-problem" disabled>
+    <svg class="send-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span class="send-label" data-i18n="sendButton">Send to app</span>
+  </button>
+
+  <section class="settings">
+    <label class="setting"><span data-i18n="settingAutoSend">Auto-send problems</span><input type="checkbox" class="switch" data-setting="autoSendProblems"></label>
+    <label class="setting"><span data-i18n="settingAutoSubmit">Auto-submit</span><input type="checkbox" class="switch" data-setting="autoSubmit"></label>
+    <label class="setting"><span data-i18n="settingBackground">Submit in a background tab</span><input type="checkbox" class="switch" data-setting="submitInBackground"></label>
+  </section>
+
+  <ol class="recent-list" hidden></ol>
+
+  <script src="ui.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>

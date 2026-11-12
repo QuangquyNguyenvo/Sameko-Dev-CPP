@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<!-- REAL page: https://dmoj.ca/problem/aplusb via the Wayback Machine snapshot 20240414021950 (dmoj.ca itself answers non-browsers with a Cloudflare challenge); scripts/styles stripped. Has 'Example Solutions' code blocks that are NOT samples. -->
+<html lang="en">
+<head>
+<title>A Plus B - DMOJ: Modern Online Judge</title>
+</head>
+<body>
+<nav id="navigation" class="unselectable">
+<div id="nav-container">
+<a id="navicon" href="javascript:void(0)"><i class="fa fa-bars"></i></a>
+<ul id="nav-list">
+<li class="home-nav-element"><a href="/"> <img src="https://static.dmoj.ca/static/icons/logo.021be82ad4a6.svg" alt="DMOJ" width="160" height="44" onerror="this.src=&quot;https://static.dmoj.ca/static/icons/logo.6ced6e9f0399.png&quot;; this.onerror=null" style="border: none">
+</a></li>
+<li class="home-nav-element"><span class="nav-divider"></span></li>
+<li class="home-menu-item"><a href="/" class="nav-home">Home</a></li>
+<li>
+<a href="/problems/" class="nav-problem active">
+Problems
+</a>
+</li>
+<li>
+<a href="/submissions/" class="nav-submit">
+Submissions
+</a>
+</li>
+<li>
+<a href="/users/" class="nav-user">
+Users
+</a>
+</li>
+<li>
+<a href="/contests/" class="nav-contest">
+Contests
+</a>
+</li>
+<li>
+<a href="/about/" class="nav-about">
+About
+<div class="nav-expand">&gt;</div>
+</a>
+<ul> <li>
+<a href="/status/" class="nav-status">
+Status
+</a>
+</li>
+<li>
+<a href="/tips/" class="nav-tips">
+Tips
+</a>
+</li>
+<li>
+<a href="https://docs.dmoj.ca/#/site/api" class="nav-api">
+API
+</a>
+</li>
+<li>
+<a href="https://github.com/DMOJ/" class="nav-github">
+Github
+</a>
+</li>
+</ul> </li>
+</ul>
+<span id="user-links">
+<span class="anon">
+<a href="/accounts/login/?next=/problem/aplusb"><b>Log in</b></a>
+&nbsp;or&nbsp;
+<a href="/accounts/register/"><b>Sign up</b></a>
+</span>
+</span>
+</div>
+<div id="nav-shadow"></div>
+</nav>
+<div id="page-container">
+<br>
+<main id="content">
+<div class="problem-title">
+<h2 style="display: inline-block">A Plus B</h2>
+<span class="spacer"></span>
+<a href="/problem/aplusb/pdf" class="view-pdf">
+<span class="pdf-icon">
+<span class="fa fa-file-pdf-o pdf-icon-logo"></span>
+<span class="pdf-icon-bar"></span>
+</span>
+View as PDF
+</a>
+</div>
+<hr>
+<div id="content-body"> <div id="common-content">
+<div id="content-right">
+<div class="info-float"> <a href="/problem/aplusb/submit" class="unselectable button full">
+Submit solution
+</a>
+<hr style="padding-bottom: 0.3em">
+<div><a href="/problem/aplusb/submissions/">All submissions</a></div>
+<div><a href="/problem/aplusb/rank/">Best submissions</a></div>
+<hr style="padding-top: 0.3em">
+<div class="problem-info-entry">
+<i class="fa fa-check fa-fw"></i><span class="pi-name">Points:</span>
+<span class="pi-value">
+3 (partial) </span>
+</div>
+<div class="problem-info-entry">
+<i class="fa fa-clock-o fa-fw"></i><span class="pi-name">Time limit:</span>
+<span class="pi-value">5.0s</span>
+</div>
+<div class="problem-lang-limits">
+</div>
+<div class="problem-info-entry">
+<i class="fa fa-server fa-fw"></i><span class="pi-name">Memory limit:</span>
+<span class="pi-value">256M</span>
+</div>
+<div class="problem-lang-limits">
+</div>
+<hr style="padding-top: 0.7em">
+<div id="problem-types">
+<div class="toggle closed unselectable">
+<i class="fa fa-chevron-right fa-fw"></i>Problem type </div>
+<div style="display:none" class="toggled">Simple Math</div>
+</div>
+</div>
+</div>
+<div id="content-left" class="split-common-content">
+<div class="content-description screen">
+<div><p>Tudor is sitting in math class, on his laptop. Clearly, he is not paying attention in this situation. However, he gets called on by his math teacher to do some problems. Since his math teacher did not expect much from Tudor, he only needs to do some simple addition problems. However, simple for you and I may not be simple for Tudor, so please help him!</p>
+<h4>Input Specification</h4>
+<p>The first line will contain an integer <span class="inline-math"><img class="tex-image" src="//static.dmoj.ca/mathoid/b51a60734da64be0e618bacbea2865a8a7dcd669/svg" style="vertical-align: -0.338ex; width:2.064ex; height:2.176ex;" alt="N"><span class="tex-text" style="display:none;">~N~</span></span> <span class="inline-math"><img class="tex-image" src="//static.dmoj.ca/mathoid/e7d50dd0a7c56176ffff75f0eb5397f8e8625d63/svg" style="vertical-align: -0.838ex; width:18.594ex; height:2.843ex;" alt="(1 \le N \le 100\,000)"><span class="tex-text" style="display:none;">~(1 \le N \le 100\,000)~</span></span>, the number of addition problems Tudor needs to do. The next <span class="inline-math"><img class="tex-image" src="//static.dmoj.ca/mathoid/b51a60734da64be0e618bacbea2865a8a7dcd669/svg" style="vertical-align: -0.338ex; width:2.064ex; height:2.176ex;" alt="N"><span class="tex-text" style="display:none;">~N~</span></span> lines will each contain two space-separated integers whose absolute value is less than <span class="inline-math"><img class="tex-image" src="//static.dmoj.ca/mathoid/b768310218e38462a2ad60e8cff682d11bfde538/svg" style="vertical-align: -0.338ex; width:12.786ex; height:2.176ex;" alt="1\,000\,000\,000"><span class="tex-text" style="display:none;">~1\,000\,000\,000~</span></span>, the two integers Tudor needs to add.</p>
+<h4>Output Specification</h4>
+<p>Output <span class="inline-math"><img class="tex-image" src="//static.dmoj.ca/mathoid/b51a60734da64be0e618bacbea2865a8a7dcd669/svg" style="vertical-align: -0.338ex; width:2.064ex; height:2.176ex;" alt="N"><span class="tex-text" style="display:none;">~N~</span></span> lines of one integer each, the solutions to the addition problems in order.</p>
+<h4>Sample Input</h4>
+<pre><code>2
+1 1
+-1 0</code></pre>
+<h4>Sample Output</h4>
+<pre><code>2
+-1</code></pre>
+<h4>Example Solutions</h4>
+<p>The judge is strict in expecting the output to match <strong>exactly</strong>. Do not prompt for input.</p>
+<h4>Python 2</h4>
+<div class="codehilite"><pre><span></span><code><span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">raw_input</span><span class="p">())</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">raw_input</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+    <span class="k">print</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span>
+</code></pre></div>
+<h4>Python 3</h4>
+<div class="codehilite"><pre><span></span><code><span class="n">N</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">input</span><span class="p">())</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">input</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">)</span>
+</code></pre></div>
+<h4>Java</h4>
+<div class="codehilite"><pre><span></span><code><span class="kn">import</span> <span class="nn">java.util.*</span><span class="p">;</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">APlusB</span> <span class="p">{</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">main</span><span class="p">(</span><span class="n">String</span><span class="o">[]</span> <span class="n">args</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">Scanner</span> <span class="n">in</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Scanner</span><span class="p">(</span><span class="n">System</span><span class="p">.</span><span class="na">in</span><span class="p">);</span>
+        <span class="kt">int</span> <span class="n">N</span> <span class="o">=</span> <span class="n">in</span><span class="p">.</span><span class="na">nextInt</span><span class="p">();</span>
+        <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+            <span class="kt">int</span> <span class="n">a</span> <span class="o">=</span> <span class="n">in</span><span class="p">.</span><span class="na">nextInt</span><span class="p">();</span>
+            <span class="kt">int</span> <span class="n">b</span> <span class="o">=</span> <span class="n">in</span><span class="p">.</span><span class="na">nextInt</span><span class="p">();</span>
+            <span class="n">System</span><span class="p">.</span><span class="na">out</span><span class="p">.</span><span class="na">println</span><span class="p">(</span><span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4>C++</h4>
+<div class="codehilite"><pre><span></span><code><span class="cp">#include</span> <span class="cpf">&lt;iostream&gt;</span><span class="cp"></span>
+<span class="k">using</span> <span class="k">namespace</span> <span class="n">std</span><span class="p">;</span>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="n">N</span><span class="p">;</span>
+    <span class="n">cin</span> <span class="o">&gt;&gt;</span> <span class="n">N</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">;</span>
+        <span class="n">cin</span> <span class="o">&gt;&gt;</span> <span class="n">a</span> <span class="o">&gt;&gt;</span> <span class="n">b</span><span class="p">;</span>
+        <span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="o">&lt;&lt;</span> <span class="n">endl</span><span class="p">;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4>C</h4>
+<div class="codehilite"><pre><span></span><code><span class="cp">#include</span> <span class="cpf">&lt;stdio.h&gt;</span><span class="cp"></span>
+<span class="kt">int</span> <span class="nf">main</span><span class="p">()</span> <span class="p">{</span>
+    <span class="kt">int</span> <span class="n">N</span><span class="p">;</span>
+    <span class="n">scanf</span><span class="p">(</span><span class="s">"%d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">N</span><span class="p">);</span>
+    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="n">N</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+        <span class="kt">int</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">;</span>
+        <span class="n">scanf</span><span class="p">(</span><span class="s">"%d %d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">a</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">b</span><span class="p">);</span>
+        <span class="n">printf</span><span class="p">(</span><span class="s">"%d</span><span class="se">\n</span><span class="s">"</span><span class="p">,</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div>
+<h4>Turing</h4>
+<pre><code>var N, a, b : int
+get N
+for i: 1..N
+   get a, b
+   put a + b
+end for</code></pre><h4>Scala</h4>
+<div class="codehilite"><pre><span></span><code><span class="k">import</span> <span class="nn">scala.io.StdIn</span>
+<span class="k">object</span> <span class="nc">aplusb</span> <span class="k">extends</span> <span class="nc">App</span> <span class="o">{</span>
+  <span class="k">for</span> <span class="o">(</span><span class="k">_</span> <span class="k">&lt;-</span> <span class="mi">1</span> <span class="n">to</span> <span class="nc">StdIn</span><span class="o">.</span><span class="n">readInt</span><span class="o">())</span> <span class="o">{</span>
+    <span class="k">val</span> <span class="nc">Array</span><span class="o">(</span><span class="n">a</span><span class="o">,</span> <span class="n">b</span><span class="o">)</span> <span class="k">=</span> <span class="nc">StdIn</span><span class="o">.</span><span class="n">readLine</span><span class="o">().</span><span class="n">split</span><span class="o">(</span><span class="s">" "</span><span class="o">)</span>
+    <span class="n">println</span><span class="o">(</span><span class="n">a</span><span class="o">.</span><span class="n">toInt</span> <span class="o">+</span> <span class="n">b</span><span class="o">.</span><span class="n">toInt</span><span class="o">)</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</code></pre></div>
+<h4>Rust</h4>
+<div class="codehilite"><pre><span></span><code><span class="cp">#[macro_use]</span><span class="w"> </span><span class="k">extern</span><span class="w"> </span><span class="k">crate</span><span class="w"> </span><span class="n">dmoj</span><span class="p">;</span><span class="w"></span>
+<span class="k">fn</span> <span class="nf">main</span><span class="p">()</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="kd">let</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">scan</span><span class="o">!</span><span class="p">(</span><span class="kt">usize</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">_</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">0</span><span class="o">..</span><span class="n">n</span><span class="w"> </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">println</span><span class="o">!</span><span class="p">(</span><span class="s">"{}"</span><span class="p">,</span><span class="w"> </span><span class="n">scan</span><span class="o">!</span><span class="p">(</span><span class="kt">i64</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">scan</span><span class="o">!</span><span class="p">(</span><span class="kt">i64</span><span class="p">));</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</code></pre></div>
+</div>
+<hr>
+</div>
+<div id="comments" class="comment-area">
+<h2><i style="padding-right: 0.3em" class="fa fa-comments"></i>Comments</h2>
+<div class="comment-header-space"></div>
+<ul class="comments top-level-comments new-comments">
+<li id="comment-13771" data-revision="1" data-max-revision="1" data-revision-ajax="/comments/13771/history/ajax" class="comment">
+<div class="comment-display bad-comment">
+<div class="info">
+<div class="vote">
+<a href="javascript:alert('Please log in to vote')" title="Please log in to vote" class="upvote-link fa fa-chevron-up fa-fw"></a>
+<br>
+<div class="comment-score">-26</div>
+<a href="javascript:alert('Please log in to vote')" title="Please log in to vote" class="downvote-link fa fa-chevron-down fa-fw"></a>
+</div>
+<a href="/user/python6645" class="user gravatar-main">
+<img src="https://www.gravatar.com/avatar/243f9de8261f1ec9bb04a6d0f252d6bf?d=identicon&amp;s=75&amp;f=y" class="user-gravatar">
+</a>
+</div>
+<div class="detail">
+<div class="header">
+<span>
+<a href="/user/python6645" class="user gravatar-mobile">
+<img src="https://www.gravatar.com/avatar/243f9de8261f1ec9bb04a6d0f252d6bf?d=identicon&amp;s=10&amp;f=y" class="user-gravatar">
+</a>
+<span class="rating rate-none user"><a href="/user/python6645">python6645</a></span>&nbsp;
+</span>
+<span data-iso="2020-12-02T19:26:57+00:00" class="time-with-rel" title="Dec. 2, 2020, 7:26 p.m." data-format="commented {time}">commented on Dec. 2, 2020, 7:26 p.m.</span>
+<span class="comment-spacer"></span>
+<span class="comment-operation">
+<span class="comment-edits">
+<a href="javascript:show_revision(13771, -1)" class="previous-revision">&larr;</a>
+<span class="comment-edit-text">
+edited
+</span>
+<a href="javascript:show_revision(13771, 1)" style="visibility: hidden" class="next-revision">&rarr;</a>
+</span>
+<a href="#comment-13771" title="Link" class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+</span>
+</div>
+<div class="content content-description">
+<div class="comment-body" style="display:none">
+<div><p>There is a problem that plagiarised the question you are looking at:</p>
+<p><a href="https://dmoj.ca/problem/thereturnofaplusb">https://dmoj.ca/problem/thereturnofaplusb</a></p>
+<p>There is another problem that copied this problem's texture:</p>
+<p><a href="https://dmoj.ca/problem/aminusb">https://dmoj.ca/problem/aminusb</a></p>
+</div>
+</div>
+<div class="comment-body bad-comment-body">
+<p>
+This comment is hidden due to too much negative feedback.
+<a href="javascript:comment_show_content(13771)">Show it anyway.</a>
+</p>
+</div>
+</div>
+</div>
+</div>
+</li>
+<ul id="comment-13771-reply" class="reply-comment" hidden></ul>
+<ul id="comment-13771-children" class="comments"> <li id="comment-14071" data-revision="0" data-max-revision="0" data-revision-ajax="/comments/14071/history/ajax" class="comment">
+<div class="comment-display">
+<div class="info">
+<div class="vote">
+<a href="javascript:alert('Please log in to vote')" title="Please log in to vote" class="upvote-link fa fa-chevron-up fa-fw"></a>
+<br>
+<div class="comment-score">2</div>
+<a href="javascript:alert('Please log in to vote')" title="Please log in to vote" class="downvote-link fa fa-chevron-down fa-fw"></a>
+</div>
+<a href="/user/OneYearOld" class="user gravatar-main">
+<img src="https://www.gravatar.com/avatar/3a3e9870e82cbdd9bd05209dd896cb4b?d=identicon&amp;s=75" class="user-gravatar">
+</a>
+</div>
+<div class="detail">
+<div class="header">
+<span>
+<a href="/user/OneYearOld" class="user gravatar-mobile">
+<img src="https://www.gravatar.com/avatar/3a3e9870e82cbdd9bd05209dd896cb4b?d=identicon&amp;s=10" class="user-gravatar">
+</a>
+<span class="rating rate-expert user"><a href="/user/OneYearOld">OneYearOld</a></span>&nbsp;
+</span>
+<span data-iso="2021-01-07T22:29:04+00:00" class="time-with-rel" title="Jan. 7, 2021, 10:29 p.m." data-format="commented {time}">commented on Jan. 7, 2021, 10:29 p.m.</span>
+<span class="comment-spacer"></span>
+<span class="comment-operation">
+<span class="comment-edits"></span>
+<a href="#comment-14071" title="Link" class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+</span>
+</div>
+<div class="content content-description">
+<div class="comment-body">
+<p>The Return of A Plus B is a joke problem (<a href="https://stackoverflow.com/questions/59640101/unable-to-solve-simple-dmoj-math-question" rel="nofollow">https://stackoverflow.com/questions/59640101/unable-to-solve-simple-dmoj-math-question</a>), and A Minus B has been removed.</p>
+</div>
+</div>
+</div>
+</div>
+</li>
+<ul id="comment-14071-reply" class="reply-comment" hidden></ul>
+</ul>
+<li id="comment-7858" data-revision="0" data-max-revision="0" data-revision-ajax="/comments/7858/history/ajax" class="comment">
+<div class="comment-display bad-comment">
+<div class="info">
+<div class="vote">
+<a href="javascript:alert('Please log in to vote')" title="Please log in to vote" class="upvote-link fa fa-chevron-up fa-fw"></a>
+<br>
+<div class="comment-score">-16</div>
+<a href="javascript:alert('Please log in to vote')" title="Please log in to vote" class="downvote-link fa fa-chevron-down fa-fw"></a>
+</div>
+<a href="/user/CoolNoobyBooby" class="user gravatar-main">
+<img src="https://www.gravatar.com/avatar/879fc817e0dd5072003d7464ab3d662d?d=identicon&amp;s=75" class="user-gravatar">
+</a>
+</div>
+<div class="detail">
+<div class="header">
+<span>
+<a href="/user/CoolNoobyBooby" class="user gravatar-mobile">
+<img src="https://www.gravatar.com/avatar/879fc817e0dd5072003d7464ab3d662d?d=identicon&amp;s=10" class="user-gravatar">
+</a>
+<span class="rating rate-newbie user"><a href="/user/CoolNoobyBooby">CoolNoobyBooby</a></span>&nbsp;
+</span>
+<span data-iso="2018-09-22T02:08:45+00:00" class="time-with-rel" title="Sept. 22, 2018, 2:08 a.m." data-format="commented {time}">commented on Sept. 22, 2018, 2:08 a.m.</span>
+<span class="comment-spacer"></span>
+<span class="comment-operation">
+<span class="comment-edits"></span>
+<a href="#comment-7858" title="Link" class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+</span>
+</div>
+<div class="content content-description">
+<div class="comment-body" style="display:none">
+<p>Since this question gives you the code, are you sure this should be worth 3 points?</p>
+</div>
+<div class="comment-body bad-comment-body">
+<p>
+This comment is hidden due to too much negative feedback.
+<a href="javascript:comment_show_content(7858)">Show it anyway.</a>
+</p>
+</div>
+</div>
+</div>
+</div>
+</li>
+<ul id="comment-7858-reply" class="reply-comment" hidden></ul>
+<ul id="comment-7858-children" class="comments"> <li id="comment-7866" data-revision="0" data-max-revision="0" data-revision-ajax="/comments/7866/history/ajax" class="comment">
+<div class="comment-display">
+<div class="info">
+<div class="vote">
+<a href="javascript:alert('Please log in to vote')" title="Please log in to vote" class="upvote-link fa fa-chevron-up fa-fw"></a>
+<br>
+<div class="comment-score">12</div>
+<a href="javascript:alert('Please log in to vote')" title="Please log in to vote" class="downvote-link fa fa-chevron-down fa-fw"></a>
+</div>
+<a href="/user/AlanL" class="user gravatar-main">
+<img src="https://www.gravatar.com/avatar/75ce7f8d3fbbe20a47a543b406be2c76?d=identicon&amp;s=75" class="user-gravatar">
+</a>
+</div>
+<div class="detail">
+<div class="header">
+<span>
+<a href="/user/AlanL" class="user gravatar-mobile">
+<img src="https://www.gravatar.com/avatar/75ce7f8d3fbbe20a47a543b406be2c76?d=identicon&amp;s=10" class="user-gravatar">
+</a>
+<span class="rating rate-candidate-master user"><a href="/user/AlanL">AlanL</a></span>&nbsp;
+</span>
+<span data-iso="2018-09-23T14:01:12+00:00" class="time-with-rel" title="Sept. 23, 2018, 2:01 p.m." data-format="commented {time}">commented on Sept. 23, 2018, 2:01 p.m.</span>
+<span class="comment-spacer"></span>
+<span class="comment-operation">
+<span class="comment-edits"></span>
+<a href="#comment-7866" title="Link" class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+</span>
+</div>
+<div class="content content-description">
+<div class="comment-body">
+<p>I mean like, does it really matter? If anyone figures out a bunch of 5 pointers or above, the 3 points won't be worth much.</p>
+</div>
+</div>
+</div>
+</div>
+</li>
+<ul id="comment-7866-reply" class="reply-comment" hidden></ul>
+</ul>
+<li id="comment-7090" data-revision="0" data-max-revision="0" data-revision-ajax="/comments/7090/history/ajax" class="comment">
+<div class="comment-display">
+<div class="info">
+<div class="vote">
+<a href="javascript:alert('Please log in to vote')" title="Please log in to vote" class="upvote-link fa fa-chevron-up fa-fw"></a>
+<br>
+<div class="comment-score">2</div>
+<a href="javascript:alert('Please log in to vote')" title="Please log in to vote" class="downvote-link fa fa-chevron-down fa-fw"></a>
+</div>
+<a href="/user/damody" class="user gravatar-main">
+<img src="https://www.gravatar.com/avatar/9473fac31cc4e26a65306e197ae0ffdd?d=identicon&amp;s=75" class="user-gravatar">
+</a>
+</div>
+<div class="detail">
+<div class="header">
+<span>
+<a href="/user/damody" class="user gravatar-mobile">
+<img src="https://www.gravatar.com/avatar/9473fac31cc4e26a65306e197ae0ffdd?d=identicon&amp;s=10" class="user-gravatar">
+</a>
+<span class="rating rate-none user"><a href="/user/damody">damody</a></span>&nbsp;
+</span>
+<span data-iso="2018-03-06T09:43:40+00:00" class="time-with-rel" title="March 6, 2018, 9:43 a.m." data-format="commented {time}">commented on March 6, 2018, 9:43 a.m.</span>
+<span class="comment-spacer"></span>
+<span class="comment-operation">
+<span class="comment-edits"></span>
+<a href="#comment-7090" title="Link" class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+</span>
+</div>
+<div class="content content-description">
+<div class="comment-body">
+<p>Ruster see this page <a href="https://github.com/DMOJ/dmoj-rust" rel="nofollow">https://github.com/DMOJ/dmoj-rust</a></p>
+</div>
+</div>
+</div>
+</div>
+</li>
+<ul id="comment-7090-reply" class="reply-comment" hidden></ul>
+</ul>
+</div> </div>
+</div>
+</div>
+</main>
+<footer>
+<span id="footer-content">
+<br>
+<a style="color: rgb(128, 128, 128)" href="//github.com/DMOJ/">fork us on <span style="font-weight:bold">Github</span></a>  | <a style="color: rgb(128, 128, 128);" href="//www.facebook.com/dmoj.ca">like us on <span style="font-weight: bold;">Facebook</span></a> | <a style="color: rgb(128, 128, 128)" href="https://translate.dmoj.ca/">help us <span style="font-weight: bold;">translate</span></a> | <a style="color: rgb(128, 128, 128)" href="https://dmoj.ca/tos/">terms of service</a> |
+<form action="/i18n/setlang/" method="post" style="display: inline">
+<input type="hidden" name="csrfmiddlewaretoken" value="gQ0VCKphWWHBJ0mdb1uvxXzvVAHob15F2vCZsWvlkjeioD815DFwjqFYtpDUJiOS" /> <input name="next" type="hidden" value="/problem/aplusb">
+<select name="language" onchange="form.submit()" style="height: 1.5em">
+<option value="ca">
+català (ca)
+</option>
+<option value="de">
+Deutsch (de)
+</option>
+<option value="el">
+Ελληνικά (el)
+</option>
+<option value="en" selected>
+English (en)
+</option>
+<option value="es">
+español (es)
+</option>
+<option value="fr">
+français (fr)
+</option>
+<option value="hr">
+Hrvatski (hr)
+</option>
+<option value="hu">
+Magyar (hu)
+</option>
+<option value="ja">
+日本語 (ja)
+</option>
+<option value="ko">
+한국어 (ko)
+</option>
+<option value="pt">
+Português (pt)
+</option>
+<option value="ro">
+Română (ro)
+</option>
+<option value="ru">
+Русский (ru)
+</option>
+<option value="sr-latn">
+srpski (latinica) (sr-latn)
+</option>
+<option value="tr">
+Türkçe (tr)
+</option>
+<option value="vi">
+Tiếng Việt (vi)
+</option>
+<option value="zh-hans">
+简体中文 (zh-hans)
+</option>
+<option value="zh-hant">
+繁體中文 (zh-hant)
+</option>
+</select>
+</form>
+</span>
+</footer>
+</div>
+</body>
+</html>

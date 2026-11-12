@@ -11,6 +11,9 @@ module.exports = {
     openExtensionPage: companionServer.openExtensionPage,
     setOnProblemReceived: companionServer.setOnProblemReceived,
     setOnFocusWindow: companionServer.setOnFocusWindow,
+    // Sameko Companion extension (/sameko/v1/*, extension-bridge.js)
+    configureBridge: companionServer.configureBridge,
+    getBridge: companionServer.getBridge,
     CC_PORT: companionServer.CC_PORT,
 
     // Batch Tester

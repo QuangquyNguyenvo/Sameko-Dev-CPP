@@ -8,6 +8,7 @@
 
 const http = require('http');
 const { shell } = require('electron');
+const { createBridge } = require('./extension-bridge');
 
 let ccServer = null;
 
@@ -18,6 +19,9 @@ let onProblemReceived = null;
 
 /** @type {Function|null} - Callback to focus main window */
 let onFocusWindow = null;
+
+/** Sameko Companion extension routes (/sameko/v1/*), see configureBridge(). */
+let bridge = null;
 
 const { COMPETITIVE_COMPANION } = require('../../shared/constants');
 
@@ -60,7 +64,30 @@ function setOnFocusWindow(callback) {
     onFocusWindow = callback;
 }
 
-function startServer() {
+/**
+ * Create the extension bridge (replacing an earlier one). Problems it receives
+ * go through the same callbacks as Competitive Companion's.
+ * @param {object} options  createBridge() options without onProblem/onFocusWindow/sanitizeProblem
+ */
+function configureBridge(options) {
+    if (bridge) bridge.dispose();
+    bridge = createBridge({
+        ...options,
+        sanitizeProblem,
+        onProblem: (problem) => { if (onProblemReceived) onProblemReceived(problem); },
+        onFocusWindow: () => { if (onFocusWindow) onFocusWindow(); },
+    });
+    bridge.setRunning(ccServer !== null && ccServerStatus === 'running');
+    return bridge;
+}
+
+function getBridge() {
+    return bridge;
+}
+
+/** @param {{port?:number}} [options] port: tests pass 0 for a free port */
+function startServer(options) {
+    const port = options && Number.isInteger(options.port) ? options.port : CC_PORT;
     if (ccServer) {
         console.log('[CC] Server already running');
         return Promise.resolve({ success: true, status: 'already_running' });
@@ -70,6 +97,7 @@ function startServer() {
         ccServerStatus = 'starting';
 
         ccServer = http.createServer((req, res) => {
+            if (bridge && bridge.handle(req, res)) return;
             if (req.method === 'POST') {
                 // The extension posts from its background page, whose Origin is
                 // `chrome-extension://…` / `moz-extension://…` (or absent). A
@@ -141,9 +169,10 @@ function startServer() {
             resolve({ success: false, error: err.message });
         });
 
-        ccServer.listen(CC_PORT, COMPETITIVE_COMPANION.LISTEN_ADDRESS, () => {
-            console.log(`[CC] Competitive Companion server listening on port ${CC_PORT}`);
+        ccServer.listen(port, COMPETITIVE_COMPANION.LISTEN_ADDRESS, () => {
+            console.log(`[CC] Competitive Companion server listening on port ${ccServer.address().port}`);
             ccServerStatus = 'running';
+            if (bridge) bridge.setRunning(true);
             resolve({ success: true, status: 'running' });
         });
     });
@@ -154,6 +183,8 @@ function stopServer() {
         ccServer.close();
         ccServer = null;
         ccServerStatus = 'stopped';
+        // Answers a waiting long poll, so close() is not held up by it.
+        if (bridge) bridge.setRunning(false);
         console.log('[CC] Server stopped');
     }
     return { success: true, status: 'stopped' };
@@ -163,7 +194,7 @@ function getStatus() {
     return {
         status: ccServerStatus,
         running: ccServer !== null,
-        port: CC_PORT
+        port: ccServer && ccServer.address() ? ccServer.address().port : CC_PORT
     };
 }
 
@@ -182,5 +213,8 @@ module.exports = {
     openExtensionPage,
     setOnProblemReceived,
     setOnFocusWindow,
+    configureBridge,
+    getBridge,
+    sanitizeProblem,
     CC_PORT,
 };

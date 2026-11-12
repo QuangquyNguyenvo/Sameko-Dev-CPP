@@ -778,6 +778,55 @@ async function main() {
         assert.equal(back.tip, before.tip);
     });
 
+    // ---- submit to an online judge (oj-submit.js) ------------------------------------
+    await check('Submit with no browser extension: asks for the URL once, says the extension is missing', async () => {
+        const r = await page.evaluate(async () => {
+            if (App.isSplit) closeSplit();
+            newFile();
+            const tab = App.tabs.find(t => t.id === App.activeTabId);
+            setTabText(tab, 'int main() { return 0; }\n');
+            ccProblem = null;
+            const first = submitToOJ();
+            await new Promise(res => setTimeout(res, 150));
+            document.querySelector('.oj-url-dialog .input-dialog-field').value = 'codeforces.com/contest/1900/problem/A';
+            document.querySelector('.oj-url-dialog .note-dialog-save').click();
+            await first;
+            const second = submitToOJ();
+            await new Promise(res => setTimeout(res, 50));
+            const askedAgain = !!document.querySelector('.oj-url-dialog');
+            await second;
+            const chip = document.getElementById('oj-verdict');
+            return {
+                url: ccProblem && ccProblem.url, tests: ccProblem.tests.length, askedAgain,
+                chipShown: !chip.hidden, state: tab.ojSubmission.state,
+                log: TerminalManager.getLines().map(l => l.text).join('\n'),
+                theme: ojThemeSnapshot()
+            };
+        });
+        assert.equal(r.url, 'https://codeforces.com/contest/1900/problem/A');
+        assert.equal(r.tests, 0);
+        assert.equal(r.askedAgain, false, 'the URL is remembered on the tab');
+        assert.ok(r.chipShown);
+        assert.ok(['queued', 'failed'].includes(r.state), r.state);
+        assert.match(r.log, /extension is not connected|did not pick up/);
+        assert.match(r.theme.bg, /^rgb\(/);
+        assert.match(r.theme.accent, /^rgba?\(/);
+    });
+
+    await check('a pairing request asks Allow / Deny with Deny focused', async () => {
+        const dlg = await page.evaluate(async () => {
+            ojPromptPair({ origin: 'chrome-extension://abcdefghijklmnop', browser: 'chrome', extVersion: '0.1.0' });
+            await new Promise(res => setTimeout(res, 50));
+            const d = document.getElementById('confirm-dialog');
+            const out = { open: d.classList.contains('active'), text: d.textContent, focus: document.activeElement?.id };
+            document.getElementById('confirm-dialog-cancel').click();
+            return out;
+        });
+        assert.ok(dlg.open);
+        assert.match(dlg.text, /in Chrome will receive the code you submit\. ID: abcdefghijklmnop/);
+        assert.equal(dlg.focus, 'confirm-dialog-cancel');
+    });
+
     // ---- whole session ----------------------------------------------------------
     await check('no failed resource loads', async () => assert.deepEqual(failedRequests, []));
     await check('no uncaught renderer exceptions', async () => assert.deepEqual(pageErrors, []));

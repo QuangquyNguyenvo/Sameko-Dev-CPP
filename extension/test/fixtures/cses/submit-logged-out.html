@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<!-- RECONSTRUCTED, not fetched (login-only page). Logged-out variant (real site returns a 404 page with the same Login link, see task-1068).
+     Header/skeleton/title-block copied from the real task-1068 fixture; logged-in account link is a guess.
+     Sources: userscript "Submit Text on CSES" (greasyfork 557074: input[name=file], select#lang, match cses.fi/problemset/submit/*),
+     cses-cli wiki (status/result vocabulary, -l language / -o option such as C++11/C++17), cses.fi/howto (language list:
+     C++ -> C++11/17/20/23, Python3 -> CPython3/PyPy3, Rust -> 2018/2021), and the author's memory of the site. -->
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CSES - Submit solution</title></head>
+<body class="with-sidebar norm-width">
+  <div class="header">
+    <div>
+      <a href="/" class="logo"><img src="/logo.png?1" alt="CSES"></a>
+      <div class="controls">
+        <a class="account" href="/login">Login</a>
+      </div>
+    </div>
+  </div>
+  <div class="skeleton">
+  <div class="navigation">
+    <div class="title-block">
+      <h3><a href="/problemset/list/">CSES Problem Set</a></h3>
+      <h1>Weird Algorithm</h1>
+      <ul class="nav">
+<li><a href="/problemset/task/1068/">Task</a></li>
+<li><a href="/problemset/submit/1068/" class="current">Submit</a></li>
+<li><a href="/problemset/result/1068/">Results</a></li>
+<li><a href="/problemset/stats/1068/">Statistics</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="content-wrapper">
+  <div class="content">
+<p>Please log in.</p>
+  </div>
+  </div>
+  </div>
+</body>
+</html>

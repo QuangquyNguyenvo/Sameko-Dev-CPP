@@ -1,14 +1,12 @@
 /* ========================================
-   SNIPPET EDITOR MODAL
-   Uses CSS variables for theme compatibility
+   SNIPPET EDITOR DIALOG
+   The card, frame and dim layer come from popups.css (the Settings popup's look);
+   everything here reads theme tokens.
    ======================================== */
 
 .snippet-editor-modal {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     z-index: var(--z-fullscreen);
     display: none;
     align-items: center;
@@ -23,33 +21,24 @@
 
 .snippet-editor-overlay {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    inset: 0;
     background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(8px);
 }
 
 .snippet-editor-container {
     position: relative;
     z-index: calc(var(--z-fullscreen) + 1);
-    background: var(--bg-glass-heavy, #ffffff);
-    border-radius: 20px;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.3);
-    width: 90%;
-    max-width: 700px;
-    max-height: 85vh;
+    width: min(720px, calc(100vw - 48px));
+    max-height: calc(100vh - 64px);
     display: flex;
     flex-direction: column;
-    border: 2px solid var(--border-strong, #88c9ea);
     overflow: hidden;
-    animation: snippetPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: snippetPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 @keyframes snippetPop {
     from {
-        transform: scale(0.9) translateY(20px);
+        transform: scale(0.94) translateY(12px);
         opacity: 0;
     }
 
@@ -63,147 +52,191 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 20px 24px;
-    border-bottom: 2px dashed var(--border, #cceeff);
-    background: var(--bg-ocean-light, #eff8fe);
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
 
 .snippet-editor-header h2 {
     margin: 0;
-    font-size: 1.3em;
-    color: var(--bg-ocean-dark, #3a7ca5);
-    font-weight: 800;
+    font-size: 18px;
+    color: var(--text-primary);
+    font-weight: 700;
     font-family: 'Fredoka', sans-serif;
 }
 
 .btn-close-snippet-editor {
-    background: white;
-    border: 2px solid var(--border, #cceeff);
-    cursor: pointer;
     width: 32px;
     height: 32px;
-    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.2s, color 0.2s, transform 0.2s, border-color 0.2s;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+    background: transparent;
     color: var(--text-secondary);
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .btn-close-snippet-editor:hover {
-    background: var(--error, #ff8fab);
-    color: white;
-    transform: rotate(90deg);
-    border-color: var(--border);
+    background: var(--error);
+    border-color: var(--error);
+    color: #fff;
 }
 
 .snippet-editor-body {
-    padding: 24px;
-    overflow-y: auto;
     flex: 1;
-    background: var(--bg-glass, rgba(240, 248, 255, 0.5));
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 22px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
-.snippet-field {
-    margin-bottom: 20px;
+.snippet-fields-row {
+    display: flex;
+    gap: 12px;
+}
+
+.snippet-field-trigger {
+    flex: 1;
+    min-width: 0;
+}
+
+.snippet-field-lang {
+    width: 170px;
+    flex-shrink: 0;
 }
 
 .snippet-field label {
-    display: block;
-    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 7px;
+    font-size: 13px;
     font-weight: 700;
-    color: var(--text-primary);
-    font-size: 0.95em;
-    font-family: 'Nunito', sans-serif;
+    color: var(--text-secondary);
+}
+
+.snippet-field input[type="text"],
+.snippet-field select {
+    width: 100%;
+    height: 38px;
+    box-sizing: border-box;
+    padding: 0 14px;
+    border-radius: 12px;
+    font-size: 14px;
 }
 
 .snippet-field input[type="text"] {
-    width: 100%;
-    padding: 12px 16px;
-    border: 2px solid var(--border, #cceeff);
-    border-radius: 12px;
-    background: white;
-    color: var(--text-primary);
-    font-size: 1em;
     font-family: 'JetBrains Mono', monospace;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    box-sizing: border-box;
 }
 
-.snippet-field input[type="text"]:focus {
-    outline: none;
-    border-color: var(--bg-ocean-deep, #88c9ea);
-    box-shadow: 0 0 0 4px rgba(136, 201, 234, 0.2);
+.snippet-field select {
+    font-weight: 600;
+    cursor: pointer;
 }
 
 #snippet-content-editor {
+    height: clamp(180px, 38vh, 340px);
     border-radius: 12px;
     overflow: hidden;
-    border: 2px solid var(--border, #cceeff);
-    background: #1a2530 !important;
-    /* Keep editor dark for contrast */
+    border: 1.5px solid var(--border);
+    background: var(--editor-bg);
+    transition: border-color 0.2s;
+}
+
+#snippet-content-editor:focus-within {
+    border-color: var(--accent);
+}
+
+.snippet-error {
+    margin: -4px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--error);
+}
+
+/* Tab-stop help, folded by default: it is read once. */
+.snippet-tips {
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    border-radius: 12px;
+    padding: 0 14px;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+}
+
+.snippet-tips summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 0;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.snippet-tips summary::-webkit-details-marker {
+    display: none;
+}
+
+.snippet-tips summary::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    margin-left: auto;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(45deg);
+    opacity: 0.6;
+    transition: transform 0.15s;
+}
+
+.snippet-tips[open] summary::after {
+    transform: rotate(225deg);
+}
+
+.snippet-tips summary:hover {
+    color: var(--text-primary);
+}
+
+.tips-content {
+    margin: 0 0 8px;
+    padding-left: 18px;
+    line-height: 1.7;
+}
+
+.tips-content code,
+.tips-example {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+}
+
+.tips-content code {
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    font-weight: 600;
+}
+
+.tips-example {
+    margin: 0 0 12px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: var(--editor-bg);
+    font-size: 12.5px;
+    white-space: pre;
+    overflow-x: auto;
 }
 
 .snippet-editor-footer {
     display: flex;
     justify-content: flex-end;
-    gap: 12px;
-    padding: 18px 24px;
-    border-top: 1px solid var(--border-color);
-    background: var(--bg-secondary);
-}
-
-.snippet-tips {
-    margin-top: 16px;
-    padding: 12px;
-    background: rgba(var(--accent-rgb, 136, 201, 234), 0.05);
-    border: 1px dashed var(--border, #cceeff);
-    border-radius: 12px;
-}
-
-.tips-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: 800;
-    font-size: 0.85em;
-    color: var(--bg-ocean-dark, #3a7ca5);
-    margin-bottom: 6px;
-    font-family: 'Fredoka', sans-serif;
-}
-
-.tips-content {
-    font-size: 0.8em;
-    line-height: 1.5;
-    color: var(--text-secondary);
-}
-
-.tips-content code {
-    background: var(--bg-ocean-light);
-    padding: 2px 4px;
-    border-radius: 4px;
-    color: var(--accent-color);
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 600;
-}
-
-.tips-examples {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px dashed var(--border-color);
-}
-
-.tips-examples pre {
-    background: var(--bg-ocean-light, #f0f9ff);
-    padding: 8px 12px;
-    border-radius: 8px;
-    margin: 6px 0 12px 0;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.85em;
-    color: var(--accent-color);
-    border: 1px solid var(--border);
-    white-space: pre-wrap;
-    overflow-x: auto;
+    gap: 10px;
+    padding: 14px 22px 18px;
+    border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
 
 .btn-secondary,
@@ -241,115 +274,168 @@
     box-shadow: 0 4px 12px rgba(58, 124, 165, 0.3);
 }
 
+
 /* ========================================
    SNIPPETS LIST IN SETTINGS
+   One list in the panel's own scroll: your snippets, then the built-ins.
    ======================================== */
 
-.snippets-list-container {
-    background: var(--bg-glass, rgba(245, 248, 250, 0.8));
-    border: 1px solid var(--border, #e0e0e0);
-    border-radius: 12px;
-    padding: 12px;
-    height: 400px;
-    min-height: 200px;
-    overflow-y: auto;
+/* Language filter: pills like the Code Template tabs, with a count. */
+.snippet-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    width: fit-content;
+    max-width: 100%;
+    padding: 3px;
+    margin-bottom: 12px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
 }
 
-/* Snippet item row */
+.snippet-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 6px 5px 12px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.snippet-filter:hover {
+    color: var(--text-primary);
+}
+
+.snippet-filter.active {
+    background: var(--editor-bg);
+    color: var(--text-primary);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+.snippet-filter-count {
+    min-width: 20px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    font-size: 11.5px;
+    text-align: center;
+}
+
+.snippet-filter.active .snippet-filter-count {
+    background: var(--accent);
+    color: var(--btn-primary-text, #fff);
+}
+
+.snippets-status {
+    margin: -6px 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.snippets-status[data-type="success"] {
+    color: var(--success);
+}
+
+.snippets-status[data-type="warning"] {
+    color: var(--warning);
+}
+
+.snippets-status[data-type="error"] {
+    color: var(--error);
+}
+
+/* Snippet row: trigger, language, first line, actions */
 .snippet-item {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: minmax(72px, auto) auto minmax(0, 1fr) auto;
     align-items: center;
     gap: 12px;
-    background: var(--bg-input, #fff);
-    padding: 8px 12px;
-    margin-bottom: 8px;
-    border-radius: 10px;
-    border: 1px solid var(--border, #e5e5e5);
-    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.snippet-item:last-child {
-    margin-bottom: 0;
+    padding: 8px 10px 8px 12px;
+    margin-bottom: 6px;
+    border-radius: 12px;
+    background: var(--bg-input);
+    border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+    transition: border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .snippet-item:hover {
-    border-color: var(--accent, #88c9ea);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.snippet-item.builtin {
-    background: var(--bg-ocean-light, #f5f8fa);
-    border-left: 3px solid var(--text-muted, #aaa);
-}
-
-.snippet-item:not(.builtin) {
-    border-left: 3px solid var(--accent, #88c9ea);
+    border-color: var(--accent);
 }
 
 .snippet-trigger {
     font-family: 'JetBrains Mono', 'Consolas', monospace;
-    font-weight: 600;
-    color: var(--accent, #3a7ca5);
-    padding: 5px 12px;
-    background: var(--bg-ocean-light, #eef4f8);
-    border-radius: 6px;
-    font-size: 0.85em;
-    min-width: 70px;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--accent);
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
     text-align: center;
     white-space: nowrap;
 }
 
+.snippet-lang {
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
 .snippet-preview {
-    font-family: 'Consolas', 'Monaco', monospace;
-    color: var(--text-secondary, #666);
-    font-size: 0.85em;
+    font-family: 'JetBrains Mono', 'Consolas', monospace;
+    color: var(--text-secondary);
+    font-size: 12.5px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    opacity: 0.85;
 }
 
 .snippet-actions {
     display: flex;
     gap: 6px;
-    opacity: 0.6;
+    opacity: 0.45;
     transition: opacity 0.15s;
 }
 
-.snippet-item:hover .snippet-actions {
+.snippet-item:hover .snippet-actions,
+.snippet-actions:focus-within {
     opacity: 1;
 }
 
 .snippet-actions button {
-    background: var(--bg-ocean-light, #f0f4f7);
-    border: 1px solid var(--border, #ddd);
-    cursor: pointer;
-    width: 30px;
-    height: 30px;
-    border-radius: 6px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform 0.15s, background-color 0.15s, color 0.15s, border-color 0.15s;
-    color: var(--text-secondary, #777);
-}
-
-.snippet-actions button:hover {
-    transform: scale(1.05);
+    border-radius: 8px;
+    border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
 }
 
 .snippet-actions .btn-edit:hover {
-    background: var(--bg-ocean-medium, #dbe8f0);
-    color: var(--accent, #3a7ca5);
-    border-color: var(--accent, #88c9ea);
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
 .snippet-actions .btn-delete:hover {
-    background: var(--error, #ff6b6b);
-    color: white;
-    border-color: var(--error, #ff6b6b);
+    background: var(--error);
+    border-color: var(--error);
+    color: #fff;
 }
 
 /* Add (primary) and Import (outlined) side by side; text colours are the theme's button
@@ -395,88 +481,79 @@
     border-color: var(--accent);
 }
 
-/* Empty state */
 .snippets-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 32px 16px;
+    padding: 14px;
+    margin-bottom: 6px;
+    border: 1.5px dashed var(--border);
+    border-radius: 12px;
     text-align: center;
-    color: var(--text-muted, #999);
-}
-
-.snippets-empty svg {
-    width: 48px;
-    height: 48px;
-    margin-bottom: 12px;
-    opacity: 0.4;
-    color: var(--accent, #88c9ea);
+    font-size: 13px;
+    color: var(--text-muted);
 }
 
 /* Built-in snippets section (rows from window.BUILTIN_SNIPPETS) */
 .snippets-section-title {
     margin: 18px 2px 2px;
-    font-weight: 600;
-    font-size: 0.95em;
+    font-weight: 700;
+    font-size: 14px;
     color: var(--text-primary);
 }
 
 .snippets-section-desc {
     margin: 0 2px 10px;
-    font-size: 0.82em;
-    color: var(--text-muted, #999);
+    font-size: 12.5px;
+    color: var(--text-muted);
 }
 
-.snippet-item.snippet-builtin {
-    grid-template-columns: auto auto 1fr auto;
+/* A built-in is on (suggested) or off (hidden) by the Settings switch, made smaller to fit
+ * the row; it stays fully visible, unlike the edit button. */
+.snippet-actions {
+    align-items: center;
 }
 
-.snippet-lang {
-    font-size: 0.72em;
-    font-weight: 600;
-    padding: 2px 6px;
-    border-radius: 4px;
-    border: 1px solid var(--border, #ddd);
-    color: var(--text-muted, #999);
+.snippet-actions .snippet-switch {
+    zoom: 0.72;
+    margin-left: 4px;
+}
+
+.snippet-item.builtin .snippet-actions {
+    opacity: 1;
+}
+
+.snippet-item.builtin .snippet-actions .btn-edit {
+    opacity: 0.45;
+    transition: opacity 0.15s;
+}
+
+.snippet-item.builtin:hover .snippet-actions .btn-edit,
+.snippet-item.builtin .snippet-actions .btn-edit:focus-visible {
+    opacity: 1;
+}
+
+.snippet-hidden-tag {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-muted) 18%, transparent);
+    color: var(--text-muted);
+    font-size: 11.5px;
+    font-weight: 700;
     white-space: nowrap;
+}
+
+.snippet-item.is-hidden {
+    background: transparent;
+    border-style: dashed;
 }
 
 .snippet-item.is-hidden .snippet-trigger,
 .snippet-item.is-hidden .snippet-lang,
 .snippet-item.is-hidden .snippet-preview {
-    opacity: 0.4;
-}
-
-.snippet-item.is-hidden .snippet-trigger {
-    text-decoration: line-through;
+    opacity: 0.45;
 }
 
 .snippet-replaced-note {
-    font-size: 0.8em;
+    font-size: 12px;
     font-style: italic;
-    color: var(--text-muted, #999);
+    color: var(--text-muted);
     white-space: nowrap;
-}
-
-/* Dark Theme Adjustments */
-[data-theme-variant="dark"] .snippet-item {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-}
-
-[data-theme-variant="dark"] .snippet-trigger {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--accent);
-}
-
-[data-theme-variant="dark"] .snippet-actions button {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.7);
-}
-
-[data-theme-variant="dark"] .snippets-list-container {
-    background: rgba(0, 0, 0, 0.2);
-    border-color: rgba(255, 255, 255, 0.1);
 }

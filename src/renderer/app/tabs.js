@@ -418,6 +418,7 @@ function doAction(action) {
         mdpreview: () => window.MarkdownPreview?.toggle(getActiveEditor()),
         // Same as the toolbar button, which narrow windows hide.
         gettests: () => document.getElementById('btn-cc')?.click(),
+        submittooj: () => submitToOJ(),
         debugstart: () => window.Debugger?.start(),
         debugstepover: () => window.Debugger?.stepOver(),
         debugstepinto: () => window.Debugger?.stepInto(),
