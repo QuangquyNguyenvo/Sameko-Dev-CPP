@@ -109,15 +109,15 @@ syntax/clangd, local history, Discord RPC.
 | `renderer/app/*.js` | The application itself, 18 files loaded in a fixed order (formerly one 7,900-line `app.js`). File index in §9. |
 | `renderer/boot.js` | Loaded first: error hooks, `loadScript()` (one-time script/module loader), shared `escHtml`. |
 | `vendor/monaco/` | Generated, gitignored: the Monaco ESM bundle built by `scripts/build-monaco.js` (`npm start`, `npm test`, `npm run test:gui` and every `build:*` run it). `vim.js` (monaco-vim) is a second entry sharing its chunks, imported only when Vim Mode is on. |
-| `renderer/ui/` | `theme-manager.js`, `theme-tokens.js`, `theme-customizer.js` (draft/history/save), `theme-customizer-view.js` (controls/scoped IDE preview), `theme-marketplace.js`, `confirm-dialog.js`, `motion.js`. |
-| `styles/` | `base.css` (imports `animations.css` and fonts), `components/*.css`, `themes/{theme,themes}.css`. `components/toolbar.css` and `components/islands.css` load after `themes.css`: the header buttons, and the floating-card layout (header islands, editor / bottom panel / status bar cards, Run split button, collapsed bottom panel) for every theme. |
+| `renderer/ui/` | `theme-manager.js` (logic) + `theme-manager-builtins.js` (builtin theme data, `_getHardcodedThemes()`), `theme-tokens.js`, `theme-customizer.js` (draft/history/save), `theme-customizer-view.js` (controls/scoped IDE preview), `theme-marketplace.js`, `confirm-dialog.js`, `motion.js`. |
+| `styles/` | `base.css` (imports `animations.css` and fonts), `components/*.css`, `themes/theme.css` + `themes/theme-{layout,editor,dock,tests,explorer,contest,categories}.css` (the app stylesheet, one cascade in eight files, linked in that order), `themes/themes.css` + `themes/themes-{dark-panels,sakura,marketplace}.css` (theme-variant styling, same arrangement). `components/toolbar.css` and `components/islands.css` load after `themes.css`: the header buttons, and the floating-card layout (header islands, editor / bottom panel / status bar cards, Run split button, collapsed bottom panel) for every theme. |
 | `assets/` | Fonts, icons, backgrounds (five looping `.webm` + one `.jpg`), screenshots (README only). |
 
 ### Loaded scripts, in order (`index.html`)
 `renderer/boot.js` (error hooks, `loadScript`, shared `escHtml`) → `renderer/i18n.js` → `renderer/locales/{vi,zh-CN}.js` → `features/suggestions/cpp-suggestions.js` →
 `features/snippets/snippet-editor.js` → `renderer/ui/theme-tokens.js` →
-`theme-manager.js` → `theme-marketplace.js` → `theme-customizer-view.js` → `theme-customizer.js` → `confirm-dialog.js` → `motion.js` →
-`features/local-history/history-manager.js` → `features/file-explorer/file-explorer.js` →
+`theme-manager.js` → `theme-manager-builtins.js` → `theme-marketplace.js` → `theme-customizer-view.js` → `theme-customizer.js` → `confirm-dialog.js` → `motion.js` →
+`features/local-history/history-manager.js` → `features/file-explorer/file-explorer.js` and its parts `file-explorer-{tree,menus,approaches,contest,categories,category-ui}.js` →
 `features/terminal/terminal-manager.js` → `features/debugger/debugger-ui.js` → `renderer/app/*.js` in
 the order of §9.
 
@@ -126,7 +126,7 @@ the order of §9.
 | Completion + hover (clangd, snippets) | `features/suggestions/cpp-suggestions.js` | `registerCppIntellisense` |
 | Snippets: settings list, per-language `lang` (none = C/C++), suggestions outside C/C++ | `features/snippets/snippet-editor.js` | `renderSnippetsList`, `editSnippet`, `snippetAppliesTo`, `registerSnippetCompletions` |
 | Local history / checkpoints | `features/local-history/history-manager.js` | `LocalHistory` |
-| Explorer, categories, contest mode | `features/file-explorer/file-explorer.js` | `FileExplorer` |
+| Explorer, categories, contest mode | `features/file-explorer/file-explorer.js` (state, persistence, directory loading, contest/approach metadata) + `file-explorer-tree.js` (render), `-menus.js` (context menus, dialogs, rename/delete/open), `-approaches.js`, `-contest.js`, `-categories.js`, `-category-ui.js`; each part is `Object.assign(FileExplorer, {…})` | `FileExplorer` |
 | Terminal output (xterm, display only; xterm.js is loaded with `loadScript` when the page is idle or on the first write, earlier writes are queued) | `features/terminal/terminal-manager.js` | `TerminalManager` |
 | Debugger panel, breakpoints, variables | `features/debugger/debugger-ui.js` | `Debugger` |
 | GSAP effects (menu cascade, Settings pop-in, Run result); GSAP is loaded with `loadScript` once the editor is ready, and every call is a no-op in Performance Mode or with reduced motion | `renderer/ui/motion.js` | `Motion` |
@@ -157,7 +157,7 @@ in October 2026.)
 - Installer: `package.json` › `build.nsis.installerLanguages` + the `LangString`s in `installer/installer.nsh`.
 
 ### Theme system
-- **Data:** `ThemeManager._getHardcodedThemes()` defines the eleven builtin themes (`kawaii-dark`,
+- **Data:** `ThemeManager._getHardcodedThemes()` (in `theme-manager-builtins.js`) defines the eleven builtin themes (`kawaii-dark`,
   `kawaii-light`, `sakura`, `dracula`, `monokai`, `nord`,
   `catppuccin-mocha`, `gruvbox-dark`, `crimson`, `event-horizon`, `pixel-night`) inline; the list of ids is
   `ThemeManager.builtinThemeIds`. Every builtin has a background picture or video; a theme with
@@ -489,7 +489,7 @@ meanwhile cannot mix two files.
 | Global UI state and init | `src/renderer/app/core.js` |
 | Tabs, settings, shortcuts, panels, tests | the matching file in `src/renderer/app/` (see §9) |
 | Explorer, terminal, debugger UI, checkpoints, completion | the loaded file under `src/features/` (see §4) |
-| Theme colors / tokens / CSS | `theme-manager.js` / `theme-tokens.js` / `src/styles/themes/*.css` |
+| Theme colors / tokens / CSS | `theme-manager-builtins.js` (colors), `theme-manager.js` (logic) / `theme-tokens.js` / `src/styles/themes/*.css` |
 | Limits, flags, ports | `app/shared/constants.js` |
 
 ## 11. Browser extension — `extension/`
