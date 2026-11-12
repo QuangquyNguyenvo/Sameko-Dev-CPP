@@ -119,22 +119,10 @@
     <link rel="stylesheet" href="assets/css/tokens.css">
     <link rel="stylesheet" href="assets/css/home.css">
     <link rel="stylesheet" href="assets/css/homepage.css">
-    <style>
-        .alt-hero { padding-top: clamp(96px, 14vw, 150px); }
-        .alt-prose { max-width: 70ch; margin-inline: auto; }
-        .alt-prose h2 { margin-top: 2.2em; }
-        .alt-prose h2:first-child { margin-top: 0; }
-        .alt-prose h3 { margin-top: 1.6em; margin-bottom: .3em; }
-        .alt-prose p, .alt-prose li { line-height: 1.7; }
-        .alt-prose ul, .alt-prose ol { padding-left: 1.3em; margin-block: .8em; }
-        .alt-prose p { margin-block: .8em; }
-        .alt-prose a { text-decoration: underline; }
-        .alt-nowrap { white-space: nowrap; }
-        .alt-note { font-size: .9em; opacity: .75; }
-    </style>
+    <link rel="stylesheet" href="assets/css/compare.css">
 </head>
 
-<body class="sameko-home">
+<body class="sameko-home cmp-page">
     <a class="skip-link" href="#main">Chuyển đến nội dung</a>
 
     <nav class="nav">
@@ -151,54 +139,157 @@
                 <a href="#faq">FAQ</a>
             </div>
             <div class="nav__actions">
+                <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Bật/tắt chế độ tối" title="Chuyển chế độ tối/sáng">
+                    <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"></circle><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"></path></svg>
+                    <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
                 <a class="btn btn--primary" href="vi.html#download-trigger">Tải về</a>
             </div>
         </div>
     </nav>
 
     <main id="main">
-        <header class="band alt-hero">
-            <div class="wrap">
-                <div class="band__head">
-                    <span class="eyebrow">Thay thế Dev-C++</span>
-                    <h1 class="h-display">Quen Dev&#8209;C++? Thử bản đời mới.</h1>
-                    <p class="lede">Bạn vẫn mở file <code>.cpp</code>, nhấn <kbd>F11</kbd> là chương trình chạy, y như hồi dùng Dev-C++. Chỉ khác là compiler, trình soạn thảo và debugger đều mới hơn nhiều.</p>
+        <header class="hero-band cmp-hero">
+            <div class="hero__art" aria-hidden="true">
+                <span class="hero__word">C++</span>
+                <span class="shape shape--circle" style="--x:2%;--y:30%;--sz:40px;--c:var(--shape-sky);--d:7s"></span>
+                <span class="shape shape--star" style="--x:44%;--y:6%;--sz:46px;--c:var(--shape-butter);--d:9s"><svg viewBox="0 0 48 48"><path d="M24 5l5.4 11.6 12.7 1.5-9.4 8.7 2.5 12.6L24 33.1l-11.2 6.3 2.5-12.6-9.4-8.7 12.7-1.5z"/></svg></span>
+                <span class="shape shape--pill" style="--x:6%;--y:84%;--sz:72px;--c:var(--shape-white);--d:8s;--r:-14deg"></span>
+                <span class="shape shape--ring" style="--x:47%;--y:88%;--sz:38px;--c:var(--shape-sky);--d:10s"></span>
+                <span class="shape shape--heart" style="--x:94%;--y:8%;--sz:40px;--c:var(--shape-butter);--d:6s"><svg viewBox="0 0 48 48"><path d="M24 40S7 29.5 7 17.8A8.8 8.8 0 0 1 24 13a8.8 8.8 0 0 1 17 4.8C41 29.5 24 40 24 40z"/></svg></span>
+                <span class="shape shape--squircle" style="--x:92%;--y:82%;--sz:36px;--c:var(--shape-butter);--d:9.5s;--r:18deg"></span>
+                <span class="shape shape--circle" style="--x:28%;--y:4%;--sz:20px;--c:var(--shape-white);--d:6.5s"></span>
+                <span class="shape shape--spark" style="--x:72%;--y:92%;--sz:26px;--c:var(--shape-butter);--d:8.5s"><svg viewBox="0 0 48 48"><path d="M24 4c1.8 11 6.6 16.2 19 20-12.4 3.8-17.2 9-19 20-1.8-11-6.6-16.2-19-20 12.4-3.8 17.2-9 19-20z"/></svg></span>
+                <span class="shape shape--circle" style="--x:1.5%;--y:52%;--sz:18px;--c:var(--shape-butter);--d:7s"></span>
+            </div>
+            <div class="wrap hero__inner">
+                <div class="hero__content">
+                    <span class="badge hero__badge">Thay thế Dev-C++</span>
+                    <h1 class="h-display hero__title cmp-hero__title">Quen Dev&#8209;C++? Thử bản <span class="hl">đời mới.<svg class="hl__squiggle" viewBox="0 0 220 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 14C24 4 40 22 60 13S96 4 116 13s36 9 56 0 32-7 44-2"/></svg></span></h1>
+                    <p class="lede hero__lede">Bạn vẫn mở file <code>.cpp</code>, nhấn <kbd>F11</kbd> là chương trình chạy, y như hồi dùng Dev-C++. Chỉ khác là compiler, trình soạn thảo và debugger đều mới hơn nhiều.</p>
+                    <div class="hero__actions">
+                        <a href="vi.html#download-trigger" class="btn btn--primary btn--lg">Tải Sameko Dev C++</a>
+                        <a href="#compare" class="btn btn--ghost btn--lg">Xem bảng so sánh</a>
+                    </div>
                 </div>
-                <div class="cta__actions">
-                    <a href="vi.html#download-trigger" class="btn btn--primary btn--lg">Tải Sameko Dev C++</a>
-                    <a href="#compare" class="btn btn--ghost btn--lg">Xem bảng so sánh</a>
+
+                <div class="tn" aria-hidden="true">
+                    <span class="hero__sun tn__sun"></span>
+                    <span class="hero__spark hero__spark--1"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.6 8.4L23 11l-8.4 2.6L12 22l-2.6-8.4L1 11l8.4-2.6z"/></svg></span>
+                    <span class="hero__spark hero__spark--2"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0l2.6 8.4L23 11l-8.4 2.6L12 22l-2.6-8.4L1 11l8.4-2.6z"/></svg></span>
+                    <div class="tn__card tn__card--then">
+                        <span class="tn__tag">Trước</span>
+                        <span class="tn__name">Dev-C++</span>
+                        <span class="tn__row"><span class="tn__chip">TDM-GCC 9.2</span><span class="tn__chip">C++17</span></span>
+                    </div>
+                    <span class="tn__arrow"><svg class="icon" viewBox="0 0 24 24"><path d="M12 4v16M5 13l7 7 7-7"/></svg></span>
+                    <div class="tn__card tn__card--now">
+                        <span class="tn__tag">Giờ</span>
+                        <span class="tn__name">Sameko Dev C++</span>
+                        <span class="tn__row"><span class="tn__chip">GCC 16</span><span class="tn__chip">C++26</span></span>
+                    </div>
+                    <span class="hero__sticker tn__key"><kbd>F11</kbd> vẫn phím cũ</span>
                 </div>
             </div>
         </header>
 
-        <section class="band band--alt">
-            <div class="wrap alt-prose">
-                <h2 class="h-section">Hai phần mềm khác nhau.</h2>
-                <p><strong>Dev-C++</strong> là IDE mà chắc bạn đã gặp ở trường. Bloodshed làm ra nó, sau đó Orwell rồi Embarcadero phát triển tiếp. Bản hiện tại đi kèm TDM-GCC&nbsp;9.2.</p>
-                <p><strong>Sameko Dev C++</strong> là một IDE khác, mới hơn. Tên nghe gần giống và mục tiêu cũng vậy, đó là cài xong bạn code được ngay. Đây là dự án mã nguồn mở độc lập, không phải bản fork của Dev-C++, và được xây trên Monaco, trình soạn thảo nằm bên trong VS&nbsp;Code.</p>
+        <section class="band" id="two-programs">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">Bối cảnh</span>
+                    <h2 class="h-section">Hai phần mềm khác nhau.</h2>
+                </div>
+                <div class="duo">
+                    <article class="duo__card duo__card--old">
+                        <div class="duo__top" aria-hidden="true">
+                            <span class="duo__icon"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span>
+                            <span class="tn__tag">Trước</span>
+                        </div>
+                        <p><strong>Dev-C++</strong> là IDE mà chắc bạn đã gặp ở trường. Bloodshed làm ra nó, sau đó Orwell rồi Embarcadero phát triển tiếp. Bản hiện tại đi kèm TDM-GCC&nbsp;9.2.</p>
+                    </article>
+                    <span class="duo__vs" aria-hidden="true">vs</span>
+                    <article class="duo__card duo__card--new">
+                        <div class="duo__top" aria-hidden="true">
+                            <span class="duo__icon duo__icon--logo"><img src="assets/logo-48.png" alt="" width="32" height="32"></span>
+                            <span class="tn__tag">Giờ</span>
+                        </div>
+                        <p><strong>Sameko Dev C++</strong> là một IDE khác, mới hơn. Tên nghe gần giống và mục tiêu cũng vậy, đó là cài xong bạn code được ngay. Đây là dự án mã nguồn mở độc lập, không phải bản fork của Dev-C++, và được xây trên Monaco, trình soạn thảo nằm bên trong VS&nbsp;Code.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
 
-                <h2 class="h-section">Những thứ bạn vẫn quen.</h2>
-                <ul>
-                    <li><strong>Không phải thiết lập gì.</strong> Compiler có sẵn trong bản tải về. Bạn cài, mở file rồi chạy thôi.</li>
-                    <li><strong>Phím tắt quen tay.</strong> Bạn vẫn nhấn <kbd>F9</kbd> để compile, <kbd>F10</kbd> để chạy, <kbd>F11</kbd> để compile rồi chạy luôn.</li>
-                    <li><strong>Một file là đủ.</strong> Mỗi file <code>.cpp</code> là một chương trình, bạn không cần tạo project.</li>
-                    <li><strong>Mang theo được.</strong> Bản zip chạy thẳng từ USB, không cần quyền admin, rất hợp với máy phòng thi hay phòng máy ở trường.</li>
-                    <li><strong>Miễn phí.</strong> Mã nguồn mở, không cần tài khoản, không quảng cáo.</li>
+        <section class="band band--alt" id="same">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">Giữ nguyên</span>
+                    <h2 class="h-section">Những thứ bạn vẫn quen.</h2>
+                </div>
+                <ul class="same">
+                    <li class="same__item">
+                        <span class="same__icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg></span>
+                        <p><strong>Không phải thiết lập gì.</strong> Compiler có sẵn trong bản tải về. Bạn cài, mở file rồi chạy thôi.</p>
+                    </li>
+                    <li class="same__item same__item--keys">
+                        <span class="same__keys" aria-hidden="true"><kbd>F9</kbd><kbd>F10</kbd><kbd>F11</kbd></span>
+                        <p><strong>Phím tắt quen tay.</strong> Bạn vẫn nhấn <kbd>F9</kbd> để compile, <kbd>F10</kbd> để chạy, <kbd>F11</kbd> để compile rồi chạy luôn.</p>
+                    </li>
+                    <li class="same__item">
+                        <span class="same__icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M10 13l-2 2 2 2M14 13l2 2-2 2"/></svg></span>
+                        <p><strong>Một file là đủ.</strong> Mỗi file <code>.cpp</code> là một chương trình, bạn không cần tạo project.</p>
+                    </li>
+                    <li class="same__item">
+                        <span class="same__icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 10h10v7a5 5 0 0 1-10 0z"/><path d="M9 10V3h6v7M11 6h0M13 6h0"/></svg></span>
+                        <p><strong>Mang theo được.</strong> Bản zip chạy thẳng từ USB, không cần quyền admin, rất hợp với máy phòng thi hay phòng máy ở trường.</p>
+                    </li>
+                    <li class="same__item">
+                        <span class="same__icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.1a4.3 4.3 0 0 1 7.5 2.7C19.5 15.4 12 20 12 20z"/></svg></span>
+                        <p><strong>Miễn phí.</strong> Mã nguồn mở, không cần tài khoản, không quảng cáo.</p>
+                    </li>
                 </ul>
+            </div>
+        </section>
 
-                <h2 class="h-section">Những thứ bạn được thêm.</h2>
-                <h3>Compiler mới</h3>
-                <p>Bạn có GCC&nbsp;16 trên Windows, dùng được từ C++98 đến C++26. Dev-C++ đi kèm TDM-GCC&nbsp;9.2, ra đời trước khi C++20 và C++23 hoàn thiện. Vì vậy phần lớn tính năng của hai chuẩn này bạn sẽ không dùng được, trừ khi tự thay compiler.</p>
-                <h3>Báo lỗi ngay lúc gõ</h3>
-                <p>clangd kiểm tra code ngay lúc bạn viết và gạch chân chỗ sai trước khi bạn compile. Gợi ý code cũng hiểu template, STL và các kiểu bạn tự định nghĩa.</p>
-                <h3>Làm ra cho online judge</h3>
-                <p>Test case nằm ngay cạnh code, Output và Expected đặt sát nhau cho bạn dễ so. Bạn chạy hết các test một lượt là thấy verdict, thời gian và bộ nhớ của từng test. Competitive Companion còn lấy đề và test từ các online judge về giúp bạn.</p>
-                <h3>Debugger ngay trong trình soạn thảo</h3>
-                <p>Bạn đặt breakpoint ngay ở lề, theo dõi biến bằng watch và xem call stack, tất cả chạy bằng GDB.</p>
-                <h3>Windows và Linux</h3>
-                <p>Dev-C++ chỉ chạy trên Windows. Sameko Dev C++ có thêm bản AppImage cho Linux, dùng compiler cài sẵn trên máy bạn.</p>
-                <h3>Mấy thứ còn lại</h3>
-                <p>Bạn còn có lịch sử file với checkpoint, snippet, tự định dạng code khi lưu, xem trước Markdown, giao diện tối và trình chỉnh theme. Giao diện có Tiếng Việt, English và &#31616;&#20307;&#20013;&#25991;.</p>
+        <section class="band band--butter" id="different">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">Mới</span>
+                    <h2 class="h-section">Những thứ bạn được thêm.</h2>
+                </div>
+                <div class="feats">
+                    <article class="feat">
+                        <span class="feat__sticker" aria-hidden="true">C++26</span>
+                        <span class="feat__icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></svg></span>
+                        <h3>Compiler mới</h3>
+                        <p>Bạn có GCC&nbsp;16 trên Windows, dùng được từ C++98 đến C++26. Dev-C++ đi kèm TDM-GCC&nbsp;9.2, ra đời trước khi C++20 và C++23 hoàn thiện. Vì vậy phần lớn tính năng của hai chuẩn này bạn sẽ không dùng được, trừ khi tự thay compiler.</p>
+                    </article>
+                    <article class="feat">
+                        <span class="feat__icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 11h10"/><path d="M4 18c1.5-2 3-2 4.5 0s3 2 4.5 0 3-2 4.5 0"/></svg></span>
+                        <h3>Báo lỗi ngay lúc gõ</h3>
+                        <p>clangd kiểm tra code ngay lúc bạn viết và gạch chân chỗ sai trước khi bạn compile. Gợi ý code cũng hiểu template, STL và các kiểu bạn tự định nghĩa.</p>
+                    </article>
+                    <article class="feat">
+                        <span class="feat__sticker feat__sticker--ac" aria-hidden="true">AC</span>
+                        <span class="feat__icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5a3 3 0 0 0 3 4M16 6h3a3 3 0 0 1-3 4M12 13v4M8 21h8M10 17h4"/></svg></span>
+                        <h3>Làm ra cho online judge</h3>
+                        <p>Test case nằm ngay cạnh code, Output và Expected đặt sát nhau cho bạn dễ so. Bạn chạy hết các test một lượt là thấy verdict, thời gian và bộ nhớ của từng test. Competitive Companion còn lấy đề và test từ các online judge về giúp bạn.</p>
+                    </article>
+                    <article class="feat">
+                        <span class="feat__icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="13" rx="5"/><path d="M12 11v9M9 4l1.5 3M15 4l-1.5 3M3 11h4M17 11h4M3 17h4M17 17h4"/></svg></span>
+                        <h3>Debugger ngay trong trình soạn thảo</h3>
+                        <p>Bạn đặt breakpoint ngay ở lề, theo dõi biến bằng watch và xem call stack, tất cả chạy bằng GDB.</p>
+                    </article>
+                    <article class="feat">
+                        <span class="feat__icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="4" width="13" height="10" rx="2"/><rect x="9" y="10" width="13" height="10" rx="2"/></svg></span>
+                        <h3>Windows và Linux</h3>
+                        <p>Dev-C++ chỉ chạy trên Windows. Sameko Dev C++ có thêm bản AppImage cho Linux, dùng compiler cài sẵn trên máy bạn.</p>
+                    </article>
+                    <article class="feat">
+                        <span class="feat__icon"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M11 3l1.8 5.2L18 10l-5.2 1.8L11 17l-1.8-5.2L4 10l5.2-1.8z"/><path d="M19 14l.8 2.2L22 17l-2.2.8L19 20l-.8-2.2L16 17l2.2-.8z"/></svg></span>
+                        <h3>Mấy thứ còn lại</h3>
+                        <p>Bạn còn có lịch sử file với checkpoint, snippet, tự định dạng code khi lưu, xem trước Markdown, giao diện tối và trình chỉnh theme. Giao diện có Tiếng Việt, English và &#31616;&#20307;&#20013;&#25991;.</p>
+                    </article>
+                </div>
             </div>
         </section>
 
@@ -297,35 +388,100 @@
             </div>
         </section>
 
-        <section class="band band--alt">
-            <div class="wrap alt-prose">
-                <h2 class="h-section">Chuyển từ Dev-C++ sang.</h2>
-                <ol>
-                    <li><a href="vi.html#download-trigger">Tải Sameko Dev C++ về</a>. Bạn chọn bản cài, hoặc bản zip portable nếu máy không cho cài phần mềm.</li>
-                    <li>Mở một file <code>.cpp</code> bạn đang có. Bạn không phải chuyển đổi gì cả.</li>
-                    <li>Nhấn <kbd>F11</kbd>. Lần build đầu dùng luôn GCC&nbsp;16 có sẵn.</li>
-                    <li>Nếu lớp học hay judge của bạn yêu cầu chuẩn cũ hơn, bạn chọn lại trong Cài đặt &rarr; Compiler.</li>
+        <section class="band band--alt" id="moving">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">Chuyển sang</span>
+                    <h2 class="h-section">Chuyển từ Dev-C++ sang.</h2>
+                </div>
+                <ol class="steps steps--four">
+                    <li class="steps__item">
+                        <span class="steps__num">1</span>
+                        <p><a href="vi.html#download-trigger">Tải Sameko Dev C++ về</a>. Bạn chọn bản cài, hoặc bản zip portable nếu máy không cho cài phần mềm.</p>
+                    </li>
+                    <li class="steps__item">
+                        <span class="steps__num">2</span>
+                        <p>Mở một file <code>.cpp</code> bạn đang có. Bạn không phải chuyển đổi gì cả.</p>
+                    </li>
+                    <li class="steps__item">
+                        <span class="steps__num">3</span>
+                        <p>Nhấn <kbd>F11</kbd>. Lần build đầu dùng luôn GCC&nbsp;16 có sẵn.</p>
+                    </li>
+                    <li class="steps__item">
+                        <span class="steps__num">4</span>
+                        <p>Nếu lớp học hay judge của bạn yêu cầu chuẩn cũ hơn, bạn chọn lại trong Cài đặt &rarr; Compiler.</p>
+                    </li>
                 </ol>
-                <p>Bạn cứ để hai IDE cài song song, chúng không đụng cài đặt hay compiler của nhau.</p>
+                <p class="steps__after">Bạn cứ để hai IDE cài song song, chúng không đụng cài đặt hay compiler của nhau.</p>
+            </div>
+        </section>
 
-                <h2 class="h-section" id="faq">Hỏi đáp.</h2>
-                <h3>Sameko Dev C++ có phải bản mới của Dev-C++ không?</h3>
-                <p>Không bạn nhé. Dev-C++ là một IDE khác, do Bloodshed làm ra, sau đó Orwell rồi Embarcadero phát triển tiếp. Sameko Dev C++ là dự án độc lập, viết mới từ đầu trên Electron và trình soạn thảo Monaco. Nó không phải bản fork và không dùng chung dòng code nào với Dev-C++.</p>
-                <h3>Phím tắt quen của Dev-C++ còn dùng được không?</h3>
-                <p>Mấy phím chính vẫn y nguyên. Bạn nhấn F9 để compile, F10 để chạy, F11 để compile rồi chạy luôn, còn Shift+F5 để dừng chương trình. Muốn đổi phím nào thì bạn vào Cài đặt.</p>
-                <h3>Mở lại file cũ từ Dev-C++ được không?</h3>
-                <p>Được bạn nhé. File .cpp và .h chỉ là file chữ nên bạn mở ra là dùng, không phải chuyển đổi gì.</p>
-                <h3>Có phải cài compiler riêng không?</h3>
-                <p>Trên Windows thì bạn không cần cài gì thêm. GCC 16, clangd và GDB nằm sẵn trong bản tải về, giống như Dev-C++ đi kèm TDM-GCC. Trên Linux thì app dùng g++, gdb và clangd bạn cài từ distro.</p>
-                <h3>Có miễn phí như Dev-C++ không?</h3>
-                <p>Có bạn nhé. Sameko Dev C++ là mã nguồn mở, giấy phép MIT, không quảng cáo, không cần tài khoản và không thu thập dữ liệu của bạn.</p>
+        <section class="band band--butter" id="faq">
+            <div class="wrap">
+                <div class="band__head">
+                    <span class="eyebrow">FAQ</span>
+                    <h2 class="h-section">Hỏi đáp.</h2>
+                </div>
+                <div class="faq-list">
+                    <div class="faq-item active">
+                        <h3 class="faq-h"><button class="faq-question" type="button" aria-expanded="true" aria-controls="faq-a1" id="faq-q1">
+                            <span>Sameko Dev C++ có phải bản mới của Dev-C++ không?</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button></h3>
+                        <div class="faq-answer" id="faq-a1" role="region" aria-labelledby="faq-q1"><div class="faq-answer__inner">
+                            <p>Không bạn nhé. Dev-C++ là một IDE khác, do Bloodshed làm ra, sau đó Orwell rồi Embarcadero phát triển tiếp. Sameko Dev C++ là dự án độc lập, viết mới từ đầu trên Electron và trình soạn thảo Monaco. Nó không phải bản fork và không dùng chung dòng code nào với Dev-C++.</p></div>
+                        </div>
+                    </div>
+                    <div class="faq-item active">
+                        <h3 class="faq-h"><button class="faq-question" type="button" aria-expanded="true" aria-controls="faq-a2" id="faq-q2">
+                            <span>Phím tắt quen của Dev-C++ còn dùng được không?</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button></h3>
+                        <div class="faq-answer" id="faq-a2" role="region" aria-labelledby="faq-q2"><div class="faq-answer__inner">
+                            <p>Mấy phím chính vẫn y nguyên. Bạn nhấn F9 để compile, F10 để chạy, F11 để compile rồi chạy luôn, còn Shift+F5 để dừng chương trình. Muốn đổi phím nào thì bạn vào Cài đặt.</p></div>
+                        </div>
+                    </div>
+                    <div class="faq-item active">
+                        <h3 class="faq-h"><button class="faq-question" type="button" aria-expanded="true" aria-controls="faq-a3" id="faq-q3">
+                            <span>Mở lại file cũ từ Dev-C++ được không?</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button></h3>
+                        <div class="faq-answer" id="faq-a3" role="region" aria-labelledby="faq-q3"><div class="faq-answer__inner">
+                            <p>Được bạn nhé. File .cpp và .h chỉ là file chữ nên bạn mở ra là dùng, không phải chuyển đổi gì.</p></div>
+                        </div>
+                    </div>
+                    <div class="faq-item active">
+                        <h3 class="faq-h"><button class="faq-question" type="button" aria-expanded="true" aria-controls="faq-a4" id="faq-q4">
+                            <span>Có phải cài compiler riêng không?</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button></h3>
+                        <div class="faq-answer" id="faq-a4" role="region" aria-labelledby="faq-q4"><div class="faq-answer__inner">
+                            <p>Trên Windows thì bạn không cần cài gì thêm. GCC 16, clangd và GDB nằm sẵn trong bản tải về, giống như Dev-C++ đi kèm TDM-GCC. Trên Linux thì app dùng g++, gdb và clangd bạn cài từ distro.</p></div>
+                        </div>
+                    </div>
+                    <div class="faq-item active">
+                        <h3 class="faq-h"><button class="faq-question" type="button" aria-expanded="true" aria-controls="faq-a5" id="faq-q5">
+                            <span>Có miễn phí như Dev-C++ không?</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button></h3>
+                        <div class="faq-answer" id="faq-a5" role="region" aria-labelledby="faq-q5"><div class="faq-answer__inner">
+                            <p>Có bạn nhé. Sameko Dev C++ là mã nguồn mở, giấy phép MIT, không quảng cáo, không cần tài khoản và không thu thập dữ liệu của bạn.</p></div>
+                        </div>
+                    </div>
+                </div>
                 <p class="alt-note">Dev-C++ là sản phẩm của các tác giả tương ứng. Sameko Dev C++ không liên quan đến Bloodshed, Orwell hay Embarcadero. Bảng so sánh mô tả bản cài mặc định, kiểm tra lần cuối vào tháng 11/2026.</p>
             </div>
         </section>
 
         <section id="cta" class="band band--cta">
+            <div class="cta__art" aria-hidden="true">
+                <span class="shape shape--circle" style="--x:8%;--y:22%;--sz:40px;--c:var(--shape-butter);--d:7s"></span>
+                <span class="shape shape--spark" style="--x:86%;--y:18%;--sz:38px;--c:var(--shape-white);--d:8s"><svg viewBox="0 0 48 48"><path d="M24 4c1.8 11 6.6 16.2 19 20-12.4 3.8-17.2 9-19 20-1.8-11-6.6-16.2-19-20 12.4-3.8 17.2-9 19-20z"/></svg></span>
+                <span class="shape shape--squircle" style="--x:90%;--y:72%;--sz:34px;--c:var(--shape-butter);--d:9s;--r:16deg"></span>
+                <span class="shape shape--ring" style="--x:12%;--y:74%;--sz:36px;--c:var(--shape-white);--d:10s"></span>
+            </div>
             <div class="wrap cta">
-                <h2 class="h-section">Bạn cứ cài thử, để cạnh Dev-C++.</h2>
+                <h2 class="h-section">Bạn cứ cài thử, để cạnh <span class="hl">Dev-C++.<svg class="hl__squiggle" viewBox="0 0 220 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 14C24 4 40 22 60 13S96 4 116 13s36 9 56 0 32-7 44-2"/></svg></span></h2>
                 <p class="lede">Miễn phí, portable và mã nguồn mở.</p>
                 <div class="cta__actions">
                     <a href="vi.html#download-trigger" class="btn btn--primary btn--lg">Tải về</a>
@@ -334,7 +490,6 @@
             </div>
         </section>
     </main>
-
 
     <footer class="foot">
         <div class="wrap">
@@ -365,8 +520,7 @@
                         <li><a href="wiki.html">Wiki (English)</a></li>
                         <li><a href="wiki-vi.html">Wiki (Tiếng Việt)</a></li>
                         <li><a href="vi.html#faq">FAQ</a></li>
-                        <li><a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/CHANGELOG.md"
-                                target="_blank" rel="noopener">Changelog</a></li>
+                        <li><a href="changelog.html">Changelog</a></li>
                     </ul>
                 </div>
 
@@ -392,6 +546,7 @@
             </div>
         </div>
     </footer>
+    <script src="assets/js/compare.js" defer></script>
 </body>
 
 </html>

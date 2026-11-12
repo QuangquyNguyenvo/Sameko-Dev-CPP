@@ -1,0 +1,229 @@
+/* Dev-C++ comparison pages (dev-cpp-alternative.html, thay-the-dev-cpp.html).
+   Loaded after homepage.css and reuses its flat kit: thick ink outlines,
+   hard offset shadows, sky / white / butter section pastels. Colors come only
+   from the tokens in tokens.css and the .sameko-home overrides in homepage.css. */
+
+/* ---------- Section rhythm ---------- */
+.sameko-home .band--alt { --band-bg: var(--sec-white); --band-ink: var(--sec-white-ink); }
+.sameko-home .band--butter { --band-bg: var(--sec-butter); --band-ink: var(--sec-butter-ink); }
+.cmp-page .band__head .lede { max-width: 60ch; }
+.alt-nowrap { white-space: nowrap; }
+.cmp-page main a:not(.btn) { color: var(--c-brand-strong); text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 2px; }
+
+/* Shared little label: "Then" / "Now". */
+.tn__tag {
+    display: inline-flex; align-items: center; min-height: 26px; padding: 2px 12px; border-radius: 99px;
+    border: 2px solid var(--ink); background: var(--c-surface); color: var(--c-text);
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+/* ---------- Hero ---------- */
+.sameko-home .cmp-hero { min-height: calc(100svh - 120px); padding-block: 56px 110px; }
+.sameko-home .cmp-hero .hero__inner { grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr); gap: clamp(32px, 5vw, 72px); }
+.sameko-home .cmp-hero__title { font-size: clamp(42px, 5.4vw, 80px); line-height: 1.06; letter-spacing: -0.045em; margin-bottom: 36px; text-wrap: balance; }
+.sameko-home .cmp-hero__title > .hl { display: inline-block; white-space: nowrap; }
+.sameko-home .cmp-hero .hero__lede { max-width: 44ch; }
+.sameko-home .cmp-hero .hero__lede kbd { font-size: 0.85em; }
+.sameko-home .cmp-hero .hero__word { right: -4vw; color: var(--sec-sky); }
+
+/* Then -> Now: two flat cards and a key sticker. Pure HTML/CSS, aria-hidden. */
+.tn { position: relative; display: grid; gap: 14px; padding: 34px 18px 64px; isolation: isolate; min-width: 0; }
+.tn__sun { width: 26%; right: 2%; top: 0; z-index: -1; }
+.sameko-home .tn .hero__spark--1 { left: 0; top: 2%; }
+.sameko-home .tn .hero__spark--2 { right: 34%; top: -4%; }
+.tn__card {
+    position: relative; display: grid; gap: 12px; justify-items: start; width: min(100%, 340px);
+    padding: 20px 22px 22px; border: 3px solid var(--ink); border-radius: 24px;
+    background: var(--c-surface); color: var(--c-text); box-shadow: 0 7px 0 var(--ink-shadow);
+}
+.tn__card--then { justify-self: start; rotate: -4deg; }
+.tn__card--then .tn__name { color: var(--c-text-muted); }
+.tn__card--then .tn__chip { background: var(--c-surface-sunk); color: var(--c-text-muted); text-decoration: line-through; text-decoration-thickness: 2px; }
+.tn__card--now { justify-self: end; rotate: 3deg; background: var(--c-brand); color: #10202c; }
+.tn__card--now .tn__tag { background: var(--c-accent); color: #10202c; border-color: var(--ink); }
+.tn__name { font-size: clamp(22px, 2.4vw, 30px); font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
+.tn__row { display: flex; flex-wrap: wrap; gap: 8px; }
+.tn__chip {
+    padding: 5px 12px; border-radius: 12px; border: 2px solid var(--ink);
+    background: var(--c-surface); color: var(--c-text); font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+}
+.tn__card--now .tn__chip { background: #fff; color: #10202c; border-color: #2a4a5a; }
+.tn__arrow {
+    justify-self: center; display: grid; place-items: center; width: 52px; height: 52px; margin-block: -6px;
+    border-radius: 50%; border: 3px solid var(--ink); background: var(--c-accent); color: #10202c; box-shadow: var(--pop-sm); z-index: 2;
+}
+.tn__arrow svg { width: 26px; height: 26px; stroke-width: 3; }
+.sameko-home .tn__key { left: 4%; right: auto; bottom: 4px; rotate: -6deg; background: var(--c-accent); color: #10202c; font-size: 14px; }
+
+/* ---------- 01 Two programs ---------- */
+.duo { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 22px; }
+.duo__card {
+    display: grid; align-content: start; gap: 18px; height: 100%; padding: clamp(24px, 3vw, 36px);
+    border: var(--bd); border-radius: 26px; background: var(--c-surface); color: var(--c-text); box-shadow: var(--pop);
+}
+.duo__card p { margin: 0; font-size: 17px; line-height: 1.7; color: var(--c-text-soft); }
+.duo__card strong { color: var(--c-text); font-size: 1.12em; }
+.duo__card--new { background: var(--c-brand); }
+.duo__card--new p, .duo__card--new strong { color: #10202c; }
+.duo__card--new .tn__tag { background: var(--c-accent); color: #10202c; }
+.duo__top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.duo__icon {
+    display: grid; place-items: center; width: 54px; height: 54px; border-radius: 16px;
+    border: 2.5px solid var(--ink); background: var(--c-surface-sunk); color: var(--c-text); box-shadow: var(--pop-sm);
+}
+.duo__icon svg { width: 28px; height: 28px; }
+.duo__icon--logo { background: #fff; }
+.duo__icon--logo img { width: 34px; height: 34px; }
+.duo__vs {
+    display: grid; place-items: center; width: 64px; height: 64px; border-radius: 50%; rotate: -8deg;
+    border: 3px solid var(--ink); background: var(--c-accent); color: #10202c; box-shadow: var(--pop);
+    font-size: 22px; font-weight: 700;
+}
+
+/* ---------- 02 What stays the same ---------- */
+.same { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 20px; list-style: none; margin: 0; padding: 0; }
+.same__item {
+    grid-column: span 2; display: grid; align-content: start; gap: 16px; padding: 26px;
+    border: var(--bd); border-radius: 24px; background: var(--c-surface); box-shadow: var(--pop);
+}
+.same__item--keys { grid-column: span 4; grid-template-columns: auto minmax(0, 1fr); align-items: center; align-content: center; gap: 26px; background: var(--c-brand); }
+.same__item:nth-child(n + 3) { grid-column: span 2; }
+.same__item p { margin: 0; font-size: 16px; line-height: 1.6; color: var(--c-text-soft); }
+.same__item strong { display: block; margin-bottom: 4px; font-size: 20px; color: var(--c-text); letter-spacing: -0.01em; }
+.same__item--keys p, .same__item--keys strong { color: #10202c; }
+.same__item--keys p kbd { color: #10202c; background: #fff; border-color: #2a4a5a; box-shadow: 0 3px 0 #2a4a5a; }
+.same__icon {
+    display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px;
+    border: 2.5px solid var(--ink); background: var(--c-brand); color: #10202c; box-shadow: var(--pop-sm);
+}
+.same__item:nth-child(3n) .same__icon { background: var(--c-accent); }
+.same__item:nth-child(4) .same__icon { background: var(--c-surface-sunk); color: var(--c-text); }
+.same__icon svg { width: 26px; height: 26px; }
+.same__keys { display: flex; gap: 10px; }
+.sameko-home .same__keys kbd {
+    display: grid; place-items: center; min-width: 64px; height: 64px; padding: 0 12px;
+    border: 3px solid #2a4a5a; border-radius: 14px; background: #fff; color: #10202c;
+    box-shadow: 0 5px 0 #2a4a5a; font-size: 20px;
+}
+.sameko-home .same__keys kbd:last-child { background: var(--c-accent); }
+
+/* ---------- 03 What is different ---------- */
+.feats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+.feat {
+    position: relative; display: grid; align-content: start; gap: 12px; padding: 28px 26px 30px;
+    border: var(--bd); border-radius: 24px; background: var(--c-surface); box-shadow: var(--pop);
+}
+.feat h3 { margin: 6px 0 0; font-size: 22px; line-height: 1.2; letter-spacing: -0.02em; color: var(--c-text); }
+.feat p { margin: 0; font-size: 15px; line-height: 1.65; color: var(--c-text-soft); }
+.feat__icon {
+    display: grid; place-items: center; width: 56px; height: 56px; border-radius: 18px;
+    border: 2.5px solid var(--ink); background: var(--c-brand); color: #10202c; box-shadow: var(--pop-sm);
+}
+.feat:nth-child(3n + 2) .feat__icon { background: var(--c-accent); }
+.feat:nth-child(3n) .feat__icon { background: var(--c-surface-sunk); color: var(--c-text); }
+.feat__icon svg { width: 28px; height: 28px; }
+.feat__sticker {
+    position: absolute; right: 18px; top: -16px; padding: 6px 14px; rotate: 6deg;
+    border: 2.5px solid var(--ink); border-radius: 14px; background: var(--c-accent); color: #10202c;
+    box-shadow: var(--pop-sm); font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+}
+.feat__sticker--ac { background: var(--c-brand); rotate: -6deg; }
+
+/* ---------- 04 Compare ---------- */
+.cmp-page .cmp__table tbody td:nth-child(3) { background: var(--sec-butter); }
+.cmp-page .cmp__table thead th:nth-child(3) { background: var(--c-accent); color: #10202c; font-size: 14px; }
+@media (max-width: 1100px) {
+    /* The table scrolls inside its frame here; keep the row names in view. */
+    .cmp-page .cmp__table tbody th, .cmp-page .cmp__table thead th:first-child {
+        position: sticky; left: 0; z-index: 1; border-right: 2px solid var(--c-border);
+    }
+}
+
+/* ---------- 05 Moving: four numbered steps ---------- */
+.sameko-home .steps--four { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; list-style: none; margin: 0; padding: 0; }
+.sameko-home .steps--four::before, .sameko-home .steps--four::after { left: calc(100% / 8); right: calc(100% / 8); }
+.sameko-home .steps--four .steps__item p { margin: 22px 0 0; font-size: 16px; line-height: 1.6; color: var(--c-text-soft); }
+.steps__after {
+    width: fit-content; max-width: 100%; margin: clamp(40px, 6vw, 64px) auto 0; padding: 14px 24px;
+    border: var(--bd); border-radius: 22px; background: var(--sec-butter); color: var(--c-text);
+    box-shadow: var(--pop-sm); font-weight: 600; text-align: center; line-height: 1.6;
+}
+
+/* ---------- 06 FAQ ---------- */
+.faq-h { margin: 0; font-size: inherit; font-weight: inherit; }
+.sameko-home .faq-question { font-size: 17px; }
+.sameko-home .faq-question > span { min-width: 0; }
+/* Without compare.js every answer stays open; the script adds .faq-list--js and collapses them. */
+.sameko-home .faq-list .faq-answer { grid-template-rows: 1fr; }
+.sameko-home .faq-list--js .faq-item:not(.active) .faq-answer { grid-template-rows: 0fr; }
+.sameko-home .faq-list--js .faq-item:not(.active) .faq-chevron { transform: none; }
+.alt-note { max-width: 860px; margin: 28px 0 0; font-size: 14px; line-height: 1.6; color: var(--c-text-muted); }
+
+/* ---------- CTA ---------- */
+.cta__art { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 1100px) {
+    .feats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .same { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .same__item, .same__item:nth-child(n + 3) { grid-column: span 1; }
+    .same__item--keys { grid-column: 1 / -1; }
+    .sameko-home .steps--four { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: 40px; }
+    .sameko-home .steps--four::before, .sameko-home .steps--four::after { display: none; }
+}
+@media (max-width: 900px) {
+    .sameko-home .cmp-hero { padding-block: 32px 96px; }
+    .sameko-home .cmp-hero .hero__inner { grid-template-columns: minmax(0, 1fr); text-align: left; }
+    .sameko-home .cmp-hero .hero__lede { margin-inline: 0; }
+    .sameko-home .cmp-hero .hero__actions { justify-content: flex-start; }
+    .tn { width: min(460px, 100%); margin-inline: auto; padding-inline: 6px; }
+    .duo { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+    .duo__card { width: 100%; }
+    .duo__vs { margin-block: -36px; position: relative; z-index: 2; }
+}
+@media (max-width: 720px) {
+    .feats, .same { grid-template-columns: minmax(0, 1fr); }
+    .same__item--keys { grid-template-columns: minmax(0, 1fr); }
+    .sameko-home .steps--four { grid-template-columns: minmax(0, 1fr); row-gap: 28px; }
+    .sameko-home .steps--four::before { display: block; left: 26px; right: auto; }
+    .sameko-home .steps--four::after { display: block; left: 28px; right: auto; }
+    .sameko-home .cmp-hero .hero__word, .cmp-hero .shape:is(:nth-child(2), :nth-child(3), :nth-child(8), :nth-child(10)) { display: none; }
+    .cmp-page .cmp__table thead th:first-child { width: 150px; }
+    .sameko-home .steps--four .steps__item p { margin: 12px 0 0; }
+}
+@media (max-width: 480px) {
+    .sameko-home .cmp-hero__title { font-size: clamp(34px, 10vw, 44px); margin-bottom: 24px; }
+    .sameko-home .cmp-hero .hero__actions .btn { width: 100%; }
+    .tn__card { padding: 16px 18px 18px; width: 92%; }
+    .tn__chip { font-size: 13px; }
+    .same__item, .feat { padding: 22px 20px 24px; }
+    .sameko-home .same__keys kbd { min-width: 54px; height: 54px; font-size: 17px; }
+    .duo__card p { font-size: 16px; }
+    .steps__after { padding: 14px 18px; }
+    .cmp-page .cmp__table td { padding-left: 42px; }
+    .sameko-home.cmp-page .theme-toggle { width: 44px; height: 44px; }
+    .sameko-home.cmp-page .nav__actions .btn { min-height: 44px; }
+}
+
+/* ---------- Motion: subtle, CSS only ---------- */
+@media (prefers-reduced-motion: no-preference) {
+    .tn__card--then { animation: tn-float 6s var(--ease-soft) infinite alternate; }
+    .tn__card--now { animation: tn-float 7s var(--ease-soft) -3s infinite alternate; }
+    .tn__key { animation: bob 5s var(--ease-soft) -1s infinite alternate; }
+    .duo__vs { animation: vs-wobble 4s var(--ease-soft) infinite alternate; }
+    .same__item, .feat, .duo__card {
+        transition: transform var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+    }
+    .same__item:hover, .feat:hover, .duo__card:hover { transform: translateY(-4px); box-shadow: 0 9px 0 var(--ink-shadow); }
+    .sameko-home .faq-question .faq-chevron { transition: transform var(--dur-base) var(--ease-out); }
+    @supports (animation-timeline: view()) {
+        .same__item, .feat, .steps__item, .duo__card {
+            animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 55%;
+        }
+    }
+}
+@keyframes tn-float { to { translate: 0 -10px; } }
+@keyframes vs-wobble { to { rotate: 6deg; } }
+@keyframes rise { from { translate: 0 28px; scale: 0.97; } }
+.cmp-page #compare .band__head { max-width: 900px; }
+.cmp-page .nav__brand { min-height: 44px; }
