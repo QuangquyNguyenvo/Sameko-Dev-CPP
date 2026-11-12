@@ -104,7 +104,7 @@
             intro.from('.wiki-release-pill', { y: 12, autoAlpha: 0, duration: 0.5 }, 0);
             if (title) intro.from(splitWords(title), { y: 36, autoAlpha: 0, duration: 0.7, stagger: 0.07 }, 0.08);
             intro.from('.wiki-hero-copy > p, .wiki-search', { y: 16, autoAlpha: 0, duration: 0.6, stagger: 0.1 }, 0.35)
-                .from('.wiki-hero-word', { yPercent: 18, autoAlpha: 0, duration: 0.9 }, 0.1)
+                .from('.wiki-hero-word', { y: 60, autoAlpha: 0, duration: 0.9 }, 0.1)
                 .from('.wiki-hero-art .shape', { scale: 0, autoAlpha: 0, duration: 0.6, stagger: 0.05, ease: 'back.out(3)' }, 0.3)
                 .from('.wiki-sidebar', { x: -20, autoAlpha: 0, duration: 0.7 }, 0.45);
             var mark = document.querySelector('.wiki-hero .hl');

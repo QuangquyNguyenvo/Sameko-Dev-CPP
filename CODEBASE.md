@@ -185,6 +185,9 @@ in October 2026.)
 | `samekodevcpp/` | electron-builder output (gitignored). |
 | `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md` | User and contributor docs (`CONTRIBUTING.md` also covers placing the bundled compiler). |
 
+`docs/changelog.html` (the site's release-notes page) is generated from `CHANGELOG.md` by
+`node scripts/build-changelog.js`; rerun it and commit the result after editing the changelog.
+
 ## 6. Packaging (`package.json` › `build`)
 - electron-builder, `asar: true`, output `samekodevcpp/`, appId `com.quangquy.cppide`.
 - Packaged files: `app/`, `preload.js`, `src/`, `node_modules/` (trimmed by the exclusion list:

@@ -24,7 +24,7 @@ It is aimed at beginners, students and competitive programmers. Key facts:
 - [Trang chủ tiếng Việt](https://sameko.dev/vi) and [So sánh với Dev-C++](https://sameko.dev/thay-the-dev-cpp): Vietnamese versions of the home page and the comparison
 - [Wiki (English)](https://sameko.dev/wiki): installation, first project, requirements, compiler settings, shortcuts, themes, debugger, snippets, Competitive Companion, troubleshooting
 - [Wiki (Tiếng Việt)](https://sameko.dev/wiki-vi): Vietnamese version of the wiki
-- [Release notes](https://sameko.dev/wiki#whats-new): what changed in 1.4.0, 1.3.2 and 1.3.1
+- [Changelog](https://sameko.dev/changelog): full release notes for every version, newest first (added, changed, fixed, security, performance)
 - [Troubleshooting](https://sameko.dev/wiki#troubleshooting): IDE won't open, missing DLL, compile errors, Windows Defender false positives
 
 ## Download

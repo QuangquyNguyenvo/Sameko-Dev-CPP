@@ -314,11 +314,14 @@ body.wiki-page {
     pointer-events: none;
 }
 
+/* Centred with flex, not with a transform: GSAP owns the transform of this element (wiki.js),
+   and a CSS translate here made the word jump half its width to the right when a tween started. */
 .wiki-page .wiki-hero-word {
     position: absolute;
-    left: 50%;
-    top: 48%;
-    translate: -50% -50%;
+    inset: -2% 0 2%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     color: var(--sec-sky);
     font-size: clamp(200px, 30vw, 440px);
     font-weight: 700;
@@ -1305,7 +1308,7 @@ body.wiki-page {
     }
 
     .wiki-page .wiki-hero-word {
-        top: 30%;
+        inset: 0 0 40%;
         font-size: 44vw;
     }
 
