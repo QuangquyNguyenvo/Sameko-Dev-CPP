@@ -12,8 +12,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const tokenSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'renderer', 'ui', 'theme-tokens.js'), 'utf8');
-const controllerSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'renderer', 'ui', 'theme-customizer.js'), 'utf8');
+const tokenSource = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'renderer', 'ui', 'theme-tokens.js'), 'utf8');
+const controllerSource = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'renderer', 'ui', 'theme-customizer.js'), 'utf8');
 
 function clone(value) {
     return value === undefined ? undefined : JSON.parse(JSON.stringify(value));

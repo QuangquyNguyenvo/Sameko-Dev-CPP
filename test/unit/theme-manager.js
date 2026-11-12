@@ -2,7 +2,7 @@
 
 /*
  * Focused, dependency-free checks for the ThemeManager persistence contract.
- * Run with: node scripts/test-theme-manager.js
+ * Run with: node test/unit/theme-manager.js
  */
 
 const assert = require('assert');
@@ -10,8 +10,8 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const source = fs.readFileSync(path.join(__dirname, '..', 'src', 'renderer', 'ui', 'theme-manager.js'), 'utf8');
-const tokenSource = fs.readFileSync(path.join(__dirname, '..', 'src', 'renderer', 'ui', 'theme-tokens.js'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'renderer', 'ui', 'theme-manager.js'), 'utf8');
+const tokenSource = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'renderer', 'ui', 'theme-tokens.js'), 'utf8');
 
 function clone(value) {
     return value === undefined ? undefined : JSON.parse(JSON.stringify(value));

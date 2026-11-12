@@ -6,9 +6,9 @@
  *   Parts B-D  gdb-session.js E2E      — need a real gdb/g++; SKIP if absent.
  *              They run concurrently; each part's lines are printed in order.
  *
- *   node scripts/test-debugger.js          all parts (npm run test:debugger)
- *   node scripts/test-debugger.js --unit   Part A only
- *   node scripts/test-debugger.js --e2e    Parts B-D only
+ *   node test/e2e/debugger.js          all parts (npm run test:debugger)
+ *   node test/e2e/debugger.js --unit   Part A only
+ *   node test/e2e/debugger.js --e2e    Parts B-D only
  *
  * Node core only. Exit code is 0 unless something FAILED.
  *
@@ -24,7 +24,7 @@ const path = require('path');
 const { promisify } = require('util');
 const execFile = promisify(require('child_process').execFile);
 
-const ROOT = path.join(__dirname, '..');
+const ROOT = path.join(__dirname, '..', '..');
 
 // ---- tiny harness ---------------------------------------------------------
 // Each part gets its own log buffer so concurrent parts print in order.

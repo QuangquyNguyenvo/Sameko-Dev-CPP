@@ -7,7 +7,7 @@
  * one Build & Run of a real program through the bundled g++.
  * Page errors and failed resource loads are collected for the whole session.
  *
- *   node scripts/test-gui.js     (npm run test:gui; also part of npm test)
+ *   node test/gui/app.js     (npm run test:gui; also part of npm test)
  *   KEEP_PROFILE=1               keep the temp profile (it is kept anyway on failure)
  *   SMOKE_SHOT=1                 save a screenshot to plans/_smoke-artifacts/
  */
@@ -18,7 +18,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { _electron } = require('playwright-core');
 
-const ROOT = path.resolve(__dirname, '..');
+const ROOT = path.resolve(__dirname, '..', '..');
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-gui-'));
 let app;
 let failed = 0;

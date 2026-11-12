@@ -73,11 +73,11 @@ and `window.open` are denied in `app/windows/main-window.js`.
 | `compiler/languages.js` | Python, Java, Kotlin, Rust, Go, Pascal, JavaScript: finds the machine's compiler/interpreter (PATH, the registry's PATH, usual folders, `settings.languages.<id>.path`), builds into `<temp>/cpp-ide-builds/lang/`, and `runCommand()` turns a build into the command that starts it. |
 | `compiler/run-launcher.js` | Builds (once per toolchain) and locates `sameko_run.exe`, the Windows helper that runs a program and reports its wall time, CPU time and peak memory. |
 | `debugger/gdb-session.js` | Drives GDB over the MI protocol. |
-| `debugger/mi-parser.js` | Pure GDB/MI output parser (unit-tested by `scripts/test-debugger.js`). |
+| `debugger/mi-parser.js` | Pure GDB/MI output parser (unit-tested by `test/e2e/debugger.js --unit`). |
 | `syntax/clangd-service.js` | clangd child process, JSON-RPC over stdio. |
 | `syntax/gcc-checker.js` | `g++ -fsyntax-only` check, the fallback when clangd is unavailable. |
 | `competitive/companion-server.js` | HTTP listener for Competitive Companion on `127.0.0.1:27121` (the `10043` in `constants.js` is unused). |
-| `competitive/batch-tester.js`, `competitive/judge-selftest.js` | Multi-test runner; judge self-test. |
+| `competitive/batch-tester.js` | Multi-test runner (judge rules tested by `test/unit/judge.js`). |
 | `competitive/checker.js` | testlib checkers: copies the bundled `app/assets/testlib/testlib.h` (0.9.41, MIT) to a temp folder that `executor.js` and clangd add with `-idirafter`, and `runChecker()` (`checker in out ans`, exit code = verdict). |
 | `formatter/astyle.js`, `formatter/styles.js` | AStyle wrapper; style presets. |
 | `auto-update-service.js`, `discord-rpc-service.js` | electron-updater; Discord RPC. |
@@ -171,14 +171,15 @@ in October 2026.)
 - **Customizer:** a separate draft owns history and validation. The dialog reuses the Settings
   popup's classes (`.settings-*`, `.setting-row`, `.btn-save`); its Shadow DOM preview is a scaled
   copy of the islands layout fed with all `ThemeTokens`. Editing never changes the active Monaco theme.
-  `scripts/test-theme-customizer-gui.js` (part of `npm test`) covers editing, save/restart, backgrounds and portable export on an isolated profile.
+  `test/gui/theme-customizer.js` (part of `npm test`) covers editing, save/restart, backgrounds and portable export on an isolated profile.
 
 ## 5. Everything else at the root
 
 | Path | What it is |
 |---|---|
 | `Sameko-GCC/` | Bundled toolchain (gitignored). Copied into the Windows build as an extra resource. |
-| `scripts/` | `clean.js`, `build-appimage.js`, `build-icons.js`, `check-toolchain-deps.js`, `patch-toolchain-utf8.js` (gives binutils the UTF-8 code page, §6); tests: `test.js` (`npm test`: runs all of them in parallel), `test-gui.js` (boot, editor state, Build & Run), `test-theme-customizer-gui.js`, `test-debugger.js` (`--unit` / `--e2e`), `test-theme-tokens.js`, `test-theme-manager.js`, `test-theme-customizer-state.js`, `test-run-checks.js` (crash names, judge rules). |
+| `scripts/` | `clean.js`, `build-appimage.js`, `build-icons.js`, `check-toolchain-deps.js`, `patch-toolchain-utf8.js` (gives binutils the UTF-8 code page, §6). |
+| `test/` | Every test suite (`test/README.md`). `run.js` is the runner and its `SUITES` list (`npm test`, `node test/run.js <group or word>`); `unit/` plain Node (theme tokens/manager/customizer state, judge rules, crash names, OJ bridge), `gui/` the real app on a temp profile (`app.js` boot, editor state, Build & Run; `theme-customizer.js`; `checker.js`), `e2e/debugger.js` (`--unit` MI parser / `--e2e` gdb), `helpers/app.js` launch + PASS/FAIL for new gui suites. |
 | `docs/` | The sameko.dev website (landing page and wiki). Not part of the app. |
 | `plans/` | Gitignored working plans. |
 | `samekodevcpp/` | electron-builder output (gitignored). |

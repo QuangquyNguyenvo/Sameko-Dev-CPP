@@ -2,11 +2,11 @@
 
 /**
  * Lightweight self-tests for shared judge behavior.
- * Run manually: node app/services/competitive/judge-selftest.js
+ * Run manually: node test/unit/judge.js
  */
 
 const assert = require('assert');
-const { compareOutputs, normalizeOutput } = require('../../shared/judge');
+const { compareOutputs, normalizeOutput } = require('../../app/shared/judge');
 
 function runJudgeSelfTests() {
     // Newline normalization

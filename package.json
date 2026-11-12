@@ -81,10 +81,14 @@
         "codegraph:sync": "codegraph sync",
         "codegraph:status": "codegraph status",
         "pretest": "node scripts/build-monaco.js --if-stale",
-        "test": "node scripts/test.js",
-        "test:debugger": "node scripts/test-debugger.js",
+        "test": "node test/run.js",
+        "pretest:unit": "node scripts/build-monaco.js --if-stale",
+        "test:unit": "node test/run.js unit",
+        "pretest:e2e": "node scripts/build-monaco.js --if-stale",
+        "test:e2e": "node test/run.js e2e",
+        "test:debugger": "node test/e2e/debugger.js",
         "pretest:gui": "node scripts/build-monaco.js --if-stale",
-        "test:gui": "node scripts/test-gui.js"
+        "test:gui": "node test/run.js gui"
     },
     "dependencies": {
         "@xterm/addon-fit": "^0.11.0",
@@ -115,7 +119,6 @@
         },
         "files": [
             "app/**/*",
-            "!app/services/competitive/judge-selftest.js",
             "!app/shared/types.js",
             "preload.js",
             "src/**/*",

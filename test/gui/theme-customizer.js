@@ -3,7 +3,7 @@
 /*
  * Theme Customizer checks in the real app (two launches: the last checks run
  * after a restart). Part of npm test; run alone with:
- *   node scripts/test-theme-customizer-gui.js
+ *   node test/gui/theme-customizer.js
  *   KEEP_PROFILE=1   keep the temp profile (it is kept anyway on failure)
  *   SMOKE_SHOT=1     save screenshots to plans/_smoke-artifacts/
  */
@@ -13,7 +13,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { _electron: electron } = require('playwright-core');
-const ROOT = path.join(__dirname, '..');
+const ROOT = path.join(__dirname, '..', '..');
 const artifacts = path.join(ROOT, 'plans', '_smoke-artifacts');
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-theme-gui-'));
 async function screenshot(name) {

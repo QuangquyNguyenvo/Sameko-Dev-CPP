@@ -1,13 +1,13 @@
 'use strict';
 /**
  * Unit checks for what a run reports: crash names (app/shared/exit-codes.js) and the shared
- * judge rules (app/services/competitive/judge-selftest.js). No Electron, no compiler.
- *   node scripts/test-run-checks.js
+ * judge rules (test/unit/judge.js). No Electron, no compiler.
+ *   node test/unit/run-checks.js
  */
 
 const assert = require('assert');
-const { describeExit } = require('../app/shared/exit-codes');
-const { runJudgeSelfTests } = require('../app/services/competitive/judge-selftest');
+const { describeExit } = require('../../app/shared/exit-codes');
+const { runJudgeSelfTests } = require('./judge');
 
 let failed = 0;
 function check(name, fn) {
@@ -46,7 +46,7 @@ check('every crash has a hint unless there is nothing to do', () => {
     }
 });
 
-check('judge rules (judge-selftest.js)', () => { assert.equal(runJudgeSelfTests(), true); });
+check('judge rules (test/unit/judge.js)', () => { assert.equal(runJudgeSelfTests(), true); });
 
 console.log(`\n${failed ? 'FAILED' : 'ok'}`);
 process.exitCode = failed ? 1 : 0;

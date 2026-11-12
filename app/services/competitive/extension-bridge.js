@@ -7,7 +7,7 @@
  * progress). Contract: extension/PROTOCOL.md.
  *
  * Free of Electron: the state folder, app info and every callback are injected,
- * so scripts/test-oj-bridge.js runs it in plain Node.
+ * so test/unit/oj-bridge.js runs it in plain Node.
  *
  * @module app/services/competitive/extension-bridge
  */

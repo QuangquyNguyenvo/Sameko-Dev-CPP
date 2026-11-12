@@ -2,7 +2,7 @@
 /**
  * The Sameko Companion extension bridge (/sameko/v1/*, app/services/competitive/extension-bridge.js)
  * on the real Competitive Companion server, over HTTP on a free port. Plain Node, no Electron.
- *   node scripts/test-oj-bridge.js
+ *   node test/unit/oj-bridge.js
  */
 
 const assert = require('assert');
@@ -10,7 +10,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const http = require('http');
-const server = require('../app/services/competitive/companion-server');
+const server = require('../../app/services/competitive/companion-server');
 
 const EXT_A = 'chrome-extension://abcdefghijklmnopabcdefghijklmnop';
 const EXT_B = 'moz-extension://0a1b2c3d-1111-2222-3333-444455556666';

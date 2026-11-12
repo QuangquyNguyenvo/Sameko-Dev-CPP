@@ -4,16 +4,16 @@
  * chrome.*) against the app's real bridge (app/services/competitive/extension-bridge.js on the
  * Competitive Companion server). Each side also has its own suite against a stub of the other;
  * this is the one that fails when the two drift apart. Plain Node, no Electron, no browser.
- *   node scripts/test-oj-roundtrip.js
+ *   node test/unit/oj-roundtrip.js
  */
 
 const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const server = require('../app/services/competitive/companion-server');
-const SamekoBridge = require('../extension/background/bridge.js');
-const { createFakeChrome } = require('../extension/test/fake-chrome.js');
+const server = require('../../app/services/competitive/companion-server');
+const SamekoBridge = require('../../extension/background/bridge.js');
+const { createFakeChrome } = require('../../extension/test/fake-chrome.js');
 
 const ORIGIN = 'chrome-extension://roundtriproundtriproundtriproundt';
 const ADAPTERS = [{ id: 'codeforces', name: 'Codeforces', hosts: ['codeforces.com'] }];

@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
 
-const sourcePath = path.join(__dirname, '..', 'src', 'renderer', 'ui', 'theme-tokens.js');
+const sourcePath = path.join(__dirname, '..', '..', 'src', 'renderer', 'ui', 'theme-tokens.js');
 const source = fs.readFileSync(sourcePath, 'utf8');
 const sandbox = { console, window: {} };
 vm.runInNewContext(source, sandbox, { filename: sourcePath });
@@ -13,7 +13,7 @@ vm.runInNewContext(source, sandbox, { filename: sourcePath });
 const ThemeTokens = sandbox.window.ThemeTokens;
 assert(ThemeTokens, 'ThemeTokens should be exposed by the renderer script');
 
-const themeManagerPath = path.join(__dirname, '..', 'src', 'renderer', 'ui', 'theme-manager.js');
+const themeManagerPath = path.join(__dirname, '..', '..', 'src', 'renderer', 'ui', 'theme-manager.js');
 const themeManagerSource = fs.readFileSync(themeManagerPath, 'utf8');
 vm.runInNewContext(themeManagerSource, sandbox, { filename: themeManagerPath });
 const ThemeManager = sandbox.window.ThemeManager;
