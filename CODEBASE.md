@@ -78,6 +78,7 @@ and `window.open` are denied in `app/windows/main-window.js`.
 | `syntax/gcc-checker.js` | `g++ -fsyntax-only` check, the fallback when clangd is unavailable. |
 | `competitive/companion-server.js` | HTTP listener for Competitive Companion on `127.0.0.1:27121` (the `10043` in `constants.js` is unused). |
 | `competitive/batch-tester.js`, `competitive/judge-selftest.js` | Multi-test runner; judge self-test. |
+| `competitive/checker.js` | testlib checkers: copies the bundled `app/assets/testlib/testlib.h` (0.9.41, MIT) to a temp folder that `executor.js` and clangd add with `-idirafter`, and `runChecker()` (`checker in out ans`, exit code = verdict). |
 | `formatter/astyle.js`, `formatter/styles.js` | AStyle wrapper; style presets. |
 | `auto-update-service.js`, `discord-rpc-service.js` | electron-updater; Discord RPC. |
 
@@ -372,7 +373,13 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   is the peak commit (memory asked for, used or not), and the memory limit (the problem's from
   Competitive Companion, else `execution.memoryLimitMB`, default 256, 0 = none) is a job limit:
   over it is `MLE`. Output is compared word by word with real numbers within 1e-6
-  (`execution.compareMode` 'tokens'; 'lines' is the strict rule), in `app/shared/judge.js`.
+  (`execution.compareMode` 'tokens'; 'nocase' ignores letter case; 'lines' is the strict rule), in `app/shared/judge.js`.
+- **Checker** (`checker.js`): each problem may override that in `problem.checker` ('' = Settings,
+  'tokens' / 'nocase' / 'lines', or `file:<path>` of a testlib checker), picked in the TESTS header
+  and the STRESS setup. A checker file is compiled like the tests (`prepareChecker`), passed to
+  `runTest({ checker })`, and judges every cleanly finished test, also one without an expected
+  output: exit 0 AC, 1/2 WA, 7 partial (WA), anything else `FAIL` (the checker's fault). Its stderr
+  line is the test's detail. A problem with only a checker and no tests is still saved in the session.
 
 **Other languages** (`app/services/compiler/languages.js`)
 - `executor.compile` hands a file whose extension is not C/C++ (`languageOfFile`) to
@@ -407,7 +414,8 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
 - Gen, brute force and solution are built like the tests (`variant: 'judge'`, so the solution
   shares Run All's build). Each test: the generator runs with its seed as `argv[1]` (`runTest({ args })`,
   passed on by the run launcher; plain words only), the brute force's output is the expected answer
-  and the solution is judged with the problem's limits and `compareMode`. Up to 4 workers like Run All;
+  and the solution is judged with the problem's limits and its checker (the brute force's output is the
+  answer file). Up to 4 workers like Run All;
   a TLE from a crowded run is re-run alone. Stops at the first failure (lowest test number), the
   test count or the time budget (`execution.stressTests`, `stressSeconds`). Seeds differ every run.
 - Holds `isBatchTesting` while it runs. Gen and brute are picked from the files next to the focused
@@ -451,7 +459,8 @@ function from a later file. Search for the function name to find the exact spot.
 | `companion.js` | 643 | Competitive Companion, per-tab test state (`ccProblem`, `saveTestStateToTab`), test navigation |
 | `file-watch.js` | 118 | External file changes and the reload prompt |
 | `batch-tests.js` | 605 | `runAllTests`, single test, results list, `buildCompileFlags` |
-| `stress-test.js` | 726 | STRESS tab of the bottom panel: generator / brute force / solution loop, `startStressTest`, Add to tests |
+| `checker.js` | 248 | How a problem's tests are judged: `problem.checker`, the TESTS-header and STRESS selects, New checker, `prepareChecker` |
+| `stress-test.js` | 744 | STRESS tab of the bottom panel: generator / brute force / solution loop, `startStressTest`, Add to tests |
 | `oj-submit.js` | 536 | Submit to an online judge through the Sameko browser extension (`submitToOJ`, verdict chip per tab in `tab.ojSubmission`), the extension section of the Get Tests popup, pairing prompt, theme snapshot for the extension |
 | `terminal-input.js` | 217 | Terminal input box, xterm setup |
 | `updates.js` | 341 | About tab, update status, portable detection, compiler check at startup, `showToast` |

@@ -99,9 +99,16 @@ function buildSessionRestoreSummary(session) {
         : 'Restore previous session?';
 }
 
+/** A problem worth keeping across a restart: it has tests, or a checker was chosen for it. */
+function problemWorthSaving(p) {
+    return !!(p && ((Array.isArray(p.tests) && p.tests.length) || p.checker));
+}
+
 function restoredTestState(tabData) {
     const p = tabData && tabData.tests;
-    return (p && Array.isArray(p.tests) && p.tests.length) ? { problem: p, index: -1, results: [] } : null;   // no test selected: the Input box stays the user's
+    if (!problemWorthSaving(p)) return null;
+    if (!Array.isArray(p.tests)) p.tests = [];
+    return { problem: p, index: -1, results: [] };   // no test selected: the Input box stays the user's
 }
 
 /**
@@ -272,9 +279,7 @@ function saveSession(sync = false) {
                 // not stored (it doubled the checkpoint for every open file).
                 original: t.path ? '' : (t.original || ''),
                 modified: t.modified || false,
-                tests: (t.testState && t.testState.problem && Array.isArray(t.testState.problem.tests) && t.testState.problem.tests.length)
-                    ? t.testState.problem
-                    : null,
+                tests: problemWorthSaving(t.testState && t.testState.problem) ? t.testState.problem : null,
             })),
             activeTabId: App.activeTabId,
             splitTabId: App.splitTabId,

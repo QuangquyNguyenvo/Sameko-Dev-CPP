@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="styles/components/discord-preview.css">
     <link rel="stylesheet" href="styles/components/markdown-preview.css">
     <link rel="stylesheet" href="styles/components/stress-test.css">
+    <link rel="stylesheet" href="styles/components/checker.css">
     <link rel="stylesheet" href="styles/components/oj-submit.css">
     <link rel="stylesheet" href="styles/components/settings-languages.css">
     <link rel="stylesheet" href="styles/themes/theme-customizer.css">
@@ -673,9 +674,10 @@
                             </div>
                             <div class="setting-row">
                                 <label>Compare Output <span class="tooltip"
-                                        title="Words: same words in order, however spaced or split into lines; real numbers within 1e-6 (like Codeforces)&#10;Exact lines: every line must match">?</span></label>
+                                        title="Words: same words in order, however spaced or split into lines; real numbers within 1e-6 (like Codeforces)&#10;Ignore case: the same, with YES = yes&#10;Exact lines: every line must match&#10;A problem can pick its own checker in the TESTS tab">?</span></label>
                                 <select id="set-compareMode">
                                     <option value="tokens" selected>Words (like Codeforces)</option>
+                                    <option value="nocase">Words, ignore case (YES = yes)</option>
                                     <option value="lines">Exact lines</option>
                                 </select>
                             </div>
@@ -1258,6 +1260,16 @@
                                 title="Stress test: compare your solution with a brute force on random tests">STRESS</span>
                             <!-- Everything after this is right-aligned (oj-submit.css). -->
                             <span class="panel-actions-spacer"></span>
+                            <!-- How each test's output is judged; only on the TESTS tab (renderer/app/checker.js). -->
+                            <span class="checker-pick" id="checker-pick">
+                                <label class="checker-pick-label" for="checker-select"
+                                    title="How the output of each test is judged">Checker</label>
+                                <select class="checker-select" id="checker-select"></select>
+                                <button class="checker-new-btn" id="checker-new" title="New testlib checker from a template"
+                                    aria-label="New testlib checker from a template">
+                                    <svg class="ico" data-icon="plus" width="12" height="12"><use href="#i-plus"/></svg>
+                                </button>
+                            </span>
                             <!-- Shown only on the STRESS tab (stress-test.css). -->
                             <button class="run-all-btn stress-run-btn" id="btn-stress-run" title="Start the stress test">
                                 <svg class="ico stress-ico-start" data-icon="play" data-weight="fill" width="12" height="12"><use href="#i-play-fill"/></svg>
@@ -1303,6 +1315,12 @@
                                         title="A slow but surely correct solution. Its output is the expected answer.">Brute force</label>
                                     <select class="stress-select" id="stress-brute"></select>
                                     <button class="stress-icon-btn" id="stress-new-brute" title="New brute force from a template">
+                                        <svg class="ico" data-icon="plus" width="13" height="13"><use href="#i-plus"/></svg>
+                                    </button>
+                                    <label class="stress-label" for="stress-checker"
+                                        title="How your output is judged against the brute force's answer. The same choice as in TESTS.">Checker</label>
+                                    <select class="stress-select" id="stress-checker"></select>
+                                    <button class="stress-icon-btn" id="stress-new-checker" title="New testlib checker from a template">
                                         <svg class="ico" data-icon="plus" width="13" height="13"><use href="#i-plus"/></svg>
                                     </button>
                                     <label class="stress-label" for="stress-count">Tests</label>
@@ -1474,6 +1492,7 @@
     <script src="renderer/app/companion.js"></script>
     <script src="renderer/app/file-watch.js"></script>
     <script src="renderer/app/batch-tests.js"></script>
+    <script src="renderer/app/checker.js"></script>
     <script src="renderer/app/stress-test.js"></script>
     <script src="renderer/app/oj-submit.js"></script>
     <script src="renderer/app/terminal-input.js"></script>

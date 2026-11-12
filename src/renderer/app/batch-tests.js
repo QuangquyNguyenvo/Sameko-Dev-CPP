@@ -185,6 +185,16 @@ async function runAllTests() {
         tab.exePath = compileResult.outputPath;
         log(compileResult.cached ? 'Source unchanged: reused the last build' : `Compiled in ${compileResult.time}ms`, 'success');
 
+        // The problem's checker (checker.js): a testlib program is compiled now.
+        const judging = await prepareChecker(problem);
+        if (judging.error) {
+            log(`${judging.error.title}!`, 'error');
+            if (judging.error.detail) log(judging.error.detail, 'error');
+            setStatus(judging.error.title, 'error');
+            return;
+        }
+        const judge = { ...judgeOptions(problem), ...judging };
+
         const timeLimit = problem.timeLimit || (App.settings.execution.timeLimitSeconds * 1000) || 3000;
 
 
@@ -233,7 +243,7 @@ async function runAllTests() {
                     input: test.input || '',
                     expectedOutput: test.output || '',
                     timeLimit: timeLimit,
-                    ...judgeOptions(problem),
+                    ...judge,
                     cwd: sourceDir,
                     debug: true,
                     testMeta: { index: i, name: `Test ${i + 1}` }
@@ -263,7 +273,7 @@ async function runAllTests() {
                     input: tests[i].input || '',
                     expectedOutput: tests[i].output || '',
                     timeLimit: timeLimit,
-                    ...judgeOptions(problem),
+                    ...judge,
                     cwd: sourceDir,
                     debug: true,
                     testMeta: { index: i, name: `Test ${i + 1}` }
@@ -384,6 +394,14 @@ async function runSingleTestByIndex(testIndex) {
         App.exePath = compileResult.outputPath;
         tab.exePath = compileResult.outputPath;
 
+        const judging = await prepareChecker(problem);
+        if (judging.error) {
+            log(`${judging.error.title}!`, 'error');
+            if (judging.error.detail) log(judging.error.detail, 'error');
+            setStatus(judging.error.title, 'error');
+            return;
+        }
+
         const timeLimit = problem.timeLimit || (App.settings.execution.timeLimitSeconds * 1000) || 3000;
         const lastSlash = tab.path ? Math.max(tab.path.lastIndexOf('/'), tab.path.lastIndexOf('\\')) : -1;
         const sourceDir = lastSlash !== -1 ? tab.path.substring(0, lastSlash) : null;
@@ -395,6 +413,7 @@ async function runSingleTestByIndex(testIndex) {
             expectedOutput: test.output || '',
             timeLimit: timeLimit,
             ...judgeOptions(problem),
+            ...judging,
             cwd: sourceDir,
             debug: true,
             testMeta: { index: testIndex, name: `Test ${testIndex + 1}` }
@@ -661,7 +680,7 @@ function judgeOptions(problem) {
     const fromSettings = Number(App.settings.execution.memoryLimitMB ?? 256);
     return {
         memoryLimit: fromProblem > 0 ? fromProblem : (fromSettings > 0 ? fromSettings : 0),
-        compare: App.settings.execution.compareMode === 'lines' ? 'lines' : 'tokens'
+        compare: typeof checkerCompareMode === 'function' ? checkerCompareMode(problem) : 'tokens'
     };
 }
 
@@ -677,7 +696,7 @@ function translateTestDetails(result) {
     if (/^(The program built a moment ago is gone|Windows or an antivirus blocked)/.test(text)) return I18n.t(text);
     const pieces = [result.crash && result.crash.name, result.crash && result.crash.hint, result.startErrorMessage,
         'Runtime error', 'Time limit exceeded', 'Memory limit exceeded', 'No expected output to compare with',
-        'Output limit exceeded (more than 16 MB printed)'];
+        'Output limit exceeded (more than 16 MB printed)', 'Wrong answer', 'Partial points', 'Checker failed'];
     for (const piece of pieces) {
         if (piece && text.includes(piece)) text = text.replace(piece, I18n.t(piece));
     }

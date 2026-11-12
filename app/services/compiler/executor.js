@@ -16,6 +16,7 @@ const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getWritableBasePat
 const { ensurePCH } = require('./pch-manager');
 const { getLauncherIfReady, newStatsFile, readStats } = require('./run-launcher');
 const languages = require('./languages');
+const { testlibIncludeDir } = require('../competitive/checker');
 const { validateCompilerFlags, splitFlags, joinFlags } = require('../../shared/validators');
 const { describeExit, describeStartError } = require('../../shared/exit-codes');
 const { EXE_SUFFIX, IS_WIN, IS_MAC, IS_LINUX, ensurePrivateDir, readProcMemoryKB, which, appTempDir } = require('../../shared/platform');
@@ -399,6 +400,10 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
         '-I', dir,
         '-pipe'
     ];
+    // `#include "testlib.h"` (checkers, generators): the bundled copy, after every other
+    // include folder so a testlib.h next to the source wins (competitive/checker.js).
+    const testlibDir = testlibIncludeDir();
+    if (testlibDir) args.push('-idirafter', testlibDir);
 
     // Link the realtime-output shim (unit-buffers std::cout/cerr) so program
     // output appears line-by-line in the terminal. Skipped when the user

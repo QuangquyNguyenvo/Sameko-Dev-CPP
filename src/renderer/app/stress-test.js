@@ -308,6 +308,15 @@ async function startStressTest() {
             if (role === 'sol') tab.exePath = res.outputPath;
         }
 
+        // The problem's checker (checker.js) judges the solution against the brute force's answer.
+        if (!run.result && !Stress.stopping) {
+            const file = checkerFilePath(checkerChoice(problem));
+            if (file) { run.compiling = checkerBaseName(file); paintStressSoon(); }
+            const judging = await prepareChecker(problem);
+            if (judging.error) run.result = { kind: 'compile', title: judging.error.title, detail: judging.error.detail };
+            else Object.assign(judge, judging);
+        }
+
         if (!run.result && !Stress.stopping) {
             run.phase = 'test';
             run.startedAt = Date.now();
@@ -369,7 +378,7 @@ async function runStressTest(i, seed, run, ctx) {
             kind: 'fail', verdict, seed, testNo: i, input, expected,
             output: sol.output || '',
             time: sol.executionTime || 0,
-            details: verdict === 'WA' ? '' : (translateTestDetails(sol) || sol.error || '')
+            details: verdict === 'WA' ? (sol.checkerMessage || '') : (translateTestDetails(sol) || sol.error || '')
         }
     };
 }
@@ -415,7 +424,7 @@ async function runStressTests(run, ctx) {
         if (again.verdict !== 'AC') {
             keep({
                 ...s, verdict: again.verdict, output: again.sol.output || '', time: again.sol.executionTime || 0,
-                details: again.verdict === 'WA' ? '' : (translateTestDetails(again.sol) || again.sol.error || '')
+                details: again.verdict === 'WA' ? (again.sol.checkerMessage || '') : (translateTestDetails(again.sol) || again.sol.error || '')
             }, s.testNo);
             break;
         }
@@ -563,7 +572,7 @@ function renderStressView() {
         const label = runBtn.querySelector('.stress-run-label');
         if (label) label.textContent = Stress.running ? (Stress.stopping ? 'Stopping...' : 'Stop') : 'Start';
     }
-    for (const id of ['stress-gen', 'stress-brute', 'stress-count', 'stress-seconds', 'stress-new-gen', 'stress-new-brute']) {
+    for (const id of ['stress-gen', 'stress-brute', 'stress-count', 'stress-seconds', 'stress-new-gen', 'stress-new-brute', 'stress-checker', 'stress-new-checker']) {
         const el = stressEl(id);
         if (el) el.disabled = Stress.running;
     }
@@ -681,7 +690,7 @@ function paintStressSoonAfter(ms) {
 
 /** Called by switchDockedPanel when the STRESS tab is shown. */
 function onStressViewShown() {
-    if (!Stress.running) refreshStressFiles();
+    if (!Stress.running) { refreshStressFiles(); refreshCheckerFiles(); }
     else renderStressView();
 }
 

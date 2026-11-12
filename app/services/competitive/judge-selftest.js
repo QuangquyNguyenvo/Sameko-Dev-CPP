@@ -35,6 +35,9 @@ function runJudgeSelfTests() {
     assert.strictEqual(compareOutputs('1 2 3', '1\n2\n3').matched, true);
     assert.strictEqual(compareOutputs('1 2', '1 2 3').matched, false);
     assert.strictEqual(compareOutputs('YES', 'yes').matched, false);
+    assert.strictEqual(compareOutputs('YES\nno', 'yes\nNO', 'nocase').matched, true);
+    assert.strictEqual(compareOutputs('YES', 'no', 'nocase').matched, false);
+    assert.strictEqual(compareOutputs('0.3333333', '0.333333', 'nocase').matched, true);
     assert.strictEqual(compareOutputs('12', '012').matched, false);
 
     // Real numbers within 1e-6, absolute or relative; integers exactly

@@ -12,6 +12,7 @@ const crypto = require('crypto');
 const { spawn, exec } = require('child_process');
 const { getCompilerEnv } = require('../compiler/detector');
 const { normalizeOutput, compareOutputs } = require('../../shared/judge');
+const { runChecker } = require('./checker');
 const { describeExit, describeStartError } = require('../../shared/exit-codes');
 const { wasBuiltThisSession } = require('../compiler/executor');
 const { IS_WIN, IS_LINUX, readProcMemoryKB, killProcessTree } = require('../../shared/platform');
@@ -28,12 +29,14 @@ const languages = require('../compiler/languages');
  * @param {number} [options.timeLimit=3000] - Time limit in ms
  * @param {number} [options.memoryLimit] - Memory limit in MB (peak commit, as judges count it); none if 0
  * @param {string} [options.compare] - how output is judged ('tokens' by default, see app/shared/judge.js)
+ * @param {string} [options.checker] - a compiled testlib checker that judges the output instead
+ *   (competitive/checker.js); it also judges a test without an expected output
  * @param {string} [options.cwd] - Working directory
  * @param {string[]} [options.args] - command-line arguments for the program (a stress-test
  *   generator's seed): plain words only, anything else is dropped
  * @returns {Promise<import('../../shared/types').BatchTestResult>}
  */
-async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memoryLimit = 0, compare, cwd, args = [], debug = false, testMeta = null }) {
+async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memoryLimit = 0, compare, checker = '', cwd, args = [], debug = false, testMeta = null }) {
     memoryLimit = Number.isFinite(+memoryLimit) && +memoryLimit > 0 ? Math.round(+memoryLimit) : 0;
     const programArgs = programArguments(args);
     return new Promise((resolve) => {
@@ -229,6 +232,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
             let status = 'AC';
             let details = '';
             let crash = null;
+            let useChecker = false;   // the program ran cleanly: the checker decides
 
             if (startError !== null) {
                 status = 'RE';
@@ -254,6 +258,8 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
                 debugInfo.hadStderr = !!(errorOutput && errorOutput.length > 0);
                 debugInfo.stderrPreview = errPreview;
                 details = `Runtime error (${reason})${crash && crash.hint ? `\n${crash.hint}` : ''}${errPreview ? `\nStderr: ${errPreview}` : ''}`;
+            } else if (checker && expectedOutput !== undefined && expectedOutput !== null) {
+                useChecker = true;
             } else if (expectedOutput !== undefined && expectedOutput !== null) {
                 const expectedText = String(expectedOutput ?? '');
                 const hasExpected = expectedText.trim().length > 0;
@@ -289,16 +295,40 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
                 startErrorMessage: startError !== null ? describeStartError(startError) : undefined
             };
 
-            if (debugInfo.enabled) {
-                response.debug = {
-                    ...debugInfo,
-                    status,
-                    executionTime,
-                    peakMemoryKB,
-                };
-            }
-
-            resolve(response);
+            const finish = () => {
+                if (debugInfo.enabled) {
+                    response.debug = {
+                        ...debugInfo,
+                        status: response.status,
+                        executionTime,
+                        peakMemoryKB,
+                    };
+                }
+                resolve(response);
+            };
+            if (!useChecker) { finish(); return; }
+            runChecker({ checkerPath: checker, input: input || '', output, answer: String(expectedOutput ?? '') })
+                .then((judged) => {
+                    // The checker's own line ("wrong answer 1st numbers differ - expected: '3',
+                    // found: '4'") is the detail shown in TESTS, so it is kept as written.
+                    const msg = judged.message.split(/\n/)[0];
+                    response.checkerMessage = judged.message;
+                    if (judged.verdict === 'AC') {
+                        response.status = 'AC';
+                        response.details = msg;
+                    } else if (judged.verdict === 'FAIL') {
+                        response.status = 'FAIL';
+                        const code = judged.exitCode !== null && judged.exitCode !== undefined ? ` (exit code ${judged.exitCode})` : '';
+                        response.details = `Checker failed${code}${msg ? `: ${msg}` : ''}`;
+                    } else if (judged.verdict === 'PC') {
+                        response.status = 'WA';
+                        response.details = `Partial points${msg ? `: ${msg}` : ''}`;
+                    } else {
+                        response.status = 'WA';
+                        response.details = msg || 'Wrong answer';
+                    }
+                    finish();
+                });
         }
 
         testProcess.on('error', (err) => {

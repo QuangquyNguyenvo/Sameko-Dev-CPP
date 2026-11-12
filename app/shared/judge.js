@@ -51,12 +51,14 @@ function sameToken(actual, expected) {
  *
  * 'tokens' (the default) is how Codeforces' standard checkers judge: the outputs are the same
  * words in the same order, however they are split into spaces and lines, with real numbers
- * compared within EPS. 'lines' is the old strict rule: the same lines once line endings and
- * trailing spaces are normalized, so an extra blank line or a doubled space is a WA.
+ * compared within EPS. 'nocase' is 'tokens' with letter case ignored (YES = yes = Yes), as
+ * most problems with a yes/no answer say. 'lines' is the old strict rule: the same lines once
+ * line endings and trailing spaces are normalized, so an extra blank line or a doubled space is
+ * a WA.
  *
  * @param {string} actual
  * @param {string} expected
- * @param {'tokens'|'lines'} [mode='tokens']
+ * @param {'tokens'|'nocase'|'lines'} [mode='tokens']
  * @returns {{ matched: boolean, actualNorm: string, expectedNorm: string }}
  */
 function compareOutputs(actual, expected, mode = 'tokens') {
@@ -66,8 +68,12 @@ function compareOutputs(actual, expected, mode = 'tokens') {
     if (mode === 'lines') {
         matched = actualNorm === expectedNorm;
     } else {
-        const a = actualNorm ? actualNorm.split(/\s+/) : [];
-        const e = expectedNorm ? expectedNorm.split(/\s+/) : [];
+        const words = (text) => {
+            const list = text ? text.split(/\s+/) : [];
+            return mode === 'nocase' ? list.map(w => w.toLowerCase()) : list;
+        };
+        const a = words(actualNorm);
+        const e = words(expectedNorm);
         matched = a.length === e.length && a.every((t, i) => sameToken(t, e[i]));
     }
     return {
@@ -77,7 +83,11 @@ function compareOutputs(actual, expected, mode = 'tokens') {
     };
 }
 
+/** The comparison modes compareOutputs knows, as stored in settings and problems. */
+const COMPARE_MODES = ['tokens', 'nocase', 'lines'];
+
 module.exports = {
+    COMPARE_MODES,
     normalizeOutput,
     compareOutputs,
 };

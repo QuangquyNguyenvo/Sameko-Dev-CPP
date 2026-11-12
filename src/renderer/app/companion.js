@@ -37,6 +37,8 @@ function loadTestStateFromTab(tab) {
     renderTestResults();
     // The STRESS tab lists the files next to the focused tab (stress-test.js).
     if (typeof onStressTabChanged === 'function') onStressTabChanged();
+    // The checker selects show this tab's problem and the checkers next to it (checker.js).
+    if (typeof refreshCheckerFiles === 'function') refreshCheckerFiles();
     // The verdict chip shows this tab's last submission (oj-submit.js).
     if (typeof renderOjVerdictChip === 'function') renderOjVerdictChip();
 

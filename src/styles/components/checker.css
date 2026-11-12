@@ -1,0 +1,100 @@
+/* ===== CHECKER (src/renderer/app/checker.js) =====
+ * How each test's output is judged: a select in the TESTS header and a row in the STRESS
+ * setup (that one is styled by stress-test.css). Theme tokens only. */
+
+/* Header: only on the TESTS tab, before Run All. */
+.checker-pick {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    margin-right: 10px;
+}
+
+.problems-panel[data-view="tests"] .checker-pick {
+    display: flex;
+}
+
+.checker-pick-label {
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    cursor: default;
+}
+
+.checker-select {
+    height: 26px;
+    min-width: 0;
+    max-width: 240px;
+    padding: 0 8px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--btn-bg, var(--bg-panel));
+    color: var(--text-primary);
+    font-family: 'Nunito', sans-serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.checker-select:hover {
+    border-color: var(--border-strong, var(--accent));
+}
+
+.checker-select:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+/* A problem with its own checker stands out from the default. */
+.checker-select.is-custom,
+.stress-select.is-custom {
+    border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+    color: var(--accent);
+}
+
+.checker-select option,
+.checker-select optgroup,
+.stress-select option,
+.stress-select optgroup {
+    color: var(--text-primary);
+    background: var(--bg-panel, var(--btn-bg));
+}
+
+.checker-new-btn {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.checker-new-btn:hover {
+    background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+/* The checker itself failed (testlib "FAIL", a crash, or stuck): not the solution's verdict. */
+.test-result-item.status-FAIL {
+    border-left-color: var(--text-muted);
+}
+
+.test-result-status.FAIL {
+    background: var(--text-muted);
+    color: var(--btn-primary-text, white);
+    opacity: 0.85;
+}
+
+.test-summary-bar > .FAIL {
+    background: color-mix(in srgb, var(--text-muted) 60%, transparent);
+}

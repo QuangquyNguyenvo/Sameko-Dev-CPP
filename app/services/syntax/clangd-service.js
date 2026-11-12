@@ -13,6 +13,7 @@ const os = require('os');
 const url = require('url');
 const { app } = require('electron');
 const { getCompilerBinDir, getBasePath, getWritableBasePath, getDetectedCompiler } = require('../compiler/detector');
+const { testlibIncludeDir } = require('../competitive/checker');
 const { getCompilerSettings, getArgumentPlaceholdersSetting } = require('../../shared/settings-reader');
 const { binName, NULL_DEVICE, IS_WIN, IS_MAC } = require('../../shared/platform');
 const { splitFlags } = require('../../shared/validators');
@@ -559,6 +560,9 @@ function buildClangdFlagsList(includePaths, opts = {}) {
     // GNU extension that g++ accepts and competitive code uses all the time.
     flags.push('-Wall', '-Wextra', '-Wno-unknown-warning-option', '-Wno-vla-cxx-extension', '-Wno-vla-extension');
     flags.push(...includePaths.flatMap(p => ['-I', toPath(p)]));
+    // The bundled testlib.h, as executor.js adds it (competitive/checker.js).
+    const testlibDir = testlibIncludeDir();
+    if (testlibDir) flags.push('-idirafter', toPath(testlibDir));
     if (extraFlags) {
         flags.push(...splitFlags(extraFlags));
     }

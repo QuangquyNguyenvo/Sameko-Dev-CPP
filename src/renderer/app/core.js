@@ -55,7 +55,7 @@ const DEFAULT_SETTINGS = {
         timeLimitEnabled: false,
         timeLimitSeconds: 3,
         memoryLimitMB: 256,    // Run All Tests; a Competitive Companion problem brings its own
-        compareMode: 'tokens', // 'tokens' like Codeforces' checkers, or 'lines' (strict)
+        compareMode: 'tokens', // 'tokens' like Codeforces' checkers, 'nocase' (YES = yes) or 'lines' (strict)
         stressTests: 1000,     // stress test (stress-test.js): tests per run, and its time budget
         stressSeconds: 60,
         clearTerminal: true,
