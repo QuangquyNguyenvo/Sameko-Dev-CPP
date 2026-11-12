@@ -1,269 +1,274 @@
 {
-    "name": "sameko-dev-cpp",
-    "version": "1.4.0",
-    "description": "A fast, modern, and beautiful C++ IDE built with Electron and Monaco Editor",
-    "main": "app/main.js",
-    "author": "QuangquyNguyenvo",
-    "license": "MIT",
-    "homepage": "https://sameko.dev",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP.git"
+  "name": "sameko-dev-cpp",
+  "version": "1.4.0",
+  "description": "A fast, modern, and beautiful C++ IDE built with Electron and Monaco Editor",
+  "main": "app/main.js",
+  "author": "QuangquyNguyenvo",
+  "license": "MIT",
+  "homepage": "https://sameko.dev",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP.git"
+  },
+  "bugs": {
+    "url": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues"
+  },
+  "keywords": [
+    "cpp",
+    "c++",
+    "c-plus-plus",
+    "cpp-ide",
+    "c++-ide",
+    "ide",
+    "code-editor",
+    "editor",
+    "electron",
+    "electron-app",
+    "monaco-editor",
+    "programming",
+    "development",
+    "competitive-programming",
+    "coding",
+    "compiler",
+    "gcc",
+    "mingw",
+    "windows-ide",
+    "lightweight-ide",
+    "devcpp",
+    "dev-cpp",
+    "student-ide",
+    "beginner-friendly",
+    "cpp-compiler",
+    "code-runner",
+    "syntax-highlighting",
+    "intellisense",
+    "autocomplete",
+    "portable-ide",
+    "theme-customization",
+    "kawaii",
+    "educational-software",
+    "programming-tools",
+    "cpp-development",
+    "cpp11",
+    "cpp14",
+    "cpp17",
+    "cpp20"
+  ],
+  "scripts": {
+    "build:monaco": "node scripts/build-monaco.js",
+    "prestart": "node scripts/build-monaco.js --if-stale",
+    "start": "electron .",
+    "predev": "node scripts/build-monaco.js --if-stale",
+    "dev": "electron . --enable-logging",
+    "clean": "node scripts/clean.js settings",
+    "clean-start": "npm run clean && npm start",
+    "build": "npm run build:win && npm run build:appimage",
+    "prebuild:win": "node scripts/build-monaco.js",
+    "build:win": "node scripts/build-win.js",
+    "build:setup": "node scripts/build-setup.js",
+    "prebuild:appimage": "node scripts/build-monaco.js",
+    "build:appimage": "node scripts/build-appimage.js",
+    "prebuild:mac": "node scripts/build-monaco.js",
+    "build:mac": "electron-builder --mac",
+    "prebuild:linux": "node scripts/build-monaco.js",
+    "build:linux": "electron-builder --linux AppImage deb tar.gz -c.productName=Sameko-Dev-CPP",
+    "prebuild:all": "node scripts/build-monaco.js",
+    "build:all": "npm run build:win && electron-builder --linux AppImage deb tar.gz -c.productName=Sameko-Dev-CPP",
+    "clean:dist": "node scripts/clean.js dist",
+    "rebuild:win": "npm run clean:dist && npm run build:win",
+    "rebuild": "npm run clean:dist && npm run build",
+    "icons": "node scripts/build-icons.js",
+    "codegraph:sync": "codegraph sync",
+    "codegraph:status": "codegraph status",
+    "pretest": "node scripts/build-monaco.js --if-stale",
+    "test": "node test/run.js",
+    "pretest:unit": "node scripts/build-monaco.js --if-stale",
+    "test:unit": "node test/run.js unit",
+    "pretest:e2e": "node scripts/build-monaco.js --if-stale",
+    "test:e2e": "node test/run.js e2e",
+    "test:debugger": "node test/e2e/debugger.js",
+    "pretest:gui": "node scripts/build-monaco.js --if-stale",
+    "test:gui": "node test/run.js gui",
+    "site:indexnow": "node scripts/indexnow.js"
+  },
+  "dependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "discord-rpc": "^4.0.1",
+    "dompurify": "3.4.17",
+    "electron-log": "^5.4.4",
+    "electron-updater": "^6.8.9",
+    "gsap": "^3.15.0",
+    "marked": "18.1.1"
+  },
+  "devDependencies": {
+    "@phosphor-icons/core": "^2.1.1",
+    "electron": "^44.9.3",
+    "electron-builder": "^26.15.3",
+    "esbuild": "^0.28.2",
+    "monaco-editor": "^0.57.0",
+    "monaco-vim": "0.4.4",
+    "playwright-core": "^1.64.1",
+    "sharp": "^0.35.5"
+  },
+  "build": {
+    "appId": "com.quangquy.cppide",
+    "productName": "Sameko Dev C++",
+    "artifactName": "${productName}-${version}.${ext}",
+    "directories": {
+      "output": "samekodevcpp"
     },
-    "bugs": {
-        "url": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues"
-    },
-    "keywords": [
-        "cpp",
-        "c++",
-        "c-plus-plus",
-        "cpp-ide",
-        "c++-ide",
-        "ide",
-        "code-editor",
-        "editor",
-        "electron",
-        "electron-app",
-        "monaco-editor",
-        "programming",
-        "development",
-        "competitive-programming",
-        "coding",
-        "compiler",
-        "gcc",
-        "mingw",
-        "windows-ide",
-        "lightweight-ide",
-        "devcpp",
-        "dev-cpp",
-        "student-ide",
-        "beginner-friendly",
-        "cpp-compiler",
-        "code-runner",
-        "syntax-highlighting",
-        "intellisense",
-        "autocomplete",
-        "portable-ide",
-        "theme-customization",
-        "kawaii",
-        "educational-software",
-        "programming-tools",
-        "cpp-development",
-        "cpp11",
-        "cpp14",
-        "cpp17",
-        "cpp20"
+    "files": [
+      "app/**/*",
+      "!app/shared/types.js",
+      "preload.js",
+      "src/**/*",
+      "node_modules/**/*",
+      "!Sameko-GCC/**/*",
+      "!node_modules/@xterm/{xterm,addon-fit}/{src,typings}/**",
+      "!node_modules/gsap/{src,types,utils}/**",
+      "!node_modules/gsap/*.{js,md}",
+      "!node_modules/gsap/dist/!(gsap.min.js)",
+      "!node_modules/js-yaml/dist/**",
+      "!node_modules/marked/{bin,man,src}/**",
+      "!node_modules/marked/lib/marked.esm.js",
+      "!node_modules/marked/*.md",
+      "!node_modules/dompurify/dist/!(purify.min.js)",
+      "!node_modules/dompurify/*.md",
+      "!node_modules/dompurify/src/**",
+      "!src/assets/screenshots/**",
+      "!src/assets/icons/icon.png",
+      "!src/assets/icons/fish.png",
+      "!src/assets/icons/linux/{512x512,1024x1024}.png",
+      "!plans/**",
+      "!docs/**",
+      "!scripts/**",
+      "!.github/**",
+      "!AGENTS.md",
+      "!CODEBASE.md",
+      "!CONTRIBUTING.md",
+      "!CHANGELOG.md",
+      "!compile_error.log",
+      "!compile_flags.txt",
+      "!**/*.js.map",
+      "!**/*.ts.map",
+      "!**/*.css.map"
     ],
-    "scripts": {
-        "build:monaco": "node scripts/build-monaco.js",
-        "prestart": "node scripts/build-monaco.js --if-stale",
-        "start": "electron .",
-        "predev": "node scripts/build-monaco.js --if-stale",
-        "dev": "electron . --enable-logging",
-        "clean": "node scripts/clean.js settings",
-        "clean-start": "npm run clean && npm start",
-        "build": "npm run build:win && npm run build:appimage",
-        "prebuild:win": "node scripts/build-monaco.js",
-        "build:win": "node scripts/build-win.js",
-        "build:setup": "node scripts/build-setup.js",
-        "prebuild:appimage": "node scripts/build-monaco.js",
-        "build:appimage": "node scripts/build-appimage.js",
-        "prebuild:mac": "node scripts/build-monaco.js",
-        "build:mac": "electron-builder --mac",
-        "prebuild:linux": "node scripts/build-monaco.js",
-        "build:linux": "electron-builder --linux AppImage deb tar.gz -c.productName=Sameko-Dev-CPP",
-        "prebuild:all": "node scripts/build-monaco.js",
-        "build:all": "npm run build:win && electron-builder --linux AppImage deb tar.gz -c.productName=Sameko-Dev-CPP",
-        "clean:dist": "node scripts/clean.js dist",
-        "rebuild:win": "npm run clean:dist && npm run build:win",
-        "rebuild": "npm run clean:dist && npm run build",
-        "icons": "node scripts/build-icons.js",
-        "codegraph:sync": "codegraph sync",
-        "codegraph:status": "codegraph status",
-        "pretest": "node scripts/build-monaco.js --if-stale",
-        "test": "node test/run.js",
-        "pretest:unit": "node scripts/build-monaco.js --if-stale",
-        "test:unit": "node test/run.js unit",
-        "pretest:e2e": "node scripts/build-monaco.js --if-stale",
-        "test:e2e": "node test/run.js e2e",
-        "test:debugger": "node test/e2e/debugger.js",
-        "pretest:gui": "node scripts/build-monaco.js --if-stale",
-        "test:gui": "node test/run.js gui"
-    },
-    "dependencies": {
-        "@xterm/addon-fit": "^0.11.0",
-        "@xterm/xterm": "^6.0.0",
-        "discord-rpc": "^4.0.1",
-        "dompurify": "3.4.17",
-        "electron-log": "^5.4.4",
-        "electron-updater": "^6.8.9",
-        "gsap": "^3.15.0",
-        "marked": "18.1.1"
-    },
-    "devDependencies": {
-        "@phosphor-icons/core": "^2.1.1",
-        "electron": "^44.9.3",
-        "electron-builder": "^26.15.3",
-        "esbuild": "^0.28.2",
-        "monaco-editor": "^0.57.0",
-        "monaco-vim": "0.4.4",
-        "playwright-core": "^1.64.1",
-        "sharp": "^0.35.5"
-    },
-    "build": {
-        "appId": "com.quangquy.cppide",
-        "productName": "Sameko Dev C++",
-        "artifactName": "${productName}-${version}.${ext}",
-        "directories": {
-            "output": "samekodevcpp"
+    "asar": true,
+    "npmRebuild": false,
+    "afterPack": "scripts/toolchain-package.js",
+    "electronLanguages": [
+      "en-US"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "QuangquyNguyenvo",
+        "repo": "Sameko-Dev-CPP",
+        "releaseType": "release"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
         },
-        "files": [
-            "app/**/*",
-            "!app/shared/types.js",
-            "preload.js",
-            "src/**/*",
-            "node_modules/**/*",
-            "!Sameko-GCC/**/*",
-            "!node_modules/@xterm/{xterm,addon-fit}/{src,typings}/**",
-            "!node_modules/gsap/{src,types,utils}/**",
-            "!node_modules/gsap/*.{js,md}",
-            "!node_modules/gsap/dist/!(gsap.min.js)",
-            "!node_modules/js-yaml/dist/**",
-            "!node_modules/marked/{bin,man,src}/**",
-            "!node_modules/marked/lib/marked.esm.js",
-            "!node_modules/marked/*.md",
-            "!node_modules/dompurify/dist/!(purify.min.js)",
-            "!node_modules/dompurify/*.md",
-            "!node_modules/dompurify/src/**",
-            "!src/assets/screenshots/**",
-            "!src/assets/icons/icon.png",
-            "!src/assets/icons/fish.png",
-            "!src/assets/icons/linux/{512x512,1024x1024}.png",
-            "!plans/**",
-            "!docs/**",
-            "!scripts/**",
-            "!.github/**",
-            "!AGENTS.md",
-            "!CODEBASE.md",
-            "!CONTRIBUTING.md",
-            "!CHANGELOG.md",
-            "!compile_error.log",
-            "!compile_flags.txt",
-            "!**/*.js.map",
-            "!**/*.ts.map",
-            "!**/*.css.map"
-        ],
-        "asar": true,
-        "npmRebuild": false,
-        "afterPack": "scripts/toolchain-package.js",
-        "electronLanguages": [
-            "en-US"
-        ],
-        "publish": [
-            {
-                "provider": "github",
-                "owner": "QuangquyNguyenvo",
-                "repo": "Sameko-Dev-CPP",
-                "releaseType": "release"
-            }
-        ],
-        "win": {
-            "target": [
-                {
-                    "target": "nsis",
-                    "arch": [
-                        "x64"
-                    ]
-                },
-                {
-                    "target": "zip",
-                    "arch": [
-                        "x64"
-                    ]
-                }
-            ],
-            "icon": "src/assets/icon.ico",
-            "signtoolOptions": {
-                "publisherName": "Sameko Project"
-            },
-            "artifactName": "sameko-dev-cpp-${version}-portable.${ext}",
-            "verifyUpdateCodeSignature": false,
-            "signExts": [],
-            "extraResources": [
-                {
-                    "from": "Sameko-GCC",
-                    "to": "Sameko-GCC",
-                    "filter": [
-                        "**/*",
-                        "!bin/ld.lld.exe",
-                        "!bin/{gfortran,x86_64-w64-mingw32-*,ccache,ctags,readtags,optscript,nasm,ndisasm,yasm,vsyasm,ytasm,jwasm,ninja,premake5,cmcldeps,sarif-replay,pkgconf,dos2unix,unix2dos,mac2unix,unix2mac,ntldd,listpedeps,copypedeps,bomtool,wl-*}.exe",
-                        "!bin/{blake3,crossrun,libarchive-13,libavl,libb2-1,libbrotlicommon,libbrotlidec,libbrotlienc,libbz2,libcrypto-3-x64,libcurl-4,libdirtrav,libfmt,libgcrypt-20,libgdiagnostics-0,libgfortran-5,libgnutls-30,libgomp-plugin-nvptx-1,libgpg-error-0,libgss-3,libgumbo-3,libhiredis,libhogweed-6,libidn2-0,libisl-23,libjansson,liblz4,liblzo2-2,libmpc-3,libnettle-8,libpcre-1,libpcre2-8-0,libpcre2_finder,libpkgconf-7,libpsl-5,librhash,libscalednum,libspdlog,libsqlite3-0,libssh2-1,libtasn1-6,libtss2-esys-0,libtss2-mu-0,libtss2-sys-1,libunistring-5,libuv-1,libxdiff,libxml2-16,libyaml,libzip,lua54,miniargv,pedeps,portcolcon,versioncmp}.dll",
-                        "!libexec/gcc/*/*/{f951,cc1obj,cc1objplus}.exe",
-                        "!lib/{libgfortran*,libpython3*.a,libyasm.a,libgdiagnostics.dll.a,libgomp-plugin-nvptx.dll.a}",
-                        "!lib/gcc/*/*/{finclude,plugin}/**",
-                        "!lib/gcc/*/*/libcaf_*.a",
-                        "!lib/python3*/{test,idlelib,tkinter,turtledemo,ensurepip,lib2to3,pydoc_data}/**",
-                        "!x86_64-w64-mingw32/[0-9]*/**",
-                        "!include/{libyasm,python3*}/**",
-                        "!**/*.idl",
-                        "!share/man/**"
-                    ]
-                }
-            ]
-        },
-        "nsis": {
-            "artifactName": "sameko-dev-cpp-setup-${version}.${ext}",
-            "oneClick": false,
-            "allowToChangeInstallationDirectory": true,
-            "createDesktopShortcut": true,
-            "createStartMenuShortcut": true,
-            "shortcutName": "Sameko Dev C++",
-            "perMachine": false,
-            "allowElevation": true,
-            "include": "installer/installer.nsh",
-            "installerSidebar": "installer/sidebar.bmp",
-            "uninstallerSidebar": "installer/sidebar.bmp",
-            "installerHeader": "installer/header.bmp",
-            "runAfterFinish": true,
-            "installerLanguages": ["en_US", "vi_VN", "zh_CN"],
-            "multiLanguageInstaller": true
-        },
-        "mac": {
-            "target": "dmg",
-            "icon": "src/assets/icon.icns"
-        },
-        "linux": {
-            "target": [
-                "AppImage",
-                "deb",
-                "tar.gz"
-            ],
-            "artifactName": "sameko-dev-cpp-${version}-linux-${arch}.${ext}",
-            "icon": "src/assets/icons/linux",
-            "category": "Development",
-            "synopsis": "A fast, modern C++ IDE",
-            "maintainer": "QuangquyNguyenvo <QuangquyNguyenvo@users.noreply.github.com>",
-            "desktop": {
-                "entry": {
-                    "Name": "Sameko Dev C++",
-                    "Comment": "A fast, modern C++ IDE",
-                    "Categories": "Development;IDE;",
-                    "StartupWMClass": "sameko-dev-cpp"
-                }
-            }
-        },
-        "deb": {
-            "recommends": [
-                "g++",
-                "gdb",
-                "clangd",
-                "astyle"
-            ]
+        {
+          "target": "zip",
+          "arch": [
+            "x64"
+          ]
         }
-    },
-    "overrides": {
-        "monaco-editor": {
-            "dompurify": "3.4.17"
+      ],
+      "icon": "src/assets/icon.ico",
+      "signtoolOptions": {
+        "publisherName": "Sameko Project"
+      },
+      "artifactName": "sameko-dev-cpp-${version}-portable.${ext}",
+      "verifyUpdateCodeSignature": false,
+      "signExts": [],
+      "extraResources": [
+        {
+          "from": "Sameko-GCC",
+          "to": "Sameko-GCC",
+          "filter": [
+            "**/*",
+            "!bin/ld.lld.exe",
+            "!bin/{gfortran,x86_64-w64-mingw32-*,ccache,ctags,readtags,optscript,nasm,ndisasm,yasm,vsyasm,ytasm,jwasm,ninja,premake5,cmcldeps,sarif-replay,pkgconf,dos2unix,unix2dos,mac2unix,unix2mac,ntldd,listpedeps,copypedeps,bomtool,wl-*}.exe",
+            "!bin/{blake3,crossrun,libarchive-13,libavl,libb2-1,libbrotlicommon,libbrotlidec,libbrotlienc,libbz2,libcrypto-3-x64,libcurl-4,libdirtrav,libfmt,libgcrypt-20,libgdiagnostics-0,libgfortran-5,libgnutls-30,libgomp-plugin-nvptx-1,libgpg-error-0,libgss-3,libgumbo-3,libhiredis,libhogweed-6,libidn2-0,libisl-23,libjansson,liblz4,liblzo2-2,libmpc-3,libnettle-8,libpcre-1,libpcre2-8-0,libpcre2_finder,libpkgconf-7,libpsl-5,librhash,libscalednum,libspdlog,libsqlite3-0,libssh2-1,libtasn1-6,libtss2-esys-0,libtss2-mu-0,libtss2-sys-1,libunistring-5,libuv-1,libxdiff,libxml2-16,libyaml,libzip,lua54,miniargv,pedeps,portcolcon,versioncmp}.dll",
+            "!libexec/gcc/*/*/{f951,cc1obj,cc1objplus}.exe",
+            "!lib/{libgfortran*,libpython3*.a,libyasm.a,libgdiagnostics.dll.a,libgomp-plugin-nvptx.dll.a}",
+            "!lib/gcc/*/*/{finclude,plugin}/**",
+            "!lib/gcc/*/*/libcaf_*.a",
+            "!lib/python3*/{test,idlelib,tkinter,turtledemo,ensurepip,lib2to3,pydoc_data}/**",
+            "!x86_64-w64-mingw32/[0-9]*/**",
+            "!include/{libyasm,python3*}/**",
+            "!**/*.idl",
+            "!share/man/**"
+          ]
         }
+      ]
+    },
+    "nsis": {
+      "artifactName": "sameko-dev-cpp-setup-${version}.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Sameko Dev C++",
+      "perMachine": false,
+      "allowElevation": true,
+      "include": "installer/installer.nsh",
+      "installerSidebar": "installer/sidebar.bmp",
+      "uninstallerSidebar": "installer/sidebar.bmp",
+      "installerHeader": "installer/header.bmp",
+      "runAfterFinish": true,
+      "installerLanguages": [
+        "en_US",
+        "vi_VN",
+        "zh_CN"
+      ],
+      "multiLanguageInstaller": true
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "src/assets/icon.icns"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb",
+        "tar.gz"
+      ],
+      "artifactName": "sameko-dev-cpp-${version}-linux-${arch}.${ext}",
+      "icon": "src/assets/icons/linux",
+      "category": "Development",
+      "synopsis": "A fast, modern C++ IDE",
+      "maintainer": "QuangquyNguyenvo <QuangquyNguyenvo@users.noreply.github.com>",
+      "desktop": {
+        "entry": {
+          "Name": "Sameko Dev C++",
+          "Comment": "A fast, modern C++ IDE",
+          "Categories": "Development;IDE;",
+          "StartupWMClass": "sameko-dev-cpp"
+        }
+      }
+    },
+    "deb": {
+      "recommends": [
+        "g++",
+        "gdb",
+        "clangd",
+        "astyle"
+      ]
     }
+  },
+  "overrides": {
+    "monaco-editor": {
+      "dompurify": "3.4.17"
+    }
+  }
 }
