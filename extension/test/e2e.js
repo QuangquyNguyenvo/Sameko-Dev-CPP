@@ -39,11 +39,37 @@ async function cdpOpen(port, url) {
     return r.json();
 }
 
+/** One CDP call on a page target; resolves with its result. */
+function cdp(wsUrl, method, params) {
+    return new Promise((resolve, reject) => {
+        const ws = new WebSocket(wsUrl);
+        const t = setTimeout(() => { ws.close(); reject(new Error('cdp timeout')); }, 8000);
+        ws.onopen = () => ws.send(JSON.stringify({ id: 1, method, params: params || {} }));
+        ws.onmessage = (m) => {
+            const d = JSON.parse(m.data);
+            if (d.id !== 1) return;
+            clearTimeout(t);
+            ws.close();
+            resolve(d.result || null);
+        };
+        ws.onerror = () => { clearTimeout(t); reject(new Error('cdp socket error')); };
+    });
+}
+
+/** SAMEKO_E2E_SHOTS=<folder>: saves the popup as PNGs there, to look at the layout. */
+async function shot(wsUrl, name) {
+    const dir = process.env.SAMEKO_E2E_SHOTS;
+    if (!dir) return;
+    await cdp(wsUrl, 'Emulation.setDeviceMetricsOverride', { width: 320, height: 560, deviceScaleFactor: 2, mobile: false });
+    const r = await cdp(wsUrl, 'Page.captureScreenshot', { format: 'png' });
+    if (r && r.data) fs.writeFileSync(path.join(dir, name + '.png'), Buffer.from(r.data, 'base64'));
+}
+
 function cdpEval(wsUrl, expression) {
     return new Promise((resolve, reject) => {
         const ws = new WebSocket(wsUrl);
         const t = setTimeout(() => { ws.close(); reject(new Error('cdp timeout')); }, 5000);
-        ws.onopen = () => ws.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression, returnByValue: true } }));
+        ws.onopen = () => ws.send(JSON.stringify({ id: 1, method: 'Runtime.evaluate', params: { expression, returnByValue: true, awaitPromise: true } }));
         ws.onmessage = (m) => {
             const d = JSON.parse(m.data);
             if (d.id !== 1) return;
@@ -148,6 +174,40 @@ function cdpEval(wsUrl, expression) {
         const pv = JSON.parse(popup || '{}');
         check(pv.state === 'connected' && pv.recent && pv.recent.length === 2 && /AC/.test(pv.recent[1]) && /Failed/.test(pv.recent[0]),
             'popup shows connected + recent submissions', popup);
+
+        const ws = target.webSocketDebuggerUrl;
+        const ev = (js) => cdpEval(ws, js);
+        await shot(ws, 'popup-1-default');
+
+        const row = JSON.parse(await ev(`JSON.stringify({
+            site: document.querySelector('.recent-site').textContent,
+            detail: document.querySelector('.recent-item:last-child .recent-detail').textContent })`) || '{}');
+        check(row.site === 'Mock OJ' && /C\+\+17/.test(row.detail) && !/c\+\+17/.test(row.detail), 'history row: judge tag and C++17', JSON.stringify(row));
+
+        await ev(`document.querySelector('.recent .fold-toggle').click()`);
+        await sleep(200);
+        const folded = JSON.parse(await ev(`JSON.stringify({ hidden: document.querySelector('.recent-list').hidden,
+            summary: document.querySelector('.recent .fold-summary').textContent })`) || '{}');
+        check(folded.hidden === true && folded.summary === 'Failed', 'history folds, the newest verdict stays on its header', JSON.stringify(folded));
+        await ev(`document.querySelector('.settings .fold-toggle').click()`);
+        await sleep(200);
+        await shot(ws, 'popup-2-folded-settings');
+
+        await ev(`(() => { const s = document.querySelector('.language-select'); s.value = 'vi'; s.dispatchEvent(new Event('change')); })()`);
+        await sleep(600);
+        const vi = JSON.parse(await ev(`JSON.stringify({ label: document.querySelector('.connection-label').textContent,
+            title: document.querySelector('.settings .fold-toggle span').textContent,
+            stored: null })`) || '{}');
+        check(vi.label === 'Đã kết nối' && vi.title === 'Cài đặt', 'language: Tiếng Việt picked in the popup', JSON.stringify(vi));
+        await ev(`document.querySelector('.recent .fold-toggle').click()`);
+        await sleep(200);
+        await shot(ws, 'popup-3-vi');
+
+        await ev(`document.querySelector('.recent-clear').click()`);
+        await sleep(500);
+        const cleared = await ev(`document.querySelector('.recent').hidden`);
+        const stored = await ev(`chrome.storage.local.get('recent').then(r => r.recent.length)`);
+        check(cleared === true && stored === 0, 'Clear empties the history', String(stored));
     } catch (e) {
         failed++;
         console.log(`FAIL e2e: ${e && e.message}`);

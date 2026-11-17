@@ -255,6 +255,8 @@
             const u = parse(url);
             const m = u && RESULT_PATH.exec(u.pathname);
             if (!m) return null;                    // only a /result/<id>/ page shows a verdict
+            // An older result of the same task opened in this tab is not this job's.
+            if (!A.isJobSubmission(doc, job, 'sameko-cses-submission', m[2])) return null;
             const submissionUrl = `${u.origin}${u.pathname}`;
 
             const fields = summaryFields(doc);

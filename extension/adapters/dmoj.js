@@ -520,9 +520,12 @@
             return msg ? `${siteName(url)}: ${msg}` : null;
         },
 
-        readVerdict(doc, url) {
+        readVerdict(doc, url, job) {
             const u = parse(url);
-            if (!u || !SUBMISSION_PATH.test(u.pathname)) return null;      // only the new submission's own page
+            const m = u && SUBMISSION_PATH.exec(u.pathname);
+            if (!m) return null;                                            // only the new submission's own page
+            // An older submission opened in this tab while the new one is queued is not this job's.
+            if (!A.isJobSubmission(doc, job, 'sameko-dmoj-submission', m[1])) return null;
             const tc = doc.querySelector('#test-cases');
             if (!tc) return null;
             const r = readTestCases(tc);

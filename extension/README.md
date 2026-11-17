@@ -5,9 +5,15 @@ Sameko Dev C++ app. The app asks it, over `http://127.0.0.1:27121/sameko/v1/*`, 
 source file or to read a problem. The extension does the work inside the browser session you are
 already logged in to, so the app never sees cookies or passwords. `PROTOCOL.md` is the contract.
 
-Supported judges in v1: Codeforces (with the m1/m2/m3 mirrors), AtCoder, CSES, DMOJ, VNOI and
-LQDOJ. The four adapters in `adapters/` are **stubs for now**: they register, but treat every
-page as `other`.
+Supported judges in v1: Codeforces (with the m1/m2/m3 mirrors), AtCoder, CSES, and the DMOJ
+family (VNOJ, LQDOJ, dmoj.ca). Each has an adapter in `adapters/`, written from the judge's saved
+pages in `test/fixtures/`.
+
+## Store package
+
+`node scripts/pack-extension.js` writes `samekodevcpp/extension/sameko-companion-<version>.zip`
+with only the files the extension runs (no `test/`, `.dev/` or docs). Upload that to the Chrome
+Web Store / Edge Add-ons; never attach it to a GitHub Release.
 
 ## Load it unpacked (Chrome / Edge ≥ 116)
 

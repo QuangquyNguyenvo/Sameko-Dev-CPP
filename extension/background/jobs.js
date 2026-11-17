@@ -14,7 +14,9 @@
  *   autoSent    [url]                             auto-send de-duplication
  * chrome.storage.local:
  *   settings    { autoSendProblems, autoSubmit, submitInBackground }
- *   recent      the last 10 submissions, newest first
+ *   recent      the last 10 submissions, newest first (the popup can clear it)
+ *   uiLanguage  'auto' | 'en' | 'vi' | 'zh_CN', written by the popup (shared/i18n.js)
+ *   popupFolds  { recent, settings }  which popup cards are open
  */
 (function (root) {
     'use strict';
@@ -95,7 +97,7 @@
                 const recent = Array.isArray(got.recent) ? got.recent : [];
                 let item = recent.find(r => r.id === job.id);
                 if (!item) {
-                    item = { id: job.id, url: job.url, language: job.language, std: job.std || null, startedAt: now() };
+                    item = { id: job.id, url: job.url, language: job.language, std: job.std || null, autoSubmit: job.autoSubmit !== false, startedAt: now() };
                     recent.unshift(item);
                 }
                 item.state = ev.state;
@@ -206,6 +208,10 @@
             let tab = null;
             if (tabId != null && !jobTabs[tabId] && !fetchTabs[tabId]) {
                 try { tab = await chrome.tabs.get(tabId); } catch (_) { tab = null; }
+                // Only while it still shows this judge's submit or status page: a tab the user has
+                // since taken elsewhere (another problem, another site) is theirs now.
+                const kind = tab && tab.url && A.byUrl(tab.url) === adapter ? A.classifyUrl(tab.url) : null;
+                if (kind !== 'submit' && kind !== 'status') tab = null;
             }
             try {
                 if (tab) {
@@ -276,6 +282,9 @@
         async function autoSend(tabId, url) {
             const settings = await getSettings();
             if (!settings.autoSendProblems) return;
+            // App closed: nothing is queued (opening it later would pour every page visited since
+            // into it) and the page is not marked as sent, so a visit after the app starts sends it.
+            if (!isConnected()) return;
             const sent = await load('autoSent', []);
             const key = url.replace(/#.*$/, '');
             if (sent.includes(key)) return;
@@ -291,6 +300,7 @@
             const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
             if (!tab || !tab.url) return { ok: false, error: err('no-problem-tab', 'No tab is active.') };
             if (A.classifyUrl(tab.url) !== 'problem') return { ok: false, error: err('no-problem-tab', 'This tab is not an online judge problem page.') };
+            if (!isConnected()) return { ok: false, error: err('no-app', 'Sameko Dev C++ is not running.') };
             const r = await problemFromTab(tab.id);
             if (!r.problem) return { ok: false, error: err('parse-failed', r.error || 'Could not read the problem on this page.') };
             await sendProblem(r.problem, { auto: false }, tab.id);
@@ -464,6 +474,28 @@
             });
         }
 
+        /**
+         * History rows still in progress whose job is gone: the browser was closed or the extension
+         * reloaded mid-submit (jobTabs lives in session storage, the history in local storage).
+         * They would show "Judging" for ever. Not sent to the app: it has its own limit.
+         */
+        async function settleOrphans(t, jobTabs) {
+            const live = new Set(Object.values(jobTabs).map(rec => rec.job && rec.job.id));
+            const got = await L.get('recent');
+            const recent = Array.isArray(got.recent) ? got.recent : [];
+            let changed = false;
+            for (const item of recent) {
+                const pending = ['queued', 'opened', 'submitted', 'judging'].includes(item.state) ||
+                    (item.state === 'filled' && item.autoSubmit === true);   // fill-only jobs end at filled
+                if (!pending || live.has(item.id) || t - (item.updatedAt || item.startedAt || 0) < 10000) continue;
+                item.state = 'failed';
+                item.updatedAt = t;
+                item.error = err('interrupted', "The browser or the extension closed before the verdict arrived. Check the result on the judge's site.");
+                changed = true;
+            }
+            if (changed) await L.set({ recent });
+        }
+
         function checkTimeouts() {
             return serial(async () => {
                 const t = now();
@@ -480,6 +512,7 @@
                     await save('jobTabs', jobTabs);
                     await status(rec.job, 'failed', { error: err('timeout', message) });
                 }
+                await settleOrphans(t, jobTabs);
                 const fetchTabs = await load('fetchTabs', {});
                 for (const [tabId, f] of Object.entries(fetchTabs)) {
                     if (t - f.startedAt < limits.fetchMs) continue;
@@ -501,6 +534,10 @@
             return { url: tab.url, kind, adapter: a ? a.name : null, canSend: kind === 'problem' };
         }
 
+        function clearRecent() {
+            return serial(() => L.set({ recent: [] }));    // after any remember() in flight
+        }
+
         async function recent() {
             const got = await L.get('recent');
             return Array.isArray(got.recent) ? got.recent : [];
@@ -508,7 +545,7 @@
 
         return {
             handleCommand, handleMessage, onTabRemoved, onTabActivated, checkTimeouts,
-            sendActiveTab, activeTabInfo, getSettings, setSetting, recent,
+            sendActiveTab, activeTabInfo, getSettings, setSetting, recent, clearRecent,
             idle: () => lock
         };
     }

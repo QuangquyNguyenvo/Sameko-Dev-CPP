@@ -153,6 +153,17 @@ test('locales: every data-i18n / t() / __MSG__ key exists in en, vi and zh_CN wi
     }
 });
 
+test('isJobSubmission: the first submission page after submitting is the job\'s, an older one is not', () => {
+    const data = new Map();
+    const doc = { defaultView: { sessionStorage: { getItem: k => (data.has(k) ? data.get(k) : null), setItem: (k, v) => data.set(k, String(v)) } } };
+    const job = { id: 'j1' };
+    assert.strictEqual(A.isJobSubmission(doc, job, 'k', 200), true);       // the redirect: pinned
+    assert.strictEqual(A.isJobSubmission(doc, job, 'k', '200'), true);
+    assert.strictEqual(A.isJobSubmission(doc, job, 'k', 150), false);      // an older submission opened meanwhile
+    assert.strictEqual(A.isJobSubmission(doc, { id: 'j2' }, 'k', 150), true);   // the next job pins again
+    assert.strictEqual(A.isJobSubmission({}, job, 'k', 999), true);        // no storage: as before
+});
+
 test('mock adapter: classify and submitUrl', () => {
     assert.strictEqual(mockAdapter.classify('http://localhost:27190/problem/A').kind, 'problem');
     assert.strictEqual(mockAdapter.classify('http://localhost:27190/submit/A').kind, 'submit');

@@ -16,7 +16,8 @@
     <section class="status" data-state="checking" aria-live="polite">
       <p class="status-line"><span class="dot" aria-hidden="true"></span><span class="status-title" data-i18n="statusChecking">Looking for Sameko Dev C++…</span></p>
       <div class="status-actions">
-        <a class="btn btn-primary status-getapp" href="https://sameko.dev" hidden data-i18n="actionGetApp">Get the app</a>
+        <button type="button" class="btn btn-primary status-open" hidden data-i18n="actionOpenApp">Open</button>
+        <a class="btn status-getapp" href="https://sameko.dev" hidden data-i18n="actionGetApp">Get the app</a>
         <button type="button" class="btn btn-primary status-retry" hidden data-i18n="actionRetry">Try again</button>
       </div>
     </section>
@@ -26,6 +27,7 @@
     <p class="foot muted" data-i18n="welcomePrivacy">Passwords and cookies stay in your browser.</p>
   </main>
 
+  <script src="../shared/i18n.js"></script>
   <script src="../popup/ui.js"></script>
   <script src="welcome.js"></script>
 </body>

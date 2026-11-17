@@ -86,8 +86,12 @@
             chrome, win, adapters,
             onAboutToSubmit: async () => {
                 if (submitted) return;
+                // Stage → watch before navigating. A refusal means the worker has given up on this
+                // job (it timed out, and the app was told it failed): pressing Submit now would
+                // send code the app no longer tracks, and the user would submit it again.
+                const r = await send({ type: 'submitted', id: job.id });
+                if (!(r && r.ok)) throw makeError('timeout', 'This submission was cancelled: the submit page took too long. Submit again.');
                 submitted = true;
-                await send({ type: 'submitted', id: job.id });   // stage → watch before navigating
             }
         });
         try {
@@ -184,7 +188,9 @@
         try {
             let label = text || '';
             if (!label) {
-                try { label = chrome.i18n.getMessage(TOAST_KEYS[kind]) || ''; } catch (_) { label = ''; }
+                // In the language picked in the popup; the worker has it loaded.
+                try { label = ((await chrome.runtime.sendMessage({ type: 'i18n', key: TOAST_KEYS[kind] })) || {}).text || ''; } catch (_) { label = ''; }
+                if (!label) { try { label = chrome.i18n.getMessage(TOAST_KEYS[kind]) || ''; } catch (_) { label = ''; } }
                 label = label || TOAST_FALLBACK[kind] || '';
             }
             if (!label || !doc.body) return;

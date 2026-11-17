@@ -217,12 +217,32 @@
 
     function unregister(id) { registry.delete(id); }
 
+    /**
+     * For judges whose submissions have a page of their own (/submission/<id>): true when
+     * `submissionId` is this job's submission. The first submission page the job's tab reaches
+     * after submitting (the judge's redirect) is pinned in the tab's sessionStorage; any other one
+     * (the user opened an older submission while the new one was still in the queue) is not.
+     * Without sessionStorage it answers true, as before.
+     */
+    function isJobSubmission(doc, job, key, submissionId) {
+        if (!job || !job.id || submissionId == null) return true;
+        let store = null;
+        try { store = doc.defaultView && doc.defaultView.sessionStorage; } catch (_) { store = null; }
+        if (!store) return true;
+        const id = String(submissionId);
+        let saved = null;
+        try { saved = JSON.parse(store.getItem(key) || 'null'); } catch (_) { saved = null; }
+        if (saved && saved.jobId === job.id) return saved.id === id;
+        try { store.setItem(key, JSON.stringify({ jobId: job.id, id })); } catch (_) { /* answer true */ }
+        return true;
+    }
+
     const SamekoAdapters = {
         __sameko: true,
         VERDICT, VERDICT_CODES,
         register, unregister, get, byUrl, classifyUrl, list,
         pickLanguage, parseStd, parseVersion,
-        normalizeVerdict, isPendingVerdict, parseTimeMs, parseMemoryKb
+        normalizeVerdict, isPendingVerdict, parseTimeMs, parseMemoryKb, isJobSubmission
     };
 
     root.SamekoAdapters = SamekoAdapters;

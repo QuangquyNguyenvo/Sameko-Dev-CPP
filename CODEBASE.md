@@ -516,14 +516,15 @@ renderer oj-submit.js ─IPC─► main extension-bridge.js ◄─HTTP 127.0.0.1
 | `background/jobs.js` | Submit job per tab (`fill` → `watch`, stored in `chrome.storage.session`), tab reuse, timeouts, `fetchProblem`, auto-send, MAIN-world `setEditorText`. |
 | `background/service-worker.js` | Wires bridge + jobs to `chrome.*` events. |
 | `content/main.js`, `content/page-world.js` | On judge pages: asks the worker `whoami`, runs the adapter stage with the `h` helpers, watches the verdict. `page-world.js` sets Ace / CodeMirror / Monaco text in the page's own world. |
-| `popup/`, `welcome/`, `_locales/` | Popup (state, toggles, recent submissions) and first-install page, coloured from the app's theme snapshot; en / vi / zh_CN. |
+| `popup/`, `welcome/`, `_locales/` | Popup (state, send button, foldable recent submissions with the judge's name, foldable settings with a language picker) and first-install page, coloured from the app's theme snapshot; en / vi / zh_CN. |
+| `shared/i18n.js` | `SamekoI18n`: texts in the language picked in the popup (`chrome.storage.local` `uiLanguage`), loaded from `_locales/<lang>/messages.json`; "auto" and missing keys fall back to `chrome.i18n`. |
 | `test/run.js` | Node suite with a fake `chrome` (`fake-chrome.js`) and a stub app (`stub-app.js`); in `npm test` as `extension`. |
 | `test/adapter-fixtures.js` | Runs `test/adapters/<id>.cases.js` against saved judge HTML in `test/fixtures/<id>/` (Electron DOM); in `npm test` as `extension adapters`. |
 | `test/mock-oj/`, `test/make-dev.js`, `test/e2e.js` | A local fake judge with a complete adapter (the worked example), a dev copy of the extension that includes it (`extension/.dev/`), and a real-browser end-to-end run (`node extension/test/e2e.js`, not in `npm test`). |
 
 Messages inside the extension — content → worker: `whoami`, `pageInfo`, `filled`, `submitted`,
 `verdict`, `failed`, `setEditorText`; worker → content: `getProblem`; popup → worker:
-`popup:getState`, `popup:sendProblem`, `popup:retry`, `popup:setSetting`.
+`popup:getState`, `popup:sendProblem`, `popup:retry`, `popup:setSetting`, `popup:clearRecent`; content/popup → worker: `i18n` (a text in the language picked in the popup).
 
 **Adding a judge:** copy `test/mock-oj/adapter.js` to `adapters/<id>.js`, add its hosts to both
 lists in `manifest.json`, save real page HTML under `test/fixtures/<id>/`, write

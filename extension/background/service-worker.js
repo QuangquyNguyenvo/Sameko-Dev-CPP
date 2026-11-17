@@ -17,6 +17,7 @@ const ADAPTER_FILES = CONTENT_FILES.filter(f => f.startsWith('adapters/'));
 
 importScripts(
     '/shared/adapters.js',
+    '/shared/i18n.js',
     ...ADAPTER_FILES.map(f => '/' + f),
     '/content/page-world.js',
     '/background/bridge.js',
@@ -49,7 +50,28 @@ bridge.setCommandHandler(cmd => jobs.handleCommand(cmd));
 
 // ── messages ──────────────────────────────────────────────────────────────────────────────
 // Content scripts: whoami, pageInfo, submitted, filled, verdict, failed, setEditorText.
-// Popup: popup:getState, popup:sendProblem, popup:retry, popup:setSetting.
+// Popup: popup:getState, popup:sendProblem, popup:retry, popup:setSetting, popup:clearRecent,
+// popup:openApp.
+// Content: i18n (a text in the language picked in the popup, for the page toasts).
+/**
+ * Starts the app through its samekodev:// link (app/core/url-scheme.js). Sent to the active tab,
+ * an external link only shows the browser's "Open Sameko Dev C++?" prompt and the page stays;
+ * a new tab only when there is no active tab to use.
+ */
+async function openAppLink() {
+    const url = 'samekodev://open';
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+        if (tab && tab.id != null) await chrome.tabs.update(tab.id, { url });
+        else await chrome.tabs.create({ url });
+    } catch (e) {
+        log('open app', e);
+        try { await chrome.tabs.create({ url }); } catch (_) { return { ok: false }; }
+    }
+    bridge.kick();
+    return { ok: true };
+}
+
 async function handlePopup(msg) {
     switch (msg.type) {
         case 'popup:getState':
@@ -65,6 +87,11 @@ async function handlePopup(msg) {
         case 'popup:retry':
             await bridge.retry();
             return { ok: true, connection: bridge.state };
+        case 'popup:openApp':
+            return openAppLink();
+        case 'popup:clearRecent':
+            await jobs.clearRecent();
+            return { ok: true };
         case 'popup:setSetting':
             return { ok: true, settings: await jobs.setSetting(msg.key, msg.value) };
         default:
@@ -78,6 +105,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     let p;
     if (msg.type.startsWith('popup:')) {
         p = handlePopup(msg);
+    } else if (msg.type === 'i18n') {
+        p = SamekoI18n.load(chrome, (u) => fetch(u)).then(() => ({ text: SamekoI18n.get(chrome, String(msg.key || '')) }));
     } else {
         if (msg.type === 'pageInfo') bridge.kick();       // any OJ page load retries hello
         p = jobs.handleMessage(msg, sender);

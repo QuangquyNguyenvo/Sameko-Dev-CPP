@@ -14,26 +14,59 @@
     <span class="connection" data-state="disconnected"><span class="dot" aria-hidden="true"></span><span class="connection-label">…</span></span>
   </header>
 
-  <!-- Shown only while something is needed from the user. -->
+  <!-- Shown only while something is needed from the user. Offline: Open starts the app through its
+       samekodev:// link (a browser prompt); the link below is for people who do not have it. -->
   <section class="notice" hidden aria-live="polite">
     <p class="notice-text"></p>
+    <button type="button" class="btn btn-primary connection-open" hidden data-i18n="actionOpenApp">Open</button>
     <a class="btn btn-primary connection-link" href="https://sameko.dev" hidden data-i18n="actionGetApp">Get the app</a>
     <button type="button" class="btn btn-primary connection-retry" hidden data-i18n="actionRetry">Try again</button>
+    <p class="notice-foot" hidden><span data-i18n="noticeNoApp">No app yet?</span> <a class="connection-download" href="https://sameko.dev" data-i18n="actionGetApp">Get the app</a></p>
   </section>
 
-  <button type="button" class="btn btn-primary send-problem" disabled>
+  <!-- Only on a problem page: elsewhere there is nothing to send. -->
+  <button type="button" class="btn btn-primary send-problem" hidden>
     <svg class="send-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 3v12m0 0-5-5m5 5 5-5M5 20h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <span class="send-label" data-i18n="sendButton">Send to app</span>
+    <span class="send-label" data-i18n="sendButton">Send this problem to the app</span>
   </button>
 
-  <section class="settings">
-    <label class="setting"><span data-i18n="settingAutoSend">Auto-send problems</span><input type="checkbox" class="switch" data-setting="autoSendProblems"></label>
-    <label class="setting"><span data-i18n="settingAutoSubmit">Auto-submit</span><input type="checkbox" class="switch" data-setting="autoSubmit"></label>
-    <label class="setting"><span data-i18n="settingBackground">Submit in a background tab</span><input type="checkbox" class="switch" data-setting="submitInBackground"></label>
+  <!-- Two foldable cards; which ones are open is remembered (chrome.storage.local popupFolds). -->
+  <section class="fold recent" data-fold="recent" hidden>
+    <div class="fold-head">
+      <button type="button" class="fold-toggle" aria-expanded="true" aria-controls="recent-body">
+        <svg class="chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span data-i18n="recentTitle">Recent submissions</span>
+        <span class="fold-count" translate="no"></span>
+        <span class="fold-summary"></span>
+      </button>
+      <button type="button" class="link-btn recent-clear" data-i18n="recentClear">Clear</button>
+    </div>
+    <ol class="recent-list fold-body" id="recent-body"></ol>
   </section>
 
-  <ol class="recent-list" hidden></ol>
+  <section class="fold settings" data-fold="settings">
+    <div class="fold-head">
+      <button type="button" class="fold-toggle" aria-expanded="false" aria-controls="settings-body">
+        <svg class="chevron" viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path d="m4 6 4 4 4-4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span data-i18n="settingsTitle">Settings</span>
+      </button>
+    </div>
+    <div class="fold-body" id="settings-body" hidden>
+      <label class="setting"><span class="setting-text"><span data-i18n="settingAutoSend">Auto-fetch problems</span><span class="setting-hint" data-i18n="hintAutoSend"></span></span><input type="checkbox" class="switch" data-setting="autoSendProblems"></label>
+      <label class="setting"><span class="setting-text"><span data-i18n="settingAutoSubmit">Auto-submit</span><span class="setting-hint" data-i18n="hintAutoSubmit"></span></span><input type="checkbox" class="switch" data-setting="autoSubmit"></label>
+      <label class="setting"><span class="setting-text"><span data-i18n="settingBackground">Submit in a background tab</span><span class="setting-hint" data-i18n="hintBackground"></span></span><input type="checkbox" class="switch" data-setting="submitInBackground"></label>
+      <label class="setting"><span data-i18n="settingLanguage">Language</span>
+        <select class="select language-select">
+          <option value="auto" data-i18n="languageAuto">Browser language</option>
+          <option value="en" translate="no">English</option>
+          <option value="vi" translate="no">Tiếng Việt</option>
+          <option value="zh_CN" translate="no">简体中文</option>
+        </select>
+      </label>
+    </div>
+  </section>
 
+  <script src="../shared/i18n.js"></script>
   <script src="ui.js"></script>
   <script src="popup.js"></script>
 </body>

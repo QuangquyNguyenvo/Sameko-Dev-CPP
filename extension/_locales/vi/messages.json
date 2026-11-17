@@ -48,7 +48,7 @@
     "message": "Cần cập nhật"
   },
   "noticeOffline": {
-    "message": "Hãy mở Sameko Dev C++"
+    "message": "App chưa mở"
   },
   "noticeWaiting": {
     "message": "Bấm Cho phép trong Sameko Dev C++"
@@ -69,10 +69,7 @@
     "message": "Thử lại"
   },
   "sendButton": {
-    "message": "Gửi đề về app"
-  },
-  "sendNeedPage": {
-    "message": "Hãy mở một trang đề"
+    "message": "Gửi đề này sang app"
   },
   "sendSending": {
     "message": "Đang gửi…"
@@ -84,13 +81,13 @@
     "message": "Không gửi được"
   },
   "settingAutoSend": {
-    "message": "Tự gửi đề khi mở trang"
+    "message": "Tự lấy đề"
   },
   "settingAutoSubmit": {
-    "message": "Tự submit"
+    "message": "Tự bấm nộp"
   },
   "settingBackground": {
-    "message": "Submit ở tab nền"
+    "message": "Nộp ở tab nền"
   },
   "statusChecking": {
     "message": "Đang tìm Sameko Dev C++…"
@@ -109,5 +106,38 @@
   },
   "toastSubmitting": {
     "message": "Đang submit…"
+  },
+  "recentTitle": {
+    "message": "Bài nộp gần đây"
+  },
+  "recentClear": {
+    "message": "Xoá"
+  },
+  "settingsTitle": {
+    "message": "Cài đặt"
+  },
+  "settingLanguage": {
+    "message": "Ngôn ngữ"
+  },
+  "languageAuto": {
+    "message": "Theo trình duyệt"
+  },
+  "hintAutoSend": {
+    "message": "Gửi đề sang app ngay khi mở trang đề"
+  },
+  "hintAutoSubmit": {
+    "message": "Tắt: chỉ điền sẵn code, bạn tự bấm Submit"
+  },
+  "hintBackground": {
+    "message": "Mở tab OJ mà không chuyển sang tab đó"
+  },
+  "actionOpenApp": {
+    "message": "Mở app"
+  },
+  "actionOpening": {
+    "message": "Đang mở…"
+  },
+  "noticeNoApp": {
+    "message": "Chưa có app?"
   }
 }

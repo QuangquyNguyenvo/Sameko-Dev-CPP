@@ -48,7 +48,7 @@
     "message": "Update needed"
   },
   "noticeOffline": {
-    "message": "Open Sameko Dev C++"
+    "message": "The app is not open"
   },
   "noticeWaiting": {
     "message": "Click Allow in Sameko Dev C++"
@@ -69,10 +69,7 @@
     "message": "Try again"
   },
   "sendButton": {
-    "message": "Send to app"
-  },
-  "sendNeedPage": {
-    "message": "Open a problem page"
+    "message": "Send this problem to the app"
   },
   "sendSending": {
     "message": "Sending…"
@@ -84,7 +81,7 @@
     "message": "Could not send"
   },
   "settingAutoSend": {
-    "message": "Auto-send problems"
+    "message": "Auto-fetch problems"
   },
   "settingAutoSubmit": {
     "message": "Auto-submit"
@@ -109,5 +106,38 @@
   },
   "toastSubmitting": {
     "message": "Submitting…"
+  },
+  "recentTitle": {
+    "message": "Recent submissions"
+  },
+  "recentClear": {
+    "message": "Clear"
+  },
+  "settingsTitle": {
+    "message": "Settings"
+  },
+  "settingLanguage": {
+    "message": "Language"
+  },
+  "languageAuto": {
+    "message": "Browser language"
+  },
+  "hintAutoSend": {
+    "message": "Send a problem to the app as soon as you open its page"
+  },
+  "hintAutoSubmit": {
+    "message": "Off: the code is only filled in, you press Submit"
+  },
+  "hintBackground": {
+    "message": "The judge's tab opens without switching to it"
+  },
+  "actionOpenApp": {
+    "message": "Open"
+  },
+  "actionOpening": {
+    "message": "Opening…"
+  },
+  "noticeNoApp": {
+    "message": "No app yet?"
   }
 }

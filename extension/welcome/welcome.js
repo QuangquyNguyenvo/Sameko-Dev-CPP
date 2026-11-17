@@ -25,7 +25,10 @@ function renderStatus(c) {
     $('.status').dataset.state = state;
     $('.status-title').textContent = t(key);
     const offline = state === 'disconnected';
-    $('.status-getapp').hidden = !(offline && (!detail || detail === 'unreachable' || detail === 'protocol'));
+    const notRunning = offline && (!detail || detail === 'unreachable');
+    $('.status-open').hidden = !notRunning;
+    $('.status-getapp').hidden = !(notRunning || (offline && detail === 'protocol'));
+    $('.status-getapp').classList.toggle('btn-primary', !notRunning);
     $('.status-retry').hidden = state !== 'denied';
     $('.sites').hidden = state !== 'connected' || !$('.sites').children.length;
 }
@@ -36,17 +39,7 @@ async function check() {
 }
 
 async function showSites() {
-    const manifest = chrome.runtime.getManifest();
-    const files = Array.from(new Set((manifest.content_scripts || []).flatMap(c => c.js || [])))
-        .filter(f => f.startsWith('shared/') || f.startsWith('adapters/'));
-    for (const f of files) {
-        await new Promise((resolve) => {
-            const s = document.createElement('script');
-            s.src = '../' + f;
-            s.onload = s.onerror = resolve;
-            document.head.append(s);
-        });
-    }
+    await loadAdapters();
     if (typeof SamekoAdapters === 'undefined') return;
     const list = $('.sites');
     for (const a of SamekoAdapters.list().filter(x => x.id !== 'mock-oj')) {
@@ -58,8 +51,11 @@ async function showSites() {
     }
 }
 
-applyI18n();
+loadI18n().then(() => { applyI18n(); check(); });
 loadTheme();
+// Starts the app through its samekodev:// link; the 2 s check below notices when it answers.
+$('.status-open').addEventListener('click', () => { send({ type: 'popup:openApp' }); });
+$('.status-getapp').addEventListener('click', (e) => { e.preventDefault(); openTab(APP_SITE); });
 $('.status-retry').addEventListener('click', async () => {
     const r = await send({ type: 'popup:retry' });
     if (r && r.connection) renderStatus(r.connection);
@@ -69,6 +65,7 @@ chrome.runtime.onMessage.addListener((msg) => {
 });
 chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes.theme) applyTheme(changes.theme.newValue);
+    if (area === 'local' && changes.uiLanguage) loadI18n().then(() => { applyI18n(); check(); });
 });
 check();
 setInterval(check, CHECK_MS);

@@ -48,7 +48,7 @@
     "message": "需要更新"
   },
   "noticeOffline": {
-    "message": "请打开 Sameko Dev C++"
+    "message": "应用未打开"
   },
   "noticeWaiting": {
     "message": "请在 Sameko Dev C++ 中点击“允许”"
@@ -69,10 +69,7 @@
     "message": "重试"
   },
   "sendButton": {
-    "message": "发送到应用"
-  },
-  "sendNeedPage": {
-    "message": "请打开题目页面"
+    "message": "把这道题发送到应用"
   },
   "sendSending": {
     "message": "发送中…"
@@ -84,7 +81,7 @@
     "message": "发送失败"
   },
   "settingAutoSend": {
-    "message": "打开题目时自动发送"
+    "message": "自动获取题目"
   },
   "settingAutoSubmit": {
     "message": "自动提交"
@@ -109,5 +106,38 @@
   },
   "toastSubmitting": {
     "message": "正在提交…"
+  },
+  "recentTitle": {
+    "message": "最近提交"
+  },
+  "recentClear": {
+    "message": "清除"
+  },
+  "settingsTitle": {
+    "message": "设置"
+  },
+  "settingLanguage": {
+    "message": "语言"
+  },
+  "languageAuto": {
+    "message": "跟随浏览器"
+  },
+  "hintAutoSend": {
+    "message": "打开题目页面时自动发送到应用"
+  },
+  "hintAutoSubmit": {
+    "message": "关闭时只填写代码，由你点击提交"
+  },
+  "hintBackground": {
+    "message": "打开评测网站的标签页，但不切换过去"
+  },
+  "actionOpenApp": {
+    "message": "打开"
+  },
+  "actionOpening": {
+    "message": "正在打开…"
+  },
+  "noticeNoApp": {
+    "message": "还没有安装？"
   }
 }

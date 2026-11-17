@@ -105,7 +105,7 @@ a { color: var(--accent); }
   flex: none; max-width: 120px;
   padding: 2px 10px; border-radius: 999px; border: 2px solid color-mix(in srgb, var(--c) 55%, transparent);
   background: color-mix(in srgb, var(--c) 20%, transparent);
-  color: color-mix(in srgb, var(--c) 70%, var(--text));
+  color: color-mix(in srgb, var(--c) 55%, var(--text));   /* ≥ 4.5:1 on the card in both variants */
   font: 700 11px/1.5 var(--font-body);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
@@ -113,9 +113,10 @@ a { color: var(--accent); }
 .tag-warn { --c: var(--warning); }
 .tag-bad { --c: var(--error); }
 .tag-info, .tag-pending { --c: var(--accent); }
-.tag-pending { animation: pulse 1.4s ease-in-out infinite; }
+/* In progress: a ring pulses around it; the text itself never fades. */
+.tag-pending { animation: ring 1.4s ease-in-out infinite; }
 .dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--text-muted)); }
-@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+@keyframes ring { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--c, var(--accent)) 35%, transparent); } }
 @media (prefers-reduced-motion: reduce) {
   .tag-pending { animation: none; }
   .btn, .switch, .switch::after { transition: none; }
