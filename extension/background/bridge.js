@@ -214,6 +214,9 @@
                 Promise.resolve().then(() => onCommand(cmd)).catch(e => log('command failed', cmd && cmd.type, e));
             }
             if (queue.length) flush();
+            // Another paired browser took over the poll (PROTOCOL §poll): wait before taking it back.
+            const retryAfter = Number(r.body.retryAfter);
+            if (retryAfter > 0) await sleep(Math.min(retryAfter, 60) * 1000);
         }
 
         async function loop() {

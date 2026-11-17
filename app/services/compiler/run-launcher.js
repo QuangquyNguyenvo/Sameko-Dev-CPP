@@ -240,6 +240,14 @@ function ensureLauncher() {
 
 /** The helper path if it is already built, else null (never blocks). */
 function getLauncherIfReady() {
+    // An antivirus can quarantine the unsigned helper, or a temp cleaner delete it, after it was
+    // built: every run would then fail with "spawn ... ENOENT" until a restart. Run this one
+    // directly and build the helper again for the next.
+    if (launcherPath && !fs.existsSync(launcherPath)) {
+        console.warn('[RunLauncher] helper is gone, rebuilding:', launcherPath);
+        launcherPath = null;
+        buildPromise = null;
+    }
     if (!launcherPath && IS_WIN) ensureLauncher(); // kick off for next time
     return launcherPath;
 }

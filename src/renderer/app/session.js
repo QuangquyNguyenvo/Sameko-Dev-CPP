@@ -90,18 +90,21 @@ function buildSessionRestoreSummary(session) {
     const untitledCount = unsavedTabs.filter(t => !t.path).length;
     const modifiedCount = unsavedTabs.filter(t => t.path && t.modified).length;
     const parts = [];
+    // Translated here, piece by piece: the page translator only sees the finished sentence,
+    // whose counted parts no locale key matches (#74).
+    const t = (s, ...a) => (typeof I18n !== 'undefined' ? I18n.t(s, ...a) : a.reduce((r, v, i) => r.replace(`{${i}}`, v), s));
 
-    if (untitledCount > 0) parts.push(`${untitledCount} unsaved file${untitledCount > 1 ? 's' : ''}`);
-    if (modifiedCount > 0) parts.push(`${modifiedCount} modified file${modifiedCount > 1 ? 's' : ''}`);
+    if (untitledCount > 0) parts.push(t(untitledCount > 1 ? '{0} unsaved files' : '{0} unsaved file', untitledCount));
+    if (modifiedCount > 0) parts.push(t(modifiedCount > 1 ? '{0} modified files' : '{0} modified file', modifiedCount));
 
     return parts.length > 0
-        ? `Your previous session contains ${parts.join(' and ')}. Restore now?`
-        : 'Restore previous session?';
+        ? t('Your previous session contains {0}. Restore now?', parts.length > 1 ? t('{0} and {1}', parts[0], parts[1]) : parts[0])
+        : t('Restore previous session?');
 }
 
 /** A problem worth keeping across a restart: it has tests, or a checker was chosen for it. */
 function problemWorthSaving(p) {
-    return !!(p && ((Array.isArray(p.tests) && p.tests.length) || p.checker));
+    return !!(p && ((Array.isArray(p.tests) && p.tests.length) || p.checker || p.url));
 }
 
 function restoredTestState(tabData) {

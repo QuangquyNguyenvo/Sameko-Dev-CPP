@@ -53,7 +53,11 @@ function setup() {
     const firstRun = !fs.existsSync(dataDir);
     try {
         fs.mkdirSync(dataDir, { recursive: true });
-        fs.accessSync(dataDir, fs.constants.W_OK);
+        // A real write: on Windows W_OK only checks the read-only flag, and a data folder an
+        // elevated run made under Program Files passes it while every save then fails.
+        const probe = path.join(dataDir, `.write-test-${process.pid}`);
+        fs.writeFileSync(probe, '');
+        fs.rmSync(probe, { force: true });
     } catch (err) {
         console.warn(`[Portable] ${dataDir} is not writable, using the default data folder: ${err.message}`);
         return;

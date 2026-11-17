@@ -103,8 +103,9 @@ function startServer(options) {
                 // `chrome-extension://…` / `moz-extension://…` (or absent). A
                 // request carrying a web origin comes from a page in the
                 // browser — any site can reach 127.0.0.1 — and is refused.
+                // `Origin: null` is a page too (a sandboxed iframe, a data: URL).
                 const origin = String(req.headers.origin || '');
-                if (/^https?:\/\//i.test(origin)) {
+                if (origin && !/^(chrome|moz|safari-web)-extension:\/\//i.test(origin)) {
                     res.writeHead(403);
                     res.end('Forbidden');
                     return;

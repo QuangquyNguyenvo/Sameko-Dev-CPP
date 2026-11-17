@@ -66,7 +66,10 @@ Held open up to `wait` seconds (clamped 1–30) until a command is queued.
 // 401 when the origin is not paired
 { "error": "unpaired" }
 ```
-One poller at a time: a newer poll makes the older one return `{ "commands": [] }` at once.
+One poller at a time: a newer poll makes the older one return `{ "commands": [] }` at once. When the
+newer poll comes from another browser, the answer is `{ "commands": [], "retryAfter": 5 }` and the
+extension waits that many seconds before polling again, so two paired browsers take turns instead
+of knocking each other's poll off in a loop.
 The app considers the extension **connected** while a poll is pending or one ended < 5 s ago.
 
 #### `POST /sameko/v1/events`

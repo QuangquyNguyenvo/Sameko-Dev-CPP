@@ -459,6 +459,9 @@ function reportStressResult(run) {
     if (r.kind === 'fail') {
         log(`Stress test: ${r.verdict} on test ${r.testNo} (seed ${r.seed})`, 'error');
         setStatus(`Stress: ${r.verdict} on test ${r.testNo}`, 'error');
+    } else if (r.kind === 'stopped' && !run.done) {
+        log('Stress test stopped before any test ran', 'warning');
+        setStatus('Stress test stopped', 'warning');
     } else if (r.kind === 'pass' || r.kind === 'timeup' || r.kind === 'stopped') {
         log(`Stress test: ${run.done} tests, no difference (${secs} s)`, 'success');
         setStatus(`Stress: ${run.done} tests OK`, 'success');
@@ -483,10 +486,10 @@ function addStressCaseToTests() {
     if (getPreferredTabId() === tab.id) {
         if (!ccProblem) ccProblem = { name: 'Manual Problem', tests: [] };
         if (!ccProblem.tests) ccProblem.tests = [];
-        // No tests yet but text in the boxes: keep it as Test 1, as Add Test does.
+        // No test selected but text in the boxes: keep it as a test, as Add Test does.
         const inputArea = stressEl('input-area');
         const expectedArea = stressEl('expected-area');
-        if (!ccProblem.tests.length && ((inputArea && inputArea.value) || (expectedArea && expectedArea.value))) {
+        if (!ccProblem.tests[ccTestIndex] && ((inputArea && inputArea.value) || (expectedArea && expectedArea.value))) {
             ccProblem.tests.push({ input: inputArea ? inputArea.value : '', output: expectedArea ? expectedArea.value : '' });
         }
         ccProblem.tests.push(test);
@@ -627,9 +630,9 @@ function renderStressView() {
     } else if (r && (r.kind === 'pass' || r.kind === 'timeup' || r.kind === 'stopped')) {
         const note = r.kind === 'pass' ? 'All tests passed' : r.kind === 'timeup' ? 'Time is up' : 'Stopped';
         html = `
-            <div class="test-results-summary all-passed stress-summary">
+            <div class="test-results-summary ${run.done ? 'all-passed' : ''} stress-summary">
                 <span class="test-summary-ratio">${run.done}</span>
-                <span class="test-summary-stat passed">✓ <span>${run.done ? 'No difference found' : 'Nothing was tested'}</span></span>
+                <span class="test-summary-stat ${run.done ? 'passed' : ''}">${run.done ? '✓ ' : ''}<span>${run.done ? 'No difference found' : 'Nothing was tested'}</span></span>
                 <span class="stress-chip">${note}</span>
                 <span class="test-summary-stat total">${stressElapsedSeconds(run)} s</span>
             </div>
@@ -690,6 +693,7 @@ function paintStressSoonAfter(ms) {
 
 /** Called by switchDockedPanel when the STRESS tab is shown. */
 function onStressViewShown() {
+    syncStressInputs();
     if (!Stress.running) { refreshStressFiles(); refreshCheckerFiles(); }
     else renderStressView();
 }
@@ -698,6 +702,17 @@ function onStressViewShown() {
 function onStressTabChanged() {
     if (Stress.running || !stressViewVisible()) return;
     refreshStressFiles();
+}
+
+/** Show the saved Tests / Max values. Settings load after this script runs, so the view is
+ *  synced again whenever it is shown; otherwise it showed the defaults, and the next edit saved
+ *  a default over the other box's value. */
+function syncStressInputs() {
+    const s = stressSettings();
+    const count = stressEl('stress-count');
+    const secs = stressEl('stress-seconds');
+    if (count) count.value = s.tests;
+    if (secs) secs.value = s.seconds;
 }
 
 function initStressTest() {
@@ -721,11 +736,7 @@ function initStressTest() {
 
     const count = stressEl('stress-count');
     const secs = stressEl('stress-seconds');
-    const sync = () => {
-        const s = stressSettings();
-        if (count) count.value = s.tests;
-        if (secs) secs.value = s.seconds;
-    };
+    const sync = syncStressInputs;
     const save = () => {
         App.settings.execution.stressTests = Number(count?.value);
         App.settings.execution.stressSeconds = Number(secs?.value);

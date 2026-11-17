@@ -1292,6 +1292,11 @@
         // no breakpoints set — Auto dry run needs somewhere to begin.
         const breakAtMain = !!(opts && opts.breakAtMain === true);
         if (isSessionLive()) { return continueExec(); }
+        // Compiling stops the compile and program of a running test or stress run.
+        if (typeof isBatchTesting !== 'undefined' && isBatchTesting) {
+            sys('Tests are running. Wait for them or stop them first.', 'warning');
+            return;
+        }
         // Stop pressed while saving or compiling bumps startGen: this start
         // then gives up instead of launching gdb afterwards.
         const gen = ++startGen;

@@ -170,11 +170,13 @@ function ojRememberProblemUrl(tab, url) {
     if (getPreferredTabId() === tab.id) {
         if (!ccProblem) ccProblem = { name: 'Manual Problem', tests: [] };
         ccProblem.url = url;
+        if (typeof scheduleSessionSave === 'function') scheduleSessionSave();
         return;
     }
     if (!tab.testState) tab.testState = { problem: null, index: 0, results: [] };
     if (!tab.testState.problem) tab.testState.problem = { name: 'Manual Problem', tests: [] };
     tab.testState.problem.url = url;
+    if (typeof scheduleSessionSave === 'function') scheduleSessionSave();
 }
 
 /** The record of a failed attempt, shown like a failed submission. */
@@ -185,6 +187,9 @@ function ojFailLocally(tab, message, url) {
     setStatus(message, 'warning');
 }
 
+// Tabs whose submit is being prepared (URL prompt, bridge call): a second press waits for it.
+const ojSubmitStarting = new Set();
+
 async function submitToOJ() {
     const api = window.electronAPI;
     if (!api?.ojSubmit) return;
@@ -193,6 +198,21 @@ async function submitToOJ() {
         setStatus('Open a file to submit', 'warning');
         return;
     }
+    // Pressing Submit twice must not send the code twice.
+    const state = tab.ojSubmission && tab.ojSubmission.state;
+    if (ojSubmitStarting.has(tab.id) || ['queued', 'opened', 'filled', 'submitted'].includes(state)) {
+        setStatus('This file is already being submitted', 'warning');
+        return;
+    }
+    ojSubmitStarting.add(tab.id);
+    try {
+        await submitTabToOJ(api, tab);
+    } finally {
+        ojSubmitStarting.delete(tab.id);
+    }
+}
+
+async function submitTabToOJ(api, tab) {
     const language = ojLanguageOf(tab);
     if (!language) {
         ojFailLocally(tab, 'This file type cannot be submitted to an online judge.');
@@ -235,7 +255,7 @@ async function submitToOJ() {
     }
 
     ojSubmitTabs.set(result.id, tab.id);
-    tab.ojSubmission = { id: result.id, state: 'queued', url };
+    tab.ojSubmission = { id: result.id, state: 'queued', url, lastEventAt: Date.now() };
     renderOjVerdictChip();
     ojLog(`Submitting ${tab.name}`, 'info');
     if (ojBridge.connected) {
@@ -262,6 +282,8 @@ function onOjSubmitStatus(ev) {
     const sub = tab && tab.ojSubmission && tab.ojSubmission.id === ev.id ? tab.ojSubmission : null;
     if (sub) {
         sub.state = ev.state;
+        sub.lastEventAt = Date.now();
+        sub.offlineSince = 0;
         if (ev.message !== undefined) sub.message = ev.message;
         if (ev.submissionUrl) sub.submissionUrl = ev.submissionUrl;
         if (ev.verdict) sub.verdict = ev.verdict;
@@ -302,6 +324,37 @@ function onOjSubmitStatus(ev) {
             setStatus('Submit failed', 'error');
             break;
         }
+    }
+}
+
+// A submission the browser took but never finished (the browser was closed, the extension
+// crashed) would show "Judging" forever: the extension's own limit is 10 minutes, so give up
+// after 30 s without the extension or 11 minutes without any news. A queued one is expired by
+// the main process after 60 s.
+const OJ_OFFLINE_LIMIT_MS = 30 * 1000;
+const OJ_SILENCE_LIMIT_MS = 11 * 60 * 1000;
+
+function ojCheckStalledSubmissions() {
+    if (!ojSubmitTabs.size) return;
+    const now = Date.now();
+    for (const [id, tabId] of [...ojSubmitTabs]) {
+        const tab = App.tabs.find((t) => t.id === tabId);
+        const sub = tab && tab.ojSubmission && tab.ojSubmission.id === id ? tab.ojSubmission : null;
+        if (!sub) { ojSubmitTabs.delete(id); continue; }
+        if (sub.state === 'queued') continue;
+        let message = '';
+        if (!ojBridge.connected) {
+            if (!sub.offlineSince) sub.offlineSince = now;
+            else if (now - sub.offlineSince >= OJ_OFFLINE_LIMIT_MS) {
+                message = 'The browser extension disconnected before the verdict arrived. Check the result on the judge\'s site.';
+            }
+        } else {
+            sub.offlineSince = 0;
+            if (now - (sub.lastEventAt || now) >= OJ_SILENCE_LIMIT_MS) {
+                message = 'No verdict from the browser extension. Check the result on the judge\'s site.';
+            }
+        }
+        if (message) onOjSubmitStatus({ id, state: 'failed', error: { code: 'timeout', message } });
     }
 }
 
@@ -536,6 +589,7 @@ function initOjSubmit() {
     api.onOjSubmitStatus(onOjSubmitStatus);
     api.onOjFetchFailed(onOjFetchFailed);
     api.onOjPairRequest((req) => ojPromptPair(req));
+    setInterval(ojCheckStalledSubmissions, 5000);
     // After startup settles: a prompt that came before this page (a reload) is still pending.
     setTimeout(() => {
         api.ojBridgeStatus().then(onOjBridgeStatus).catch(() => { });

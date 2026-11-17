@@ -394,11 +394,13 @@ function createBridge(opts) {
         if (!isPaired(origin)) { sendJson(res, 401, { error: 'unpaired' }); return; }
         activeOrigin = origin;
         if (poll) {
-            // One poller at a time: the older one returns at once, empty.
+            // One poller at a time: the older one returns at once, empty. When it is another
+            // browser, it also waits before polling again: two paired browsers otherwise knock
+            // each other's poll off thousands of times a second.
             const old = poll;
             poll = null;
             clearTimeout(old.timer);
-            sendJson(old.res, 200, { commands: [] });
+            sendJson(old.res, 200, old.origin === origin ? { commands: [] } : { commands: [], retryAfter: 5 });
         }
         if (queue.length) {
             sendJson(res, 200, { commands: takeCommands(), theme: themeFor(origin) });

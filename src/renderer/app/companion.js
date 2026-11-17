@@ -167,8 +167,9 @@ function addTestCase() {
     if (ccProblem.tests.length > 0 && ccProblem.tests[ccTestIndex]) {
         ccProblem.tests[ccTestIndex].input = inputArea.value;
         ccProblem.tests[ccTestIndex].output = expectedArea.value;
-    } else if (ccProblem.tests.length === 0 && (inputArea.value || expectedArea.value)) {
-        // If there were no tests but we had content, treat current content as Test 1
+    } else if (inputArea.value || expectedArea.value) {
+        // No test selected (none yet, or after an import or a restored session) but text in the
+        // boxes: keep it as a test of its own instead of losing it to the new empty one.
         ccProblem.tests.push({
             input: inputArea.value,
             output: expectedArea.value

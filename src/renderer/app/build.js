@@ -72,6 +72,12 @@ async function buildActiveTab({ runAfter }) {
     }
     const verb = runAfter ? 'Build' : 'Compile';
     if (blockedByDebugSession(runAfter ? 'Build & Run' : 'Compile')) return;
+    // A build stops the compile and the program of a running test or stress run, which then
+    // report a bogus compile error or verdict.
+    if (isBatchTesting) {
+        log('Tests are running. Wait for them or stop them first.', 'warning');
+        return;
+    }
 
     const tab = App.tabs.find(t => t.id === getPreferredTabId());
     const editor = getActiveEditor();

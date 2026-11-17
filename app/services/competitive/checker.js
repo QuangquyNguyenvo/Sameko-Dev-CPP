@@ -30,7 +30,8 @@ let includeDir = null;
 
 /** The folder holding testlib.h for g++ and clangd ('' if it could not be written). */
 function testlibIncludeDir() {
-    if (includeDir !== null) return includeDir;
+    // Checked again when the file is gone: a temp cleaner may have removed it mid-session.
+    if (includeDir && fs.existsSync(path.join(includeDir, 'testlib.h'))) return includeDir;
     try {
         const dir = appTempDir('cpp-ide-testlib');
         const dest = path.join(dir, 'testlib.h');

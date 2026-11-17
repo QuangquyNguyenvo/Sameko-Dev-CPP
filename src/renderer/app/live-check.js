@@ -369,6 +369,7 @@ function clearLiveCheckMarkers(model = null) {
 }
 
 function applySettings() {
+    if (typeof syncStressInputs === 'function') syncStressInputs();
     const performanceMode = !!App.settings.appearance.performanceMode;
     const opts = {
         fontSize: App.settings.editor.fontSize,

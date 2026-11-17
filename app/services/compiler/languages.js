@@ -169,6 +169,24 @@ function isStorePythonStub(file) {
     return IS_WIN && /\\WindowsApps\\/i.test(file);
 }
 
+// Checked once per candidate: this is asked on every run, and the check starts a process.
+const python3Cache = new Map();
+
+/** The Python 3 executable `file prefix…` runs, or '' when it is not Python 3. */
+function python3Behind(file, prefix) {
+    const key = [file, ...prefix].join('|');
+    if (python3Cache.has(key)) return python3Cache.get(key);
+    let real = '';
+    try {
+        const out = execFileSync(file, [...prefix, '-c', 'import sys; print(sys.version_info[0]); print(sys.executable)'],
+            { encoding: 'utf8', windowsHide: true, timeout: 5000, stdio: ['ignore', 'pipe', 'pipe'] });
+        const [major, exe] = out.split(/\r?\n/);
+        if (major && major.trim() === '3') real = (exe || '').trim() || file;
+    } catch (_) { real = ''; }
+    python3Cache.set(key, real);
+    return real;
+}
+
 function runsAsPython3(file, prefix) {
     try {
         const out = execFileSync(file, [...prefix, '--version'], { encoding: 'utf8', windowsHide: true, timeout: 5000, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -200,7 +218,13 @@ function locateTool(name, { override = '', near = '' } = {}) {
     const pick = (candidates) => {
         for (const file of candidates) {
             const prefix = name === 'python' && /^py(\.exe)?$/i.test(path.basename(file)) ? ['-3'] : [];
-            if (name === 'python' && (isStorePythonStub(file) || prefix.length) && !runsAsPython3(file, prefix)) continue;
+            if (name === 'python' && (isStorePythonStub(file) || prefix.length)) {
+                const real = python3Behind(file, prefix);
+                if (!real) continue;
+                // The py launcher runs python.exe as a child: run that directly, so the launcher's
+                // time and memory figures (and the MLE limit) are the program's own.
+                if (prefix.length && isFile(real)) return { file: real, prefix: [] };
+            }
             return { file, prefix };
         }
         return null;
@@ -265,7 +289,9 @@ function runTool(file, args, { cwd, env, timeout = 120000 } = {}) {
         let out = '';
         let child;
         try {
-            child = spawnTool(file, args, { cwd, env, windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] });
+            // detached on Linux: its own process group, so a cancel or timeout kills go's compile
+            // and link steps (and kotlinc's java) too, not just the tool.
+            child = spawnTool(file, args, { cwd, env, windowsHide: true, detached: !IS_WIN, stdio: ['ignore', 'pipe', 'pipe'] });
         } catch (err) {
             resolve({ code: null, out: `Could not start ${file}: ${err.message}` });
             return;
@@ -589,7 +615,10 @@ const PY_ENV = { PYTHONUTF8: '1', PYTHONIOENCODING: 'utf-8', PYTHONDONTWRITEBYTE
 /** JVM options: a small initial heap and the memory limit as -Xmx (see the module comment). */
 function jvmArgs(memoryLimit) {
     const args = ['-Xss64m', '-XX:+UseSerialGC', '-Xms8m'];
-    if (memoryLimit > 0) args.push(`-Xmx${Math.max(16, Math.round(memoryLimit))}m`);
+    // The memory limit covers the whole JVM (metaspace, code cache, GC tables come on top of the
+    // heap), so the heap gets a little less: with -Xmx equal to the limit, a program near the
+    // limit was stopped as MLE before its heap was full.
+    if (memoryLimit > 0) args.push(`-Xmx${Math.max(16, Math.round(memoryLimit - Math.min(32, memoryLimit / 8)))}m`);
     args.push('-Dfile.encoding=UTF-8', '-Dstdout.encoding=UTF-8', '-Dstderr.encoding=UTF-8', '-Duser.language=en');
     return args;
 }
