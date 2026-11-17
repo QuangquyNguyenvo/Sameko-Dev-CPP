@@ -4,6 +4,51 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.5.0] - 2026-11-17
+
+Judge-style testing, stress tests, checkers, seven more languages, submitting to online judges from the app, and smaller, faster updates.
+
+### Added
+
+- **Submit to Online Judge** (Ctrl+Alt+S) through the new **Sameko Companion** browser extension: Codeforces, AtCoder, CSES and DMOJ-based judges (VNOI, LQDOJ). It submits from your logged-in browser and shows the verdict in the app.
+- **Stress test** (STRESS tab): runs a generator, a brute force and your solution on seeded tests until the first wrong answer; the failing test can be added to your tests.
+- **Checkers**: judge a problem's tests with a testlib checker, or compare ignoring case. `testlib.h` ships with the app.
+- **Other languages** (#66): build and run Python, Java, Kotlin, Rust, Go, Pascal and JavaScript with the compiler already on your machine. Tests, stress tests and the external console work for them; IntelliSense and the debugger stay C/C++.
+- **Memory limit** for tests (default 256 MB; Competitive Companion problems bring their own), reported as MLE.
+- **Large Stack** (256 MB, on by default, Windows): deep recursion no longer overflows, as on judges.
+- **Templates for the other languages**, and a choice of what New File creates.
+- **View › Reset Layout**.
+- **Snippets per language**: the editor suggests only the snippets of the file's language.
+- **Portable zip** keeps its data in `data\` next to the exe.
+
+### Changed
+
+- **Rounded Chinese font** (#73, suggested by @Onlyanadvisor): the Simplified Chinese interface uses WenYuan Rounded SC (SIL OFL 1.1), cut to the interface's characters (about 240 KB).
+- **Run All Tests judges like an online judge**: tests are built with -O2 into their own program, output is compared word by word with real numbers within 1e-6, and the time limit counts from the program's start.
+- **TESTS panel redesigned**: verdict, details, time and memory on each row, and a verdict bar.
+- **Crashes are named** (stack overflow, access violation, division by zero…) instead of a bare exit code.
+- **A test without an expected output** is RAN, not AC.
+- **Updates download only what changed** (about 20 MB instead of the whole installer), keep GCC when it did not change, and show a progress window.
+
+### Fixed
+
+- **Builds under a non-English Windows user name** (e.g. `C:\Users\Nguyễn`) no longer fail.
+- **Restart to update** no longer leaves an app with no window that cannot be opened again.
+- **Antivirus or Windows blocking a program**: the message says so and names the folder to exclude.
+- **Run keeps working** after an antivirus deletes the app's run helper.
+- **Vietnamese letters** use the app's fonts everywhere.
+- **Find widget Close button** is clickable (#71); Escape in Settings closes inner widgets first.
+- **No blue line** above the current line with word wrap on (#72).
+- **Build and Debug wait** while tests or a stress test are running.
+- **Adding a test with +** keeps the text you typed.
+- **Stress test** keeps its Tests/Max values, and stopping before any test ran is no longer shown as passed.
+- **Submitting twice** with a double click no longer sends two submissions; the problem link is remembered after a restart.
+- **Python started through `py`** is timed and limited correctly; **Java** is no longer given MLE below the limit.
+- **Competitive Companion** accepts problems only from browser extensions, not from web pages.
+- **A submission whose browser was closed** ends with a message instead of showing "Judging" forever.
+- **Run button edge** (#75, by @baodao211): hover no longer flickers and a click on the edge is no longer lost.
+- **Restore session prompt** is translated (#74).
+
 ## [1.4.0] - 2026-11-07
 
 Vietnamese and Chinese interface, Vim Mode, new themes, a Settings-style Theme Customizer, data-loss fixes and security fixes.
@@ -668,7 +713,8 @@ A full code audit, Electron 44, a reworked interface (floating cards, Explorer, 
 - Keyboard shortcuts for all major actions
 - Custom frameless window with native controls
 
-[Unreleased]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.5.0...HEAD
+[1.5.0]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.4.0...v1.5.0
 [1.4.0]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.3.2...v1.4.0
 [1.3.2]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/compare/v1.3.0...v1.3.1
