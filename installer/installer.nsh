@@ -95,6 +95,20 @@
   ${endIf}
 !macroend
 
+; The samekodev:// link the app registers for the current user (app/core/url-scheme.js).
+; Kept on an update: the new version uses the same exe path.
+!macro customUnInstall
+  ${ifNot} ${isUpdated}
+    ReadRegStr $R0 HKCU "Software\Classes\samekodev\shell\open\command" ""
+    StrCpy $R1 "$INSTDIR\${APP_EXECUTABLE_FILENAME}"
+    StrLen $R2 $R1
+    StrCpy $R3 $R0 $R2 1
+    ${if} $R3 == $R1
+      DeleteRegKey HKCU "Software\Classes\samekodev"
+    ${endIf}
+  ${endIf}
+!macroend
+
 ; "Restart to update" (app/services/auto-update-service.js) runs this installer with --updated
 ; --force-run and no /S: the wizard skips every page but the progress bar, then starts the app.
 ; Nothing to click, and the minute it takes to replace ~700 MB of files is visibly progress.

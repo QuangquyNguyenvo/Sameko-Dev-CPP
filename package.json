@@ -115,6 +115,14 @@
         "appId": "com.quangquy.cppide",
         "productName": "Sameko Dev C++",
         "artifactName": "${productName}-${version}.${ext}",
+        "protocols": [
+            {
+                "name": "Sameko Dev C++",
+                "schemes": [
+                    "samekodev"
+                ]
+            }
+        ],
         "directories": {
             "output": "samekodevcpp"
         },

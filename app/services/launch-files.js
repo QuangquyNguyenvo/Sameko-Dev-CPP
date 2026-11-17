@@ -25,6 +25,7 @@ function filesFromArgv(argv, cwd) {
     const files = [];
     for (const arg of argv.slice(1)) {
         if (!arg || arg.startsWith('-')) continue;
+        if (/^samekodev:/i.test(arg)) continue;          // a samekodev:// link only opens the app
         const full = path.resolve(cwd || process.cwd(), arg);
         if (full === appPath) continue;
         try {

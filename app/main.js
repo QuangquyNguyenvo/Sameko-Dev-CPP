@@ -58,6 +58,7 @@ app.whenReady().then(async () => {
         if (deferredStarted) return;
         deferredStarted = true;
         startDeferredCompilerWork();
+        require('./core/url-scheme').register();
         setTimeout(() => {
             require('./services/auto-update-service').initialize(mainWindow);
             require('./services/discord-rpc-service').connect();

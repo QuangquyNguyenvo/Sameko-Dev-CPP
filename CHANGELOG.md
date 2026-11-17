@@ -11,6 +11,7 @@ Judge-style testing, stress tests, checkers, seven more languages, submitting to
 ### Added
 
 - **Submit to Online Judge** (Ctrl+Alt+S) through the new **Sameko Companion** browser extension: Codeforces, AtCoder, CSES and DMOJ-based judges (VNOI, LQDOJ). It submits from your logged-in browser and shows the verdict in the app.
+- **Open the app from the browser**: the extension's Open button starts Sameko Dev C++ through a `samekodev://` link (it only opens the app; the uninstaller removes the link).
 - **Stress test** (STRESS tab): runs a generator, a brute force and your solution on seeded tests until the first wrong answer; the failing test can be added to your tests.
 - **Checkers**: judge a problem's tests with a testlib checker, or compare ignoring case. `testlib.h` ships with the app.
 - **Other languages** (#66): build and run Python, Java, Kotlin, Rust, Go, Pascal and JavaScript with the compiler already on your machine. Tests, stress tests and the external console work for them; IntelliSense and the debugger stay C/C++.
