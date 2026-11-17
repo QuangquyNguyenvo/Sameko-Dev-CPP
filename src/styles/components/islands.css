@@ -173,10 +173,59 @@
     align-items: stretch;
     height: 34px;
     border-radius: 999px;
-    overflow: hidden;
     background: var(--btn-primary-bg, var(--accent));
     box-shadow: none;
     transition: transform 0.2s var(--ease-spring);
+}
+
+/* The pill lifts on hover and shrinks when pressed. A pointer on its edge would fall off it,
+   so hover flickered and a click (press here, release outside) was lost (#75). Each half
+   catches the pointer a few px beyond its edge, more than the pill moves. No overflow: hidden
+   on the pill: it would clip these too; each half rounds its own outer corners instead. */
+.header-bar .run-split .action-btn.primary {
+    position: relative;
+}
+
+.header-bar .run-split .action-btn.primary::before {
+    content: '';
+    position: absolute;
+    inset: -4px 0;
+}
+
+.header-bar .run-split #btn-buildrun {
+    border-radius: 999px 0 0 999px;
+}
+
+.header-bar .run-split #btn-buildrun::before {
+    left: -4px;
+}
+
+.header-bar .run-split #btn-run-menu {
+    border-radius: 0 999px 999px 0;
+}
+
+.header-bar .run-split #btn-run-menu::before {
+    right: -4px;
+}
+
+/* Lifted 1px: the catch area moves the other way, so its edges stay where they were. */
+.header-bar .run-split:hover .action-btn.primary::before {
+    top: -3px;
+    bottom: -5px;
+}
+
+/* Pressed: a release a little off the shrunken pill still counts as the click. */
+.header-bar .run-split:active .action-btn.primary::before {
+    top: -8px;
+    bottom: -8px;
+}
+
+.header-bar .run-split:active #btn-buildrun::before {
+    left: -8px;
+}
+
+.header-bar .run-split:active #btn-run-menu::before {
+    right: -8px;
 }
 
 .header-bar .run-split:hover {
