@@ -1263,6 +1263,8 @@
     'The submission could not be sent.': '无法发送提交。',
     'Submitting {0}': '正在提交 {0}',
     'Merged into one file: {0}': '已合并为一个文件：{0}',
+    'Queries: {0} | Your replies: {1}': '询问：{0} | 你的回答：{1}',
+    'Your code prints queries but never flushes. It works here, but a judge will give Idleness limit exceeded. Use endl, or cout.flush() / fflush(stdout) after each query.': '代码会输出询问，但从未刷新输出。在这里能运行，但提交到评测会得到 Idleness limit exceeded。请在每次询问后使用 endl，或调用 cout.flush() / fflush(stdout)。',
     'Submitting…': '正在提交…',
     'The browser extension is not connected. Open the browser with the Sameko extension; the submission waits 60 seconds for it.': '浏览器扩展未连接。请打开装有 Sameko 扩展的浏览器；提交会等待 60 秒。',
     'Waiting for the browser extension…': '正在等待浏览器扩展…',

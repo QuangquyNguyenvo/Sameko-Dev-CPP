@@ -119,6 +119,7 @@ if (window.electronAPI) {
             if (memStr) parts.push('Memory: ' + memStr);
             log(parts.join(' | '), 'info');
         }
+        logInteractiveSummary(currentRun);
 
         setRunning(false);
         showRunStats(timeStr, memStr);

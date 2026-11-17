@@ -8,17 +8,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
-- **One-file submit**: a C/C++ solution that includes its own headers (`#include "lib/dsu.hpp"`) is submitted with them pasted in, since a judge takes one file. Only quoted includes that name a file next to it are replaced; anything else is sent exactly as written.
+- **Interactive problems by hand**: you answer the program's queries in the terminal. Your replies have their own colour, and the run ends with `Queries: N | Your replies: M`.
+- **Flush warning**: a C/C++ solution that prints `?` queries but never flushes is warned when it starts. It works locally, but a judge gives Idleness limit exceeded.
+- **One-file submit**: quoted includes of your own headers (`#include "lib/dsu.hpp"`) are pasted into the submitted file, since a judge takes one file. Other includes are sent as written.
 - **Sameko Companion for Firefox** (128+), next to Chrome and Edge.
 - **More judges in the extension**: HNOJ (hnoj.edu.vn), LTOJ (laptrinhonline.club) and 28tech (oj.28tech.com.vn).
 
 ### Changed
 
-- **Faster judging of large outputs**: Run All Tests compares outputs word by word in place and stops at the first difference (a 20 MB output: ~1.1 s and 460 MB before, ~0.3 s and 44 MB now), and the diff view no longer copies or draws the whole output.
+- **Faster judging of large outputs**: Run All Tests compares in place and stops at the first difference (20 MB output: 1.1 s / 460 MB before, 0.3 s / 44 MB now). The diff view no longer copies or draws the whole output.
 
 ### Fixed
 
-- **Samples under a "Ví dụ" heading** are read from VNOJ-style problem pages (the heading was never recognised).
+- **Samples under a "Ví dụ" heading** are now read from VNOJ-style problem pages.
 
 ## [1.5.0] - 2026-11-17
 

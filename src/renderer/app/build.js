@@ -263,6 +263,7 @@ async function runNow(clearTerminal) {
     log('--- Running ---', 'system');
     setStatus('Running...', '');
     beginRunCapture(tabId);
+    warnIfInteractiveWithoutFlush(exeTab);
     setTabOutput(tabId, { text: '', state: 'running' });
     setRunning(true);
 
@@ -536,12 +537,12 @@ function renderProblems() {
 
 
 const TERMINAL_MESSAGE_COLORS = {
-    'ansi-16': { success: '#98c379', error: '#e06c75', warning: '#e5c07b', info: '#61afef', system: '#7a8a9a' },
-    'ansi-256': { success: '#98c379', error: '#e06c75', warning: '#e5c07b', info: '#61afef', system: '#7a8a9a' },
-    'dracula': { success: '#50fa7b', error: '#ff5555', warning: '#f1fa8c', info: '#bd93f9', system: '#6272a4' },
-    'monokai': { success: '#a6e22e', error: '#f92672', warning: '#f4bf75', info: '#66d9ef', system: '#75715e' },
-    'nord': { success: '#a3be8c', error: '#bf616a', warning: '#ebcb8b', info: '#81a1c1', system: '#4c566a' },
-    'solarized': { success: '#859900', error: '#dc322f', warning: '#b58900', info: '#268bd2', system: '#586e75' }
+    'ansi-16': { success: '#98c379', error: '#e06c75', warning: '#e5c07b', info: '#61afef', system: '#7a8a9a', input: '#56b6c2' },
+    'ansi-256': { success: '#98c379', error: '#e06c75', warning: '#e5c07b', info: '#61afef', system: '#7a8a9a', input: '#56b6c2' },
+    'dracula': { success: '#50fa7b', error: '#ff5555', warning: '#f1fa8c', info: '#bd93f9', system: '#6272a4', input: '#8be9fd' },
+    'monokai': { success: '#a6e22e', error: '#f92672', warning: '#f4bf75', info: '#66d9ef', system: '#75715e', input: '#ae81ff' },
+    'nord': { success: '#a3be8c', error: '#bf616a', warning: '#ebcb8b', info: '#81a1c1', system: '#4c566a', input: '#88c0d0' },
+    'solarized': { success: '#859900', error: '#dc322f', warning: '#b58900', info: '#268bd2', system: '#586e75', input: '#2aa198' }
 };
 
 
@@ -636,6 +637,7 @@ async function sendInput() {
         // sends an empty line (getline), and a pasted "a\n\n" keeps its blank line.
         const text = inp.value.replace(/\r\n/g, '\n').replace(/\n$/, '');
         log(text, 'input');
+        noteInteractiveReply();
         // Cleared before the round trip: the next input typed while it is in
         // flight must not be erased when it returns.
         inp.value = '';
@@ -943,7 +945,48 @@ const MAX_RUN_STDERR_CHARS = 1024 * 1024;
 let currentRun = null;   // { tabId, text, truncated, stderr, stderrTruncated }
 
 function beginRunCapture(tabId) {
-    currentRun = { tabId, text: '', truncated: false, stderr: '', stderrTruncated: false };
+    currentRun = { tabId, text: '', truncated: false, stderr: '', stderrTruncated: false,
+        replies: 0, queries: 0, atLineStart: true };
+}
+
+// ----------------------------------------------------------------------------
+// Interactive problems, judged by hand: the user plays the judge in the terminal. The run counts
+// the program's "?" query lines and the user's replies (shown at exit), and warns at start when a
+// C/C++ solution prints queries but never flushes: it may still work here, but on a judge the
+// question stays in its buffer and the verdict is Idleness limit exceeded.
+
+/** Query-style string literals ("? ", "! ", '?') and any flush, in C/C++ source. */
+const INTERACTIVE_QUERY_RE = /"[?!][ \\"]|'[?!]'/;
+const FLUSH_RE = /\bendl\b|\bflush\b|\bfflush\b|\bsetvbuf\b|\bunitbuf\b/;
+
+function warnIfInteractiveWithoutFlush(tab) {
+    if (!tab || !isCppTab(tab)) return;
+    // Comments do not count: "// remember to flush" is not a flush.
+    const src = String(tab.content || '').replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+    if (!INTERACTIVE_QUERY_RE.test(src) || FLUSH_RE.test(src)) return;
+    log('Your code prints queries but never flushes. It works here, but a judge will give Idleness limit exceeded. Use endl, or cout.flush() / fflush(stdout) after each query.', 'warning');
+}
+
+/** Counts lines the program starts with "?" (queries), across output chunks. Native indexOf, so cheap. */
+function noteInteractiveOutput(data) {
+    const run = currentRun;
+    if (!run) return;
+    const s = String(data);
+    if (!s) return;
+    let n = run.atLineStart && s[0] === '?' ? 1 : 0;
+    for (let i = s.indexOf('\n?'); i >= 0; i = s.indexOf('\n?', i + 1)) n++;
+    run.queries += n;
+    run.atLineStart = s[s.length - 1] === '\n';
+}
+
+function noteInteractiveReply() {
+    if (currentRun && App.isRunning) currentRun.replies++;
+}
+
+/** "Queries: 5 | Your replies: 5" at exit, only when the program asked "?" lines and the user answered. */
+function logInteractiveSummary(run) {
+    if (!run || !run.replies || !run.queries) return;
+    log(`Queries: ${run.queries} | Your replies: ${run.replies}`, 'info');
 }
 
 /** Free the last run's output (up to 8 MB) when its tab closes, unless it still runs. */
@@ -954,6 +997,7 @@ function releaseRunCapture(tabId) {
 function captureRunOutput(data) {
     if (!currentRun || data == null) return;
     if (currentRun.text.length >= MAX_RUN_OUTPUT_CHARS) { currentRun.truncated = true; return; }
+    noteInteractiveOutput(data);
     currentRun.text += String(data);
 }
 

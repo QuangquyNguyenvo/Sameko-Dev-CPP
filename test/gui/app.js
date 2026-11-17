@@ -526,6 +526,50 @@ async function main() {
         assert.equal(await terminalShown(), true, 'Terminal not opened with the option on');
     });
 
+    await check('interactive by hand: replies go to the program, the run ends with the query count; no flush is warned', async () => {
+        const terminal = () => page.evaluate(() => TerminalManager.getLines().map(l => l.text).join('\n'));
+        const start = (code) => page.evaluate(code => {
+            if (App.isSplit) closeSplit();
+            newFile();
+            setTabText(App.tabs.find(t => t.id === App.activeTabId), code);
+            document.getElementById('input-area').value = '';
+            document.getElementById('expected-area').value = '';
+            ACTION_HANDLERS.buildRun();
+        }, code);
+        const reply = (text) => page.evaluate(text => { document.getElementById('terminal-in').value = text; return sendInput(); }, text);
+        const waitFor = (re) => page.waitForFunction(src => TerminalManager.getLines().some(l => new RegExp(src).test(l.text)),
+            re.source, { timeout: 30000 });
+
+        await start('#include <iostream>\nusing namespace std;\nint main() { int a, b;\n'
+            + '    cout << "? 1" << endl; cin >> a;\n    cout << "? 2" << endl; cin >> b;\n    cout << "! " << a + b << endl; }\n');
+        await waitFor(/^\? 1$/);
+        await reply('20');
+        await waitFor(/^\? 2$/);
+        await reply('22');
+        await page.waitForFunction(() => !App.isRunning, null, { timeout: 10000 });
+        await waitFor(/Queries: 2 \| Your replies: 2/);
+        const t1 = await terminal();
+        assert.match(t1, /^! 42$/m);
+        assert.doesNotMatch(t1, /never flushes/);
+
+        await start('#include <iostream>\nusing namespace std;\nint main() { int a; cout << "? 1\\n"; cin >> a; cout << "! " << a << "\\n"; }\n');
+        await waitFor(/never flushes/);
+        await page.waitForFunction(() => App.isRunning, null, { timeout: 10000 });
+        await reply('7');
+        await page.waitForFunction(() => !App.isRunning, null, { timeout: 10000 });
+        assert.match(await terminal(), /Queries: 1 \| Your replies: 1/);
+
+        // An ordinary program read from the terminal gets neither the warning nor the summary line.
+        await start('#include <iostream>\nint main() { int a; std::cin >> a; std::cout << a * 2 << "\\n"; }\n');
+        await page.waitForFunction(() => App.isRunning, null, { timeout: 30000 });
+        await reply('21');
+        await page.waitForFunction(() => !App.isRunning, null, { timeout: 10000 });
+        const t3 = await terminal();
+        assert.match(t3, /^42$/m);
+        assert.doesNotMatch(t3, /never flushes/);
+        assert.doesNotMatch(t3, /Queries:/);
+    });
+
     if (process.platform === 'win32') {
         await check('a deep DFS runs with Large Stack; without it the crash is named, not just a number', async () => {
             // A path-shaped tree, 100,000 levels deep: Windows' 2 MB stack overflows, judges' does not.
