@@ -1,5 +1,9 @@
 /*
- * DMOJ-family adapter: VNOJ (oj.vnoi.info), LQDOJ (lqdoj.edu.vn) and DMOJ (dmoj.ca).
+ * DMOJ-family adapter: VNOJ (oj.vnoi.info), LQDOJ (lqdoj.edu.vn), DMOJ (dmoj.ca), and two more
+ * DMOJ sites: HNOJ (hnoj.edu.vn, Hanoi; VNOJ's theme), LTOJ (laptrinhonline.club, stock DMOJ) and 28tech
+ * (oj.28tech.com.vn).
+ * HNOJ, LTOJ and 28tech were added from their real anonymous problem pages only: their submit form and
+ * submission page are DMOJ's own templates, not yet seen logged in.
  *
  * The three sites run forks of DMOJ/online-judge (VNOJ = VNOI-Admin/OJ, LQDOJ = LQDJudge/online-judge).
  * Written from real anonymous pages saved under test/fixtures/dmoj/ (problem statements) and, for
@@ -37,7 +41,7 @@
     const SUBMISSION_PATH = /^\/submission\/(\d+)\/?$/;
     const STATUS_PATH = /^\/(?:submission\/\d+|submissions(?:\/.*)?|problem\/[^/]+\/(?:submissions|rank)(?:\/.*)?|contest\/[^/]+\/submissions(?:\/.*)?)\/?$/;
 
-    const SITES = { 'oj.vnoi.info': 'VNOJ', 'lqdoj.edu.vn': 'LQDOJ', 'dmoj.ca': 'DMOJ' };
+    const SITES = { 'oj.vnoi.info': 'VNOJ', 'lqdoj.edu.vn': 'LQDOJ', 'dmoj.ca': 'DMOJ', 'hnoj.edu.vn': 'HNOJ', 'laptrinhonline.club': 'LTOJ', 'oj.28tech.com.vn': '28tech' };
 
     function parse(url) {
         try { return new URL(url); } catch (_) { return null; }
@@ -92,10 +96,13 @@
 
     const SAMPLE_IN = /^(?:sample|example)s?\s*(?:input|in)\b|^input\s*(?:sample|example)|^(?:input|đầu vào|dữ liệu vào|dữ liệu)\s*(?:mẫu|ví dụ)|^(?:ví dụ|mẫu)\s*(?:input|đầu vào|dữ liệu vào)|^(?:sample|ví dụ)\s*\d*\s*[-–:]?\s*(?:input|đầu vào)/i;
     const SAMPLE_OUT = /^(?:sample|example)s?\s*(?:output|out)\b|^output\s*(?:sample|example)|^(?:output|đầu ra|dữ liệu ra|kết quả)\s*(?:mẫu|ví dụ)|^(?:ví dụ|mẫu)\s*(?:output|đầu ra|dữ liệu ra|kết quả)|^(?:sample|ví dụ)\s*\d*\s*[-–:]?\s*(?:output|đầu ra)/i;
-    const SAMPLE_SECTION = /^(?:samples?|examples?|sample tests?|ví dụ|các ví dụ|dữ liệu mẫu|test mẫu|bộ test mẫu|input\s*\/\s*output mẫu)\b/i;
+    const SAMPLE_SECTION = /^(?:samples?|examples?|sample tests?|ví dụ|các ví dụ|dữ liệu mẫu|test mẫu|bộ test mẫu|input\s*\/\s*output mẫu)(?![\p{L}\p{N}_])/iu;
+    // `\b` only knows ASCII letters: after "ví dụ", "mẫu" or "kết quả" it never matches, so these
+    // check the end of the word with a Unicode lookahead (u flag) instead.
+    const BARE_IO = /^(?:input|output|đầu vào|đầu ra|dữ liệu vào|dữ liệu ra|kết quả)\s*\d*\s*:?$/iu;
     const NOT_SAMPLE = /solution|lời giải|giải thích|explanation|note|ghi chú|chú thích/i;
-    const IN_CELL = /^(?:input|sample input|đầu vào|dữ liệu vào|dữ liệu|stdin|[\w-]*\.inp)\b/i;
-    const OUT_CELL = /^(?:output|sample output|đầu ra|dữ liệu ra|kết quả|stdout|[\w-]*\.out)\b/i;
+    const IN_CELL = /^(?:input|sample input|đầu vào|dữ liệu vào|dữ liệu|stdin|[\w-]*\.inp)(?![\p{L}\p{N}_])/iu;
+    const OUT_CELL = /^(?:output|sample output|đầu ra|dữ liệu ra|kết quả|stdout|[\w-]*\.out)(?![\p{L}\p{N}_])/iu;
 
     /** A heading-like element: h1–h6, or a paragraph that is only bold text ("**Sample Input**"). */
     function headingText(el) {
@@ -135,7 +142,8 @@
         let mode = null;                                  // 'in' | 'out' | 'section' | null
         for (const el of nodes) {
             if (el.tagName === 'PRE') {
-                if (!isDataPre(el) || !mode) continue;
+                // A <pre> in a table cell belongs to that table's row (tableSamples).
+                if (!isDataPre(el) || !mode || el.closest('table')) continue;
                 if (mode === 'in') { inputs.push(blockText(el)); mode = null; }
                 else if (mode === 'out') { outputs.push(blockText(el)); mode = null; }
                 else section.push(blockText(el));
@@ -147,6 +155,9 @@
             else if (SAMPLE_IN.test(h)) mode = 'in';
             else if (SAMPLE_OUT.test(h)) mode = 'out';
             else if (SAMPLE_SECTION.test(h)) mode = 'section';
+            // "Ví dụ" / <pre>input</pre> / "Output" / <pre>output</pre>: a bare Input/Output heading
+            // inside the section labels its pres; it does not end it.
+            else if (mode === 'section' && BARE_IO.test(h)) continue;
             else if (/^H[1-6]$/.test(el.tagName)) mode = null;   // any other heading ends a sample section
         }
         const tests = [];
@@ -385,7 +396,7 @@
     const adapter = {
         id: 'dmoj',
         name: 'VNOJ / LQDOJ / DMOJ',
-        hosts: ['oj.vnoi.info', 'lqdoj.edu.vn', 'dmoj.ca'],   // exact hosts; keep in sync with manifest.json
+        hosts: ['oj.vnoi.info', 'lqdoj.edu.vn', 'dmoj.ca', 'hnoj.edu.vn', 'laptrinhonline.club', 'oj.28tech.com.vn'],   // exact hosts; keep in sync with manifest.json
 
         // ── pure: also runs in the worker ──────────────────────────────────────────────────
         classify(url) {

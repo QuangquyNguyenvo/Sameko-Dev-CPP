@@ -252,9 +252,11 @@
                 if (!res || typeof res.Html !== 'string') return;
                 const cell = doc.querySelector(`.waiting-judge[data-id="${id}"]`);
                 if (!cell) return;
-                const tbody = doc.createElement('tbody');
-                tbody.innerHTML = `<tr>${res.Html}</tr>`;           // AtCoder's own status cells
-                const cells = Array.from(tbody.firstElementChild ? tbody.firstElementChild.children : []);
+                // AtCoder's own status cells, parsed inert (DOMParser runs no script, and
+                // addons.mozilla.org rejects innerHTML from fetched text), then moved in.
+                const parsed = new win.DOMParser().parseFromString(`<table><tbody><tr>${res.Html}</tr></tbody></table>`, 'text/html');
+                const row = parsed.querySelector('tr');
+                const cells = Array.from(row ? row.children : []).map(c => doc.importNode(c, true));
                 if (!cells.length) return;
                 if (cells[0].classList.contains('waiting-judge')) {
                     const span = cells[0].querySelector('span'), old = cell.querySelector('span');

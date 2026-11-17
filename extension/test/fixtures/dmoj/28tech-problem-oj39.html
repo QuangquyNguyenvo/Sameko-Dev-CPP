@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<!-- REAL page: https://oj.28tech.com.vn/problem/oj39 fetched anonymously 2026-11-18 (vi locale); scripts/styles stripped. -->
+<html lang="vi">
+<head>
+    <title>[Làm Quen OJ]. Bài 39. Số có 4 chữ số - 28tech Online Judge</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="description" property="og:description" content="Cho số nguyên N là số có 4 chữ số với các chữ số hàng nghìn, trăm, chục, đơn vị là a, b, c, d.">
+    <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Favicons-->
+    <meta name="msapplication-TileColor" content="#231F20">
+    <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+    <meta name="theme-color" content="#231F20">
+        <meta property="og:image" content="https://oj.28tech.com.vn/logo.png">
+    <meta property="og:site_name" content="28tech Online Judge">
+    <meta property="og:url"
+          content="https://oj.28tech.com.vn/problem/oj39">
+    <noscript>
+    </noscript>
+    <!-- Facebook Pixel Code -->
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=3854179708000474&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- DO NOT MODIFY -->
+    <!-- End Facebook Pixel Code -->
+</head>
+<body>
+<svg width="0" height="0" style="display: block">
+    <defs>
+        <clipPath id="rating-clip"><circle cx="8" cy="8" r="7"/></clipPath>
+    </defs>
+</svg>
+<nav id="navigation" class="unselectable">
+    <div id="nav-container">
+        <a id="navicon" href="javascript:void(0)"><i class="fa fa-bars"></i></a>
+        <ul id="nav-list">
+            <li class="home-nav-element"><a href="/">    <img src="/static/icons/logo.a2b402947fed.svg" alt="28tech" width="130" height="40"
+         onerror="this.src=&quot;/static/icons/logo.0f2f24c2b59e.png&quot;; this.onerror=null" style="border: none; padding-top: 4px">
+</a></li>
+            <li class="home-nav-element"><span class="nav-divider"></span></li>
+            <li class="home-menu-item"><a href="/" class="nav-home">Trang chủ</a></li>
+            <!--                 <li>
+                    <a href="/problems/" class="nav-problems active">
+                        Danh sách bài
+                    </a>
+                </li>
+                <li>
+                    <a href="/submissions/" class="nav-submit">
+                        Các bài nộp
+                    </a>
+                </li>
+                <li>
+                    <a href="/users/" class="nav-user">
+                        Thành viên
+                    </a>
+                </li>
+                <li>
+                    <a href="/contests/" class="nav-contest">
+                        Các kỳ thi
+                    </a>
+                </li>
+                <li>
+                    <a href="/about/" class="nav-about">
+                        Thông tin
+                            <div class="nav-expand">&gt;</div>
+                    </a>
+<ul>                <li>
+                    <a href="/status/" class="nav-status">
+                        Máy chấm
+                    </a>
+                </li>
+                <li>
+                    <a href="/custom_checkers/" class="nav-checkers">
+                        Custom Checkers
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-github">
+                        Github
+                    </a>
+                </li>
+</ul>                </li>
+ -->
+            <li>
+                <a href="/problems/" class="nav-problems">
+                    Danh sách bài
+                </a>
+            </li>
+            <li>
+                <a href="/submissions/" class="nav-submit">
+                    Các bài nộp
+                </a>
+            </li>
+            <li>
+                <a href="/users/" class="nav-user">
+                    Thành viên
+                    <div class="nav-expand">&gt;</div>
+                </a>
+                <ul>
+                    <li>
+                        <a href="/organizations/" class="nav-user">
+                            Tổ chức
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a href="/contests/" class="nav-contest">
+                    Các kỳ thi
+                </a>
+            </li>
+            <li>
+                <a href="/about/" class="nav-about">
+                    Thông tin
+                    <div class="nav-expand">&gt;</div>
+                </a>
+                <ul>
+                    <li>
+                        <a href="/status/" class="nav-status">
+                            Máy chấm
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a href="https://28tech.com.vn/" class="nav-about-28tech" target="_blank">
+                    Về 28Tech
+                    <div class="nav-expand">&gt;</div>
+                </a>
+                <ul>
+                    <li>
+                        <a href="https://28tech.com.vn/" class="nav-about-28tech" target="_blank">
+                            Thông tin lớp học
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://blog.28tech.com.vn/" class="nav-about-28tech" target="_blank">
+                            Blog học lập trình
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.youtube.com/28tech_" class="nav-about-28tech" target="_blank">
+                            Tutorial
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://blog.28tech.com.vn/tag/thanh-tich" class="nav-about-28tech" target="_blank">
+                            Thành tích học viên
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.facebook.com/28TechAndEdu" class="nav-about-28tech" target="_blank">
+                            Fanpage Facebook
+                        </a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+        <span id="user-links">
+            <a href=
+                    "/problem/oj39/tickets/new"
+            style="margin-right: 5px;">
+                <span title="Báo cáo vấn đề">
+                    <i class="fa fa-exclamation-triangle" style="color: yellow;"></i>
+                </span>
+            </a>
+            <a id="flag_vi" href="#" onclick="submmit_language('vi')" style="margin-right: 5px; margin-top: 4px;">
+                <img src="/static/icons/vi_flag.5ae22348af5d.svg" alt="VI" height="24">
+            </a>
+            <a id="flag_en" href="#" onclick="submmit_language('en')" style="margin-right: 5px; margin-top: 4px;">
+                <img src="/static/icons/gb_flag.7e1408b72e7f.svg" alt="EN" height="24">
+            </a>
+                <span class="anon">
+                    <a href="/accounts/login/?next=/problem/oj39"><b>Đăng nhập</b></a>
+                    &nbsp;hoặc&nbsp;
+                    <a href="/accounts/register/"><b>Đăng ký</b></a>
+                </span>
+        </span>
+    </div>
+    <div id="nav-shadow"></div>
+</nav>
+<div id="page-container">
+    <noscript>
+        <div id="noscript">Trang web này hoạt động tốt nhất khi JavaScript được cho phép.</div>
+    </noscript>
+    <br>
+    <main id="content">
+    <div class="problem-title">
+        <h2 style="display: inline-block">[Làm Quen OJ]. Bài 39. Số có 4 chữ số</h2>
+        <span class="spacer"></span>
+        <a id="pdf_button" class="view-pdf" href='#'>
+            <span class="pdf-icon">
+                <span class="fa fa-file-pdf-o pdf-icon-logo"></span>
+                <span class="pdf-icon-bar"></span>
+            </span>
+            Xem dạng PDF
+        </a>
+    </div>
+            <hr>
+        <div id="content-body">    <div id="common-content">
+        <div id="content-right">
+            <div class="info-float">        <a href="/problem/oj39/submit" class="unselectable button full">
+            Gửi bài giải
+        </a>
+    <hr style="padding-bottom: 0.3em">
+        <div><a href="/problem/oj39/submissions/">Danh sách bài nộp</a></div>
+        <div><a href="/problem/oj39/rank/">Bài nộp tốt nhất</a></div>
+    <hr style="padding-top: 0.3em">
+    <div class="problem-info-entry">
+        <i class="fa fa-check fa-fw"></i><span class="pi-name">Điểm:</span>
+        <span class="pi-value">
+                1,00 (OI)        </span>
+    </div>
+    <div class="problem-info-entry">
+        <i class="fa fa-clock-o fa-fw"></i><span class="pi-name">Giới hạn thời gian:</span>
+        <span class="pi-value">1.0s</span>
+    </div>
+    <div class="problem-lang-limits">
+    </div>
+    <div class="problem-info-entry">
+        <i class="fa fa-server fa-fw"></i><span class="pi-name">Giới hạn bộ nhớ:</span>
+        <span class="pi-value">256M</span>
+    </div>
+    <div class="problem-lang-limits">
+    </div>
+        <div class="problem-info-entry">
+            <i class="fa fa-keyboard-o fa-fw"></i><span class="pi-name">Input:</span>
+            <span class="pi-value">stdin</span>
+        </div>
+        <div class="problem-info-entry">
+            <i class="fa fa-print fa-fw"></i><span class="pi-name">Output:</span>
+            <span class="pi-value">stdout</span>
+        </div>
+    <hr style="padding-top: 0.7em">
+        <div class="problem-info-entry">
+            <i class="fa fa-pencil-square-o fa-fw"></i><span
+                class="pi-name">Nguồn bài:</span>
+            <div class="pi-value authors-value">28Tech</div>
+        </div>
+        <div id="problem-types">
+                <div class="toggle closed unselectable">
+                    <i class="fa fa-chevron-right fa-fw"></i>Dạng bài                </div>
+                <div style="display:none" class="toggled">Làm Quen Với Online Judge</div>
+        </div>
+        <div id="allowed-langs">
+            <div class="toggle open unselectable">
+                <i class="fa fa-chevron-right fa-fw"></i>Ngôn ngữ cho phép
+            </div>
+            <div class="toggled">
+C, C++, Java, Kotlin, Pascal, PyPy, Python, Scratch            </div>
+        </div>
+</div>
+        </div>
+        <div id="content-left" class="split-common-content">
+            <div class="content-description screen">
+    <iframe name="raw_problem" id="raw_problem"></iframe>
+    <div><p>Cho số nguyên <strong>N</strong> là số có 4 chữ số với các chữ số hàng nghìn, trăm, chục, đơn vị là <strong>a</strong>, <strong>b</strong>, <strong>c</strong>, <strong>d</strong>. </p>
+<p>Ví dụ <strong>N</strong> = 1234 thì <strong>a</strong> = 1, <strong>b</strong> = 2, <strong>c</strong> = 3, <strong>d</strong> = 4. Bạn hãy tính toán giá trị của biểu thức : <strong>a^b</strong> + <strong>c^d</strong> và in kết quả ra màn hình. </p>
+<hr>
+<h5>Đầu vào</h5>
+<ul>
+<li>Dòng duy nhất chứa số 2 số nguyên dương <strong>N</strong>. </li>
+</ul>
+<hr>
+<h5>Giới hạn</h5>
+<ul>
+<li>1000 &lt;= N &lt;= 9999</li>
+</ul>
+<hr>
+<h5>Đầu ra</h5>
+<ul>
+<li>In ra biểu thức cần tính toán</li>
+</ul>
+<hr>
+<h4>Ví dụ :</h4>
+<h5>Input 01</h5>
+<pre><code>1283
+</code></pre>
+<h5>Output 01</h5>
+<pre><code>513
+</code></pre>
+</div>
+                    <hr>
+            </div>
+    <div id="comments" class="comment-area">
+        <h2><i style="padding-right: 0.3em" class="fa fa-comments"></i>Bình luận</h2>
+            <div class="alert alert-warning">
+                Hãy đọc <a href="/about/comment/">nội quy</a> trước khi bình luận.
+            </div>
+            <hr><br>
+            <div class="comment-header-space"></div>
+            <ul class="comments top-level-comments new-comments">
+                    <li id="comment-1985" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/1985/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">-1</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/daotu" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/7e08207450b8119e1603b7633b16d804?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/daotu" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/7e08207450b8119e1603b7633b16d804?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-none user"><a href="/user/daotu" style="display: inline-block;">daotu</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2026-10-05T14:12:22.026714+00:00" class="time-with-rel" title="5, Tháng 10, 2026, 14:12" data-format="đã bình luận {time}">đã bình luận lúc 5, Tháng 10, 2026, 14:12</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-1985" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><p>Full ac :</p>
+<h3>include &lt;bits/stdc++.h&gt;</h3>
+<p>using namespace std;</p>
+<p>int main() {</p>
+<pre><code>int n;
+cin &gt;&gt; n;
+int a = n / 1000;
+int b = (n / 100) % 10;
+int c = (n / 10) % 10;
+int d = n % 10;
+long long s = pow(a, b) + pow(c, d);
+cout &lt;&lt; s;
+return 0;
+</code></pre>
+<p>}</p>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-1985-reply" class="reply-comment" hidden></ul>
+            </ul>
+    </div>
+        </div>
+    </div>
+</div>
+    </main>
+    <footer>
+        <span id="footer-content">
+            <br>
+            <a style="color: #808080" href="https://28tech.com.vn/" target="_blank">Được phát triển bởi <strong>28TECH.COM.VN</strong></a>
+            <form id="set_language" action="/i18n/setlang/" method="post" style="display: inline">
+<input type='hidden' name='csrfmiddlewaretoken' value='woCSjS48UHApwGJgkv1rrWhnadV0slw9NUvPQE9e7jO8Vxr3TzJBxxQgJBhtlYCd' />            <input name="next" type="hidden" value="/problem/oj39">
+            <input name="language" type="hidden" value="vi">
+          </form>
+        </span>
+    </footer>
+</div>
+</body>
+</html>

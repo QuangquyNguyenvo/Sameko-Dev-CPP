@@ -242,6 +242,15 @@ async function submitTabToOJ(api, tab) {
 
     const job = { url, source, language, fileName: tab.name, autoSubmit: true };
     if (language === 'cpp') job.std = ojCppStandard();
+    if ((language === 'cpp' || language === 'c') && tab.path) {
+        // Main pastes the file's own headers in (#include "lib/x.hpp"); an open header with
+        // unsaved edits is sent as it is in the editor, like the main file.
+        job.filePath = tab.path;
+        job.openFiles = {};
+        for (const t of App.tabs) {
+            if (t !== tab && t.path && t.modified) job.openFiles[t.path] = tabSourceText(t);
+        }
+    }
     let result;
     try {
         result = await api.ojSubmit(job);
@@ -258,6 +267,9 @@ async function submitTabToOJ(api, tab) {
     tab.ojSubmission = { id: result.id, state: 'queued', url, lastEventAt: Date.now() };
     renderOjVerdictChip();
     ojLog(`Submitting ${tab.name}`, 'info');
+    if (Array.isArray(result.merged) && result.merged.length) {
+        ojLog(`Merged into one file: ${result.merged.join(', ')}`, 'info');
+    }
     if (ojBridge.connected) {
         setStatus('Submitting…', 'running');
     } else {

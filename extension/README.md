@@ -5,15 +5,27 @@ Sameko Dev C++ app. The app asks it, over `http://127.0.0.1:27121/sameko/v1/*`, 
 source file or to read a problem. The extension does the work inside the browser session you are
 already logged in to, so the app never sees cookies or passwords. `PROTOCOL.md` is the contract.
 
-Supported judges in v1: Codeforces (with the m1/m2/m3 mirrors), AtCoder, CSES, and the DMOJ
-family (VNOJ, LQDOJ, dmoj.ca). Each has an adapter in `adapters/`, written from the judge's saved
+Supported judges: Codeforces (with the m1/m2/m3 mirrors), AtCoder, CSES, and the DMOJ family
+(VNOJ, LQDOJ, dmoj.ca, HNOJ, LTOJ = laptrinhonline.club, 28tech = oj.28tech.com.vn). Each has an adapter in `adapters/`, written from the judge's saved
 pages in `test/fixtures/`.
 
 ## Store package
 
 `node scripts/pack-extension.js` writes `samekodevcpp/extension/sameko-companion-<version>.zip`
-with only the files the extension runs (no `test/`, `.dev/` or docs). Upload that to the Chrome
-Web Store / Edge Add-ons; never attach it to a GitHub Release.
+(Chrome Web Store / Edge Add-ons) and `…-<version>-firefox.zip` (addons.mozilla.org) with only the
+files the extension runs (no `test/`, `.dev/` or docs). Never attach them to a GitHub Release.
+
+`manifest.json` is the Chrome manifest and the only one to edit. The Firefox build (128+) is made
+from it by `firefoxManifest()` in that script: the worker runs as an event page whose
+`background.scripts` lists, in order, what `service-worker.js` would `importScripts` (keep the two
+lists in the same order), plus the add-on id `companion@sameko.dev`. `npx web-ext lint
+--source-dir <dir>` on that build reports nothing.
+
+## Load it in Firefox (128+)
+
+`node scripts/pack-extension.js --firefox-dir <dir>` writes the Firefox build unpacked. Open
+`about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on** and pick
+`<dir>/manifest.json` (it stays until Firefox restarts). The app pairs with it like with Chrome.
 
 ## Load it unpacked (Chrome / Edge ≥ 116)
 
@@ -52,6 +64,7 @@ tabs. Content scripts in tabs that were already open keep the old code.
 ```sh
 node extension/test/run.js          # unit + integration (also part of `npm test`), ~4 s
 node extension/test/e2e.js          # real browser: Edge/Chrome headless, mock OJ + stub app (not in npm test)
+node extension/test/e2e-firefox.js --firefox <firefox.exe>   # the same flow in Firefox, add-on loaded over its debugger port
 ```
 
 `run.js` covers the registry and `pickLanguage`, runs the bridge against an in-test server that

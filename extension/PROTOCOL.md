@@ -143,7 +143,7 @@ copy of the app's default dark/light theme (by `prefers-color-scheme`) before th
 |---|---|---|---|
 | `ojBridgeStatus()` | `oj-bridge-status` | invoke | → `{ running, connected, paired, browser, extVersion, adapters, pendingPair }` (`pendingPair`: `{ origin, browser, extVersion }` or null) |
 | `onOjBridgeStatus(cb)` | `oj-bridge-status-changed` | main → renderer | same object |
-| `ojSubmit(job)` | `oj-submit` | invoke | `{ url, source, language, std, fileName, autoSubmit }` → `{ success, id }` or `{ success:false, error }` |
+| `ojSubmit(job)` | `oj-submit` | invoke | `{ url, source, language, std, fileName, autoSubmit, filePath?, openFiles? }` → `{ success, id, merged? }` or `{ success:false, error }` |
 | `ojFetchProblem(req)` | `oj-fetch-problem` | invoke | `{ url? }` → `{ success, id }` |
 | `onOjSubmitStatus(cb)` | `oj-submit-status` | main → renderer | a `submitStatus` event (§3) |
 | `onOjFetchFailed(cb)` | `oj-fetch-failed` | main → renderer | a `fetchFailed` event (§3) |
@@ -151,6 +151,12 @@ copy of the app's default dark/light theme (by `prefers-color-scheme`) before th
 | `ojPairRespond(r)` | `oj-pair-respond` | invoke | `{ origin, allow }` → `{ success }` |
 | `ojSetTheme(t)` | `oj-set-theme` | invoke | a theme snapshot (§4) |
 | `onProblemReceived(cb)` | `problem-received` (existing) | main → renderer | the problem, plus `via: "sameko"`, `auto`, `requestId` when it came from this extension |
+
+For C/C++, main pastes the file's own headers into `source` before the command is queued
+(`app/services/competitive/source-bundler.js`): each `#include "…"` that names a file relative
+to `filePath` (or to the header including it) is replaced by its text, each file once;
+`openFiles` (`{ path: text }`) supplies unsaved editor text. `merged` lists the pasted files.
+The extension only ever sees one file.
 
 `adapters` is the list from `hello`; the renderer uses `hosts` to tell whether a problem URL can
 be submitted. A problem that arrives with `auto: true` must not raise or focus the app window.

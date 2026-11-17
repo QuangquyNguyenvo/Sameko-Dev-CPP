@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<!-- REAL page: https://laptrinhonline.club/problem/tichpxlailatrinhtham fetched anonymously 2026-11-18 (vi locale); scripts/styles stripped. "Ví dụ" heading, input pre, bare "Output" heading, output pre. -->
+<html lang="vi">
+<head>
+    <title>Lại là Trinh thám - DMOJ: Modern Online Judge</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="description" content="Amas là một sinh viên mới vào học tại ĐHGVTVT năm thứ nhất. Kết thúc học kỳ 1, Amas được tham gia một học kỳ quân sự. Hôm nay, lớp học của Amas được chia làm 2 phía chiến trường và tổ chức tập trận, Amas tham gia bên phía quân xanh có nhiệm vụ đi trinh thám quân đỏ …">
+    <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Favicons-->
+    <meta name="theme-color" content="#FFBB33">
+    <meta property="og:site_name" content="DMOJ: Modern Online Judge">
+    <meta property="og:url"
+          content="http:///problem/tichpxlailatrinhtham">
+        <meta property="og:description" content="Amas là một sinh viên mới vào học tại ĐHGVTVT năm thứ nhất. Kết thúc học kỳ 1, Amas được tham gia một học kỳ quân sự. Hôm nay, lớp học của Amas được chia làm 2 phía chiến trường và tổ chức tập trận, Amas tham gia bên phía quân xanh có nhiệm vụ đi trinh thám quân đỏ …">
+</head>
+<body>
+<svg width="0" height="0" style="display: block">
+    <defs>
+        <clipPath id="rating-clip"><circle cx="8" cy="8" r="7"/></clipPath>
+    </defs>
+</svg>
+<nav id="navigation" class="unselectable">
+    <div id="nav-container">
+        <a id="navicon" href="javascript:void(0)"><i class="fa fa-bars"></i></a>
+        <ul id="nav-list">
+            <li class="home-nav-element"><a href="/">    <img src="/static/icons/logo.svg" alt="DMOJ" width="160" height="44"
+         onerror="this.src=&quot;/static/icons/logo.png&quot;; this.onerror=null" style="border: none">
+</a></li>
+            <li class="home-nav-element"><span class="nav-divider"></span></li>
+            <li class="home-menu-item"><a href="/" class="nav-home">Trang chủ</a></li>
+                <li>
+                    <a href="/problems/" class="nav-problems active">
+                        Problems
+                            <div class="nav-expand">&gt;</div>
+                    </a>
+<ul>                <li>
+                    <a href="/problems/?category=3" class="nav-beginners">
+                        Beginners
+                    </a>
+                </li>
+                <li>
+                    <a href="/problems/?category=1" class="nav-coban">
+                        Cơ bản
+                    </a>
+                </li>
+                <li>
+                    <a href="/problems/?amp;category=15" class="nav-kochuyen">
+                        Không chuyên
+                    </a>
+                </li>
+                <li>
+                    <a href="/problems/?category=2" class="nav-org">
+                        Cấu trúc giải thuật
+                            <div class="nav-expand">&gt;</div>
+                    </a>
+<ul>                <li>
+                    <a href="http://laptrinhonline.club/problems/?category=20" class="nav-map">
+                        Cấu trúc dữ liệu map
+                    </a>
+                </li>
+                <li>
+                    <a href="http://laptrinhonline.club/problems/?category=21" class="nav-pq">
+                        Hàng đợi ưu tiên
+                    </a>
+                </li>
+</ul>                </li>
+</ul>                </li>
+                <li>
+                    <a href="/submissions/" class="nav-submit">
+                        Submissions
+                    </a>
+                </li>
+                <li>
+                    <a href="/users/" class="nav-user">
+                        Users
+                            <div class="nav-expand">&gt;</div>
+                    </a>
+                </li>
+                <li>
+                    <a href="/contests/" class="nav-contest">
+                        Contests
+                    </a>
+                </li>
+                <li>
+                    <a href="/about/" class="nav-about">
+                        About
+                            <div class="nav-expand">&gt;</div>
+                    </a>
+<ul>                <li>
+                    <a href="/hd-dktk/" class="nav-hd-dktk">
+                        Hướng dẫn đăng ký
+                    </a>
+                </li>
+                <li>
+                    <a href="/hd-thi-nb/" class="nav-hd-thi-nb">
+                        HD thi và nộp bài
+                    </a>
+                </li>
+                <li>
+                    <a href="/phanloaide/" class="nav-phanloaide">
+                        Phân loại đề bài
+                    </a>
+                </li>
+                <li>
+                    <a href="/huongdan/hoc/" class="nav-hd-tuhoc">
+                        Tự học lập trình
+                    </a>
+                </li>
+                <li>
+                    <a href="/status/" class="nav-status">
+                        Status
+                    </a>
+                </li>
+</ul>                </li>
+                <li>
+                    <a href="/organizations/" class="nav-nhom">
+                        NHÓM
+                    </a>
+                </li>
+        </ul>
+        <span id="user-links">
+                <span class="anon">
+                    <a href="/accounts/login/?next=/problem/tichpxlailatrinhtham"><b>Đăng nhập</b></a>
+                        &nbsp;hoặc&nbsp;
+                        <a href="/accounts/register/"><b>Sign up</b></a>
+                </span>
+        </span>
+    </div>
+    <div id="nav-shadow"></div>
+</nav>
+<div id="page-container">
+    <br>
+    <main id="content">
+    <div class="problem-title">
+        <h2 style="display: inline-block">Lại là Trinh thám</h2>
+    </div>
+            <hr>
+        <div id="content-body">    <div id="common-content">
+        <div id="content-right">
+            <div class="info-float">        <a href="/problem/tichpxlailatrinhtham/submit" class="unselectable button full">
+            Submit solution
+        </a>
+    <hr style="padding-bottom: 0.3em">
+    <div><a href="/problem/tichpxlailatrinhtham/submissions/">All submissions</a></div>
+    <div><a href="/problem/tichpxlailatrinhtham/rank/">Best submissions</a></div>
+    <hr style="padding-top: 0.3em">
+    <div class="problem-info-entry">
+        <i class="fa fa-check fa-fw"></i><span class="pi-name">Points:</span>
+        <span class="pi-value">
+                4        </span>
+    </div>
+    <div class="problem-info-entry">
+        <i class="fa fa-clock-o fa-fw"></i><span class="pi-name">Time limit:</span>
+        <span class="pi-value">1.0s</span>
+    </div>
+    <div class="problem-lang-limits">
+            <div class="lang-limit">
+                <span class="lang-name">Python 3</span>
+                <span class="lang-tl">2.0s</span>
+            </div>
+    </div>
+    <div class="problem-info-entry">
+        <i class="fa fa-server fa-fw"></i><span class="pi-name">Memory limit:</span>
+        <span class="pi-value">977M</span>
+    </div>
+    <div class="problem-lang-limits">
+    </div>
+    <hr style="padding-top: 0.7em">
+                    <div class="problem-info-entry">
+                        <i class="fa fa-pencil-square-o fa-fw"></i><span
+                            class="pi-name">Author:</span>
+                        <div class="pi-value authors-value"><span class="rating rate-newbie admin"><a href="/user/TICHPX">TICHPX</a></span></div>
+                    </div>
+        <div id="problem-types">
+                <div class="toggle closed unselectable">
+                    <i class="fa fa-chevron-right fa-fw"></i>Problem type                </div>
+                <div style="display:none" class="toggled">Collections</div>
+        </div>
+        <div id="allowed-langs">
+            <div class="toggle open unselectable">
+                <i class="fa fa-chevron-right fa-fw"></i>Allowed languages
+            </div>
+            <div class="toggled">
+Ada, Assembly, Awk, C, C++, C11, CLANG, <s title="No CLANGX judge online">CLANGX</s>, <s title="No Classical judge online">Classical</s>, COBOL, <s title="No Coffee judge online">Coffee</s>, CSC, <s title="No D lang judge online">D lang</s>, <s title="No DART judge online">DART</s>, F95, FORTH, <s title="No Fortrn judge online">Fortrn</s>, <s title="No GAS32 judge online">GAS32</s>, <s title="No GO judge online">GO</s>, <s title="No Haskell judge online">Haskell</s>, Itercal, Java, <s title="No kotlin judge online">kotlin</s>, <s title="No LEAN judge online">LEAN</s>, LISP, LUA, <s title="No MONOVB judge online">MONOVB</s>, <s title="No Nasm judge online">Nasm</s>, <s title="No OCAML judge online">OCAML</s>, Pascal, Perl, php, PIKE, <s title="No prolog judge online">prolog</s>, <s title="No Pypy judge online">Pypy</s>, Python, <s title="No Ruby 2 judge online">Ruby 2</s>, <s title="No RUST judge online">RUST</s>, <s title="No Scala judge online">Scala</s>, <s title="No SCM judge online">SCM</s>, SED, <s title="No SWIFT judge online">SWIFT</s>, TCL, <s title="No TUR judge online">TUR</s>, <s title="No V8JS judge online">V8JS</s>, <s title="No VB judge online">VB</s>, <s title="No ZIG judge online">ZIG</s>            </div>
+        </div>
+</div>
+        </div>
+        <div id="content-left" class="split-common-content">
+            <div class="content-description screen">
+        <div><p>Amas là một sinh viên mới vào học tại ĐHGVTVT năm thứ nhất. Kết thúc học kỳ 1, Amas được tham gia một học kỳ quân sự. Hôm nay, lớp học của Amas được chia làm 2 phía chiến trường và tổ chức tập trận, Amas tham gia bên phía quân xanh có nhiệm vụ đi trinh thám quân đỏ huấn luyện. Amas leo lên một quả đồi và sử dụng ống nhòm để quan sát thì phát hiện ra quân đỏ đang dàn hàng ngang để tập luyện, khổ nỗi ống nhòm nhỏ nên mỗi khung nhìn chỉ quan sát được một số lính liên tiếp của quân đỏ. Nhiệm vụ trinh thám lần này là tìm ra chiều cao cao nhất của đối phương, để làm được điều đó rất khó nên phải quan sát dần dần lần lượt từ đầu đến cuối của hàng bằng cách dịch khung nhìn lần lượt mỗi lần tịnh tiến lên một đơn vị.</p>
+<p>Bài toán đặt ra với Amas là với n quân đỏ có chiều lượt là \(a_1, a_2...a_n\), khung nhìn có khoảng rộng là \(1&lt;=k&lt;=n\). Khi dịch khung nhìn lần lượt từ đầu đến cuối thì với từng vị trí khung nhìn phải tìm ra chiều cao của quân đỏ cao nhất trong khung nhìn đó</p>
+<h4>Input</h4>
+<p>Dòng đầu chứa 2 số n là số quân đỏ \((1&lt;= n &lt;=10^6)\) và k là khung nhìn của ống nhòm \((1&lt;=k&lt;=n)\) (số quân đỏ tối đa mà một lần ống nhòm quan sát được)</p>
+<p>Dòng thứ 2 chứa n số nguyên là chiều cao của quân đỏ theo đơn vị chiều cao \((1&lt;= a_i &lt;= 10^6)\)</p>
+<h4>Output</h4>
+<p>Kết quả đầu ra gồm n-k+1 số nguyên là chiều cao của quân đỏ cao nhất trong từng khung nhìn</p>
+<h4>Ví dụ</h4>
+<pre><code>8 3
+4 7 2 5 6 3 9 1</code></pre>
+<h4>Output</h4>
+<pre><code>7 7 6 6 9 9</code></pre>
+<p><strong>Giải thích</strong>  Lần lượt khung nhìn duyệt qua 3 phần tử một tìm \(max(4,7,2),  max(7,2,5), max(2,5,6), max(5,6,3), max(6,3,9), max(3,9,1)\)</p>
+</div>
+            <span class="license">
+            <a href="/license/TICHPX">tichpx</a>
+        </span>
+                    <hr>
+            </div>
+<div id="comments" class="comment-area">
+    <h2><i style="padding-right: 0.3em" class="fa fa-comments"></i>Comments</h2>
+        <div class="comment-header-space"></div>
+        <ul class="comments top-level-comments new-comments">
+                <li id="comment-1914" data-revision="0"
+                    data-max-revision="0"
+                    data-revision-ajax="/comments/1914/history/ajax" class="comment">
+                    <div class="comment-display">
+                        <div class="info">
+                            <div class="vote">
+                                    <a href="javascript:alert('Please log in to vote')" title="Please log in to vote"
+                                       class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                <br>
+                                <div class="comment-score">0</div>
+                                    <a href="javascript:alert('Please log in to vote')" title="Please log in to vote"
+                                       class="downvote-link fa fa-chevron-down fa-fw"></a>
+                            </div>
+                                <a href="/user/z3r0_l0v3" class="user gravatar-main">
+                                    <img src="https://www.gravatar.com/avatar/6e178fbee604a41314cb46177fdee950?d=identicon&amp;s=75" class="user-gravatar">
+                                </a>
+                        </div>
+                        <div class="detail">
+                            <div class="header">
+                                <span>
+                                        <a href="/user/z3r0_l0v3" class="user gravatar-mobile">
+                                            <img src="https://www.gravatar.com/avatar/6e178fbee604a41314cb46177fdee950?d=identicon&amp;s=10" class="user-gravatar">
+                                        </a>
+                                    <span class="rating rate-candidate-master user"><a href="/user/z3r0_l0v3">z3r0_l0v3</a></span>&nbsp;
+                                </span>
+                                    <span data-iso="2023-09-22T16:46:47.874013+00:00" class="time-with-rel" title="Tháng 9. 22, 2023, 4:46 p.m." data-format="commented {time}">commented on Tháng 9. 22, 2023, 4:46 p.m.</span>
+                                <span class="comment-spacer"></span>
+                                <span class="comment-operation">
+                                    <span class="comment-edits"></span>
+                                    <a href="#comment-1914" title="Link"
+                                       class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                            </span>
+                            </div>
+                            <div class="content content-description">
+                                <div class="comment-body">
+                                    <p>Để giảm O(nlogn) chỉ có cách bổ sung thêm mảng đánh dấu vs lazy remove khỏi priority_queue =)))</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <ul id="comment-1914-reply" class="reply-comment" hidden></ul>
+                <li id="comment-854" data-revision="0"
+                    data-max-revision="0"
+                    data-revision-ajax="/comments/854/history/ajax" class="comment">
+                    <div class="comment-display">
+                        <div class="info">
+                            <div class="vote">
+                                    <a href="javascript:alert('Please log in to vote')" title="Please log in to vote"
+                                       class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                <br>
+                                <div class="comment-score">1</div>
+                                    <a href="javascript:alert('Please log in to vote')" title="Please log in to vote"
+                                       class="downvote-link fa fa-chevron-down fa-fw"></a>
+                            </div>
+                                <a href="/user/enoughtodie99" class="user gravatar-main">
+                                    <img src="https://www.gravatar.com/avatar/c9fe7012e044b60d0b6e005c495ed592?d=identicon&amp;s=75" class="user-gravatar">
+                                </a>
+                        </div>
+                        <div class="detail">
+                            <div class="header">
+                                <span>
+                                        <a href="/user/enoughtodie99" class="user gravatar-mobile">
+                                            <img src="https://www.gravatar.com/avatar/c9fe7012e044b60d0b6e005c495ed592?d=identicon&amp;s=10" class="user-gravatar">
+                                        </a>
+                                    <span class="rating rate-master user"><a href="/user/enoughtodie99">enoughtodie99</a></span>&nbsp;
+                                </span>
+                                    <span data-iso="2020-07-29T16:45:40.173017+00:00" class="time-with-rel" title="Tháng bảy 29, 2020, 4:45 p.m." data-format="commented {time}">commented on Tháng bảy 29, 2020, 4:45 p.m.</span>
+                                <span class="comment-spacer"></span>
+                                <span class="comment-operation">
+                                    <span class="comment-edits"></span>
+                                    <a href="#comment-854" title="Link"
+                                       class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                            </span>
+                            </div>
+                            <div class="content content-description">
+                                <div class="comment-body">
+                                    <p>easy problem with priority_queue</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <ul id="comment-854-reply" class="reply-comment" hidden></ul>
+                        <ul id="comment-854-children" class="comments">                <li id="comment-855" data-revision="0"
+                    data-max-revision="0"
+                    data-revision-ajax="/comments/855/history/ajax" class="comment">
+                    <div class="comment-display">
+                        <div class="info">
+                            <div class="vote">
+                                    <a href="javascript:alert('Please log in to vote')" title="Please log in to vote"
+                                       class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                <br>
+                                <div class="comment-score">1</div>
+                                    <a href="javascript:alert('Please log in to vote')" title="Please log in to vote"
+                                       class="downvote-link fa fa-chevron-down fa-fw"></a>
+                            </div>
+                                <a href="/user/TICHPX" class="user gravatar-main">
+                                    <img src="https://www.gravatar.com/avatar/0e109734ce114765ddb681e96317c5b5?d=identicon&amp;s=75" class="user-gravatar">
+                                </a>
+                        </div>
+                        <div class="detail">
+                            <div class="header">
+                                <span>
+                                        <a href="/user/TICHPX" class="user gravatar-mobile">
+                                            <img src="https://www.gravatar.com/avatar/0e109734ce114765ddb681e96317c5b5?d=identicon&amp;s=10" class="user-gravatar">
+                                        </a>
+                                    <span class="rating rate-newbie admin"><a href="/user/TICHPX">TICHPX</a></span>&nbsp;
+                                </span>
+                                    <span data-iso="2020-07-30T01:42:53.270305+00:00" class="time-with-rel" title="Tháng bảy 30, 2020, 1:42 a.m." data-format="commented {time}">commented on Tháng bảy 30, 2020, 1:42 a.m.</span>
+                                <span class="comment-spacer"></span>
+                                <span class="comment-operation">
+                                    <span class="comment-edits"></span>
+                                    <a href="#comment-855" title="Link"
+                                       class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                            </span>
+                            </div>
+                            <div class="content content-description">
+                                <div class="comment-body">
+                                    <p>ngon</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <ul id="comment-855-reply" class="reply-comment" hidden></ul>
+</ul>
+                <li id="comment-796" data-revision="0"
+                    data-max-revision="0"
+                    data-revision-ajax="/comments/796/history/ajax" class="comment">
+                    <div class="comment-display">
+                        <div class="info">
+                            <div class="vote">
+                                    <a href="javascript:alert('Please log in to vote')" title="Please log in to vote"
+                                       class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                <br>
+                                <div class="comment-score">2</div>
+                                    <a href="javascript:alert('Please log in to vote')" title="Please log in to vote"
+                                       class="downvote-link fa fa-chevron-down fa-fw"></a>
+                            </div>
+                                <a href="/user/DuyAnhhh" class="user gravatar-main">
+                                    <img src="https://www.gravatar.com/avatar/283e6f71bb2ef0c1c91fc2d65e440403?d=identicon&amp;s=75" class="user-gravatar">
+                                </a>
+                        </div>
+                        <div class="detail">
+                            <div class="header">
+                                <span>
+                                        <a href="/user/DuyAnhhh" class="user gravatar-mobile">
+                                            <img src="https://www.gravatar.com/avatar/283e6f71bb2ef0c1c91fc2d65e440403?d=identicon&amp;s=10" class="user-gravatar">
+                                        </a>
+                                    <span class="rating rate-grandmaster user"><a href="/user/DuyAnhhh">DuyAnhhh</a></span>&nbsp;
+                                </span>
+                                    <span data-iso="2020-06-16T12:36:06.326834+00:00" class="time-with-rel" title="Tháng sáu 16, 2020, 12:36 p.m." data-format="commented {time}">commented on Tháng sáu 16, 2020, 12:36 p.m.</span>
+                                <span class="comment-spacer"></span>
+                                <span class="comment-operation">
+                                    <span class="comment-edits"></span>
+                                    <a href="#comment-796" title="Link"
+                                       class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                            </span>
+                            </div>
+                            <div class="content content-description">
+                                <div class="comment-body">
+                                    <p>Em bị TLE test 4,buồn quá :((</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <ul id="comment-796-reply" class="reply-comment" hidden></ul>
+                        <ul id="comment-796-children" class="comments">                <li id="comment-797" data-revision="0"
+                    data-max-revision="0"
+                    data-revision-ajax="/comments/797/history/ajax" class="comment">
+                    <div class="comment-display">
+                        <div class="info">
+                            <div class="vote">
+                                    <a href="javascript:alert('Please log in to vote')" title="Please log in to vote"
+                                       class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                <br>
+                                <div class="comment-score">1</div>
+                                    <a href="javascript:alert('Please log in to vote')" title="Please log in to vote"
+                                       class="downvote-link fa fa-chevron-down fa-fw"></a>
+                            </div>
+                                <a href="/user/TICHPX" class="user gravatar-main">
+                                    <img src="https://www.gravatar.com/avatar/0e109734ce114765ddb681e96317c5b5?d=identicon&amp;s=75" class="user-gravatar">
+                                </a>
+                        </div>
+                        <div class="detail">
+                            <div class="header">
+                                <span>
+                                        <a href="/user/TICHPX" class="user gravatar-mobile">
+                                            <img src="https://www.gravatar.com/avatar/0e109734ce114765ddb681e96317c5b5?d=identicon&amp;s=10" class="user-gravatar">
+                                        </a>
+                                    <span class="rating rate-newbie admin"><a href="/user/TICHPX">TICHPX</a></span>&nbsp;
+                                </span>
+                                    <span data-iso="2020-06-16T12:57:45.913357+00:00" class="time-with-rel" title="Tháng sáu 16, 2020, 12:57 p.m." data-format="commented {time}">commented on Tháng sáu 16, 2020, 12:57 p.m.</span>
+                                <span class="comment-spacer"></span>
+                                <span class="comment-operation">
+                                    <span class="comment-edits"></span>
+                                    <a href="#comment-797" title="Link"
+                                       class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                            </span>
+                            </div>
+                            <div class="content content-description">
+                                <div class="comment-body">
+                                    <p>Nay mình sinh test cẩn thận tóm ngay được Duy Anh</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <ul id="comment-797-reply" class="reply-comment" hidden></ul>
+</ul>
+                <li id="comment-795" data-revision="0"
+                    data-max-revision="0"
+                    data-revision-ajax="/comments/795/history/ajax" class="comment">
+                    <div class="comment-display">
+                        <div class="info">
+                            <div class="vote">
+                                    <a href="javascript:alert('Please log in to vote')" title="Please log in to vote"
+                                       class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                <br>
+                                <div class="comment-score">1</div>
+                                    <a href="javascript:alert('Please log in to vote')" title="Please log in to vote"
+                                       class="downvote-link fa fa-chevron-down fa-fw"></a>
+                            </div>
+                                <a href="/user/TICHPX" class="user gravatar-main">
+                                    <img src="https://www.gravatar.com/avatar/0e109734ce114765ddb681e96317c5b5?d=identicon&amp;s=75" class="user-gravatar">
+                                </a>
+                        </div>
+                        <div class="detail">
+                            <div class="header">
+                                <span>
+                                        <a href="/user/TICHPX" class="user gravatar-mobile">
+                                            <img src="https://www.gravatar.com/avatar/0e109734ce114765ddb681e96317c5b5?d=identicon&amp;s=10" class="user-gravatar">
+                                        </a>
+                                    <span class="rating rate-newbie admin"><a href="/user/TICHPX">TICHPX</a></span>&nbsp;
+                                </span>
+                                    <span data-iso="2020-06-16T07:07:50.244326+00:00" class="time-with-rel" title="Tháng sáu 16, 2020, 7:07 a.m." data-format="commented {time}">commented on Tháng sáu 16, 2020, 7:07 a.m.</span>
+                                <span class="comment-spacer"></span>
+                                <span class="comment-operation">
+                                    <span class="comment-edits"></span>
+                                    <a href="#comment-795" title="Link"
+                                       class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                            </span>
+                            </div>
+                            <div class="content content-description">
+                                <div class="comment-body">
+                                    <p>Quá chặt và không thể áp dụng được thuật giải O(nlogn)</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </li>
+                <ul id="comment-795-reply" class="reply-comment" hidden></ul>
+        </ul>
+</div>        </div>
+    </div>
+</div>
+    </main>
+    <footer>
+        <span id="footer-content">
+            <br>
+            <a style="color: #808080" href="https://dmoj.ca">proudly powered by <strong>DMOJ</strong></a> |
+            <form action="/i18n/setlang/" method="post" style="display: inline">
+<input type='hidden' name='csrfmiddlewaretoken' value='x' />            <input name="next" type="hidden" value="/problem/tichpxlailatrinhtham">
+            <select name="language" onchange="form.submit()" style="height: 1.5em">
+                    <option value="ca" >
+                        català (ca)
+                    </option>
+                    <option value="de" >
+                        Deutsch (de)
+                    </option>
+                    <option value="el" >
+                        Ελληνικά (el)
+                    </option>
+                    <option value="en" >
+                        English (en)
+                    </option>
+                    <option value="es" >
+                        español (es)
+                    </option>
+                    <option value="fr" >
+                        français (fr)
+                    </option>
+                    <option value="hr" >
+                        Hrvatski (hr)
+                    </option>
+                    <option value="hu" >
+                        Magyar (hu)
+                    </option>
+                    <option value="ja" >
+                        日本語 (ja)
+                    </option>
+                    <option value="kk" >
+                        Қазақ (kk)
+                    </option>
+                    <option value="ko" >
+                        한국어 (ko)
+                    </option>
+                    <option value="pt" >
+                        Português (pt)
+                    </option>
+                    <option value="ro" >
+                        Română (ro)
+                    </option>
+                    <option value="ru" >
+                        Русский (ru)
+                    </option>
+                    <option value="sr-latn" >
+                        srpski (latinica) (sr-latn)
+                    </option>
+                    <option value="tr" >
+                        Türkçe (tr)
+                    </option>
+                    <option value="vi" selected>
+                        Tiếng Việt (vi)
+                    </option>
+                    <option value="zh-hans" >
+                        简体中文 (zh-hans)
+                    </option>
+                    <option value="zh-hant" >
+                        繁體中文 (zh-hant)
+                    </option>
+            </select>
+          </form>
+        </span>
+    </footer>
+</div>
+<!-- Giữ nguyên các script gốc -->
+<!-- Cửa sổ chat -->
+<div id="chatbox">
+    <div class="chat-header" id="chatHeader">
+        <button class="resize-btn" id="resizeToggle" title="Phóng to / Thu nhỏ">⤢</button>
+        <button class="minimize-btn" id="minimizeToggle" title="Thu gọn / Mở rộng">▁</button>
+        Giải đáp với AI
+    </div>
+    <div class="chat-messages" id="chat-messages"></div>
+    <div class="chat-input" id="chatInput">
+        <!-- Ô chọn ngôn ngữ lập trình -->
+        <select id="language-select">
+            <option value="CPP" selected>C++ (CPP)</option>
+            <option value="Ada">Ada</option>
+            <option value="AWK">AWK</option>
+            <option value="Classical brain">Classical brain</option>
+            <option value="C">C</option>
+            <option value="C11">C11</option>
+            <option value="COBOL">COBOL</option>
+            <option value="CLANG">CLANG</option>
+            <option value="CLANGX">CLANGX</option>
+            <option value="CoffeScript">CoffeScript</option>
+            <option value="C++03">C++03</option>
+            <option value="C++11">C++11</option>
+            <option value="C++14">C++14</option>
+            <option value="C++17">C++17</option>
+            <option value="D language">D language</option>
+            <option value="DART">DART</option>
+            <option value="Fortran">Fortran</option>
+            <option value="FORTH">FORTH</option>
+            <option value="Assembly (x64)">Assembly (x64)</option>
+            <option value="GO">GO</option>
+            <option value="Haskell">Haskell</option>
+            <option value="Intercal">Intercal</option>
+            <option value="JAVA11">JAVA11</option>
+            <option value="Java 8">Java 8</option>
+            <option value="LUA">LUA</option>
+            <option value="Mono C#">Mono C#</option>
+            <option value="Mono F#">Mono F#</option>
+            <option value="MONOVB">MONOVB</option>
+            <option value="Pascal">Pascal</option>
+            <option value="Perl">Perl</option>
+            <option value="PHP">PHP</option>
+            <option value="PIKE">PIKE</option>
+            <option value="Python 2">Python 2</option>
+            <option value="Python 3">Python 3</option>
+            <option value="Pypy 2">Pypy 2</option>
+            <option value="Pypy 3">Pypy 3</option>
+            <option value="LISP">LISP</option>
+            <option value="SCALA">SCALA</option>
+            <option value="SCM">SCM</option>
+            <option value="SED">SED</option>
+            <option value="TCL">TCL</option>
+            <option value="   ">   </option>
+        </select>
+        <input type="text" id="user-input" placeholder="Câu lệnh cần giải thích...">
+        <button onclick="sendMessage()">Gửi</button>
+    </div>
+</div>
+<!-- Giao diện + hiệu ứng -->
+<!-- Tương tác -->
+</body>
+</html>

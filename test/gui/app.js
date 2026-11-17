@@ -813,6 +813,35 @@ async function main() {
         assert.match(r.theme.accent, /^rgba?\(/);
     });
 
+    await check('Submit pastes the file\'s own headers in (#include "lib/…") and says so', async () => {
+        const dir = path.join(profile, 'bundle');
+        fs.mkdirSync(path.join(dir, 'lib'), { recursive: true });
+        fs.writeFileSync(path.join(dir, 'lib', 'dsu.hpp'), '#pragma once\nstruct DSU {};\n');
+        const file = path.join(dir, 'sol.cpp');
+        fs.writeFileSync(file, '#include <cstdio>\n#include "lib/dsu.hpp"\nint main() { DSU d; return 0; }\n');
+        const log = await page.evaluate(async (file) => {
+            if (App.isSplit) closeSplit();
+            await openFileFromPath(file);
+            const tab = App.tabs.find(t => t.id === App.activeTabId);
+            ccProblem = null;
+            const run = submitToOJ();
+            await new Promise(res => setTimeout(res, 150));
+            const field = document.querySelector('.oj-url-dialog .input-dialog-field');
+            if (field) {
+                field.value = 'codeforces.com/contest/1900/problem/B';
+                document.querySelector('.oj-url-dialog .note-dialog-save').click();
+            }
+            await run;
+            await new Promise(res => setTimeout(res, 200));
+            return {
+                tab: tab && tab.name, preferred: (App.tabs.find(t => t.id === getPreferredTabId()) || {}).name,
+                field: !!field, sub: tab && tab.ojSubmission, path: tab && tab.path,
+                text: TerminalManager.getLines().map(l => l.text).join('\n')
+            };
+        }, file);
+        assert.match(log.text, /Merged into one file: lib\/dsu\.hpp/, JSON.stringify({ tab: log.tab, field: log.field, sub: log.sub, path: log.path }));
+    });
+
     await check('a pairing request asks Allow / Deny with Deny focused', async () => {
         const dlg = await page.evaluate(async () => {
             ojPromptPair({ origin: 'chrome-extension://abcdefghijklmnop', browser: 'chrome', extVersion: '0.1.0' });

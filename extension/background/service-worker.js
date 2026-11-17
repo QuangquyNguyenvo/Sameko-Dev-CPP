@@ -15,7 +15,9 @@ const MANIFEST = chrome.runtime.getManifest();
 const CONTENT_FILES = Array.from(new Set((MANIFEST.content_scripts || []).flatMap(c => c.js || [])));
 const ADAPTER_FILES = CONTENT_FILES.filter(f => f.startsWith('adapters/'));
 
-importScripts(
+// Firefox runs this file as an event page whose manifest lists every script itself
+// (scripts/pack-extension.js writes that manifest); there is no importScripts there.
+if (typeof importScripts === 'function') importScripts(
     '/shared/adapters.js',
     '/shared/i18n.js',
     ...ADAPTER_FILES.map(f => '/' + f),
@@ -30,7 +32,7 @@ const bridge = SamekoBridge.create({
     chrome,
     fetch: (...a) => fetch(...a),
     extVersion: MANIFEST.version,
-    browser: /Edg\//.test(navigator.userAgent) ? 'edge' : 'chrome',
+    browser: /Firefox\//.test(navigator.userAgent) ? 'firefox' : /Edg\//.test(navigator.userAgent) ? 'edge' : 'chrome',
     config: { baseUrl: APP_URL },
     getAdapters: () => SamekoAdapters.list(),
     log

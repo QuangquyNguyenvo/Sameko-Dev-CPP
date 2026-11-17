@@ -487,7 +487,7 @@ meanwhile cannot mix two files.
 | An IPC channel | `app/shared/constants.js` → `app/ipc/*-handlers.js` → `preload.js` |
 | Window, splash, dev server | `app/windows/` |
 | Competitive Companion / judging | `app/services/competitive/`, `app/ipc/competitive-handlers.js`, `app/shared/judge.js` |
-| Submit to OJ / Sameko browser extension | `extension/` (contract: `extension/PROTOCOL.md`), `app/services/competitive/extension-bridge.js`, `src/renderer/app/oj-submit.js` |
+| Submit to OJ / Sameko browser extension | `extension/` (contract: `extension/PROTOCOL.md`), `app/services/competitive/extension-bridge.js`, `src/renderer/app/oj-submit.js`; C/C++ headers pasted into one file before a submit: `app/services/competitive/source-bundler.js` (called from the `oj-submit` handler in `app/ipc/competitive-handlers.js`) |
 | Formatting | `app/services/formatter/`, `app/ipc/format-handlers.js` |
 | Global UI state and init | `src/renderer/app/core.js` |
 | Tabs, settings, shortcuts, panels, tests | the matching file in `src/renderer/app/` (see §9) |
@@ -511,7 +511,7 @@ renderer oj-submit.js ─IPC─► main extension-bridge.js ◄─HTTP 127.0.0.1
 |---|---|
 | `manifest.json` | Hosts of every supported judge appear twice: `host_permissions` and `content_scripts.matches`. The worker loads adapters from the content-script list. |
 | `shared/adapters.js` | `SamekoAdapters` registry (`register`, `get`, `byUrl`, `classifyUrl`, `list`) and pure helpers: `pickLanguage`, `normalizeVerdict`, `isPendingVerdict`, `parseTimeMs`, `parseMemoryKb`. Loaded by the worker and by pages. |
-| `adapters/<id>.js` | One judge each (`codeforces`, `atcoder`, `cses`, `dmoj` = VNOJ + LQDOJ + dmoj.ca). Pure `classify` / `submitUrl`; DOM `parseProblem`, `isLoggedIn`, `fillAndSubmit`, `readVerdict`, optional `readSubmitError`. No DOM access at load time. |
+| `adapters/<id>.js` | One judge each (`codeforces`, `atcoder`, `cses`, `dmoj` = VNOJ + LQDOJ + dmoj.ca + HNOJ + LTOJ + 28tech). Pure `classify` / `submitUrl`; DOM `parseProblem`, `isLoggedIn`, `fillAndSubmit`, `readVerdict`, optional `readSubmitError`. No DOM access at load time. |
 | `background/bridge.js` | `hello` / long poll (`POST …/poll`) / `events` client, pairing loop, reconnect and the 30 s alarm, cached theme snapshot, connection state (`disconnected`, `unpaired`, `denied`, `connected`). |
 | `background/jobs.js` | Submit job per tab (`fill` → `watch`, stored in `chrome.storage.session`), tab reuse, timeouts, `fetchProblem`, auto-send, MAIN-world `setEditorText`. |
 | `background/service-worker.js` | Wires bridge + jobs to `chrome.*` events. |
@@ -520,7 +520,8 @@ renderer oj-submit.js ─IPC─► main extension-bridge.js ◄─HTTP 127.0.0.1
 | `shared/i18n.js` | `SamekoI18n`: texts in the language picked in the popup (`chrome.storage.local` `uiLanguage`), loaded from `_locales/<lang>/messages.json`; "auto" and missing keys fall back to `chrome.i18n`. |
 | `test/run.js` | Node suite with a fake `chrome` (`fake-chrome.js`) and a stub app (`stub-app.js`); in `npm test` as `extension`. |
 | `test/adapter-fixtures.js` | Runs `test/adapters/<id>.cases.js` against saved judge HTML in `test/fixtures/<id>/` (Electron DOM); in `npm test` as `extension adapters`. |
-| `test/mock-oj/`, `test/make-dev.js`, `test/e2e.js` | A local fake judge with a complete adapter (the worked example), a dev copy of the extension that includes it (`extension/.dev/`), and a real-browser end-to-end run (`node extension/test/e2e.js`, not in `npm test`). |
+| `scripts/pack-extension.js` (repo root) | Store zips for Chrome/Edge and Firefox; `firefoxManifest()` turns the Chrome manifest into Firefox's (event page with `background.scripts`, gecko id). `--firefox-dir` writes the Firefox build unpacked. |
+| `test/mock-oj/`, `test/make-dev.js`, `test/e2e.js`, `test/e2e-firefox.js` | A local fake judge with a complete adapter (the worked example), a dev copy of the extension that includes it (`extension/.dev/`), and a real-browser end-to-end run (`node extension/test/e2e.js`, not in `npm test`). |
 
 Messages inside the extension — content → worker: `whoami`, `pageInfo`, `filled`, `submitted`,
 `verdict`, `failed`, `setEditorText`; worker → content: `getProblem`; popup → worker:

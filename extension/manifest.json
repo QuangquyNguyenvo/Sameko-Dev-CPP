@@ -23,7 +23,10 @@
     "https://cses.fi/*",
     "https://oj.vnoi.info/*",
     "https://lqdoj.edu.vn/*",
-    "https://dmoj.ca/*"
+    "https://dmoj.ca/*",
+    "https://hnoj.edu.vn/*",
+    "https://laptrinhonline.club/*",
+    "https://oj.28tech.com.vn/*"
   ],
   "content_scripts": [
     {
@@ -36,7 +39,10 @@
         "https://cses.fi/*",
         "https://oj.vnoi.info/*",
         "https://lqdoj.edu.vn/*",
-        "https://dmoj.ca/*"
+        "https://dmoj.ca/*",
+        "https://hnoj.edu.vn/*",
+        "https://laptrinhonline.club/*",
+        "https://oj.28tech.com.vn/*"
       ],
       "js": [
         "shared/adapters.js",

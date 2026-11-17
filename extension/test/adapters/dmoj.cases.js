@@ -5,12 +5,18 @@
 const VN = 'https://oj.vnoi.info';
 const LQ = 'https://lqdoj.edu.vn';
 const DM = 'https://dmoj.ca';
+const HN = 'https://hnoj.edu.vn';
+const LT = 'https://laptrinhonline.club';
+const T28 = 'https://oj.28tech.com.vn';
 const cpp = (std) => ({ language: 'cpp', std: std || null });
 
 module.exports = {
     adapter: 'dmoj',
     pure: [
         // classify
+        { fn: 'classify', args: [`${HN}/problem/submod`], expect: { kind: 'problem' } },
+        { fn: 'classify', args: [`${T28}/problem/oj03`], expect: { kind: 'problem' } },
+        { fn: 'submitUrl', args: [`${LT}/problem/0004dayc`], expect: `${LT}/problem/0004dayc/submit` },
         { fn: 'classify', args: [`${VN}/problem/nkpath`], expect: { kind: 'problem' } },
         { fn: 'classify', args: [`${VN}/problem/icpc22_mb_b/`], expect: { kind: 'problem' } },
         { fn: 'classify', args: [`${LQ}/problem/aplusb#comments`], expect: { kind: 'problem' } },
@@ -55,6 +61,20 @@ module.exports = {
             expect: { tests: [{ input: '63\n', output: '1 3\n' }, { input: '67\n', output: '1 1\n2 1\n' }] } },
         { name: 'parseProblem LQDOJ "Sample" heading', fixture: 'dmoj/lqdoj-problem-sample-heading.html', url: `${LQ}/problem/gks2020a1`, fn: 'parseProblem',
             expect: { tests: [{ input: /^3\n4 100\n20 90 40 90\n[\s\S]*999 999 999\n$/, output: 'Case #1: 2\nCase #2: 3\nCase #3: 0\n' }] } },
+        { name: 'parseProblem HNOJ "Ví dụ" sample', fixture: 'dmoj/hnoj-problem-submod.html', url: `${HN}/problem/submod`, fn: 'parseProblem',
+            expect: { name: 'Tribonacci', group: 'HNOJ', timeLimit: 1000, memoryLimit: 256, tests: [{ input: '5 4\n', output: '2\n2 4\n' }] } },
+        { name: 'parseProblem HNOJ image statement (no samples)', fixture: 'dmoj/hnoj-problem-image.html', url: `${HN}/problem/khoi14b3`, fn: 'parseProblem',
+            expect: { name: 'Tổng nguyên tố', group: 'HNOJ', tests: [] } },
+        { name: 'parseProblem LTOJ "Ví dụ" then a bare "Output" heading', fixture: 'dmoj/ltoj-problem-vidu-output.html', url: `${LT}/problem/tichpxlailatrinhtham`, fn: 'parseProblem',
+            expect: { name: 'Lại là Trinh thám', group: 'LTOJ', memoryLimit: 977, tests: [{ input: '8 3\n4 7 2 5 6 3 9 1\n', output: '7 7 6 6 9 9\n' }] } },
+        { name: 'parseProblem LTOJ format pres before "Ví Dụ" are not samples', fixture: 'dmoj/ltoj-problem-input-format.html', url: `${LT}/problem/0004dayc`, fn: 'parseProblem',
+            expect: { tests: [{ input: '1 3\n', output: '0.33\n' }] } },
+        { name: 'parseProblem 28tech', fixture: 'dmoj/28tech-problem-oj03.html', url: `${T28}/problem/oj03`, fn: 'parseProblem',
+            expect: { name: '[Làm Quen OJ]. Bài 3. Print Expression', group: '28tech', timeLimit: 1000, memoryLimit: 256, tests: [{ input: '93 9 93 98\n', output: '9,93,93,98\n293\n9198\n' }] } },
+        { name: 'parseProblem 28tech array', fixture: 'dmoj/28tech-problem-array_basic24.html', url: `${T28}/problem/array_basic24`, fn: 'parseProblem',
+            expect: { name: '[Mảng 1 Chiều Cơ Bản]. Bài 24. Cửa sổ cỡ K', tests: [{ input: '7 5\n5 9 4 5 5 8 7\n', output: '28 31 29\n' }] } },
+        { name: 'parseProblem 28tech short', fixture: 'dmoj/28tech-problem-oj39.html', url: `${T28}/problem/oj39`, fn: 'parseProblem',
+            expect: { tests: [{ input: '1283\n', output: '513\n' }] } },
         { name: 'parseProblem DMOJ aplusb (solution code blocks are not samples)', fixture: 'dmoj/dmoj-problem-aplusb.html', url: `${DM}/problem/aplusb`, fn: 'parseProblem',
             expect: { name: 'A Plus B', group: 'DMOJ', timeLimit: 5000, memoryLimit: 256, tests: [{ input: '2\n1 1\n-1 0\n', output: '2\n-1\n' }] } },
         { name: 'parseProblem on a submission page → null', fixture: 'dmoj/vnoj-status-ac.html', url: `${VN}/submission/13900001`, fn: 'parseProblem', expect: null },

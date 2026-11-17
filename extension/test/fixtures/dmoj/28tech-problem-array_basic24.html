@@ -1,0 +1,1360 @@
+<!DOCTYPE html>
+<!-- REAL page: https://oj.28tech.com.vn/problem/array_basic24 fetched anonymously 2026-11-18 (vi locale); scripts/styles stripped. -->
+<html lang="vi">
+<head>
+    <title>[Mảng 1 Chiều Cơ Bản]. Bài 24. Cửa sổ cỡ K - 28tech Online Judge</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <meta name="description" property="og:description" content="Cho mảng số nguyên A[] gồm N phần tử và số nguyên K, nhiệm vụ của bạn là tìm tổng của mọi dãy con liên tiếp cỡ K của mảng A[]">
+    <meta id="viewport" name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Favicons-->
+    <meta name="msapplication-TileColor" content="#231F20">
+    <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+    <meta name="theme-color" content="#231F20">
+        <meta property="og:image" content="https://oj.28tech.com.vn/martor/e05a2c53-7cd3-4348-87a8-ea40acb6342d.png">
+    <meta property="og:site_name" content="28tech Online Judge">
+    <meta property="og:url"
+          content="https://oj.28tech.com.vn/problem/array_basic24">
+    <noscript>
+    </noscript>
+    <!-- Facebook Pixel Code -->
+    <noscript><img height="1" width="1" style="display:none"
+    src="https://www.facebook.com/tr?id=3854179708000474&ev=PageView&noscript=1"
+    /></noscript>
+    <!-- DO NOT MODIFY -->
+    <!-- End Facebook Pixel Code -->
+</head>
+<body>
+<svg width="0" height="0" style="display: block">
+    <defs>
+        <clipPath id="rating-clip"><circle cx="8" cy="8" r="7"/></clipPath>
+    </defs>
+</svg>
+<nav id="navigation" class="unselectable">
+    <div id="nav-container">
+        <a id="navicon" href="javascript:void(0)"><i class="fa fa-bars"></i></a>
+        <ul id="nav-list">
+            <li class="home-nav-element"><a href="/">    <img src="/static/icons/logo.a2b402947fed.svg" alt="28tech" width="130" height="40"
+         onerror="this.src=&quot;/static/icons/logo.0f2f24c2b59e.png&quot;; this.onerror=null" style="border: none; padding-top: 4px">
+</a></li>
+            <li class="home-nav-element"><span class="nav-divider"></span></li>
+            <li class="home-menu-item"><a href="/" class="nav-home">Trang chủ</a></li>
+            <!--                 <li>
+                    <a href="/problems/" class="nav-problems active">
+                        Danh sách bài
+                    </a>
+                </li>
+                <li>
+                    <a href="/submissions/" class="nav-submit">
+                        Các bài nộp
+                    </a>
+                </li>
+                <li>
+                    <a href="/users/" class="nav-user">
+                        Thành viên
+                    </a>
+                </li>
+                <li>
+                    <a href="/contests/" class="nav-contest">
+                        Các kỳ thi
+                    </a>
+                </li>
+                <li>
+                    <a href="/about/" class="nav-about">
+                        Thông tin
+                            <div class="nav-expand">&gt;</div>
+                    </a>
+<ul>                <li>
+                    <a href="/status/" class="nav-status">
+                        Máy chấm
+                    </a>
+                </li>
+                <li>
+                    <a href="/custom_checkers/" class="nav-checkers">
+                        Custom Checkers
+                    </a>
+                </li>
+                <li>
+                    <a href="#" class="nav-github">
+                        Github
+                    </a>
+                </li>
+</ul>                </li>
+ -->
+            <li>
+                <a href="/problems/" class="nav-problems">
+                    Danh sách bài
+                </a>
+            </li>
+            <li>
+                <a href="/submissions/" class="nav-submit">
+                    Các bài nộp
+                </a>
+            </li>
+            <li>
+                <a href="/users/" class="nav-user">
+                    Thành viên
+                    <div class="nav-expand">&gt;</div>
+                </a>
+                <ul>
+                    <li>
+                        <a href="/organizations/" class="nav-user">
+                            Tổ chức
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a href="/contests/" class="nav-contest">
+                    Các kỳ thi
+                </a>
+            </li>
+            <li>
+                <a href="/about/" class="nav-about">
+                    Thông tin
+                    <div class="nav-expand">&gt;</div>
+                </a>
+                <ul>
+                    <li>
+                        <a href="/status/" class="nav-status">
+                            Máy chấm
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a href="https://28tech.com.vn/" class="nav-about-28tech" target="_blank">
+                    Về 28Tech
+                    <div class="nav-expand">&gt;</div>
+                </a>
+                <ul>
+                    <li>
+                        <a href="https://28tech.com.vn/" class="nav-about-28tech" target="_blank">
+                            Thông tin lớp học
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://blog.28tech.com.vn/" class="nav-about-28tech" target="_blank">
+                            Blog học lập trình
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.youtube.com/28tech_" class="nav-about-28tech" target="_blank">
+                            Tutorial
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://blog.28tech.com.vn/tag/thanh-tich" class="nav-about-28tech" target="_blank">
+                            Thành tích học viên
+                        </a>
+                    </li>
+                    <li>
+                        <a href="https://www.facebook.com/28TechAndEdu" class="nav-about-28tech" target="_blank">
+                            Fanpage Facebook
+                        </a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+        <span id="user-links">
+            <a href=
+                    "/problem/array_basic24/tickets/new"
+            style="margin-right: 5px;">
+                <span title="Báo cáo vấn đề">
+                    <i class="fa fa-exclamation-triangle" style="color: yellow;"></i>
+                </span>
+            </a>
+            <a id="flag_vi" href="#" onclick="submmit_language('vi')" style="margin-right: 5px; margin-top: 4px;">
+                <img src="/static/icons/vi_flag.5ae22348af5d.svg" alt="VI" height="24">
+            </a>
+            <a id="flag_en" href="#" onclick="submmit_language('en')" style="margin-right: 5px; margin-top: 4px;">
+                <img src="/static/icons/gb_flag.7e1408b72e7f.svg" alt="EN" height="24">
+            </a>
+                <span class="anon">
+                    <a href="/accounts/login/?next=/problem/array_basic24"><b>Đăng nhập</b></a>
+                    &nbsp;hoặc&nbsp;
+                    <a href="/accounts/register/"><b>Đăng ký</b></a>
+                </span>
+        </span>
+    </div>
+    <div id="nav-shadow"></div>
+</nav>
+<div id="page-container">
+    <noscript>
+        <div id="noscript">Trang web này hoạt động tốt nhất khi JavaScript được cho phép.</div>
+    </noscript>
+    <br>
+    <main id="content">
+    <div class="problem-title">
+        <h2 style="display: inline-block">[Mảng 1 Chiều Cơ Bản]. Bài 24. Cửa sổ cỡ K</h2>
+        <span class="spacer"></span>
+        <a id="pdf_button" class="view-pdf" href='#'>
+            <span class="pdf-icon">
+                <span class="fa fa-file-pdf-o pdf-icon-logo"></span>
+                <span class="pdf-icon-bar"></span>
+            </span>
+            Xem dạng PDF
+        </a>
+    </div>
+            <hr>
+        <div id="content-body">    <div id="common-content">
+        <div id="content-right">
+            <div class="info-float">        <a href="/problem/array_basic24/submit" class="unselectable button full">
+            Gửi bài giải
+        </a>
+    <hr style="padding-bottom: 0.3em">
+        <div><a href="/problem/array_basic24/submissions/">Danh sách bài nộp</a></div>
+        <div><a href="/problem/array_basic24/rank/">Bài nộp tốt nhất</a></div>
+    <hr style="padding-top: 0.3em">
+    <div class="problem-info-entry">
+        <i class="fa fa-check fa-fw"></i><span class="pi-name">Điểm:</span>
+        <span class="pi-value">
+                1,00 (OI)        </span>
+    </div>
+    <div class="problem-info-entry">
+        <i class="fa fa-clock-o fa-fw"></i><span class="pi-name">Giới hạn thời gian:</span>
+        <span class="pi-value">1.0s</span>
+    </div>
+    <div class="problem-lang-limits">
+    </div>
+    <div class="problem-info-entry">
+        <i class="fa fa-server fa-fw"></i><span class="pi-name">Giới hạn bộ nhớ:</span>
+        <span class="pi-value">256M</span>
+    </div>
+    <div class="problem-lang-limits">
+    </div>
+        <div class="problem-info-entry">
+            <i class="fa fa-keyboard-o fa-fw"></i><span class="pi-name">Input:</span>
+            <span class="pi-value">stdin</span>
+        </div>
+        <div class="problem-info-entry">
+            <i class="fa fa-print fa-fw"></i><span class="pi-name">Output:</span>
+            <span class="pi-value">stdout</span>
+        </div>
+    <hr style="padding-top: 0.7em">
+                    <div class="problem-info-entry">
+                        <i class="fa fa-pencil-square-o fa-fw"></i><span
+                            class="pi-name">Tác giả:</span>
+                        <div class="pi-value authors-value"><span class="rating rate-none admin"><a href="/user/28tech.com.vn" style="display: inline-block;">28tech.com.vn</a></span></div>
+                    </div>
+        <div class="problem-info-entry">
+            <i class="fa fa-pencil-square-o fa-fw"></i><span
+                class="pi-name">Nguồn bài:</span>
+            <div class="pi-value authors-value">28Tech</div>
+        </div>
+        <div id="problem-types">
+                <div class="toggle closed unselectable">
+                    <i class="fa fa-chevron-right fa-fw"></i>Dạng bài                </div>
+                <div style="display:none" class="toggled">Mảng 1 Chiều Cơ Bản</div>
+        </div>
+        <div id="allowed-langs">
+            <div class="toggle open unselectable">
+                <i class="fa fa-chevron-right fa-fw"></i>Ngôn ngữ cho phép
+            </div>
+            <div class="toggled">
+C, C#, C++, Java, Kotlin, Pascal, PyPy, Python, Scratch            </div>
+        </div>
+</div>
+        </div>
+        <div id="content-left" class="split-common-content">
+            <div class="content-description screen">
+    <iframe name="raw_problem" id="raw_problem"></iframe>
+    <div><p>Cho mảng số nguyên <strong>A[]</strong> gồm <strong>N</strong> phần tử và số nguyên <strong>K</strong>, nhiệm vụ của bạn là tìm tổng của mọi dãy con liên tiếp cỡ <strong>K</strong> của mảng <strong>A[]</strong></p>
+<p><img src="/martor/e05a2c53-7cd3-4348-87a8-ea40acb6342d.png" alt=""></p>
+<hr>
+<h5>Đầu vào</h5>
+<ul>
+<li><p>Dòng đầu tiên là 2 số nguyên dương <strong>N</strong>, <strong>K</strong></p></li>
+<li><p>Dòng thứ 2 gồm <strong>N</strong> số nguyên viết cách nhau một vài khoảng trắng</p></li>
+</ul>
+<hr>
+<h5>Giới hạn</h5>
+<ul>
+<li><p>1&lt;=K&lt;=N&lt;=1000</p></li>
+<li><p>0&lt;=A[i]&lt;=10^3</p></li>
+</ul>
+<hr>
+<h5>Đầu ra</h5>
+<ul>
+<li>In ra tổng của các dãy con <strong>K</strong> phần tử liên tiếp trong mảng</li>
+</ul>
+<hr>
+<h4>Ví dụ :</h4>
+<h5>Input 01</h5>
+<pre><code>7 5
+5 9 4 5 5 8 7
+</code></pre>
+<h5>Output 01</h5>
+<pre><code>28 31 29
+</code></pre>
+</div>
+                    <hr>
+            </div>
+    <div id="comments" class="comment-area">
+        <h2><i style="padding-right: 0.3em" class="fa fa-comments"></i>Bình luận</h2>
+            <div class="alert alert-warning">
+                Hãy đọc <a href="/about/comment/">nội quy</a> trước khi bình luận.
+            </div>
+            <hr><br>
+            <div class="comment-header-space"></div>
+            <ul class="comments top-level-comments new-comments">
+                    <li id="comment-2104" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/2104/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">-1</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/Umblabla" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/b63f07d90215378ca8138de7e9326890?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/Umblabla" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/b63f07d90215378ca8138de7e9326890?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-none user"><a href="/user/Umblabla" style="display: inline-block;">Umblabla</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2026-11-06T04:43:31.811480+00:00" class="time-with-rel" title="6, Tháng 11, 2026, 4:43" data-format="đã bình luận {time}">đã bình luận lúc 6, Tháng 11, 2026, 4:43</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-2104" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><h3>include&lt;bits/stdc++.h&gt;</h3>
+<p>using namespace std;</p>
+<p>int main() {
+    int n,k;cin&gt;&gt;n&gt;&gt;k;
+    vector&lt;int&gt; a(n);</p>
+<pre><code>for(int i=0;i&amp;lt;n;i++) cin &gt;&gt; a[i];
+for(int i=0;i &lt;= n-k;i++){
+    int tong = 0;
+    for(int j=i;j &lt; i+k;j++){
+        tong += a[j];
+    }
+    cout &lt;&lt; tong &lt;&lt; " ";
+}
+return  0;
+</code></pre>
+<p>}</p>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-2104-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-2093" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/2093/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">0</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/sora_1317" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/78b4c55bc6591626ce1053c0d34e97f6?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/sora_1317" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/78b4c55bc6591626ce1053c0d34e97f6?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-expert user"><a href="/user/sora_1317" style="display: inline-block;">sora_1317</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2026-10-29T08:32:21.350207+00:00" class="time-with-rel" title="29, Tháng 10, 2026, 8:32" data-format="đã bình luận {time}">đã bình luận lúc 29, Tháng 10, 2026, 8:32</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-2093" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><h3>include &lt;bits/stdc++.h&gt;</h3>
+<p>using namespace std;
+using ll=long long;
+using int64=uint64_t;</p>
+<h3>define endl '\n'</h3>
+<p>const int mod=1e9+7;</p>
+<p>int main(){
+    ios::sync<em>with</em>stdio(0);
+    cin.tie(nullptr),cout.tie(nullptr);
+    int n,k;cin&gt;&gt;n&gt;&gt;k;
+    vector&lt;int&gt;a(n);
+    for(int i=0;i&lt;n;i++)cin&gt;&gt;a[i];
+    for(int i=0;i&lt;=n-k;i++){
+        int tong=0;
+        for(int j=i;j&lt;k+i;j++){
+            tong+=a[j];
+        }
+        cout&lt;&lt;tong&lt;&lt;' ';
+    }
+    return 0; <br>
+}</p>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-2093-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-1898" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/1898/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">0</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/linhnb" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/8d06e6677b79b2a6ce0de3cf41195051?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/linhnb" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/8d06e6677b79b2a6ce0de3cf41195051?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-none user"><a href="/user/linhnb" style="display: inline-block;">linhnb</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2026-08-30T13:12:19.059943+00:00" class="time-with-rel" title="30, Tháng 8, 2026, 13:12" data-format="đã bình luận {time}">đã bình luận lúc 30, Tháng 8, 2026, 13:12</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-1898" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><h3>include &lt;bits/stdc++.h&gt;</h3>
+<p>using namespace std;</p>
+<p>long long n,k,a[1000],s=0;</p>
+<p>int main()
+{</p>
+<pre><code>cin&gt;&gt;n&gt;&gt;k;
+for(int i= 0 ;i &lt; n;i++)
+cin&gt;&gt;a[i];
+for(int i= 0 ;i &lt; k;i++)
+s+=a[i];
+cout&lt;&lt; s &lt;&lt;" ";
+for(int i= k ;i &lt; n;i++)
+{
+    s=s-a[i-k]+a[i];
+    cout&lt;&lt; s &lt;&lt;" ";
+}
+</code></pre>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-1898-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-1630" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/1630/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">0</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/KieuQuangMinh" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/061829b1faec11a6e007f4df722901ed?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/KieuQuangMinh" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/061829b1faec11a6e007f4df722901ed?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-none user"><a href="/user/KieuQuangMinh" style="display: inline-block;">KieuQuangMinh</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2026-05-20T18:48:31.664820+00:00" class="time-with-rel" title="20, Tháng 5, 2026, 18:48" data-format="đã bình luận {time}">đã bình luận lúc 20, Tháng 5, 2026, 18:48</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-1630" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><h3>include&lt;bits/stdc++.h&gt;</h3>
+<p>using namespace std;
+int main(){
+    int n,k; cin &gt;&gt; n &gt;&gt; k;
+    int a[1005],f[1005];
+    int cnt=0;
+    for(int i=1;i&lt;=n;i++) cin &gt;&gt; a[i];
+    for(int i=1;i&lt;=n-k+1;i++){
+        int sum=0;
+        for(int j=i;j&lt;=k+i-1;j++){
+            sum+=a[j];
+        }
+        f[cnt++]=sum;
+    }
+    for(int m=0;m&lt;cnt;m++){
+        cout &lt;&lt; f[m] &lt;&lt; " ";
+    }
+    return 0;
+}</p>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-1630-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-1595" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/1595/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">0</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/Hoshino" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/cd5e6bff47b5a96bfd4782811346eb16?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/Hoshino" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/cd5e6bff47b5a96bfd4782811346eb16?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-none user"><a href="/user/Hoshino" style="display: inline-block;">Hoshino</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2026-05-02T09:30:26.778425+00:00" class="time-with-rel" title="2, Tháng 5, 2026, 9:30" data-format="đã bình luận {time}">đã bình luận lúc 2, Tháng 5, 2026, 9:30</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-1595" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><h3>include&lt;bits/stdc++.h&gt;</h3>
+<p>using namespace std;</p>
+<h3>define ll long long</h3>
+<p>ll a[1123456],n,d1,d2,d3,d4,s1,maxx=LLONG<em>MIN,minn=LLONG</em>MAX,maxx2=LLONG<em>MIN,x,k,f[1123456];
+int main()
+{
+    ios</em>base::sync<em>with</em>stdio(false);
+    cin.tie(nullptr);
+    cin&gt;&gt;n&gt;&gt;k;
+    for(ll i=1; i&lt;=n; i++)
+    {
+        cin&gt;&gt;a[i];
+    }
+    for(ll i=1;i&lt;=k;i++)
+    {
+        d1+=a[i];
+    }
+    cout&lt;&lt;d1&lt;&lt;" ";
+    for(ll i=2;i&lt;=n-k+1;i++)
+    {
+        d1=d1-a[i-1]+a[i+k-1];
+        cout&lt;&lt;d1&lt;&lt;" ";
+    }
+    return 0;
+}
+dùng cửa sổ trượt cho khỏe mn ạ</p>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-1595-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-1315" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/1315/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">-3</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/kietne" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/552081d9d6b125235172731f265571f1?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/kietne" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/552081d9d6b125235172731f265571f1?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-none user"><a href="/user/kietne" style="display: inline-block;">kietne</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2025-12-14T12:07:20.089933+00:00" class="time-with-rel" title="14, Tháng 12, 2025, 12:07" data-format="đã bình luận {time}">đã bình luận lúc 14, Tháng 12, 2025, 12:07</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-1315" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><p>DỄ THÍ AE Ạ:</p>
+<h3>include &lt;bits/stdc++.h&gt;</h3>
+<p>using namespace std;
+using ll = long long;</p>
+<p>int main()
+{
+    ios::sync<em>with</em>stdio(false);
+    cin.tie(nullptr);
+    // viết code ở đây
+    int n, k;
+    cin &gt;&gt; n &gt;&gt; k;
+    int a[n];
+    for (int &amp;i : a)
+        cin &gt;&gt; i;
+    int i = 0;
+    while (i &lt;= n - k)
+    {
+        int tong = 0;
+        for (int j = i; j &lt; k+i; j++)
+        {
+            tong += a[j];
+        }
+        cout &lt;&lt; tong &lt;&lt; " ";
+        i++;
+        /* code */
+    }</p>
+<pre><code>return 0;
+</code></pre>
+<p>}</p>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-1315-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-1064" data-revision="0"
+                        data-max-revision="0"
+                        data-revision-ajax="/comments/1064/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">0</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/skjafirjmm" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/00d51c8f284664fd572538cec574e9b7?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/skjafirjmm" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/00d51c8f284664fd572538cec574e9b7?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-none user"><a href="/user/skjafirjmm" style="display: inline-block;">skjafirjmm</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2025-09-02T01:40:50.531222+00:00" class="time-with-rel" title="2, Tháng 9, 2025, 1:40" data-format="đã bình luận {time}">đã bình luận lúc 2, Tháng 9, 2025, 1:40</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-1064" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><h3>include &lt;bits/stdc++.h&gt;</h3>
+<p>using namespace std;</p>
+<h3>define ll long long</h3>
+<p>int main(){
+    ios::sync<em>with</em>stdio(false);
+    cin.tie(nullptr);
+    int n,k; cin&gt;&gt;n&gt;&gt;k;
+    int a[n];
+    for(int i=0; i&lt;n; i++){
+        cin&gt;&gt;a[i];
+    }
+    for(int i=0; i&lt;=n-k; i++){
+        int s=0;
+        for(int j=i; j&lt;i+k; j++){
+            s+=a[j];
+        }
+        cout&lt;&lt;s&lt;&lt;" ";
+    }
+}</p>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-1064-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-974" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/974/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">0</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/anh_3506" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/a8ff46505da28c384fcfd26ca8ce81d4?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/anh_3506" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/a8ff46505da28c384fcfd26ca8ce81d4?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-specialist user"><a href="/user/anh_3506" style="display: inline-block;">anh_3506</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2025-07-25T15:21:11.156523+00:00" class="time-with-rel" title="25, Tháng 7, 2025, 15:21" data-format="đã bình luận {time}">đã bình luận lúc 25, Tháng 7, 2025, 15:21</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-974" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><h3>include &lt;bits/stdc++.h&gt;</h3>
+<p>using namespace std;</p>
+<p>int main() {
+   int n,k;
+   cin &gt;&gt; n &gt;&gt; k;
+   int a[n];
+   for(auto i=0;i&lt;n;i++){
+      cin &gt;&gt; a[i];
+   }
+   vector &lt;int&gt; v;
+   int sum=0;
+   for(int i=0;i&lt;k;i++){
+      sum+=a[i];
+   }
+   v.push<em>back(sum);
+   for(int i=k;i&lt;n;i++){
+      sum=sum-a[i-k]+a[i];
+      v.push</em>back(sum);
+   }
+   for(auto x : v){
+      cout &lt;&lt; x &lt;&lt; " ";
+   }
+}</p>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-974-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-918" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/918/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">0</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/LittleBo_29" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/67a78a394f410c18c1d8a7bb23775dfe?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/LittleBo_29" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/67a78a394f410c18c1d8a7bb23775dfe?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-none user"><a href="/user/LittleBo_29" style="display: inline-block;">LittleBo_29</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2025-07-06T07:45:34.658786+00:00" class="time-with-rel" title="6, Tháng 7, 2025, 7:45" data-format="đã bình luận {time}">đã bình luận lúc 6, Tháng 7, 2025, 7:45</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-918" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><h3>include &lt;bits/stdc++.h&gt;</h3>
+<h3>define ll long long</h3>
+<h3>define fi first</h3>
+<h3>define se second</h3>
+<h3>define pa pair&lt;int,int&gt;</h3>
+<h3>define vec vector&lt;int&gt;</h3>
+<h3>define el cout&lt;&lt;'\n'</h3>
+<h3>define fast ios<em>base::sync</em>with_stdio(0); cin.tie(0); cout.tie(0);</h3>
+<p>using namespace std;</p>
+<p>void doc(){
+    fast
+    freopen("test.inp", "r", stdin);
+    freopen("test.out", "w", stdout);
+}</p>
+<p>int n,k;
+int a[1001],b[1001];</p>
+<p>int main(){
+    //doc();
+    cin&gt;&gt;n&gt;&gt;k;
+    for(int i=1; i&lt;=n; i++) cin&gt;&gt;a[i];
+    ll s = 0;
+    vec q;
+    for(int i=1; i&lt;=k; i++) s += a[i];
+    cout&lt;&lt;s&lt;&lt;" ";
+    for(int i=k+1; i&lt;=n; i++){
+        s = s - a[i-k] + a[i];
+        cout&lt;&lt;s&lt;&lt;" ";
+    }
+    return 0;
+}
+cửa sổ trượt</p>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-918-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-891" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/891/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">0</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/hngoc" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/0f2b09e0dce8cf07176fd8c935d592a4?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/hngoc" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/0f2b09e0dce8cf07176fd8c935d592a4?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-none user"><a href="/user/hngoc" style="display: inline-block;">hngoc</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2025-07-04T15:12:01.732641+00:00" class="time-with-rel" title="4, Tháng 7, 2025, 15:12" data-format="đã bình luận {time}">đã bình luận lúc 4, Tháng 7, 2025, 15:12</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-891" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div class="codehilite"><pre><span></span><code><span class="n">n</span><span class="p">,</span><span class="n">k</span><span class="o">=</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span><span class="nb">input</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+<span class="n">tmp</span><span class="o">=</span><span class="nb">input</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+<span class="n">a</span><span class="o">=</span><span class="p">[]</span>
+<span class="n">b</span><span class="o">=</span><span class="p">[]</span>
+<span class="n">a</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">b</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">tmp</span><span class="p">:</span>
+    <span class="n">a</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="n">b</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)):</span>
+    <span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">=</span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="n">a</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">k</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">)):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">-</span><span class="n">b</span><span class="p">[</span><span class="n">i</span><span class="o">-</span><span class="n">k</span><span class="p">],</span><span class="n">end</span><span class="o">=</span><span class="s1">' '</span><span class="p">)</span>
+</code></pre></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-891-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-834" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/834/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">0</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/bengokyeuanh99" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/4a1a8d4d1aacd3d730e78eda19730d20?d=identicon&amp;s=75&amp;f=y" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/bengokyeuanh99" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/4a1a8d4d1aacd3d730e78eda19730d20?d=identicon&amp;s=75&amp;f=y" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-none user"><a href="/user/bengokyeuanh99" style="display: inline-block;">bengokyeuanh99</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2025-06-20T06:36:04.544596+00:00" class="time-with-rel" title="20, Tháng 6, 2025, 6:36" data-format="đã bình luận {time}">đã bình luận lúc 20, Tháng 6, 2025, 6:36</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-834" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><h3>include &lt;cstdio&gt;</h3>
+<p>int a[1001];</p>
+<p>int main() {
+    int n, k;
+    std::scanf("%d%d", &amp;n, &amp;k);</p>
+<pre><code>for (int i = 0; i &lt; n; ++i)
+    std::scanf("%d", &amp;a[i]);
+int sum = 0;
+for (int i = 0; i &lt; k; ++i)
+    sum += a[i];
+std::printf("%d", sum);
+for (int i = k; i &lt; n; ++i) {
+    sum += a[i] - a[i - k];
+    std::printf(" %d", sum);
+}
+return 0;
+</code></pre>
+<p>}</p>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-834-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-607" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/607/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">1</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/dungdeptrai" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/0fc377fed7ebcc26b60cb00e5e6f1f79?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/dungdeptrai" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/0fc377fed7ebcc26b60cb00e5e6f1f79?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-candidate-master user"><a href="/user/dungdeptrai" style="display: inline-block;">dungdeptrai</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2025-02-23T04:31:28.994014+00:00" class="time-with-rel" title="23, Tháng 2, 2025, 4:31" data-format="đã bình luận {time}">đã bình luận lúc 23, Tháng 2, 2025, 4:31</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-607" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><p>Gop vui 1 cach giai don gian</p>
+<h3>include &lt;stdio.h&gt;</h3>
+<h3>include &lt;math.h&gt;</h3>
+<p>void winK(int a[], int n, int k){
+    int sum = 0;
+    int tmp = 0;
+    while(k&lt;=n){
+        for(int i = tmp; i&lt;k;i++){
+            sum += a[i];
+        }
+        printf("%d ", sum);
+        sum = 0;
+        ++tmp;
+        ++k;
+    }
+}</p>
+<p>int main(){
+    int n, k;
+    scanf("%d%d", &amp;n, &amp;k);
+    int a[n];
+    for(int i = 0; i &lt; n; i++){
+        scanf("%d", &amp;a[i]);
+    }
+    winK(a, n, k);
+    return 0;
+}</p>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-607-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-592" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/592/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">1</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/duongqt34" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/416f67b8ffae1d61c2aee32061870408?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/duongqt34" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/416f67b8ffae1d61c2aee32061870408?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-pupil user"><a href="/user/duongqt34" style="display: inline-block;">duongqt34</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2025-02-14T14:21:54.052937+00:00" class="time-with-rel" title="14, Tháng 2, 2025, 14:21" data-format="đã bình luận {time}">đã bình luận lúc 14, Tháng 2, 2025, 14:21</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-592" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><h3>include&lt;bits/stdc++.h&gt;</h3>
+<p>using namespace std;</p>
+<h3>define int long long</h3>
+<p>const int mod=1000007;
+const int N=1e5+5;
+signed main(){
+    ios<em>base::sync</em>with_stdio(false);
+        cin.tie(NULL);cout.tie(NULL);
+    int n,k; cin&gt;&gt;n&gt;&gt;k;
+    vector&lt;int&gt; a(n+1);
+    vector&lt;int&gt; p(n+1,0);
+    for(int i=1;i&lt;=n;i++){
+        cin&gt;&gt;a[i];
+        p[i]=(p[i-1]+a[i]);
+    }
+    for(int i=1;i+k-1&lt;=n;i++){
+        cout&lt;&lt;p[i+k-1]-p[i-1]&lt;&lt;' ';
+    }
+    return (0&amp;1);
+}</p>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-592-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-535" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/535/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">2</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/MisolHo" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/f3d5642d9e9b4c15ee1cf4750903f82d?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/MisolHo" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/f3d5642d9e9b4c15ee1cf4750903f82d?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-none user"><a href="/user/MisolHo" style="display: inline-block;">MisolHo</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2025-01-19T07:16:08.486906+00:00" class="time-with-rel" title="19, Tháng 1, 2025, 7:16" data-format="đã bình luận {time}">đã bình luận lúc 19, Tháng 1, 2025, 7:16</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-535" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><h3>include &lt;bits/stdc++.h&gt;</h3>
+<p>using namespace std;</p>
+<p>int main() {
+    int n, k;
+    cin &gt;&gt; n &gt;&gt; k;</p>
+<pre><code>int a[n];
+for(int i = 0 ; i &lt; n ; i++){
+    cin &gt;&gt; a[i];
+}
+for(int i = 0 ; i &lt;= n-k ; i++){
+    int s = 0;
+    for(int j = i ; j &lt; k+i ; j++){
+        s+=a[j];
+    }
+    cout &lt;&lt; s &lt;&lt; " ";
+}
+return 0;
+</code></pre>
+<p>}</p>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-535-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-528" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/528/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">2</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/VDev" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/dc8d0d767aceca6bf89c551b670b2eab?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/VDev" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/dc8d0d767aceca6bf89c551b670b2eab?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-expert user"><a href="/user/VDev" style="display: inline-block;">VDev</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2025-01-18T12:12:04.709216+00:00" class="time-with-rel" title="18, Tháng 1, 2025, 12:12" data-format="đã bình luận {time}">đã bình luận lúc 18, Tháng 1, 2025, 12:12</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-528" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <div><p><strong>FULL AC</strong></p>
+<pre><code>#include &lt;bits/stdc++.h&gt;
+#include &lt;iomanip&gt;
+#include &lt;cmath&gt;
+#include &lt;climits&gt;
+#define ll long long
+using namespace std;
+ll a[10000011];
+ll cnt = 0, s = 0, mark[10000011];
+int main(){
+    ll n, k;
+    cin &gt;&gt; n &gt;&gt; k;
+    for(ll i = 0; i &lt; n; i++){
+        cin &gt;&gt; a[i];
+    }
+    for(ll i = 0; i &lt;= n - k; i++){
+            cnt = 0;
+            for(ll j = 0; j &lt; k; j++){
+            cnt += a[i + j];
+            }
+            cout &lt;&lt; cnt &lt;&lt; " ";
+    }
+    return 0;
+}
+</code></pre>
+</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-528-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-486" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/486/history/ajax" class="comment">
+                        <div class="comment-display">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">0</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/nguyen_luong_an" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/21a309928d36a96940f8e1f2905b78cb?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/nguyen_luong_an" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/21a309928d36a96940f8e1f2905b78cb?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-expert user"><a href="/user/nguyen_luong_an" style="display: inline-block;">nguyen_luong_an</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2024-12-18T20:42:20.750444+00:00" class="time-with-rel" title="18, Tháng 12, 2024, 20:42" data-format="đã bình luận {time}">đã bình luận lúc 18, Tháng 12, 2024, 20:42</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-486" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body">
+                                        <p>&lt;3</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-486-reply" class="reply-comment" hidden></ul>
+                    <li id="comment-22" data-revision="-1"
+                        data-max-revision="-1"
+                        data-revision-ajax="/comments/22/history/ajax" class="comment">
+                        <div class="comment-display bad-comment">
+                            <div class="info">
+                                <div class="vote">
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="upvote-link fa fa-chevron-up fa-fw"></a>
+                                    <br>
+                                    <div class="comment-score">-41</div>
+                                        <a href="javascript:alert('Hãy đăng nhập để bình chọn')" title="Hãy đăng nhập để bình chọn"
+                                        class="downvote-link fa fa-chevron-down fa-fw"></a>
+                                </div>
+                                    <a href="/user/minhtran1482003" class="user gravatar-main">
+                                        <img src="https://www.gravatar.com/avatar/536f127be7583cfeb1f5825855ae09ca?d=identicon&amp;s=75" class="user-gravatar">
+                                    </a>
+                            </div>
+                            <div class="detail">
+                                <div class="header">
+                                    <span>
+                                            <a href="/user/minhtran1482003" class="user gravatar-mobile">
+                                                <img src="https://www.gravatar.com/avatar/536f127be7583cfeb1f5825855ae09ca?d=identicon&amp;s=75" class="user-gravatar">
+                                            </a>
+                                        <span class="rating rate-none user"><a href="/user/minhtran1482003" style="display: inline-block;">minhtran1482003</a></span>&nbsp;
+                                    </span>
+                                        <span data-iso="2024-04-22T12:20:15.516133+00:00" class="time-with-rel" title="22, Tháng 4, 2024, 12:20" data-format="đã bình luận {time}">đã bình luận lúc 22, Tháng 4, 2024, 12:20</span>
+                                    <span class="comment-spacer"></span>
+                                    <span class="comment-operation">
+                                        <span class="comment-edits"></span>
+                                        <a href="#comment-22" title="Liên kết"
+                                           class="comment-link"><i class="fa fa-link fa-fw"></i></a>
+                                </span>
+                                </div>
+                                <div class="content content-description">
+                                    <div class="comment-body" style="display:none">
+                                        <p>hi</p>
+                                    </div>
+                                        <div class="comment-body bad-comment-body">
+                                            <p>
+                                                Bình luận này đã bị ẩn vì có quá nhiều phản ứng tiêu cực.
+                                                <a href="javascript:comment_show_content(22)">Nhấn để xem.</a>
+                                            </p>
+                                        </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                    <ul id="comment-22-reply" class="reply-comment" hidden></ul>
+            </ul>
+    </div>
+        </div>
+    </div>
+</div>
+    </main>
+    <footer>
+        <span id="footer-content">
+            <br>
+            <a style="color: #808080" href="https://28tech.com.vn/" target="_blank">Được phát triển bởi <strong>28TECH.COM.VN</strong></a>
+            <form id="set_language" action="/i18n/setlang/" method="post" style="display: inline">
+<input type='hidden' name='csrfmiddlewaretoken' value='mi7EllPXhojGWEsKLgIbr8gqw5aXLyEa8JLCP4L6J9xg8YxjbY3NFonOjdukqsET' />            <input name="next" type="hidden" value="/problem/array_basic24">
+            <input name="language" type="hidden" value="vi">
+          </form>
+        </span>
+    </footer>
+</div>
+</body>
+</html>

@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- **One-file submit**: a C/C++ solution that includes its own headers (`#include "lib/dsu.hpp"`) is submitted with them pasted in, since a judge takes one file. Only quoted includes that name a file next to it are replaced; anything else is sent exactly as written.
+- **Sameko Companion for Firefox** (128+), next to Chrome and Edge.
+- **More judges in the extension**: HNOJ (hnoj.edu.vn), LTOJ (laptrinhonline.club) and 28tech (oj.28tech.com.vn).
+
+### Changed
+
+- **Faster judging of large outputs**: Run All Tests compares outputs word by word in place and stops at the first difference (a 20 MB output: ~1.1 s and 460 MB before, ~0.3 s and 44 MB now), and the diff view no longer copies or draws the whole output.
+
+### Fixed
+
+- **Samples under a "Ví dụ" heading** are read from VNOJ-style problem pages (the heading was never recognised).
+
 ## [1.5.0] - 2026-11-17
 
 Judge-style testing, stress tests, checkers, seven more languages, submitting to online judges from the app, and smaller, faster updates.

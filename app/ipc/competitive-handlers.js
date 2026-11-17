@@ -10,6 +10,7 @@ const { ipcMain, app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const competitive = require('../services/competitive');
+const { bundleIncludes } = require('../services/competitive/source-bundler');
 const { IPC } = require('../shared/constants');
 // Synchronous like the reads, so a read-sameko that follows a write-sameko
 // always sees it (an async write could still be pending when the read runs).
@@ -59,7 +60,17 @@ function registerHandlers() {
     });
 
     ipcMain.handle(IPC.OJ.STATUS, async () => competitive.getBridge().getStatus());
-    ipcMain.handle(IPC.OJ.SUBMIT, async (event, job) => competitive.getBridge().submit(job));
+    ipcMain.handle(IPC.OJ.SUBMIT, async (event, job) => {
+        // A judge takes one file: paste the solution's own headers (#include "lib/x.hpp") in.
+        let merged = [];
+        if (job && (job.language === 'cpp' || job.language === 'c') && typeof job.filePath === 'string') {
+            const bundled = bundleIncludes(job.source, job.filePath, { openFiles: job.openFiles });
+            merged = bundled.merged;
+            job = { ...job, source: bundled.source };
+        }
+        const result = competitive.getBridge().submit(job);
+        return result && result.success && merged.length ? { ...result, merged } : result;
+    });
     ipcMain.handle(IPC.OJ.FETCH_PROBLEM, async (event, req) => competitive.getBridge().fetchProblem(req));
     ipcMain.handle(IPC.OJ.PAIR_RESPOND, async (event, r) => competitive.getBridge().respondPair(r));
     ipcMain.handle(IPC.OJ.SET_THEME, async (event, t) => competitive.getBridge().setTheme(t));

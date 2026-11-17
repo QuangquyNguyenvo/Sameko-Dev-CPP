@@ -27,6 +27,7 @@ const SUITES = [
     { name: 'customizer state', group: 'unit', file: 'unit/theme-customizer-state.js' },
     { name: 'judge', group: 'unit', file: 'unit/judge.js' },
     { name: 'run checks', group: 'unit', file: 'unit/run-checks.js' },
+    { name: 'source bundler', group: 'unit', file: 'unit/source-bundler.js' },
     { name: 'mi-parser', group: 'unit', file: 'e2e/debugger.js', args: ['--unit'] },
     { name: 'oj bridge', group: 'unit', file: 'unit/oj-bridge.js' },
     { name: 'oj round trip', group: 'unit', file: 'unit/oj-roundtrip.js' },
