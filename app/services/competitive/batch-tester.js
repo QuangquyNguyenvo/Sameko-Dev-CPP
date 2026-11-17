@@ -273,12 +273,14 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
                 } else {
                     // Compare output using shared judge rules
                     const compared = compareOutputs(output, expectedOutput, compare);
-                    debugInfo.expectedNormHash = hashText(compared.expectedNorm);
-                    debugInfo.actualNormHash = hashText(compared.actualNorm);
+                    if (debugInfo.enabled) {
+                        debugInfo.expectedNormHash = hashText(compared.expectedNorm);
+                        debugInfo.actualNormHash = hashText(compared.actualNorm);
+                    }
 
                     if (!compared.matched) {
                         status = 'WA';
-                        details = `Expected: ${truncate(compared.expectedNorm, 100)}\nGot: ${truncate(compared.actualNorm, 100)}`;
+                        details = `Expected: ${preview(expectedText, 100)}\nGot: ${preview(output, 100)}`;
                     }
                 }
             }
@@ -414,6 +416,18 @@ function programArguments(args) {
  * @param {number} maxLen
  * @returns {string}
  */
+/**
+ * The start of an output, normalized and cut to maxLen like truncate(normalizeOutput(text)),
+ * without normalizing a 16 MB output to show 100 characters of it.
+ */
+function preview(text, maxLen) {
+    const head = String(text ?? '').trimStart();
+    const cut = head.slice(0, maxLen * 4);   // room for the \r and trailing spaces normalizing drops
+    const norm = normalizeOutput(cut);
+    if (norm.length > maxLen || /\S/.test(head.slice(cut.length))) return norm.substring(0, maxLen) + '...';
+    return norm;
+}
+
 function truncate(s, maxLen) {
     if (s.length <= maxLen) return s;
     return s.substring(0, maxLen) + '...';

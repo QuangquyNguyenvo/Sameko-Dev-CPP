@@ -62,24 +62,35 @@ function sameToken(actual, expected) {
  * @returns {{ matched: boolean, actualNorm: string, expectedNorm: string }}
  */
 function compareOutputs(actual, expected, mode = 'tokens') {
-    const actualNorm = normalizeOutput(actual);
-    const expectedNorm = normalizeOutput(expected);
+    const actualText = String(actual ?? '');
+    const expectedText = String(expected ?? '');
     let matched;
     if (mode === 'lines') {
-        matched = actualNorm === expectedNorm;
+        matched = normalizeOutput(actualText) === normalizeOutput(expectedText);
     } else {
-        const words = (text) => {
-            const list = text ? text.split(/\s+/) : [];
-            return mode === 'nocase' ? list.map(w => w.toLowerCase()) : list;
-        };
-        const a = words(actualNorm);
-        const e = words(expectedNorm);
-        matched = a.length === e.length && a.every((t, i) => sameToken(t, e[i]));
+        // Walk both outputs word by word in place and stop at the first difference: no
+        // normalized copies or word arrays, which for a 16 MB output cost ~1 s and ~450 MB.
+        // /\S+/g finds the same words as normalizeOutput(text).split(/\s+/).
+        const nocase = mode === 'nocase';
+        const wa = /\S+/g;
+        const we = /\S+/g;
+        matched = true;
+        for (;;) {
+            const ma = wa.exec(actualText);
+            const me = we.exec(expectedText);
+            if (!ma || !me) { matched = !ma && !me; break; }
+            const a = nocase ? ma[0].toLowerCase() : ma[0];
+            const e = nocase ? me[0].toLowerCase() : me[0];
+            if (!sameToken(a, e)) { matched = false; break; }
+        }
     }
+    // Callers read these only for a WA message or debug hashes: build them on first use.
+    let actualNorm = null;
+    let expectedNorm = null;
     return {
         matched,
-        actualNorm,
-        expectedNorm,
+        get actualNorm() { return actualNorm ??= normalizeOutput(actualText); },
+        get expectedNorm() { return expectedNorm ??= normalizeOutput(expectedText); },
     };
 }
 
