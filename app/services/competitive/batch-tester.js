@@ -273,7 +273,9 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
                 } else {
                     // Compare output using shared judge rules
                     const compared = compareOutputs(output, expectedOutput, compare);
-                    if (debugInfo.enabled) {
+                    // The renderer always asks for debug and logs it only for a test that
+                    // failed, so an AC never normalizes its whole output just to hash it.
+                    if (debugInfo.enabled && !compared.matched) {
                         debugInfo.expectedNormHash = hashText(compared.expectedNorm);
                         debugInfo.actualNormHash = hashText(compared.actualNorm);
                     }

@@ -682,6 +682,36 @@ function normalizeJudgeOutput(text) {
         .trim();
 }
 
+const DIFF_LINE_CHARS = 300;   // characters drawn of each piece of a line
+
+function clipEnd(text) {
+    return text.length > DIFF_LINE_CHARS ? `${text.slice(0, DIFF_LINE_CHARS)}…` : text;
+}
+
+function clipStart(text) {
+    return text.length > DIFF_LINE_CHARS ? `…${text.slice(-DIFF_LINE_CHARS)}` : text;
+}
+
+/**
+ * Reads an output one line at a time, the lines normalizeJudgeOutput(text).split('\n') gives,
+ * without building the normalized copy and the array of lines: on a 16 MB output those took
+ * ~1 s each time a test was shown. next() returns null after the last line.
+ */
+function judgeLineReader(raw, normalize) {
+    const text = normalize ? String(raw ?? '').trim() : String(raw ?? '');
+    const re = normalize ? /\r\n|\r|\n/g : /\n/g;
+    let pos = text.length > 0 ? 0 : -1;
+    return {
+        next() {
+            if (pos < 0) return null;
+            const m = re.exec(text);
+            const line = text.slice(pos, m ? m.index : text.length);
+            pos = m ? re.lastIndex : -1;
+            return normalize ? line.trimEnd() : line;
+        }
+    };
+}
+
 function buildInlineCharDiff(actualLine, expectedLine) {
     const actual = String(actualLine ?? '');
     const expected = String(expectedLine ?? '');
@@ -698,12 +728,14 @@ function buildInlineCharDiff(actualLine, expectedLine) {
         endExpected -= 1;
     }
 
-    const actualPrefix = actual.slice(0, start);
-    const expectedPrefix = expected.slice(0, start);
-    const actualDiff = actual.slice(start, endActual + 1);
-    const expectedDiff = expected.slice(start, endExpected + 1);
-    const actualSuffix = actual.slice(endActual + 1);
-    const expectedSuffix = expected.slice(endExpected + 1);
+    // A line can be the whole output (16 MB of numbers on one line): draw only the text
+    // around the difference, so the diff stays a few KB of HTML.
+    const actualPrefix = clipStart(actual.slice(0, start));
+    const expectedPrefix = clipStart(expected.slice(0, start));
+    const actualDiff = clipEnd(actual.slice(start, endActual + 1));
+    const expectedDiff = clipEnd(expected.slice(start, endExpected + 1));
+    const actualSuffix = clipEnd(actual.slice(endActual + 1));
+    const expectedSuffix = clipEnd(expected.slice(endExpected + 1));
 
     const actualDiffHtml = actualDiff
         ? `<span class="diff-char-wrong">${escHtml(actualDiff)}</span>`
@@ -724,13 +756,9 @@ const DIFF_MAX_ROWS = 2000;        // rows drawn before matching lines are skipp
 const DIFF_MAX_MISMATCHES = 200;   // mismatching rows drawn in total
 
 function buildCompactDiffHtml(expectedRaw, actualRaw, { normalize = true } = {}) {
-    const expectedText = normalize ? normalizeJudgeOutput(expectedRaw) : String(expectedRaw ?? '');
-    const actualText = normalize ? normalizeJudgeOutput(actualRaw) : String(actualRaw ?? '');
+    const expectedLines = judgeLineReader(expectedRaw, normalize);
+    const actualLines = judgeLineReader(actualRaw, normalize);
 
-    const expectedLines = expectedText.length > 0 ? expectedText.split('\n') : [];
-    const actualLines = actualText.length > 0 ? actualText.split('\n') : [];
-
-    const maxLen = Math.max(expectedLines.length, actualLines.length);
     let allMatch = true;
     let mismatchCount = 0;
     const parts = [];
@@ -741,14 +769,15 @@ function buildCompactDiffHtml(expectedRaw, actualRaw, { normalize = true } = {})
         skipped = 0;
     };
 
-    for (let i = 0; i < maxLen; i++) {
-        const expLine = i < expectedLines.length ? expectedLines[i] : null;
-        const actLine = i < actualLines.length ? actualLines[i] : null;
+    for (;;) {
+        const expLine = expectedLines.next();
+        const actLine = actualLines.next();
+        if (expLine === null && actLine === null) break;
 
         if (expLine !== null && actLine !== null && expLine === actLine) {
             if (rows < DIFF_MAX_ROWS) {
                 flushSkipped();
-                parts.push(`<div class="diff-line match-compact">${escHtml(expLine)}</div>`);
+                parts.push(`<div class="diff-line match-compact">${escHtml(clipEnd(expLine))}</div>`);
                 rows++;
             } else {
                 skipped++;
@@ -773,9 +802,9 @@ function buildCompactDiffHtml(expectedRaw, actualRaw, { normalize = true } = {})
                      <span class="diff-arrow">→</span>
                      <span class="diff-right" title="Expected">${expectedHtml}</span>`;
         } else if (actLine !== null && expLine === null) {
-            html += `<span class="diff-extra" title="Extra output">[Extra] ${escHtml(actLine)}</span>`;
+            html += `<span class="diff-extra" title="Extra output">[Extra] ${escHtml(clipEnd(actLine))}</span>`;
         } else if (actLine === null && expLine !== null) {
-            html += `<span class="diff-missing" title="Missing output">Missing: ${escHtml(expLine)}</span>`;
+            html += `<span class="diff-missing" title="Missing output">Missing: ${escHtml(clipEnd(expLine))}</span>`;
         }
 
         html += `</div>`;
@@ -783,7 +812,7 @@ function buildCompactDiffHtml(expectedRaw, actualRaw, { normalize = true } = {})
     }
     flushSkipped();
 
-    return { html: parts.join(''), allMatch, mismatchCount, expectedLines, actualLines };
+    return { html: parts.join(''), allMatch, mismatchCount };
 }
 
 // ============================================================================
