@@ -282,11 +282,14 @@ function saveSession(sync = false) {
             timestamp: Date.now(),
         };
         if (sessionRestorePending && pendingStoredSession) {
-            // Keep the unanswered session's tabs first, minus any now open again.
+            // Keep the unanswered session's tabs first, minus any now open again. A file
+            // opened again still keeps its unsaved text from that session: dropping it lost
+            // the edits when the app was closed before Restore was answered. On restore the
+            // later entry for the same file goes into a "(recovered)" copy if it differs.
             const ids = new Set(session.tabs.map(t => t.id));
             const paths = new Set(session.tabs.filter(t => t.path).map(t => normalizeTabPath(t.path)));
             const kept = (pendingStoredSession.tabs || []).filter(t => t && !ids.has(t.id)
-                && !(t.path && paths.has(normalizeTabPath(t.path))));
+                && !(t.path && paths.has(normalizeTabPath(t.path)) && !(t.modified && t.content != null)));
             session.tabs = kept.concat(session.tabs);
         }
 

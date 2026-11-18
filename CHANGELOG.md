@@ -11,6 +11,7 @@ Bug fixes: copy and paste in the editor, builds under a Vietnamese Windows user 
 ### Fixed
 
 - **Ctrl+C, Ctrl+V, Ctrl+X and Delete in the editor** work again while a file is selected in the Explorer. Before, the Explorer took them as file copy, paste and delete.
+- **Unsaved work from the last session** is kept when the same file is opened again before Restore is answered. Before, closing the app then lost it.
 - **Builds under a non-English Windows user name** (e.g. `C:\Users\Nguyễn`) no longer fail.
 - **Restart to update** no longer leaves an app with no window that cannot be opened again, and the update shows its progress.
 - **Vietnamese letters** use the app's fonts everywhere.
