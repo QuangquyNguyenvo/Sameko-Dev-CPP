@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.4.1] - 2026-11-18
+
+Bug fixes: copy and paste in the editor, builds under a Vietnamese Windows user name, and Restart to update.
+
+### Fixed
+
+- **Ctrl+C, Ctrl+V, Ctrl+X and Delete in the editor** work again while a file is selected in the Explorer. Before, the Explorer took them as file copy, paste and delete.
+- **Builds under a non-English Windows user name** (e.g. `C:\Users\Nguyễn`) no longer fail.
+- **Restart to update** no longer leaves an app with no window that cannot be opened again, and the update shows its progress.
+- **Vietnamese letters** use the app's fonts everywhere.
+- **Find widget Close button** is clickable (#71); Escape in Settings closes inner widgets first.
+- **No blue line** above the current line with word wrap on (#72).
+- **Run button edge** (#75, by @baodao211): hover no longer flickers and a click on the edge is no longer lost.
+
 ## [1.4.0] - 2026-11-07
 
 Vietnamese and Chinese interface, Vim Mode, new themes, a Settings-style Theme Customizer, data-loss fixes and security fixes.
