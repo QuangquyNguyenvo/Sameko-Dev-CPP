@@ -196,7 +196,9 @@ function initShortcuts() {
         // BUT: F1-F12 are often single keys. 
         const isModifier = e.ctrlKey || e.altKey || e.shiftKey || e.metaKey;
         const isFunctionKey = e.key.startsWith('F');
-        const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable;
+        // Monaco takes keys in a plain div (.native-edit-context), not a textarea.
+        const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable
+            || !!e.target.closest?.('.monaco-editor');
 
         // If user is typing in editor (isInput) and NOT pressing modifiers/Function keys,
         // let it pass immediately.

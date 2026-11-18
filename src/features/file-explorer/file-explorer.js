@@ -463,8 +463,13 @@ const FileExplorer = {
         // Keyboard shortcuts when explorer is open and a file is selected
         document.addEventListener('keydown', (e) => {
             if (!this.isOpen || !this.selectedFilePath) return;
-            const tag = document.activeElement?.tagName;
-            if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
+            // Only when the focus is on the explorer itself (or nowhere). Any other focus,
+            // the editor above all, keeps Ctrl+C/X/V and Delete. Monaco takes keys in a
+            // plain div, so a check for INPUT/TEXTAREA alone let these steal copy and paste.
+            const active = document.activeElement;
+            if (active && active !== document.body && !this.elements.sidebar?.contains(active)) return;
+            const tag = active?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || active?.isContentEditable) return;
             this.handleExplorerKeydown(e);
         });
     },
