@@ -14,6 +14,7 @@ Bug fixes: copy and paste in the editor, builds under a Vietnamese Windows user 
 - **Builds under a non-English Windows user name** (e.g. `C:\Users\Nguyễn`) no longer fail.
 - **Restart to update** no longer leaves an app with no window that cannot be opened again, and the update shows its progress.
 - **Vietnamese letters** use the app's fonts everywhere.
+- **Vietnamese titles and buttons** are drawn in one font. Fredoka has no Vietnamese letters, so a word such as "đồ thị" mixed two fonts; in Vietnamese, Fredoka is now drawn wholly with Nunito.
 - **Find widget Close button** is clickable (#71); Escape in Settings closes inner widgets first.
 - **No blue line** above the current line with word wrap on (#72).
 - **Run button edge** (#75, by @baodao211): hover no longer flickers and a click on the edge is no longer lost.
