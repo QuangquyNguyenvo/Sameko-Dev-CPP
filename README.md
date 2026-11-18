@@ -341,6 +341,7 @@ as long as the session is live, and go back to Run / Compile & Run once it ends.
 - **[aguajardoc](https://github.com/aguajardoc)** (Added template and snippet imports and fixed the Linux dock icon)
 - **[baodao211](https://github.com/baodao211)** (Contributed the cursor trail and Scroll Beyond Last Line)
 - **[MerlyStella](https://github.com/MerlyStella)** (Tested everything, twice. The app is better because of it :D)
+- **[JuggyBob](https://github.com/JuggyBob)** (Found and reported a lot of bugs)
 
 **📝 Want to contribute?**
 
