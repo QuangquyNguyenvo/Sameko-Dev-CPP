@@ -427,7 +427,13 @@ async function spawnProcess() {
         return;
     }
 
-    const queryDriverPath = path.join(binDir, 'g++*').replace(/\\/g, '/');
+    // The one compiler clangd may run, as an exact path. A project's compile_commands.json names
+    // the program; with a `g++*` wildcard, whose `*` stops only at `/`, a Windows path such as
+    // `bin/g++x\..\..\evil.exe` would match.
+    const detectedDriver = getDetectedCompiler();
+    const queryDriverPath = (path.isAbsolute(detectedDriver || '')
+        ? detectedDriver
+        : path.join(binDir, binName('g++'))).replace(/\\/g, '/');
     // Include paths and language flags are NOT passed here (clangd rejects -I
     // on its command line); they go in the LSP `initialize` request as
     // `fallbackFlags`. --enable-config stays on so a user's own clangd config
