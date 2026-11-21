@@ -1017,6 +1017,7 @@ function openSettings() {
     document.getElementById('set-warnings').checked = App.settings.compiler.warnings;
     const lldToggle = document.getElementById('set-useLLD');
     if (lldToggle) lldToggle.checked = App.settings.compiler.useLLD !== false;
+    if (lldToggle && IS_MAC_UI) lldToggle.closest('.setting-row').style.display = 'none';
     const singleFileToggle = document.getElementById('set-singleFileMode');
     if (singleFileToggle) singleFileToggle.checked = App.settings.compiler.singleFileMode !== false;
     const largeStackToggle = document.getElementById('set-largeStack');

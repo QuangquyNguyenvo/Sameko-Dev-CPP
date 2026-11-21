@@ -256,7 +256,17 @@
             "category": "public.app-category.developer-tools",
             "identity": "-",
             "hardenedRuntime": false,
-            "icon": "src/assets/icons/linux/1024x1024.png"
+            "icon": "src/assets/icons/linux/1024x1024.png",
+            "extendInfo": {
+                "CFBundleDocumentTypes": [
+                    {
+                        "CFBundleTypeName": "C/C++ Source",
+                        "CFBundleTypeRole": "Editor",
+                        "LSHandlerRank": "Alternate",
+                        "CFBundleTypeExtensions": ["cpp", "cc", "cxx", "c", "h", "hpp", "hh", "hxx"]
+                    }
+                ]
+            }
         },
         "linux": {
             "target": [

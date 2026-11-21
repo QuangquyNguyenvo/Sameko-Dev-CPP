@@ -10,7 +10,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const { getBasePath, getResourcesPath } = require('../compiler/detector');
-const { binName, systemBinDirs, which, IS_WIN } = require('../../shared/platform');
+const { binName, systemBinDirs, which, IS_WIN, IS_MAC } = require('../../shared/platform');
 
 let detectedAStyle = null;
 
@@ -89,7 +89,9 @@ async function formatCode(code, style = 'google') {
             success: false,
             error: IS_WIN
                 ? 'AStyle was not found. Download astyle.exe and place it in Sameko-GCC\\bin\\.'
-                : 'AStyle was not found. Install it (e.g. `sudo apt install astyle`) or place an `astyle` binary in Sameko-GCC/bin/.'
+                : IS_MAC
+                    ? 'AStyle was not found. Run "brew install astyle" in Terminal, then restart the app.'
+                    : 'AStyle was not found. Install it (e.g. `sudo apt install astyle`) or place an `astyle` binary in Sameko-GCC/bin/.'
         };
     }
 

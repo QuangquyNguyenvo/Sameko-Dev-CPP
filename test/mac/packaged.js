@@ -85,7 +85,7 @@ async function main() {
         const file = path.join(project, name);
         fs.writeFileSync(file, code);
         const result = await page.evaluate(({ file, code, flags }) => window.electronAPI.compile({
-            filePath: file, content: code, flags, useLLD: false, realtimeOutput: false,
+            filePath: file, content: code, flags, useLLD: true, realtimeOutput: false,
         }), { file, code, flags });
         assert.ok(result.success, `compile failed: ${JSON.stringify(result).slice(0, 900)}`);
         return result.outputPath;
@@ -134,6 +134,34 @@ async function main() {
         const exe = await build('print.cpp', '#include <print>\nint main(){std::println("hi {}", 7);}\n', '-O2 -std=c++23');
         const r = await judge(exe, '', 'hi 7\n');
         assert.equal(r.status, 'AC', JSON.stringify(r));
+    });
+
+    await check('Large Stack runs a recursion 1,000,000 deep, which crashes without it', async () => {
+        const code = '#include <iostream>\nint f(int d){volatile char a[64];a[0]=1;return d?f(d-1)+a[0]:0;}\nint main(){std::cout<<f(1000000)<<"\\n";}\n';
+        const flagsWith = (on) => page.evaluate((on) => {
+            App.settings.compiler.largeStack = on;
+            const flags = buildCompileFlags({ judge: true });
+            App.settings.compiler.largeStack = true;
+            return flags;
+        }, on);
+        const large = await flagsWith(true);
+        assert.match(large, /-Wl,-stack_size,0x10000000/);
+        const r = await judge(await build('deep.cpp', code, `${large} -O0`), '', '1000000\n', 5000, 1024);
+        assert.equal(r.status, 'AC', JSON.stringify(r).slice(0, 400));
+        const small = await judge(await build('shallow.cpp', code, `${await flagsWith(false)} -O0`), '', '1000000\n', 5000, 1024);
+        assert.equal(small.status, 'RE', JSON.stringify(small).slice(0, 400));
+    });
+
+    await check('the app is offered for C++ files, and a file opened from Finder becomes a tab', async () => {
+        const plist = path.join(path.dirname(path.dirname(executablePath)), 'Info.plist');
+        const info = JSON.parse(execFileSync('plutil', ['-convert', 'json', '-o', '-', plist], { encoding: 'utf8' }));
+        const type = (info.CFBundleDocumentTypes || []).find((t) => (t.CFBundleTypeExtensions || []).includes('cpp'));
+        assert.ok(type, 'Info.plist declares .cpp');
+        assert.equal(type.LSHandlerRank, 'Alternate');
+        const file = path.join(project, 'from finder.cpp');
+        fs.writeFileSync(file, 'int main() {}\n');
+        await app.evaluate(({ app: electronApp }, f) => { electronApp.emit('open-file', { preventDefault() { } }, f); }, file);
+        await page.waitForFunction((f) => App.tabs.some((t) => t.path === f), file, { timeout: 10000 });
     });
 
     await check('wrong answer is WA', async () => {
@@ -275,6 +303,23 @@ async function main() {
     await check('quitting leaves no clangd or helper running', async () => {
         await noProcess('clangd');
         await noProcess(TAG);
+    });
+
+    await check('opened with Finder\'s short PATH, the app and its programs still find Homebrew', async () => {
+        const finder = await _electron.launch({
+            executablePath, args: [`--user-data-dir=${profile}`, '--lang=en-US'], timeout: 60000,
+            env: { ...process.env, PATH: '/usr/bin:/bin:/usr/sbin:/sbin' },
+        });
+        try {
+            page = await mainPage(finder);
+            const dirs = (await finder.evaluate(() => process.env.PATH)).split(':');
+            assert.ok(dirs.indexOf('/opt/homebrew/bin') !== -1 && dirs.indexOf('/opt/homebrew/bin') < dirs.indexOf('/usr/bin'), dirs.join(':'));
+            const exe = await build('path.cpp', '#include <cstdlib>\n#include <iostream>\nint main(){std::cout<<(std::system("command -v brew >/dev/null")==0)<<"\\n";}\n');
+            const r = await judge(exe, '', '1\n');
+            assert.equal(r.status, 'AC', JSON.stringify(r).slice(0, 400));
+        } finally {
+            await finder.close();
+        }
     });
 
     console.log(`\n  ${passed} passed, ${failed} failed`);

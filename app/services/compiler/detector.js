@@ -10,7 +10,7 @@ const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
-const { binName, systemCompilerPaths, which } = require('../../shared/platform');
+const { binName, systemCompilerPaths, which, IS_MAC } = require('../../shared/platform');
 
 let detectedCompiler = null;
 
@@ -146,7 +146,8 @@ function detectCompiler() {
         compilerInfo.bundled = false;
 
         const sysBinDir = path.dirname(systemPath);
-        compilerInfo.hasLLD = fs.existsSync(path.join(sysBinDir, binName('ld.lld')));
+        // Homebrew's ld.lld links Linux programs; on macOS GCC must keep Apple's linker.
+        compilerInfo.hasLLD = !IS_MAC && fs.existsSync(path.join(sysBinDir, binName('ld.lld')));
 
         console.log(`[Compiler] Selected system: ${systemPath} (LLD: ${compilerInfo.hasLLD})`);
         return systemPath;

@@ -15,6 +15,9 @@ const { initializeApp, setupAppEvents, startDeferredCompilerWork } = require('./
 if (process.platform === 'win32') {
     app.setAppUserModelId('com.quangquy.cppide');
 }
+if (process.platform === 'darwin') {
+    process.env.PATH = require('./shared/platform').macToolPath(process.env.PATH, app.getPath('home'));
+}
 
 const gotTheLock = app.requestSingleInstanceLock();
 

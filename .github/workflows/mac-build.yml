@@ -87,8 +87,13 @@ jobs:
           xattr -cr "$INSTALL/Sameko Dev C++.app"
           codesign --verify --deep --strict "$INSTALL/Sameko Dev C++.app"
           mkdir -p mac-shots
+          # A Homebrew ld.lld must not be picked up: this one fails every link that uses it.
+          printf '#!/bin/sh\nexit 1\n' > /opt/homebrew/bin/ld.lld
+          chmod +x /opt/homebrew/bin/ld.lld
           node test/mac/packaged.js "$INSTALL/Sameko Dev C++.app/Contents/MacOS/Sameko Dev C++" mac-shots 2>&1 | tee packaged.log
-          exit "${PIPESTATUS[0]}"
+          STATUS="${PIPESTATUS[0]}"
+          rm -f /opt/homebrew/bin/ld.lld
+          exit "$STATUS"
 
       - name: Unit tests
         continue-on-error: ${{ github.event_name != 'release' }}

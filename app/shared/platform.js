@@ -202,7 +202,30 @@ function appTempDir(name) {
     return path.join(os.tmpdir(), name + suffix);
 }
 
+/**
+ * An app opened from Finder gets only the system folders on PATH, so Homebrew's tools (Go, Rust,
+ * Node, a JDK...) would not be found. Adds the usual folders that exist, ahead of /usr/bin (whose
+ * `java` is a stub when no JDK is installed) but behind anything the user's shell already set.
+ * @returns {string} the new PATH
+ */
+function macToolPath(current, home, exists = fs.existsSync) {
+    const dirs = String(current || '').split(':').filter(Boolean);
+    const extra = [
+        '/opt/homebrew/opt/openjdk/bin',
+        '/opt/homebrew/bin',
+        '/opt/homebrew/sbin',
+        '/usr/local/bin',
+        '/usr/local/go/bin',
+        '/Library/Frameworks/Python.framework/Versions/Current/bin',
+        ...(home ? [path.join(home, '.cargo', 'bin'), path.join(home, 'go', 'bin')] : []),
+    ].filter((dir) => !dirs.includes(dir) && exists(dir));
+    const system = dirs.findIndex((dir) => ['/usr/bin', '/bin', '/usr/sbin', '/sbin'].includes(dir));
+    const at = system === -1 ? dirs.length : system;
+    return [...dirs.slice(0, at), ...extra, ...dirs.slice(at)].join(':');
+}
+
 module.exports = {
+    macToolPath,
     IS_WIN,
     IS_MAC,
     IS_LINUX,

@@ -1237,7 +1237,8 @@
     'Windows or an antivirus blocked the program from starting. Add this folder to its exclusions: {0}': 'Windows hoặc antivirus đã chặn chương trình khởi động. Hãy thêm thư mục này vào danh sách loại trừ của antivirus: {0}',
     // Settings › Compiler: Large Stack
     'Large Stack (256 MB)': 'Stack lớn (256 MB)',
-    'Give programs a 256 MB stack, as Codeforces and most judges do. Windows\' default of 2 MB makes a deep recursion (a DFS 100,000 levels deep) crash with a stack overflow. Windows only.': 'Cho chương trình stack 256 MB như Codeforces và đa số OJ. Mặc định 2 MB của Windows khiến đệ quy sâu (DFS sâu 100.000 tầng) bị tràn stack. Chỉ áp dụng trên Windows.',
+    'Give programs a 256 MB stack, as Codeforces and most judges do. Without it, a deep recursion (a DFS 100,000 levels deep) can crash with a stack overflow. Windows and macOS only.': 'Cho chương trình stack 256 MB như Codeforces và đa số OJ. Nếu tắt, đệ quy sâu (DFS sâu 100.000 tầng) có thể bị tràn stack. Chỉ áp dụng trên Windows và macOS.',
+    'AStyle was not found. Run "brew install astyle" in Terminal, then restart the app.': 'Không tìm thấy AStyle. Mở Terminal, chạy "brew install astyle" rồi khởi động lại app.',
     // Stress test (STRESS tab, renderer/app/stress-test.js)
     'STRESS': 'STRESS',
     'Stress test: compare your solution with a brute force on random tests': 'Stress test: so code của bạn với code trâu trên các test ngẫu nhiên',

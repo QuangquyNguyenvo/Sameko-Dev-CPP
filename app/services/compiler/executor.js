@@ -106,9 +106,9 @@ function reportStartError(winError, exePath) {
     sendToRenderer('system-message', { type: 'info', message: `Windows error ${winError}. Build folder: ${path.dirname(exePath)}` });
 }
 
-// Flags that make a build read files the cache key cannot see. `-Wl,--stack=N` (the Large Stack
-// setting) reads nothing, so it keeps the build cacheable.
-const UNCACHEABLE_FLAG = /^(-I|-iquote|-isystem|-idirafter|-include|-imacros|-L|-l(?!stdc\+\+exp$)|-Wl,(?!--stack=\d+$)|-Wa,|-Wp,|-T|-B|-specs|--sysroot|@)/;
+// Flags that make a build read files the cache key cannot see. `-Wl,--stack=N` and macOS's
+// `-Wl,-stack_size,0xN` (the Large Stack setting) read nothing, so they keep the build cacheable.
+const UNCACHEABLE_FLAG = /^(-I|-iquote|-isystem|-idirafter|-include|-imacros|-L|-l(?!stdc\+\+exp$)|-Wl,(?!--stack=\d+$|-stack_size,0x[0-9a-f]+$)|-Wa,|-Wp,|-T|-B|-specs|--sysroot|@)/;
 
 /**
  * Hash of everything that decides the output of this build, or null when the
