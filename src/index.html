@@ -216,26 +216,18 @@
                     <button class="cc-close" id="cc-close">×</button>
                 </div>
                 <div class="cc-body">
-                    <div class="cc-steps">
-                        <div class="cc-step">
-                            <span class="cc-step-num">1</span>
-                            <span class="cc-step-text">Install <strong>Competitive Companion</strong> extension for
-                                Chrome/Firefox</span>
+                    <!-- Sameko extension: fetch a problem from the browser (renderer/app/oj-submit.js). First: it is the main way. -->
+                    <div class="oj-ext" id="oj-ext">
+                        <div class="oj-ext-head">
+                            <span class="oj-ext-title">Sameko extension</span>
+                            <span class="oj-ext-state" id="oj-ext-state" data-state="off">Not connected</span>
                         </div>
-                        <div class="cc-step">
-                            <span class="cc-step-num">2</span>
-                            <span class="cc-step-text">Open a problem on any OJ website</span>
+                        <button class="cc-btn primary oj-ext-current" id="oj-fetch-current">Get problem from browser</button>
+                        <div class="oj-ext-row">
+                            <input class="oj-ext-url" id="oj-fetch-url" type="url" spellcheck="false" placeholder="Problem URL">
+                            <button class="cc-btn secondary" id="oj-fetch-url-btn">Fetch</button>
                         </div>
-                        <div class="cc-step">
-                            <span class="cc-step-num">3</span>
-                            <span class="cc-step-text">Click the <strong>+</strong> icon of the extension in your
-                                browser</span>
-                        </div>
-                        <div class="cc-step">
-                            <span class="cc-step-num">4</span>
-                            <span class="cc-step-text">Test cases will <strong>automatically load</strong> into the
-                                IDE!</span>
-                        </div>
+                        <div class="oj-ext-msg" id="oj-ext-msg" hidden></div>
                     </div>
                     <div class="cc-options">
                         <div class="cc-option-row">
@@ -253,23 +245,16 @@
                             </select>
                         </div>
                     </div>
-                    <!-- Sameko extension: fetch a problem from the browser (renderer/app/oj-submit.js). -->
-                    <div class="oj-ext" id="oj-ext">
-                        <div class="oj-ext-head">
-                            <span class="oj-ext-title">Sameko extension</span>
-                            <span class="oj-ext-state" id="oj-ext-state" data-state="off">Not connected</span>
-                        </div>
-                        <button class="cc-btn secondary oj-ext-current" id="oj-fetch-current">Get problem from browser</button>
-                        <div class="oj-ext-row">
-                            <input class="oj-ext-url" id="oj-fetch-url" type="url" spellcheck="false" placeholder="Problem URL">
-                            <button class="cc-btn primary" id="oj-fetch-url-btn">Fetch</button>
-                        </div>
-                        <div class="oj-ext-msg" id="oj-ext-msg" hidden></div>
-                    </div>
-                </div>
-                <div class="cc-footer">
-                    <button class="cc-btn secondary" id="cc-cancel">Close</button>
-                    <button class="cc-btn primary" id="cc-install">Install Extension</button>
+                    <!-- Competitive Companion (third-party, any judge): folded, it is the other way. -->
+                    <details class="cc-companion">
+                        <summary>Using Competitive Companion?</summary>
+                        <ol class="cc-mini-steps">
+                            <li>Install the Competitive Companion extension</li>
+                            <li>Open a problem and click its + icon</li>
+                            <li>The tests load here by themselves</li>
+                        </ol>
+                        <button class="cc-btn secondary" id="cc-install">Install Competitive Companion</button>
+                    </details>
                 </div>
             </div>
         </div>
@@ -1430,7 +1415,7 @@
                         <div class="terminal-body" id="terminal"></div>
                         <div class="terminal-input">
                             <span class="prompt"></span>
-                            <textarea id="terminal-in" rows="1" placeholder="Input..." disabled></textarea>
+                            <textarea id="terminal-in" rows="1" placeholder="Input... (Ctrl+D: end of input)" disabled></textarea>
                             <button class="send-btn" id="btn-send" disabled title="Send">
                                 <svg class="ico" data-icon="paper-plane-right" data-weight="fill"><use href="#i-paper-plane-right-fill"/></svg>
                             </button>
@@ -1473,6 +1458,7 @@
 <script src="renderer/locales/vi.js"></script>
 <script src="renderer/locales/zh-CN.js"></script>
     <script src="features/suggestions/cpp-suggestions.js"></script>
+    <script src="features/suggestions/cpp-language-tools.js"></script>
     <script src="features/snippets/snippet-editor.js"></script>
     <script src="renderer/ui/theme-tokens.js"></script>
     <script src="renderer/ui/theme-manager.js"></script>
@@ -1484,6 +1470,7 @@
 <script src="renderer/ui/motion.js"></script>
     <script src="features/local-history/history-manager.js"></script>
     <script src="features/file-explorer/file-explorer.js"></script>
+    <script src="features/file-explorer/find-in-files.js"></script>
     <script src="features/file-explorer/file-explorer-tree.js"></script>
     <script src="features/file-explorer/file-explorer-menus.js"></script>
     <script src="features/file-explorer/file-explorer-approaches.js"></script>
@@ -1504,10 +1491,12 @@
     <script src="renderer/app/vim-mode.js"></script>
     <script src="renderer/app/layout.js"></script>
     <script src="renderer/app/tabs.js"></script>
+    <script src="renderer/app/compile-hints.js"></script>
     <script src="renderer/app/build.js"></script>
     <script src="renderer/app/ipc-events.js"></script>
     <script src="renderer/app/companion.js"></script>
     <script src="renderer/app/file-watch.js"></script>
+    <script src="renderer/app/test-row-tools.js"></script>
     <script src="renderer/app/batch-tests.js"></script>
     <script src="renderer/app/checker.js"></script>
     <script src="renderer/app/stress-test.js"></script>

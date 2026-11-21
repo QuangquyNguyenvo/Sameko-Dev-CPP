@@ -75,12 +75,20 @@ async function start({ exePath, cwd }) {
             frames: [],
             locals: [],
         };
+        if (s.reason === 'watchpoint-trigger' && s.results.wpt) {
+            payload.watchpoint = {
+                expr: s.results.wpt.exp,
+                oldValue: s.results.value?.old,
+                newValue: s.results.value?.new,
+            };
+        }
+        if (s.reason === 'watchpoint-scope') payload.expiredWatchpointId = Number(s.results.wpnum);
         try {
-            const f = await session.listFrames();
+            const f = await owner.listFrames();
             payload.frames = (f.stack || []).map(normFrame);
         } catch (_) { }
         try {
-            const l = await session.listLocals();
+            const l = await owner.listLocals();
             payload.locals = l.variables || [];
         } catch (_) { }
         // Stopped (or replaced) while the stack was being read: the renderer
@@ -124,6 +132,7 @@ function requireSession() {
 }
 
 const setBreakpoint = (file, line, cond) => requireSession().setBreakpoint(file, line, cond);
+const setWatchpoint = (expr) => requireSession().setWatchpoint(expr);
 const breakAtMain = () => requireSession().breakAtMain();
 const removeBreakpoint = (id) => requireSession().removeBreakpoint(id);
 const enableBreakpoint = (id) => requireSession().enableBreakpoint(id);
@@ -165,6 +174,7 @@ module.exports = {
     start,
     stop,
     setBreakpoint,
+    setWatchpoint,
     breakAtMain,
     removeBreakpoint,
     enableBreakpoint,

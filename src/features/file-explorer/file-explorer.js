@@ -448,6 +448,7 @@ const FileExplorer = {
 
         document.getElementById('btn-explorer-new-file')?.addEventListener('click', () => this.promptNewFile());
         document.getElementById('btn-explorer-refresh')?.addEventListener('click', () => this.refreshTree());
+        FindInFiles.init(this);
 
         const filter = document.getElementById('explorer-filter');
         const clear = document.getElementById('explorer-filter-clear');
@@ -472,8 +473,13 @@ const FileExplorer = {
         // Keyboard shortcuts when explorer is open and a file is selected
         document.addEventListener('keydown', (e) => {
             if (!this.isOpen || !this.selectedFilePath) return;
-            const tag = document.activeElement?.tagName;
-            if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return;
+            // Only when the focus is on the explorer itself (or nowhere). Any other focus,
+            // the editor above all, keeps Ctrl+C/X/V and Delete. Monaco takes keys in a
+            // plain div, so a check for INPUT/TEXTAREA alone let these steal copy and paste.
+            const active = document.activeElement;
+            if (active && active !== document.body && !this.elements.sidebar?.contains(active)) return;
+            const tag = active?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || active?.isContentEditable) return;
             this.handleExplorerKeydown(e);
         });
     },
@@ -605,6 +611,7 @@ const FileExplorer = {
                     // Migrate global categories to the new folder if needed
                     const globalCats = this.categories.filter(c => !c.folderPath);
                     this.currentFolder = result.filePaths[0];
+                    FindInFiles.folderChanged();
                     this.filterText = '';
                     const filterInput = document.getElementById('explorer-filter');
                     if (filterInput) filterInput.value = '';

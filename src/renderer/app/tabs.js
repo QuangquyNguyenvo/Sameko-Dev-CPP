@@ -287,6 +287,34 @@ async function openFileFromPath(filePath) {
 // Expose to window for FileExplorer
 window.openFromPath = openFileFromPath;
 
+/** Reveal a file range or position, reusing an editor pane that already shows the tab. */
+async function openFileAt(filePath, selection) {
+    const key = pathKey(filePath);
+    let tab = App.tabs.find(t => t.path && pathKey(t.path) === key);
+    let editor = [getActiveEditor(), App.editor, App.editor2].find(ed => tab?.model && ed?.getModel() === tab.model);
+    if (!editor) {
+        await openFileFromPath(filePath);
+        tab = App.tabs.find(t => t.path && pathKey(t.path) === key);
+        if (!tab) return false;
+        await ensureMonaco();
+        editor = App.editor;
+        if (editor.getModel() !== tab.model) setActive(tab.id);
+    }
+    if (!editor || editor.getModel() !== tab.model) return false;
+    focusEditorPane(editor === App.editor2 ? 2 : 1);
+    if (selection?.startLineNumber) {
+        const range = tab.model.validateRange(selection);
+        editor.setSelection(range);
+        editor.revealRangeInCenter(range);
+    } else if (selection) {
+        const position = tab.model.validatePosition(selection);
+        editor.setPosition(position);
+        editor.revealPositionInCenter(position);
+    }
+    editor.focus();
+    return true;
+}
+
 function initFileDrop() {
     const shouldOpenFiles = event => event.dataTransfer?.types?.includes('Files')
         && !event.target.closest?.('.io-panel-input, .cat-group, input[type="file"]');

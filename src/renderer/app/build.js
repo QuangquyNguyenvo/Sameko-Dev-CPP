@@ -83,6 +83,8 @@ async function buildActiveTab({ runAfter }) {
     const editor = getActiveEditor();
     if (!tab) { log('No file open', 'warning'); return; }
     if (!isBuildableTab(tab)) { log(notBuildableMessage(tab), 'warning'); return; }
+    const changed = externalChangeBlocksBuild(tab.path);
+    if (changed) { log(changed, 'warning'); return; }
 
     setBuildingState(true);
     let built = false;
@@ -129,6 +131,8 @@ async function buildActiveTab({ runAfter }) {
         if (window.FileExplorer) window.FileExplorer.notifyBuildEvent(tab.path, 'compile-start');
 
         const t0 = Date.now();
+        const compiledPath = tab.path;
+        const compiledVersion = tab.model?.getVersionId();
         const r = await window.electronAPI.compile({
             filePath: tab.path,
             untitledId: tab.path ? '' : tab.id,
@@ -153,7 +157,7 @@ async function buildActiveTab({ runAfter }) {
             if (r.warnings) {
                 log(r.warnings, 'warning');
                 if (Array.isArray(r.problems)) addProblems(r.problems.filter(p => p.type !== 'error'));
-                else parseProblems(r.warnings, 'warning');
+                else parseProblems(r.warnings);
             }
             setStatus(`${verb}: ${ms}ms`, 'success');
             if (window.Motion) Motion.buildResult(document.getElementById('btn-buildrun'), true);
@@ -164,6 +168,8 @@ async function buildActiveTab({ runAfter }) {
             log(r.error, 'error');
 
             const errText = String(r.error || '');
+            const firstError = isCppTab(tab) && !Array.isArray(r.problems) ? CompileHints.firstError(errText) : null;
+            if (firstError?.hint) log(firstError.hint, 'info');
             const isFileLocked = /permission denied|cannot open output file/i.test(errText);
             const isMultiDef = /multiple definition of/i.test(errText);
             const linkerLikeError = /undefined reference|undefined symbol|ld returned|collect2\.exe: error/i.test(errText);
@@ -172,15 +178,22 @@ async function buildActiveTab({ runAfter }) {
                 log('Hint: your program is still running and is holding the .exe open. Press ■ Stop (or Shift+F5 if you are debugging), then build again.', 'warning');
             } else if (isMultiDef) {
                 log('Hint: Multiple symbol definitions detected. Check for duplicate main() or functions.', 'warning');
-            } else if ((App.settings.compiler.singleFileMode !== false) && linkerLikeError) {
+            } else if (!firstError?.hint && (App.settings.compiler.singleFileMode !== false) && linkerLikeError) {
                 log('Hint: This may require multi-file linking. Retry with Single-file mode OFF in Compiler settings.', 'warning');
             }
 
             // Other languages come with their problems read from their compiler's own format.
             if (Array.isArray(r.problems)) addProblems(r.problems);
-            else parseProblems(r.error, 'error');
+            else parseProblems(errText, firstError);
             hasBuildProblems = true; // Lock problems list from live-check overwrite
             highlightErrorLines(tab);
+            if (isCppTab(tab) && tab.path === compiledPath && tab.model && !tab.model.isDisposed() &&
+                tab.model.getVersionId() === compiledVersion && errorDecorationModel === tab.model) {
+                const tag = String(tab.id || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+                const sourceName = tag ? 'temp_code-' + tag + '.cpp' : 'temp_code.cpp';
+                CppLanguageTools.setBuildMarkers(tab.model, App.problems.filter(p => p.type === 'error' &&
+                    (tab.path ? problemIsInTab(p, tab) : p.file.split(/[/\\]/).pop() === sourceName)));
+            }
             setStatus(`${verb} failed`, 'error');
             if (window.Motion) Motion.buildResult(document.getElementById('btn-buildrun'), false);
             App.exePath = null;
@@ -335,6 +348,7 @@ async function runNow(clearTerminal) {
         log(`< ${inputFile.split(/[\\/]/).pop()}`, 'input');
         window.electronAPI.sendInputFile(inputFile).then((r) => {
             if (r && !r.success && App.isRunning) log(`Could not read the input file: ${r.error}`, 'error');
+            else if (r && r.success) armInputWaitHint(runSeq);
         });
         return;
     }
@@ -357,8 +371,11 @@ async function runNow(clearTerminal) {
                     log(inputText, 'input');
                 }
 
-                // Send entire input to stdin at once (no per-line delay)
+                // Send entire input to stdin at once (no per-line delay). stdin stays open:
+                // a program still waiting for input shows that the Input box was short, so
+                // it is said in the terminal instead of ending the input (armInputWaitHint).
                 window.electronAPI.sendInput(inputText);
+                armInputWaitHint(runSeq);
             }
         }, 20);
     }
@@ -426,6 +443,7 @@ function clearErrorDecorations(model) {
     if (model && model !== errorDecorationModel) return;
     if (errorDecorationModel && !errorDecorationModel.isDisposed()) {
         errorDecorationModel.deltaDecorations(App.errorDecorations, []);
+        monaco.editor.setModelMarkers(errorDecorationModel, CppLanguageTools.buildSource, []);
     }
     App.errorDecorations = [];
     errorDecorationModel = null;
@@ -475,22 +493,12 @@ function notBuildableMessage(tab) {
     return `${tab.name} is not a source file the app can build. Switch to the solution's tab (C/C++, Python, Java, Kotlin, Rust, Go, Pascal or JavaScript).`;
 }
 
-function parseProblems(text, type) {
-    const lines = text.split('\n');
-    const regex = /(.+):(\d+):(\d+):\s*(error|warning):\s*(.+)/;
-    const found = [];
-
-    lines.forEach(line => {
-        const m = line.match(regex);
-        if (m) {
-            found.push({
-                file: m[1],
-                line: parseInt(m[2]),
-                col: parseInt(m[3]),
-                type: m[4],
-                message: m[5]
-            });
-        }
+function parseProblems(text, firstError = null) {
+    const found = text.replace(/\x1b\[[0-9;]*m/g, '').split(/\r?\n/).flatMap((line, index) => {
+        const problem = CompileHints.parseDiagnostic(line);
+        if (!problem) return [];
+        if (firstError?.index === index && firstError.hint) problem.hint = firstError.hint;
+        return [problem];
     });
     addProblems(found);
 }
@@ -498,7 +506,10 @@ function parseProblems(text, type) {
 /** Problems found by a build ({file, line, col, type, message}) into the Problems list. */
 function addProblems(list) {
     for (const p of list || []) {
-        if (p && p.file) App.problems.push({ file: p.file, line: Number(p.line) || 1, col: Number(p.col) || 1, type: p.type || 'error', message: String(p.message || '') });
+        if (p && p.file) App.problems.push({
+            file: p.file, line: Number(p.line) || 1, col: Number(p.col) || 1,
+            type: p.type || 'error', message: String(p.message || ''), hint: p.hint
+        });
     }
 
     if (App.problems.length > 0) {
@@ -528,7 +539,8 @@ function renderProblems() {
             ? '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>'
             : '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01"/></svg>';
         el.innerHTML = `<span class="problem-icon">${icon}</span>
-      <span class="problem-message">${escHtml(p.message)}</span>
+      <span><span class="problem-message" translate="no">${escHtml(p.message)}</span>
+        ${p.hint ? `<br><span class="problem-hint">${escHtml(p.hint)}</span>` : ''}</span>
       <span class="problem-location" style="margin-left:auto;opacity:0.7;color:var(--text-secondary)">${escHtml(String(p.file || '').split(/[/\\]/).pop())}:${Number(p.line) || 0}</span>`;
         el.onclick = () => { revealProblem(p); };
         list.appendChild(el);
@@ -645,8 +657,18 @@ async function sendInput() {
         inp.style.height = '';
         inp.style.maxHeight = '';
         inp.scrollTop = 0;
-        await window.electronAPI.sendInput(text);
+        const r = await window.electronAPI.sendInput(text);
+        if (r && r.closed) log('Input is closed: the end of input was already sent.', 'warning');
     }
+}
+
+/** End of input (Ctrl+D, or Ctrl+Z in an empty box): text still in the box is sent first. */
+async function sendEof(label = '^D') {
+    if (!App.isRunning) return;
+    const inp = document.getElementById('terminal-in');
+    if (inp && inp.value) await sendInput();
+    log(`${label} (EOF)`, 'system');
+    await window.electronAPI.closeInput?.();
 }
 
 function setStatus(msg, type) {
@@ -918,6 +940,7 @@ function renderOutputPanel(out) {
     if (out && out.state === 'running') { label = 'Running'; kind = 'running'; }
     else if (out && out.state === 'stopped') { label = 'Stopped'; kind = 'stopped'; }
     else if (out && out.verdict === 'ac') { label = 'AC'; kind = 'ac'; }
+    else if (out && out.verdict === 're') { label = 'RE'; kind = 'wa'; }
     else if (out && out.verdict === 'wa') {
         label = out.mismatches ? `WA · ${out.mismatches} line${out.mismatches === 1 ? '' : 's'}` : 'WA';
         kind = 'wa';
@@ -994,8 +1017,32 @@ function releaseRunCapture(tabId) {
     if (currentRun && currentRun.tabId === tabId && !App.isRunning) currentRun = null;
 }
 
+// After the Input box or input file is sent: a program that then runs on with no output for a
+// while is either computing or waiting for input the box did not have. Say so once, with the
+// way out (Ctrl+D ends the input, for `while (cin >> x)`). Output restarts the wait.
+const INPUT_WAIT_HINT_MS = 2000;
+let inputWaitHint = null;   // { runSeq, timer, shown }
+
+function armInputWaitHint(runSeq) {
+    if (inputWaitHint) clearTimeout(inputWaitHint.timer);
+    inputWaitHint = { runSeq, timer: null, shown: false };
+    restartInputWaitHint();
+}
+
+function restartInputWaitHint() {
+    const h = inputWaitHint;
+    if (!h || h.shown) return;
+    clearTimeout(h.timer);
+    h.timer = setTimeout(() => {
+        if (inputWaitHint !== h || !App.isRunning || App.runSeq !== h.runSeq) return;
+        h.shown = true;
+        log('Still running. If it is waiting for more input, type it here, or press Ctrl+D to end the input.', 'info');
+    }, INPUT_WAIT_HINT_MS);
+}
+
 function captureRunOutput(data) {
     if (!currentRun || data == null) return;
+    restartInputWaitHint();
     if (currentRun.text.length >= MAX_RUN_OUTPUT_CHARS) { currentRun.truncated = true; return; }
     noteInteractiveOutput(data);
     currentRun.text += String(data);
@@ -1039,12 +1086,16 @@ function compareOutput(run = currentRun) {
     }
 
     const diff = buildCompactDiffHtml(expectedRaw, actualText, { normalize: true });
+    // The verdict follows the tab's compare mode, as TESTS judges (words, ignore case, lines);
+    // the line diff is only what is drawn. A crash is RE whatever it printed, as on a judge.
+    const matched = outputMatchesExpected(run.tabId, actualText, expectedRaw, diff.allMatch);
+    const crashed = run.exitCode !== undefined && run.exitCode !== null && run.exitCode !== 0;
     setTabOutput(run.tabId, {
         text: actualText,
         stderr: runStderrText(run),
         state: 'done',
-        verdict: diff.allMatch ? 'ac' : 'wa',
-        mismatches: diff.mismatchCount
+        verdict: crashed ? 're' : matched ? 'ac' : 'wa',
+        mismatches: matched ? 0 : diff.mismatchCount
     });
 
     if (focused && diffDisplay && textarea) {
@@ -1053,6 +1104,41 @@ function compareOutput(run = currentRun) {
         diffDisplay.title = 'Click to edit expected output';
         textarea.style.display = 'none';
     }
+}
+
+// The 'tokens' / 'nocase' rule of app/shared/judge.js compareOutputs(), which TESTS uses.
+// The sandboxed preload cannot load that file, so the renderer keeps this copy: keep the two
+// the same (same words in order, real numbers within 1e-6 absolute or relative).
+const JUDGE_REAL = /^[+-]?(\d+\.?\d*|\.\d+)([eE][+-]?\d+)?$/;
+const JUDGE_EPS = 1e-6;
+function judgeSameToken(a, e) {
+    if (a === e) return true;
+    if (!/[.eE]/.test(e) || !JUDGE_REAL.test(e) || !JUDGE_REAL.test(a)) return false;
+    const x = Number(a), y = Number(e);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return false;
+    const d = Math.abs(x - y);
+    return d <= JUDGE_EPS || d <= JUDGE_EPS * Math.abs(y);
+}
+function judgeTokensMatch(actual, expected, nocase) {
+    const wa = /\S+/g, we = /\S+/g;
+    for (;;) {
+        const ma = wa.exec(actual), me = we.exec(expected);
+        if (!ma || !me) return !ma && !me;
+        const a = nocase ? ma[0].toLowerCase() : ma[0];
+        const e = nocase ? me[0].toLowerCase() : me[0];
+        if (!judgeSameToken(a, e)) return false;
+    }
+}
+
+/** Same verdict as TESTS for this tab's compare mode; a checker program counts as 'tokens' here. */
+function outputMatchesExpected(tabId, actual, expected, lineMatch) {
+    if (typeof checkerCompareMode !== 'function') return lineMatch;
+    const tab = App.tabs.find(t => t.id === tabId);
+    const problem = tabId === getPreferredTabId() && typeof ccProblem !== 'undefined' ? ccProblem
+        : tab && tab.testState ? tab.testState.problem : null;
+    const mode = checkerCompareMode(problem);
+    if (mode === 'lines') return lineMatch;
+    return judgeTokensMatch(String(actual ?? ''), String(expected ?? ''), mode === 'nocase');
 }
 
 function switchToExpectedEdit() {

@@ -71,6 +71,236 @@
     padding: 8px 0;
 }
 
+/* Find in Files (find-in-files.js): replaces the filter and the tree while open. The search
+   box reuses the .explorer-filter pill; the Aa / .* toggles sit inside it. */
+.explorer-searching > .explorer-filter,
+.explorer-searching > #explorer-tree {
+    display: none;
+}
+
+#find-in-files:not([hidden]) {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 0;
+    color: var(--text-primary);
+}
+
+.fif-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 12px 6px 16px;
+}
+
+.fif-title {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.fif-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.fif-close:hover {
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--text-primary);
+}
+
+.fif-form {
+    margin: 0;
+}
+
+.explorer-filter.fif-box {
+    padding-right: 4px;
+}
+
+.fif-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 22px;
+    padding: 0 4px;
+    flex-shrink: 0;
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-family: var(--font-mono, monospace);
+    font-size: 11.5px;
+    font-weight: 700;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+/* The real checkbox covers the toggle, invisible: clicks and keyboard focus are native. */
+.fif-toggle input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.fif-toggle:hover {
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-primary);
+}
+
+.fif-toggle:has(input:checked) {
+    background: color-mix(in srgb, var(--accent) 24%, transparent);
+    color: var(--accent);
+}
+
+.fif-toggle:has(input:focus-visible) {
+    outline: 1px solid var(--accent);
+}
+
+.fif-status {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 2px 16px 6px;
+    color: var(--text-muted);
+    font-size: 11.5px;
+}
+
+.fif-status:empty {
+    display: none;
+}
+
+.fif-status.error {
+    color: var(--error, #f05a6e);
+}
+
+.fif-results {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 0 10px;
+}
+
+.fif-file > summary {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 4px 12px 4px 14px;
+    cursor: pointer;
+    list-style: none;
+    font-size: 12.5px;
+    user-select: none;
+}
+
+.fif-file > summary::-webkit-details-marker {
+    display: none;
+}
+
+.fif-file > summary::before {
+    content: '';
+    flex-shrink: 0;
+    width: 0;
+    height: 0;
+    margin-right: 2px;
+    border-left: 4px solid currentColor;
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
+    color: var(--text-muted);
+    transform: translateY(-1px);
+    transition: transform 0.12s ease;
+}
+
+.fif-file[open] > summary::before {
+    transform: translateY(-1px) rotate(90deg);
+}
+
+.fif-file > summary:hover {
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+
+.fif-file-name {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.fif-file-dir {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-muted);
+    font-size: 11px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fif-count {
+    flex-shrink: 0;
+    min-width: 18px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-secondary);
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+}
+
+.find-files-match {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    width: 100%;
+    padding: 3px 12px 3px 28px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: var(--font-mono, monospace);
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.find-files-match:hover,
+.find-files-match:focus-visible {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--text-primary);
+    outline: none;
+}
+
+.fif-line {
+    flex-shrink: 0;
+    min-width: 2.5em;
+    color: var(--text-muted);
+    font-size: 11px;
+    text-align: right;
+}
+
+.fif-text {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: pre;
+}
+
+.fif-text mark {
+    border-radius: 3px;
+    padding: 0 1px;
+    background: color-mix(in srgb, var(--accent) 30%, transparent);
+    color: var(--text-primary);
+}
+
 /* Explorer Empty State */
 .explorer-empty {
     display: flex;

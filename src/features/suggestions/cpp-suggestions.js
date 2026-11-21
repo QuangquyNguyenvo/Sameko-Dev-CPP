@@ -372,6 +372,10 @@ window.registerCppIntellisense = function (monaco) {
 
                                     return {
                                         label: item.label,
+                                        // clangd filters on the typed word ("else"), not the label
+                                        // (" else {statements}"). Filtering on the label kept the list
+                                        // open after `else {`, so Enter inserted the snippet.
+                                        filterText: item.filterText || undefined,
                                         kind: lspKindToMonaco(item.kind),
                                         detail: item.detail,
                                         documentation: doc,

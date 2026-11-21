@@ -204,6 +204,8 @@ async function stressSource(filePath) {
 }
 
 async function compileStressProgram(filePath, content, flags) {
+    const changed = externalChangeBlocksBuild(filePath);
+    if (changed) return { success: false, error: changed };
     return window.electronAPI.compile({
         filePath,
         untitledId: '',
@@ -397,18 +399,18 @@ async function runStressTests(run, ctx) {
     const seedBase = 1 + Math.floor(Math.random() * 900000000);
     let next = 1;
     let stop = null;      // the first failure or helper error (lowest test number)
-    let suspect = null;   // a TLE from a crowded run, checked alone
+    let suspects = [];    // TLEs from a crowded run, each checked alone
     let timeUp = false;
     const keep = (r, i) => { if (!stop || i < stop.testNo) stop = { ...r, testNo: i }; };
 
     const worker = async () => {
-        while (!Stress.stopping && !stop && !suspect && next <= run.total) {
+        while (!Stress.stopping && !stop && !suspects.length && next <= run.total) {
             if (Date.now() - run.startedAt >= run.seconds * 1000) { timeUp = true; return; }
             const i = next++;
             const r = await runStressTest(i, seedBase + i, run, ctx);
             if (r.error) keep(r.error, i);
             else if (r.fail && r.fail.verdict === 'TLE' && poolSize > 1) {
-                if (!suspect || i < suspect.testNo) suspect = r.fail;
+                suspects.push(r.fail);
             } else if (r.fail) keep(r.fail, i);
             else run.done++;
             paintStressSoon();
@@ -417,18 +419,25 @@ async function runStressTests(run, ctx) {
 
     for (;;) {
         await Promise.all(Array.from({ length: poolSize }, worker));
-        if (stop || !suspect || Stress.stopping) break;
-        const s = suspect;
-        suspect = null;
-        const again = await runStressSolution(ctx.exes, s.input, s.expected, ctx);
-        if (again.verdict !== 'AC') {
-            keep({
-                ...s, verdict: again.verdict, output: again.sol.output || '', time: again.sol.executionTime || 0,
-                details: again.verdict === 'WA' ? (again.sol.checkerMessage || '') : (translateTestDetails(again.sol) || again.sol.error || '')
-            }, s.testNo);
-            break;
+        if (stop || !suspects.length || Stress.stopping) break;
+        // Every TLE of the crowded round, lowest test first: checking only the lowest
+        // dropped the others, so a real TLE could end as "All tests passed".
+        const queue = suspects.sort((a, b) => a.testNo - b.testNo);
+        suspects = [];
+        for (const s of queue) {
+            if (Stress.stopping) break;
+            const again = await runStressSolution(ctx.exes, s.input, s.expected, ctx);
+            if (again.verdict !== 'AC') {
+                keep({
+                    ...s, verdict: again.verdict, output: again.sol.output || '', time: again.sol.executionTime || 0,
+                    details: again.verdict === 'WA' ? (again.sol.checkerMessage || '') : (translateTestDetails(again.sol) || again.sol.error || '')
+                }, s.testNo);
+                break;
+            }
+            run.done++;   // it was the crowding
+            paintStressSoon();
         }
-        run.done++;   // it was the crowding; carry on
+        if (stop) break;
     }
     if (stop) return stop;
     if (Stress.stopping) return { kind: 'stopped' };

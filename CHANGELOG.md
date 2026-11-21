@@ -6,67 +6,99 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-### Added
-
-- **Interactive problems by hand**: you answer the program's queries in the terminal. Your replies have their own colour, and the run ends with `Queries: N | Your replies: M`.
-- **Flush warning**: a C/C++ solution that prints `?` queries but never flushes is warned when it starts. It works locally, but a judge gives Idleness limit exceeded.
-- **One-file submit**: quoted includes of your own headers (`#include "lib/dsu.hpp"`) are pasted into the submitted file, since a judge takes one file. Other includes are sent as written.
-- **Sameko Companion for Firefox** (128+), next to Chrome and Edge.
-- **More judges in the extension**: HNOJ (hnoj.edu.vn), LTOJ (laptrinhonline.club) and 28tech (oj.28tech.com.vn).
-
-### Changed
-
-- **Faster judging of large outputs**: Run All Tests compares in place and stops at the first difference (20 MB output: 1.1 s / 460 MB before, 0.3 s / 44 MB now). The diff view no longer copies or draws the whole output.
-
-### Fixed
-
-- **Samples under a "Ví dụ" heading** are now read from VNOJ-style problem pages.
-
-## [1.5.0] - 2026-11-17
-
-Judge-style testing, stress tests, checkers, seven more languages, submitting to online judges from the app, and smaller, faster updates.
+Judge-style testing, stress tests and checkers, submitting to online judges from the app, a debugger that watches arrays and values, tools on each test row, clangd navigation, seven more languages, and smaller, faster updates.
 
 ### Added
+
+**Online judges**
 
 - **Submit to Online Judge** (Ctrl+Alt+S) through the new **Sameko Companion** browser extension: Codeforces, AtCoder, CSES and DMOJ-based judges (VNOI, LQDOJ). It submits from your logged-in browser and shows the verdict in the app.
+- **More judges in the extension**: HNOJ (hnoj.edu.vn), LTOJ (laptrinhonline.club) and 28tech (oj.28tech.com.vn).
+- **Sameko Companion for Firefox** (128+), next to Chrome and Edge.
+- **One-file submit**: quoted includes of your own headers (`#include "lib/dsu.hpp"`) are pasted into the submitted file, since a judge takes one file. Other includes are sent as written.
 - **Open the app from the browser**: the extension's Open button starts Sameko Dev C++ through a `samekodev://` link (it only opens the app; the uninstaller removes the link).
+
+**Testing**
+
 - **Stress test** (STRESS tab): runs a generator, a brute force and your solution on seeded tests until the first wrong answer; the failing test can be added to your tests.
 - **Checkers**: judge a problem's tests with a testlib checker, or compare ignoring case. `testlib.h` ships with the app.
-- **Other languages** (#66): build and run Python, Java, Kotlin, Rust, Go, Pascal and JavaScript with the compiler already on your machine. Tests, stress tests and the external console work for them; IntelliSense and the debugger stay C/C++.
 - **Memory limit** for tests (default 256 MB; Competitive Companion problems bring their own), reported as MLE.
 - **Large Stack** (256 MB, on by default, Windows): deep recursion no longer overflows, as on judges.
+- **Interactive problems by hand**: you answer the program's queries in the terminal. Your replies have their own colour, and the run ends with `Queries: N | Your replies: M`.
+- **Flush warning**: a C/C++ solution that prints `?` queries but never flushes is warned when it starts. It works locally, but a judge gives Idleness limit exceeded.
+
+**Tools on a test row**
+
+- **Debug a test**: start the debugger from a test row with that test's input on stdin.
+- **Re-run with checks**: build and run a failed test with STL checks and supported sanitizers, then inspect the diagnostics.
+- **Test input graph**: draw a test's input as a graph (edge list, `n m` header, parent array, several test cases), drag nodes, zoom, and see which lines could not be read.
+- **Profile a test**: run the selected input through a profiling build and show the top 15 functions from gprof.
+
+**Debugger**
+
+- **Watchpoints**: pause when a watched expression changes and see its old and new values.
+- **Array and vector watch view**: inspect the first 200 numeric elements and see which indices changed since the last stop.
+
+**Editor**
+
+- **Go to Definition and Find All References**: F12 and Shift+F12 use clangd to navigate C/C++ symbols across files.
+- **Clangd Quick Fix**: Ctrl+. and the editor lightbulb apply suggested edits with undo support.
+- **Find in Files**: Ctrl+Shift+F searches the Explorer folder with case and regex options and opens matching lines.
+- **Compile error explanations**: the first GCC build error gets a short hint in English, Vietnamese or Chinese when it matches a common case.
+- **Full-width punctuation fix**: Quick Fix can replace full-width punctuation on C/C++ error lines with ASCII.
+- **Snippets per language**: the editor suggests only the snippets of the file's language.
+
+**Languages and app**
+
+- **Other languages** (#66): build and run Python, Java, Kotlin, Rust, Go, Pascal and JavaScript with the compiler already on your machine. Tests, stress tests and the external console work for them; IntelliSense and the debugger stay C/C++.
 - **Templates for the other languages**, and a choice of what New File creates.
 - **View › Reset Layout**.
-- **Snippets per language**: the editor suggests only the snippets of the file's language.
 - **Portable zip** keeps its data in `data\` next to the exe.
 
 ### Changed
 
-- **Rounded Chinese font** (#73, suggested by @Onlyanadvisor): the Simplified Chinese interface uses WenYuan Rounded SC (SIL OFL 1.1), cut to the interface's characters (about 240 KB).
 - **Run All Tests judges like an online judge**: tests are built with -O2 into their own program, output is compared word by word with real numbers within 1e-6, and the time limit counts from the program's start.
+- **Faster judging of large outputs**: Run All Tests compares in place and stops at the first difference (20 MB output: 1.1 s / 460 MB before, 0.3 s / 44 MB now). The diff view no longer copies or draws the whole output.
 - **TESTS panel redesigned**: verdict, details, time and memory on each row, and a verdict bar.
 - **Crashes are named** (stack overflow, access violation, division by zero…) instead of a bare exit code.
 - **A test without an expected output** is RAN, not AC.
 - **Updates download only what changed** (about 20 MB instead of the whole installer), keep GCC when it did not change, and show a progress window.
+- **Rounded Chinese font** (#73, suggested by @Onlyanadvisor): the Simplified Chinese interface uses WenYuan Rounded SC (SIL OFL 1.1), cut to the interface's characters (about 240 KB).
 
 ### Fixed
 
-- **Builds under a non-English Windows user name** (e.g. `C:\Users\Nguyễn`) no longer fail.
-- **Restart to update** no longer leaves an app with no window that cannot be opened again.
+- **IntelliSense no longer fills the disk**: clangd kept a 13 MB preamble-*.pch file in TEMP for each C++ file opened, and they were never deleted (several GB after a few months). It now keeps them in memory.
+- **Typing `else {` and pressing Enter** now opens an indented block. The suggestion list stayed open after the `{`, so Enter inserted clangd's `else` snippet without indentation, and Tab then turned it into `else if (condition)`. Reported by @JuggyBob.
 - **Antivirus or Windows blocking a program**: the message says so and names the folder to exclude.
 - **Run keeps working** after an antivirus deletes the app's run helper.
-- **Vietnamese letters** use the app's fonts everywhere.
-- **Find widget Close button** is clickable (#71); Escape in Settings closes inner widgets first.
-- **No blue line** above the current line with word wrap on (#72).
+- **Output card verdict**: a program that prints the right answer but then crashes is RE, not AC, and the verdict follows the compare mode (Words, Ignore case) as TESTS does.
+- **End of input**: Ctrl+D in the terminal (or Ctrl+Z in an empty box) sends EOF, so `while (cin >> x)` can finish. A program still running 2 s after the Input box was sent gets a hint that it may be waiting for more input.
+- **Stress test** rechecks every test that looked like TLE in a parallel round, not only the first, so a real TLE is no longer reported as "All tests passed". It keeps its Tests/Max values, and stopping before any test ran is no longer shown as passed.
+- **A file changed in another editor** is no longer overwritten by Build or Run Tests while its Reload prompt is unanswered.
 - **Build and Debug wait** while tests or a stress test are running.
 - **Adding a test with +** keeps the text you typed.
-- **Stress test** keeps its Tests/Max values, and stopping before any test ran is no longer shown as passed.
+- **Samples under a "Ví dụ" heading** are now read from VNOJ-style problem pages.
 - **Submitting twice** with a double click no longer sends two submissions; the problem link is remembered after a restart.
-- **Python started through `py`** is timed and limited correctly; **Java** is no longer given MLE below the limit.
-- **Competitive Companion** accepts problems only from browser extensions, not from web pages.
 - **A submission whose browser was closed** ends with a message instead of showing "Judging" forever.
-- **Run button edge** (#75, by @baodao211): hover no longer flickers and a click on the edge is no longer lost.
+- **Competitive Companion** accepts problems only from browser extensions, not from web pages.
+- **Python started through `py`** is timed and limited correctly; **Java** is no longer given MLE below the limit.
 - **Restore session prompt** is translated (#74).
+
+## [1.4.1] - 2026-11-18
+
+Bug fixes: copy and paste in the editor, builds under a Vietnamese Windows user name, and Restart to update.
+
+### Fixed
+
+- **Ctrl+C, Ctrl+V, Ctrl+X and Delete in the editor** work again while a file is selected in the Explorer. Before, the Explorer took them as file copy, paste and delete.
+- **Unsaved work from the last session** is kept when the same file is opened again before Restore is answered. Before, closing the app then lost it.
+- **Builds under a non-English Windows user name** (e.g. `C:\Users\Nguyễn`) no longer fail.
+- **Restart to update** no longer leaves an app with no window that cannot be opened again, and the update shows its progress.
+- **Vietnamese letters** use the app's fonts everywhere.
+- **Vietnamese titles and buttons** are drawn in one font. Fredoka has no Vietnamese letters, so a word such as "đồ thị" mixed two fonts; in Vietnamese, Fredoka is now drawn wholly with Nunito.
+- **Find widget Close button** is clickable (#71); Escape in Settings closes inner widgets first.
+- **No blue line** above the current line with word wrap on (#72).
+- **Run button edge** (#75, by @baodao211): hover no longer flickers and a click on the edge is no longer lost.
 
 ## [1.4.0] - 2026-11-07
 

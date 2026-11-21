@@ -5,7 +5,9 @@
  * The test runner. Every suite is its own script in a child process; one line per suite, and a
  * suite's whole output only when it fails (or with --verbose).
  *
- *   node test/run.js                 everything (npm test): unit first, then gui + e2e side by side
+ *   node test/run.js                 everything (npm test): unit first, then the gui suites one
+ *                                    app at a time while e2e runs beside them
+ *   node test/run.js --parallel      the same, with every gui suite at once (faster, more RAM)
  *   node test/run.js unit            one group (npm run test:unit / test:gui / test:e2e)
  *   node test/run.js checker oj      suites whose name contains a word
  *   node test/run.js --list          the suites and their groups
@@ -27,7 +29,9 @@ const SUITES = [
     { name: 'customizer state', group: 'unit', file: 'unit/theme-customizer-state.js' },
     { name: 'judge', group: 'unit', file: 'unit/judge.js' },
     { name: 'run checks', group: 'unit', file: 'unit/run-checks.js' },
+    { name: 'test row tools unit', group: 'unit', file: 'unit/test-row-tools.js' },
     { name: 'source bundler', group: 'unit', file: 'unit/source-bundler.js' },
+    { name: 'editor batch unit', group: 'unit', file: 'unit/editor-batch.js' },
     { name: 'mi-parser', group: 'unit', file: 'e2e/debugger.js', args: ['--unit'] },
     { name: 'oj bridge', group: 'unit', file: 'unit/oj-bridge.js' },
     { name: 'oj round trip', group: 'unit', file: 'unit/oj-roundtrip.js' },
@@ -37,6 +41,9 @@ const SUITES = [
     { name: 'gui', group: 'gui', file: 'gui/app.js' },
     { name: 'theme customizer gui', group: 'gui', file: 'gui/theme-customizer.js' },
     { name: 'checker gui', group: 'gui', file: 'gui/checker.js' },
+    { name: 'editor batch gui', group: 'gui', file: 'gui/editor-batch.js' },
+    { name: 'run fixes gui', group: 'gui', file: 'gui/run-fixes.js' },
+    { name: 'test row tools gui', group: 'gui', file: 'gui/test-row-tools.js' },
     // e2e
     { name: 'gdb e2e', group: 'e2e', file: 'e2e/debugger.js', args: ['--e2e'] },
 ];
@@ -86,14 +93,20 @@ function runSuite(suite, verbose) {
         return;
     }
 
-    // Unit suites first (fast, and a broken build is caught before Electron starts); the rest
-    // run side by side, each on its own temp profile.
+    // Unit suites first (fast, and a broken build is caught before Electron starts). Then the
+    // gui suites one at a time, so only one app window (~500 MB) is open at once, while the
+    // e2e suites (gdb, no window) run beside them. --parallel runs every gui suite at once.
+    const parallel = argv.includes('--parallel');
     const stages = [picked.filter(s => s.group === 'unit'), picked.filter(s => s.group !== 'unit')].filter(st => st.length);
     const t0 = Date.now();
     const failures = [];
     for (const stage of stages) {
         if (failures.length) { console.log(`skipped ${stage.length} suite(s): an earlier stage failed`); break; }
-        const results = await Promise.all(stage.map(s => runSuite(s, verbose)));
+        const gui = stage.filter(s => s.group === 'gui');
+        const oneAtATime = async () => { const out = []; for (const s of gui) out.push(await runSuite(s, verbose)); return out; };
+        const results = parallel || gui.length < 2
+            ? await Promise.all(stage.map(s => runSuite(s, verbose)))
+            : (await Promise.all([oneAtATime(), ...stage.filter(s => s.group !== 'gui').map(s => runSuite(s, verbose).then(r => [r]))])).flat();
         failures.push(...results.filter(r => !r.ok));
     }
     if (!verbose) for (const f of failures) console.log(`\n===== ${f.name} =====\n${f.out.trimEnd()}`);

@@ -129,6 +129,19 @@ function initTerminalUX() {
         });
 
 
+        // End of input: Ctrl+D as on Linux, Ctrl+Z as on Windows (only with an empty box,
+        // where there is nothing to undo). Caught on the window in the capture phase: a
+        // window-level listener stops Ctrl+D before it reaches the box.
+        window.addEventListener('keydown', (e) => {
+            if (e.target !== termInput || !App.isRunning) return;
+            if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey
+                && (e.key === 'd' || (e.key === 'z' && termInput.value === ''))) {
+                e.preventDefault();
+                e.stopPropagation();
+                sendEof(e.key === 'z' ? '^Z' : '^D');
+            }
+        }, true);
+
         termInput.addEventListener('keydown', (e) => {
 
             if (e.ctrlKey && e.key === 'c') {

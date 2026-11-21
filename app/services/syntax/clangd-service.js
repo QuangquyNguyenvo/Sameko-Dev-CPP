@@ -290,6 +290,9 @@ async function startLspInitialization() {
                     },
                     publishDiagnostics: {
                         versionSupport: true
+                    },
+                    codeAction: {
+                        codeActionLiteralSupport: { codeActionKind: { valueSet: ['quickfix'] } }
                     }
                 }
             },
@@ -431,6 +434,10 @@ async function spawnProcess() {
         // noisy completion list, better suited to competitive programming.
         '--completion-style=bundled',
         '--header-insertion=never',
+        // Preambles (~13 MB per open file with bits/stdc++.h) in memory, not as
+        // preamble-*.pch in TEMP: clangd is stopped, not asked to exit, when the app
+        // closes, so those files were never deleted and filled the disk over time.
+        '--pch-storage=memory',
         '--enable-config',
         `--query-driver=${queryDriverPath}`
     ];
@@ -825,25 +832,7 @@ async function getDiagnostics(filePath, content, timeoutMs = 6000) {
     if (!ready || closeGen(fileUri) !== gen) return null;
 
     syncDocument(fileUri, content);
-    const wanted = documentVersions[fileUri] || 1;
-
-    const cached = publishedDiagnostics.get(fileUri);
-    let items;
-    if (cached && cached.version !== null && cached.version >= wanted) {
-        items = cached.items;
-    } else {
-        items = await new Promise((resolve) => {
-            const waiter = { version: wanted, resolve, timer: null };
-            waiter.timer = setTimeout(() => {
-                const list = (diagnosticWaiters.get(fileUri) || []).filter((w) => w !== waiter);
-                if (list.length) diagnosticWaiters.set(fileUri, list); else diagnosticWaiters.delete(fileUri);
-                resolve(null);
-            }, timeoutMs);
-            const list = diagnosticWaiters.get(fileUri) || [];
-            list.push(waiter);
-            diagnosticWaiters.set(fileUri, list);
-        });
-    }
+    const items = await waitForDiagnostics(fileUri, documentVersions[fileUri], timeoutMs);
     if (!items) return null;
 
     const SEVERITY = { 1: 'error', 2: 'warning', 3: 'note' };
@@ -858,6 +847,100 @@ async function getDiagnostics(filePath, content, timeoutMs = 6000) {
             message: String(d.message || '').split('\n')[0].replace(/\s*\(fix(es)? available\)\s*$/, ''),
             source: 'clangd'
         }));
+}
+
+function waitForDiagnostics(fileUri, wanted, timeoutMs) {
+    const cached = publishedDiagnostics.get(fileUri);
+    if (cached && cached.version !== null && cached.version >= wanted) {
+        return cached.items;
+    }
+    return new Promise((resolve) => {
+        const waiter = { version: wanted, resolve, timer: null };
+        waiter.timer = setTimeout(() => {
+            const list = (diagnosticWaiters.get(fileUri) || []).filter((w) => w !== waiter);
+            if (list.length) diagnosticWaiters.set(fileUri, list); else diagnosticWaiters.delete(fileUri);
+            resolve(null);
+        }, timeoutMs);
+        const list = diagnosticWaiters.get(fileUri) || [];
+        list.push(waiter);
+        diagnosticWaiters.set(fileUri, list);
+    });
+}
+
+function localPathFromUri(uri) {
+    try {
+        return url.fileURLToPath(uri);
+    } catch (_) {
+        return null;
+    }
+}
+
+async function getLocations({ filePath, content, position, includeDeclaration }, method) {
+    const uri = getFileUri(filePath);
+    const gen = closeGen(uri);
+    if (!await ensureReady() || closeGen(uri) !== gen) return [];
+    syncDocument(uri, content);
+    const params = { textDocument: { uri }, position };
+    if (method === 'textDocument/references') params.context = { includeDeclaration: !!includeDeclaration };
+
+    try {
+        const result = await sendRequest(method, params);
+        if (closeGen(uri) !== gen || documentText.get(uri) !== content) return [];
+        return (Array.isArray(result) ? result : result ? [result] : []).flatMap(location => {
+            const target = location.targetUri || location.uri;
+            const file = localPathFromUri(target);
+            const range = location.targetSelectionRange || location.range || location.targetRange;
+            return file && range ? [{ file, range, current: target === uri }] : [];
+        });
+    } catch (err) {
+        console.error('[Clangd] Navigation request failed:', err);
+        return [];
+    }
+}
+
+async function getCodeActions({ filePath, content, range }) {
+    const uri = getFileUri(filePath);
+    const gen = closeGen(uri);
+    if (!await ensureReady() || closeGen(uri) !== gen) return [];
+    syncDocument(uri, content);
+    const version = documentVersions[uri];
+    const isCurrent = () => closeGen(uri) === gen && documentVersions[uri] === version && documentText.get(uri) === content;
+    const items = await waitForDiagnostics(uri, version, 3000);
+    if (!items || !isCurrent()) return [];
+    // Keep the original diagnostics (including clangd's ID/data) for matching fixes.
+    const diagnostics = items.filter(d => d.range &&
+        d.range.start.line <= range.end.line && d.range.end.line >= range.start.line);
+    if (!diagnostics.length) return [];
+
+    try {
+        const result = await sendRequest('textDocument/codeAction', {
+            textDocument: { uri },
+            range,
+            context: { diagnostics, only: ['quickfix'] }
+        });
+        if (!isCurrent() || !Array.isArray(result)) return [];
+        // Apply only complete, same-document text edits. Skip server commands and
+        // changes to other files rather than partially applying a workspace edit.
+        return result.flatMap(action => {
+            if (!action.kind?.startsWith('quickfix') || !action.edit || action.command || action.disabled) return [];
+            const { changes, documentChanges } = action.edit;
+            let edits;
+            if (documentChanges) {
+                const doc = documentChanges[0];
+                if (documentChanges.length !== 1 || doc?.textDocument?.uri !== uri ||
+                    (doc.textDocument.version != null && doc.textDocument.version !== version)) return [];
+                edits = doc.edits;
+            } else if (changes && Object.keys(changes).length === 1) {
+                edits = changes[uri];
+            }
+            if (!Array.isArray(edits) || !edits.length ||
+                !edits.every(edit => edit.range && typeof edit.newText === 'string' && !edit.annotationId)) return [];
+            return [{ title: action.title, preferred: action.isPreferred, edits }];
+        });
+    } catch (err) {
+        console.error('[Clangd] Code action request failed:', err);
+        return [];
+    }
 }
 
 /**
@@ -988,6 +1071,9 @@ module.exports = {
     init: start,
     getCompletions,
     getHover,
+    getDefinition: (request) => getLocations(request, 'textDocument/definition'),
+    getReferences: (request) => getLocations(request, 'textDocument/references'),
+    getCodeActions,
     getDiagnostics,
     closeDocument,
     shutdown,

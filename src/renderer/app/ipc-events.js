@@ -127,6 +127,8 @@ if (window.electronAPI) {
         // Judge the run that just ended against ITS tab, even if another tab has
         // focus now; output still in flight is picked up by the second pass.
         const run = currentRun;
+        // A crash on POSIX has no code, only a signal: still not a clean exit.
+        if (run) run.exitCode = code === null || code === undefined ? (signal || null) : code;
         if (document.getElementById('expected-area')) {
             compareOutput(run);
         }

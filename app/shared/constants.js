@@ -24,6 +24,7 @@ const IPC = {
         SAVE_DIALOG: 'save-file-dialog',
         READ: 'read-file',
         READ_DIR: 'read-directory',
+        SEARCH: 'search-in-files',
         DELETE: 'delete-file',
         RENAME: 'rename-file',
         WATCH: 'watch-file',
@@ -35,10 +36,12 @@ const IPC = {
 
     // Compiler & Build
     COMPILER: {
+        RUN_INSTRUMENTED_TEST: 'run-instrumented-test',
         COMPILE: 'compile',
         RUN: 'run',
         STOP: 'stop-process',
         SEND_INPUT: 'send-input',
+        CLOSE_INPUT: 'close-input',
         SEND_INPUT_FILE: 'send-input-file',
         INPUT_FILE_INFO: 'input-file-info',
         LANGUAGES: 'languages-list',
@@ -49,6 +52,7 @@ const IPC = {
         START: 'debug:start',
         STOP: 'debug:stop',
         SET_BREAKPOINT: 'debug:setBreakpoint',
+        SET_WATCHPOINT: 'debug:setWatchpoint',
         REMOVE_BREAKPOINT: 'debug:removeBreakpoint',
         ENABLE_BREAKPOINT: 'debug:enableBreakpoint',
         DISABLE_BREAKPOINT: 'debug:disableBreakpoint',
@@ -92,6 +96,9 @@ const IPC = {
         SYNTAX_CHECK: 'syntax-check',
         CLANGD_COMPLETIONS: 'get-clangd-completions',
         CLANGD_HOVER: 'get-clangd-hover',
+        CLANGD_DEFINITION: 'get-clangd-definition',
+        CLANGD_REFERENCES: 'get-clangd-references',
+        CLANGD_CODE_ACTIONS: 'get-clangd-code-actions',
     },
 
     // Theme assets (backgrounds picked in the Theme Customizer)

@@ -215,6 +215,8 @@ async function prepareChecker(problem) {
     if (typeof content !== 'string') {
         return { error: { title: I18n.t('Could not read the checker {0}', name), detail: '' } };
     }
+    const changed = externalChangeBlocksBuild(file);
+    if (changed) return { error: { title: changed, detail: '' } };
     setStatus(I18n.t('Compiling {0}...', name), '');
     const res = await window.electronAPI.compile({
         filePath: file,

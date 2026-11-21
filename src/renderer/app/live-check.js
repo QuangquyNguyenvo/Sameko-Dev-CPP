@@ -324,6 +324,7 @@ function applyLiveCheckMarkers(editor, diagnostics) {
     }));
 
 
+    CppLanguageTools.markLiveDiagnostics(model);
     monaco.editor.setModelMarkers(model, 'live-check', markers);
 
     // Don't overwrite build problems with live-check results

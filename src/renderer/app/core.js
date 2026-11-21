@@ -140,6 +140,10 @@ int main() {
         formatCode: 'Ctrl+Shift+A',
         markdownPreview: 'Ctrl+Shift+V',
         toggleExplorer: 'Ctrl+E',
+        findInFiles: 'Ctrl+Shift+F',
+        goToDefinition: 'F12',
+        findAllReferences: 'Shift+F12',
+        quickFix: 'Ctrl+.',
         commentLine: 'Ctrl+/',
         selectNextOccurrence: 'Ctrl+D',
         selectAllOccurrences: 'Ctrl+Shift+L',
@@ -486,7 +490,14 @@ function applyFileTypeOptions(editor) {
 function getTabModel(tab) {
     if (!tab.model || tab.model.isDisposed()) {
         registerTextLanguage();
-        tab.model = monaco.editor.createModel(tab.content || '', languageForFile(tab.path || tab.name));
+        // Monaco's References view uses the model URI as the display name. A
+        // tab-owned URI stays unique even if the file is renamed or saved as.
+        const uri = monaco.Uri.from({
+            scheme: 'sameko-tab',
+            path: tab.path ? monaco.Uri.file(tab.path).path : '/' + tab.name,
+            query: tab.id
+        });
+        tab.model = monaco.editor.createModel(tab.content || '', languageForFile(tab.path || tab.name), uri);
         bindTabContent(tab);
     }
     return tab.model;
@@ -790,6 +801,7 @@ function initMonaco(onReady, onLoadError) {
         if (typeof registerCppIntellisense === 'function') {
             registerCppIntellisense(monaco);
         }
+        CppLanguageTools.register(monaco);
         if (typeof registerSnippetCompletions === 'function') registerSnippetCompletions(monaco);
 
         if (typeof onReady === 'function') onReady();

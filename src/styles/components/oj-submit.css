@@ -236,3 +236,72 @@
 
 .oj-ext-msg[data-kind="error"] { color: var(--error); }
 .oj-ext-msg[data-kind="warn"] { color: var(--warning); }
+
+/* The Sameko extension is the popup's first card; Competitive Companion is folded below. */
+.cc-popup .oj-ext {
+    margin-top: 0;
+}
+
+.oj-ext .oj-ext-current {
+    padding: 10px 16px;
+    font-size: 13.5px;
+}
+
+.cc-companion {
+    margin-top: 14px;
+    padding: 0 16px;
+    border: 2px solid var(--border);
+    border-radius: 14px;
+    background: var(--bg-button);
+}
+
+.cc-companion summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 0;
+    color: var(--text-secondary);
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+}
+
+.cc-companion summary::-webkit-details-marker {
+    display: none;
+}
+
+.cc-companion summary::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: rotate(-45deg);
+    transition: transform 0.15s ease;
+}
+
+.cc-companion[open] summary::before {
+    transform: rotate(45deg);
+}
+
+.cc-companion summary:hover {
+    color: var(--text-primary);
+}
+
+.cc-mini-steps {
+    margin: 0 0 12px;
+    padding-left: 20px;
+    color: var(--text-secondary);
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.7;
+}
+
+.cc-companion #cc-install {
+    margin-bottom: 14px;
+    padding: 8px 16px;
+    font-size: 12.5px;
+}

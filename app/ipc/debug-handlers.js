@@ -66,8 +66,14 @@ function registerHandlers() {
             return { id: r.id, line: r.line };
         }));
 
+    ipcMain.handle(IPC.DEBUG.SET_WATCHPOINT, async (event, { expr }) =>
+        guard(() => dbg.setWatchpoint(String(expr || '').trim())));
+
     ipcMain.handle(IPC.DEBUG.REMOVE_BREAKPOINT, async (event, { id }) =>
-        guard(() => dbg.removeBreakpoint(id)));
+        guard(() => {
+            if (!Number.isInteger(id) || id < 1) throw new Error('Invalid breakpoint ID');
+            return dbg.removeBreakpoint(id);
+        }));
 
     ipcMain.handle(IPC.DEBUG.ENABLE_BREAKPOINT, async (event, { id }) =>
         guard(() => dbg.enableBreakpoint(id)));
