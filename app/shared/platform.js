@@ -57,11 +57,18 @@ function systemCompilerPaths() {
         ];
     }
     if (IS_MAC) {
-        return [
-            '/opt/homebrew/bin/g++',   // Apple Silicon Homebrew
-            '/usr/local/bin/g++',      // Intel Homebrew
-            '/usr/bin/g++',
-        ];
+        // Homebrew installs GCC as g++-<major>; /usr/bin/g++ is Apple Clang, which has no
+        // <bits/stdc++.h>, so it is only the last resort.
+        const homebrew = [];
+        for (const dir of ['/opt/homebrew/bin', '/usr/local/bin']) {
+            let names = [];
+            try { names = fs.readdirSync(dir); } catch (_) { /* no Homebrew here */ }
+            const versioned = names
+                .filter((name) => /^g\+\+-\d+$/.test(name))
+                .sort((a, b) => Number(b.slice(4)) - Number(a.slice(4)));
+            homebrew.push(...versioned.map((name) => path.join(dir, name)), path.join(dir, 'g++'));
+        }
+        return [...homebrew, '/usr/bin/g++'];
     }
     // Linux
     return [

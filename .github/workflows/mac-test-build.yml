@@ -1,0 +1,63 @@
+# Builds an unsigned macOS arm64 test DMG and runs the test suites on a real macOS runner.
+name: macOS test build
+
+on:
+  push:
+    branches: [mac-build]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install GCC
+        run: brew list gcc >/dev/null 2>&1 || brew install gcc
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build DMG
+        run: npm run build:mac -- --arm64 --publish never
+
+      - name: Check the app bundle
+        run: |
+          ls -lh samekodevcpp/*.dmg
+          codesign --verify --deep --strict --verbose=2 "samekodevcpp/mac-arm64/Sameko Dev C++.app"
+
+      - name: Upload DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: sameko-dev-cpp-mac-arm64
+          path: samekodevcpp/*.dmg
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Unit tests
+        continue-on-error: true
+        run: node test/run.js unit -v 2>&1 | tee unit.log; exit "${PIPESTATUS[0]}"
+        shell: bash
+
+      - name: GUI tests
+        continue-on-error: true
+        timeout-minutes: 15
+        run: node test/run.js gui -v 2>&1 | tee gui.log; exit "${PIPESTATUS[0]}"
+        shell: bash
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-test-logs
+          path: '*.log'
+          if-no-files-found: ignore
