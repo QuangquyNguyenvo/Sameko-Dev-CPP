@@ -54,6 +54,12 @@ async function main() {
     await page.evaluate(async () => { await ensureMonaco(); if (!App.tabs.length) newFile(); });
 
     const terminal = () => page.evaluate(() => TerminalManager.getLines().map(l => l.text).join('\n'));
+    // The last output can reach the terminal just after the run is marked finished.
+    const terminalWith = async (pattern) => {
+        await page.waitForFunction(({ source, flags }) => new RegExp(source, flags).test(TerminalManager.getLines().map(l => l.text).join('\n')),
+            { source: pattern.source, flags: pattern.flags }, { timeout: 5000 }).catch(() => {});
+        return terminal();
+    };
     // A new untitled tab with this code, Input and Expected filled, then Build & Run to the end.
     // Waits for the run to start (App.runSeq moves on), not for App.isRunning: a short program
     // can end before a poll ever sees it running.
@@ -113,7 +119,7 @@ async function main() {
         assert.ok(await page.evaluate(() => App.isRunning), 'stdin stays open, so a short Input box still shows as waiting');
         await page.press('#terminal-in', 'Control+d');
         await waitDone();
-        assert.match(await terminal(), /^sum 10$/m);
+        assert.match(await terminalWith(/^sum 10$/m), /^sum 10$/m);
     });
 
     await check('no waiting hint for a program that ends on its own', async () => {
@@ -136,8 +142,8 @@ async function main() {
             throw new Error('still running after Ctrl+D: ' + JSON.stringify(s));
         });
         const t = await terminal();
-        assert.match(t, /\^D \(EOF\)/);
-        assert.match(t, /^sum 11$/m);
+        assert.match(await terminalWith(/\^D \(EOF\)/), /\^D \(EOF\)/, t);
+        assert.match(await terminalWith(/^sum 11$/m), /^sum 11$/m);
     });
 
     await check('stress test: every TLE of a crowded round is checked alone, not only the lowest', async () => {

@@ -333,15 +333,17 @@ class LldbSession extends EventEmitter {
         await this.request('setFunctionBreakpoints', { breakpoints: names });
     }
 
-    async _syncData() {
-        const list = [...this.breakpoints.values()].filter((bp) => bp.kind === 'data' && bp.enabled);
-        return this.request('setDataBreakpoints', {
-            breakpoints: list.map((bp) => ({ dataId: bp.dataId, accessType: 'write' })),
-        });
+    /** Run an lldb command. Watchpoints use these: DAP data breakpoints were accepted but never hit. */
+    async _command(command) {
+        const r = await this.request('evaluate', { expression: `\`${command}`, frameId: this.frameId, context: 'repl' });
+        return String(r.result || '');
     }
 
     _syncBreakpoint(bp) {
-        if (bp.kind === 'data') return this._syncData();
+        if (bp.kind === 'data') {
+            const verb = this.breakpoints.has(bp.id) ? (bp.enabled ? 'enable' : 'disable') : 'delete';
+            return this._command(`watchpoint ${verb} ${bp.lldbId}`);
+        }
         if (bp.kind === 'function') return this._syncFunctions();
         return this._syncSource(bp.file);
     }
@@ -366,35 +368,20 @@ class LldbSession extends EventEmitter {
     async setWatchpoint(expr) {
         if (this.state !== 'stopped') throw new Error('Pause the debugger first.');
         if (!expr || /[\0\r\n]/.test(expr)) throw new Error('Enter a single watch expression.');
-        const dataId = await this._watchDataId(expr);
-        const bp = {
-            id: this.nextBreakpointId++, kind: 'data', dataId, expr, enabled: true,
-            value: await this._quietEvaluate(expr),
-        };
-        this.breakpoints.set(bp.id, bp);
-        try {
-            const r = await this._syncData();
-            const list = [...this.breakpoints.values()].filter((b) => b.kind === 'data' && b.enabled);
-            const result = r.breakpoints?.[list.indexOf(bp)];
-            if (result && result.verified === false) throw new Error(result.message || 'LLDB cannot watch this expression.');
-        } catch (err) {
-            this.breakpoints.delete(bp.id);
-            await this._syncData().catch(() => { });
-            throw err;
-        }
-        return { id: bp.id };
-    }
-
-    /** Without a variablesReference, lldb-dap reads the name as an address, so give it one. */
-    async _watchDataId(expr) {
         const address = /0x[0-9a-f]+/i.exec(await this._quietEvaluate(`&(${expr})`) || '')?.[0];
         const size = parseInt(await this._quietEvaluate(`sizeof(${expr})`) || '', 10);
         if (!address || !(size > 0)) throw new Error('LLDB cannot watch this expression.');
-        const info = await this.request('dataBreakpointInfo', {
-            name: address, bytes: size, asAddress: true, frameId: this.frameId,
-        });
-        if (!info.dataId) throw new Error(info.description || 'LLDB cannot watch this expression.');
-        return info.dataId;
+        // "modify" stops only when the value changes, as GDB does; older LLDB only has "write".
+        const create = (mode) => this._command(`watchpoint set expression -w ${mode} -s ${size} -- ${address}`).catch(() => '');
+        const created = /Watchpoint created: Watchpoint (\d+)/i;
+        const match = created.exec(await create('modify')) || created.exec(await create('write'));
+        if (!match) throw new Error('LLDB cannot watch this expression.');
+        const bp = {
+            id: this.nextBreakpointId++, kind: 'data', lldbId: Number(match[1]), expr, enabled: true,
+            value: await this._quietEvaluate(expr),
+        };
+        this.breakpoints.set(bp.id, bp);
+        return { id: bp.id };
     }
 
     async removeBreakpoint(id) {
