@@ -8,7 +8,7 @@ const { launchApp, checker, waitInPage } = require('../helpers/app');
 
 async function main() {
     const t = checker();
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'sameko-editor-batch-'));
+    const dir = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'sameko-editor-batch-')));
     const paths = Object.fromEntries(['main.cpp', 'other.cpp', 'value.hpp', 'quick.cpp', 'wide.cpp', 'hint.cpp', 'matches.txt'].map(name =>
         [name, path.join(dir, name)]
     ));
@@ -121,7 +121,7 @@ async function main() {
             const before = await page.evaluate(() => getActiveEditor().getValue());
             await page.keyboard.press('ControlOrMeta+a');
             await page.keyboard.press('ControlOrMeta+c');
-            await page.keyboard.press('ControlOrMeta+End');
+            await page.keyboard.press(process.platform === 'darwin' ? 'Meta+ArrowDown' : 'Control+End');
             await page.keyboard.press('ControlOrMeta+v');
             await waitInPage(page, want => getActiveEditor().getValue() === want, before + before, 5000)
                 .catch(() => {});

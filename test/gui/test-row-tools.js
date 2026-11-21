@@ -36,7 +36,7 @@ const TESTS = [
 
 async function main() {
     const t = checker();
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-row-tools-'));
+    const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-row-tools-')));
     const file = path.join(dir, 'tools.cpp');
     fs.writeFileSync(file, SOURCE);
     // SHOT_DIR=<dir> saves a screenshot at each step for a visual check; SHOT_THEME picks the theme.
@@ -130,7 +130,8 @@ async function main() {
         });
 
         await closeDialog();
-        await t.check('gprof reads the selected input and shows the flat profile without changing the judge build', async () => {
+        // macOS has no gprof.
+        if (process.platform !== 'darwin') await t.check('gprof reads the selected input and shows the flat profile without changing the judge build', async () => {
             await tool(1, 'profile').click();
             const status = dialog.locator('[role=status]');
             await page.waitForFunction(() => document.querySelector('.test-tool-dialog [role=status]')?.textContent !== 'Building and running this test…', null, { timeout: 60000 });

@@ -57,7 +57,7 @@ const TESTS = [
 async function main() {
     console.log('Checker tests');
     const t = checker();
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-checker-'));
+    const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-checker-')));
     for (const [name, text] of Object.entries(FILES)) fs.writeFileSync(path.join(dir, name), text);
     const P = dir.split(path.sep).join('/');
 

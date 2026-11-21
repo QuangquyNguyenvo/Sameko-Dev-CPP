@@ -17,7 +17,7 @@ const path = require('node:path');
 const { _electron } = require('playwright-core');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-fix-'));
+const profile = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-fix-')));
 let app;
 let failed = 0;
 let passed = 0;

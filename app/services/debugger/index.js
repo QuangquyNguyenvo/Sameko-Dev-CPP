@@ -14,6 +14,7 @@
 
 const path = require('path');
 const { GdbSession } = require('./gdb-session');
+const { IS_MAC } = require('../../shared/platform');
 const {
     getDebuggerPath,
     getPrinterPythonDir,
@@ -47,13 +48,24 @@ async function start({ exePath, cwd }) {
     // run. The newest one owns the debugger.
     if (mine !== lifecycle) throw new Error('Debug start cancelled');
 
-    session = new GdbSession({
-        gdbPath: getDebuggerPath(),
-        exePath,
-        printerPythonDir: getPrinterPythonDir(),
-        cwd: cwd || path.dirname(exePath),
-        env: getCompilerEnv(),
-    });
+    if (IS_MAC) {
+        // GDB does not run on Apple Silicon; LldbSession has the same interface.
+        const { LldbSession, findLldbDap } = require('./lldb-session');
+        session = new LldbSession({
+            dapPath: findLldbDap(),
+            exePath,
+            cwd: cwd || path.dirname(exePath),
+            env: getCompilerEnv(),
+        });
+    } else {
+        session = new GdbSession({
+            gdbPath: getDebuggerPath(),
+            exePath,
+            printerPythonDir: getPrinterPythonDir(),
+            cwd: cwd || path.dirname(exePath),
+            env: getCompilerEnv(),
+        });
+    }
 
     session.on('running', () => send('debug:running', {}));
     session.on('console', (text) => send('debug:console', { text }));
