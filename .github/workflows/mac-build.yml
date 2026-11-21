@@ -70,6 +70,14 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
+      - name: Probe watchpoints
+        continue-on-error: true
+        run: |
+          mkdir -p "$RUNNER_TEMP/wp"; cd "$RUNNER_TEMP/wp"
+          printf 'int main(){\nvolatile int n=41;\nn=42;\nn=43;\nreturn n==43?0:1;\n}\n' > w.cpp
+          GXX=$(ls /opt/homebrew/bin/g++-* | sort -V | tail -1); "$GXX" -g -O0 w.cpp -o w
+          lldb --batch -o 'b w.cpp:3' -o run -o 'watchpoint set variable n' -o continue -o 'frame variable n' -o 'thread info' -o kill ./w 2>&1 | tee "$GITHUB_WORKSPACE/watch-probe.log"
+
       - name: Unit tests
         continue-on-error: ${{ github.event_name != 'release' }}
         run: node test/run.js unit -v 2>&1 | tee unit.log; exit "${PIPESTATUS[0]}"

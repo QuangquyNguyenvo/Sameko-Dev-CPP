@@ -48,6 +48,7 @@ const STOP_REASONS = {
     exception: 'signal-received',
     signal: 'signal-received',
     'data breakpoint': 'watchpoint-trigger',
+    watchpoint: 'watchpoint-trigger',
 };
 
 function formatValue(value, fmt) {
@@ -175,20 +176,21 @@ class LldbSession extends EventEmitter {
         this.state = 'stopped';
         this.frameIndex = 0;
         await this._loadFrames();
-        const reason = STOP_REASONS[body.reason] || body.reason || '';
+        let reason = STOP_REASONS[body.reason] || body.reason || '';
         const results = {};
 
-        if (reason === 'watchpoint-trigger') {
-            for (const bp of this.breakpoints.values()) {
-                if (bp.kind !== 'data') continue;
-                const now = await this._quietEvaluate(bp.expr);
-                if (now !== null && now !== bp.value) {
-                    results.wpt = { number: String(bp.id), exp: bp.expr };
-                    results.value = { old: bp.value, new: now };
-                    bp.value = now;
-                    break;
-                }
+        // lldb-dap versions name this stop differently, and a step can change a watched value
+        // too, so the value itself decides, as with a GDB watchpoint.
+        for (const bp of this.breakpoints.values()) {
+            if (bp.kind !== 'data' || !bp.enabled) continue;
+            const now = await this._quietEvaluate(bp.expr);
+            if (now === null || now === bp.value) continue;
+            if (!results.wpt) {
+                results.wpt = { number: String(bp.id), exp: bp.expr };
+                results.value = { old: bp.value, new: now };
+                reason = 'watchpoint-trigger';
             }
+            bp.value = now;
         }
         // Temporary breakpoints (Run to Cursor, the stop at main) end at the first stop.
         const temporary = [...this.breakpoints.values()].filter((bp) => bp.temporary);
