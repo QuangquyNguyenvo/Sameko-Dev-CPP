@@ -239,6 +239,17 @@
     border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
 }
 
+/* Readable on any theme, custom ones too: Cancel uses the main text colour, and Save picks dark
+ * or white text from the lightness of its own background. */
+#btn-cancel-snippet {
+    color: var(--text-primary);
+}
+
+#btn-save-snippet {
+    color: oklch(from var(--accent) clamp(0.2, round(1.12 - l), 1) 0 0);
+    text-shadow: none;
+}
+
 .btn-secondary,
 .btn-primary {
     padding: 10px 24px;
