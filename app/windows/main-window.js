@@ -258,7 +258,7 @@ function createMainWindow() {
         x: savedBounds?.x,
         y: savedBounds?.y,
         // macOS keeps its own window buttons over the app's header.
-        ...(IS_MAC ? { titleBarStyle: 'hidden', trafficLightPosition: { x: 14, y: 17 } } : { frame: false }),
+        ...(IS_MAC ? { titleBarStyle: 'hidden', trafficLightPosition: { x: 16, y: 23 } } : { frame: false }),
         show: false,
         webPreferences: {
             nodeIntegration: false,

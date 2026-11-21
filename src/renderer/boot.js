@@ -19,7 +19,7 @@ function primaryModifier(e) {
 /** "Ctrl+Shift+S" as macOS writes it. Ctrl+Tab keeps the real Control key. */
 function macKeyLabel(text) {
     if (!IS_MAC_UI || !text || !/(?:Ctrl|Shift|Alt)\+/.test(text)) return text;
-    return text.replace(/((?:(?:Ctrl|Shift|Alt)\+)+)([^\s,;.)]+)/g, (_, mods, key) => {
+    return text.replace(/((?:(?:Ctrl|Shift|Alt)\+)+)([A-Za-z0-9]+|[^\s])/g, (_, mods, key) => {
         const has = (name) => mods.includes(name + '+');
         const control = has('Ctrl') && /^Tab/.test(key);
         return (control ? '⌃' : '') + (has('Alt') ? '⌥' : '') + (has('Shift') ? '⇧' : '')

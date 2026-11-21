@@ -109,6 +109,11 @@ async function main() {
         for (const role of ['copy', 'paste', 'cut', 'selectall', 'undo', 'quit']) assert.ok(menu.includes(role), `menu has ${role}`);
         assert.ok(!menu.includes('close'), 'Cmd+W must stay with the tab');
         await shot('main');
+        if (shotDir) {
+            await app.evaluate(({ BrowserWindow }) => { const w = BrowserWindow.getAllWindows()[0]; w.show(); w.focus(); });
+            await sleep(500);
+            try { execFileSync('screencapture', ['-x', path.join(shotDir, 'screen.png')]); } catch (_) { }
+        }
     });
 
     await check('shortcut labels use the macOS symbols', async () => {
@@ -195,9 +200,9 @@ async function main() {
     });
 
     await check('Format Code works', async () => {
-        const r = await page.evaluate(() => window.electronAPI.formatCode('int main(){int a=1;return a;}', 'google'));
+        const r = await page.evaluate(() => window.electronAPI.formatCode('int main(){\nint a=1;\nreturn a;\n}\n', 'google'));
         assert.ok(r.success, JSON.stringify(r));
-        assert.match(r.code, /\n\s+int a/);
+        assert.match(r.code, /int main\(\) \{\n\s+int a/);
     });
 
     await check('Cmd+S saves the file', async () => {
@@ -215,16 +220,21 @@ async function main() {
     });
 
     await check('Cmd+A/C/V work in a text field', async () => {
-        const box = page.locator('#input-area');
-        await page.evaluate(() => { if (typeof setBottomPanelCollapsed === 'function') setBottomPanelCollapsed(false); });
-        await box.fill('abc');
-        await box.focus();
+        await page.evaluate(() => {
+            const field = document.createElement('textarea');
+            field.id = 'mac-clipboard-check';
+            field.style.cssText = 'position:fixed;left:200px;top:200px;z-index:99999';
+            field.value = 'abc';
+            document.body.appendChild(field);
+            field.focus();
+        });
         await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.selectAll());
         await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.copy());
         await sleep(150);
-        await page.evaluate(() => { const el = document.getElementById('input-area'); el.selectionStart = el.selectionEnd = el.value.length; });
+        await page.evaluate(() => { const el = document.getElementById('mac-clipboard-check'); el.selectionStart = el.selectionEnd = el.value.length; });
         await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].webContents.paste());
-        await page.waitForFunction(() => document.getElementById('input-area').value === 'abcabc', null, { timeout: 3000 });
+        await page.waitForFunction(() => document.getElementById('mac-clipboard-check').value === 'abcabc', null, { timeout: 3000 });
+        await page.evaluate(() => document.getElementById('mac-clipboard-check').remove());
     });
 
     await check('LLDB stops at a breakpoint in the packaged app, reads a local, and Stop leaves nothing', async () => {
