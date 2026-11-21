@@ -35,6 +35,15 @@ jobs:
           ls -lh samekodevcpp/*.dmg
           codesign --verify --deep --strict --verbose=2 "samekodevcpp/mac-arm64/Sameko Dev C++.app"
 
+      - name: Launch the packaged app
+        run: |
+          "samekodevcpp/mac-arm64/Sameko Dev C++.app/Contents/MacOS/Sameko Dev C++" --user-data-dir="$RUNNER_TEMP/profile" > launch.log 2>&1 &
+          APP_PID=$!
+          sleep 20
+          kill -0 "$APP_PID"
+          kill "$APP_PID"
+          grep -E '\[Compiler\] Selected' launch.log || true
+
       - name: Upload DMG
         uses: actions/upload-artifact@v4
         with:

@@ -248,6 +248,8 @@
             ],
             "artifactName": "sameko-dev-cpp-${version}-mac-${arch}.${ext}",
             "category": "public.app-category.developer-tools",
+            "identity": "-",
+            "hardenedRuntime": false,
             "icon": "src/assets/icons/linux/1024x1024.png"
         },
         "linux": {
