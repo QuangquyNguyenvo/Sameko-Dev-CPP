@@ -101,6 +101,20 @@ jobs:
         run: node test/run.js gui -v 2>&1 | tee gui.log; exit "${PIPESTATUS[0]}"
         shell: bash
 
+      - name: Check a Mac without GCC
+        continue-on-error: ${{ github.event_name != 'release' }}
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/gcc-away"
+          for f in /opt/homebrew/bin/g++ /opt/homebrew/bin/g++-* /usr/local/bin/g++ /usr/local/bin/g++-*; do
+            if [ -e "$f" ] || [ -L "$f" ]; then mv "$f" "$RUNNER_TEMP/gcc-away/"; fi
+          done
+          node test/mac/no-gcc.js "$RUNNER_TEMP/Apps Test/Sameko Dev C++.app/Contents/MacOS/Sameko Dev C++" 2>&1 | tee no-gcc.log
+          STATUS="${PIPESTATUS[0]}"
+          mv "$RUNNER_TEMP"/gcc-away/* /opt/homebrew/bin/
+          exit "$STATUS"
+
       - name: Upload test logs
         if: always()
         uses: actions/upload-artifact@v4
