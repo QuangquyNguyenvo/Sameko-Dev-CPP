@@ -70,33 +70,6 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
-      - name: Probe watchpoints
-        continue-on-error: true
-        run: |
-          mkdir -p "$RUNNER_TEMP/wp"; cd "$RUNNER_TEMP/wp"
-          printf 'int main(){\nvolatile int n=41;\nn=42;\nn=43;\nreturn n==43?0:1;\n}\n' > w.cpp
-          GXX=$(ls /opt/homebrew/bin/g++-* | sort -V | tail -1); "$GXX" -g -O0 w.cpp -o w
-          cat > "$RUNNER_TEMP/wp-probe.js" <<'EOF'
-          const path = require('path');
-          const { LldbSession, findLldbDap } = require(path.join(process.env.GITHUB_WORKSPACE, 'app/services/debugger/lldb-session'));
-          const dir = process.cwd();
-          const s = new LldbSession({ dapPath: findLldbDap(), exePath: path.join(dir, 'w'), cwd: dir });
-          const raw = s._onMessage.bind(s);
-          s._onMessage = (m) => { if (m.type === 'event' && m.event !== 'output' && m.event !== 'module') console.log('EVENT', JSON.stringify(m.event), JSON.stringify(m.body || {})); raw(m); };
-          const original = s.request.bind(s);
-          s.request = async (c, a) => { try { const r = await original(c, a); if (/[Dd]ata/.test(c)) console.log('REQ', c, JSON.stringify(a), JSON.stringify(r)); return r; } catch (e) { if (/[Dd]ata/.test(c)) console.log('ERR', c, e.message); throw e; } };
-          const next = (t = 10000) => new Promise((ok) => { const done = (v) => { clearTimeout(id); s.off('stopped', a); s.off('programExited', b); ok(v); }; const a = (v) => done({ stopped: v.reason, line: v.frame && v.frame.line, wpt: v.results.wpt, value: v.results.value }); const b = (v) => done({ exited: v.code }); const id = setTimeout(() => done('timeout'), t); s.on('stopped', a); s.on('programExited', b); });
-          (async () => {
-            await s.start();
-            await s.setBreakpoint(path.join(dir, 'w.cpp'), 3);
-            let w = next(); await s.run(''); console.log('first', JSON.stringify(await w));
-            console.log('watch', JSON.stringify(await s.setWatchpoint('n')));
-            w = next(); await s.cont(); console.log('second', JSON.stringify(await w));
-            await s.dispose(); process.exit(0);
-          })().catch((e) => { console.log('FAILED', e.stack); process.exit(1); });
-          EOF
-          node "$RUNNER_TEMP/wp-probe.js" 2>&1 | tee "$GITHUB_WORKSPACE/watch-probe.log"
-
       - name: Unit tests
         continue-on-error: ${{ github.event_name != 'release' }}
         run: node test/run.js unit -v 2>&1 | tee unit.log; exit "${PIPESTATUS[0]}"

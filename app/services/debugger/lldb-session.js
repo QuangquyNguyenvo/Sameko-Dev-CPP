@@ -385,14 +385,16 @@ class LldbSession extends EventEmitter {
         return { id: bp.id };
     }
 
-    /** lldb-dap names watched memory "<address>/<size>"; it only looks up plain variables itself. */
+    /** Without a variablesReference, lldb-dap reads the name as an address, so give it one. */
     async _watchDataId(expr) {
-        const info = await this.request('dataBreakpointInfo', { name: expr, frameId: this.frameId }).catch(() => null);
-        if (info?.dataId) return info.dataId;
         const address = /0x[0-9a-f]+/i.exec(await this._quietEvaluate(`&(${expr})`) || '')?.[0];
         const size = parseInt(await this._quietEvaluate(`sizeof(${expr})`) || '', 10);
-        if (!address || !(size > 0)) throw new Error(info?.description || 'LLDB cannot watch this expression.');
-        return `${address}/${size}`;
+        if (!address || !(size > 0)) throw new Error('LLDB cannot watch this expression.');
+        const info = await this.request('dataBreakpointInfo', {
+            name: address, bytes: size, asAddress: true, frameId: this.frameId,
+        });
+        if (!info.dataId) throw new Error(info.description || 'LLDB cannot watch this expression.');
+        return info.dataId;
     }
 
     async removeBreakpoint(id) {
