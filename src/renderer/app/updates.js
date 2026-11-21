@@ -98,7 +98,9 @@ function validateCompilerOnStartup() {
     if (!window.electronAPI?.getCompilerStatus) return;
 
     window.electronAPI.getCompilerStatus().then(status => {
-        if (status.fallback) {
+        if (IS_MAC_UI && (!status.found || status.path === '/usr/bin/g++')) {
+            showToast('GCC is not installed. Run "brew install gcc" in Terminal, then restart the app.', 'warning');
+        } else if (status.fallback) {
             showToast('Bundled compiler not found. Using system g++ from PATH.', 'warning');
         } else if (status.found === false && status.error) {
             showToast(`C++ compiler (g++) not found (${status.error}). Reinstall the app or install MinGW.`, 'error');

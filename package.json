@@ -244,6 +244,12 @@
                     "arch": [
                         "arm64"
                     ]
+                },
+                {
+                    "target": "zip",
+                    "arch": [
+                        "arm64"
+                    ]
                 }
             ],
             "artifactName": "sameko-dev-cpp-${version}-mac-${arch}.${ext}",

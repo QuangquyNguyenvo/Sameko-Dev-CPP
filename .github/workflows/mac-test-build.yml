@@ -48,9 +48,21 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: sameko-dev-cpp-mac-arm64
-          path: samekodevcpp/*.dmg
+          path: |
+            samekodevcpp/*.dmg
+            samekodevcpp/*.zip
+            samekodevcpp/latest-mac.yml
           retention-days: 14
           if-no-files-found: error
+
+      - name: Probe LLDB with a GCC build
+        continue-on-error: true
+        run: |
+          mkdir -p "$RUNNER_TEMP/lldb"; cd "$RUNNER_TEMP/lldb"
+          printf '#include <bits/stdc++.h>\nint main(){std::vector<int> v{1,2,3};int x=41;x++;std::cout<<x+v[1]<<"\\n";}\n' > a.cpp
+          GXX=$(ls /opt/homebrew/bin/g++-* | sort -V | tail -1); "$GXX" -g -O0 a.cpp -o a
+          ls -la; xcrun -f lldb-dap || true; xcrun -f clangd || true; which lldb
+          lldb --batch -o 'b a.cpp:2' -o run -o 'frame variable' -o kill ./a 2>&1 | tee "$GITHUB_WORKSPACE/lldb-probe.log"
 
       - name: Unit tests
         continue-on-error: true

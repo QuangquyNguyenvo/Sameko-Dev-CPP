@@ -101,6 +101,14 @@ function findClangd() {
     if (fs.existsSync(fallbackPath)) {
         return { clangdPath: fallbackPath, binDir: fallbackBinDir };
     }
+    // 3. macOS: Homebrew GCC has no clangd. It comes from Homebrew LLVM or the Command Line Tools;
+    // binDir stays GCC's, because --query-driver must name the compiler.
+    if (IS_MAC && detectedBinDir) {
+        const found = ['/opt/homebrew/opt/llvm/bin/clangd', '/usr/local/opt/llvm/bin/clangd',
+            '/Library/Developer/CommandLineTools/usr/bin/clangd', '/usr/bin/clangd']
+            .find((candidate) => fs.existsSync(candidate));
+        if (found) return { clangdPath: found, binDir: detectedBinDir };
+    }
     return null;
 }
 

@@ -49,7 +49,8 @@ function registerUpdateHandlers() {
 
     // Get app info (portable detection)
     ipcMain.handle('get-app-info', () => {
-        const isPortable = require('../core/portable').isPortable();
+        // macOS updates by download too: an unsigned app cannot replace itself.
+        const isPortable = process.platform === 'darwin' || require('../core/portable').isPortable();
         return {
             isPortable: isPortable,
             version: require('electron').app.getVersion()

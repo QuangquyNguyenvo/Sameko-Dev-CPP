@@ -19,7 +19,7 @@ const path = require('node:path');
 const { _electron } = require('playwright-core');
 
 const ROOT = path.resolve(__dirname, '..', '..');
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-gui-'));
+const profile = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-gui-')));
 let app;
 let failed = 0;
 let passed = 0;
@@ -715,7 +715,7 @@ async function main() {
     // ---- find widget, Escape, fonts -------------------------------------------------
     await check('find widget: buttons use browser tooltips and Close stays clickable (#71)', async () => {
         await page.evaluate(() => { if (App.isSplit) closeSplit(); newFile(); App.editor.focus(); });
-        await page.keyboard.press('Control+KeyF');
+        await page.keyboard.press('ControlOrMeta+KeyF');
         await page.waitForSelector('#editor-container .find-widget.visible');
         const close = page.locator('#editor-container .find-widget.visible .codicon-widget-close');
         await close.hover();
@@ -743,7 +743,7 @@ async function main() {
             initTemplateEditor();
             templateEditor.focus();
         });
-        await page.keyboard.press('Control+KeyF');
+        await page.keyboard.press('ControlOrMeta+KeyF');
         await page.waitForSelector('#template-editor-container .find-widget.visible');
         const state = () => page.evaluate(() => ({
             settings: document.getElementById('settings-overlay').classList.contains('show'),

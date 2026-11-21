@@ -922,7 +922,7 @@ async function run({ exePath, cwd }) {
     try {
         runningProcess = launcher
             ? spawn(launcher, command.args.length ? [statsFile, command.file, '0', '0', ...command.args] : [statsFile, exePath],
-                { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+                { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN })
             : spawn(command.file, command.args, { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (err) {
         // Windows refused to create the process. Node throws ("spawn UNKNOWN") instead of

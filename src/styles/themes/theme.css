@@ -698,6 +698,14 @@ body.customizer-open::before {
     height: 14px;
 }
 
+:root[data-platform="mac"] .win-btns {
+    display: none;
+}
+
+:root[data-platform="mac"] .header-bar {
+    padding-left: 88px;
+}
+
 .win-btns {
     display: flex;
     -webkit-app-region: no-drag;

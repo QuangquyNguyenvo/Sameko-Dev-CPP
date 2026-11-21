@@ -232,6 +232,7 @@
     'Build in progress...': '正在编译...',
     'Building...': '正在编译...',
     'Built-in Themes': '内置主题',
+    'GCC is not installed. Run "brew install gcc" in Terminal, then restart the app.': '未安装 GCC。请在终端运行 "brew install gcc"，然后重启应用。',
     'Bundled compiler not found. Using system g++ from PATH.': '未找到内置编译器。正在使用 PATH 中的系统 g++。',
     'Button hover': '按钮（悬停）',
     'Buttons': '按钮',

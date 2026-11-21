@@ -1,5 +1,5 @@
 /**
- * Sameko Dev C++ IDE - Run launcher (Windows)
+ * Sameko Dev C++ IDE - Run launcher (Windows and macOS)
  *
  * A tiny native helper that starts the user's program, waits for it, and
  * reports what the OS itself recorded: wall time, CPU time and peak memory.
@@ -34,7 +34,9 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { getDetectedCompiler, getCompilerEnv } = require('./detector');
-const { IS_WIN, ensurePrivateDir, appTempDir } = require('../../shared/platform');
+const { IS_WIN, IS_MAC, EXE_SUFFIX, ensurePrivateDir, appTempDir } = require('../../shared/platform');
+
+const HAS_LAUNCHER = IS_WIN || IS_MAC;
 
 const LAUNCHER_VERSION = 6; // bump when LAUNCHER_SOURCE changes
 
@@ -177,6 +179,99 @@ int wmain(int argc, wchar_t** argv) {
 }
 `;
 
+const MAC_LAUNCHER_SOURCE = String.raw`
+#include <errno.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/resource.h>
+#include <sys/time.h>
+#include <sys/wait.h>
+#include <time.h>
+#include <unistd.h>
+
+static volatile sig_atomic_t expired = 0;
+static volatile pid_t child = 0;
+
+static void onAlarm(int) { expired = 1; if (child > 0) kill(child, SIGKILL); }
+static void forward(int sig) { if (child > 0) kill(child, sig); }
+
+// usage: sameko_run <stats-file> <program> [time-limit-ms] [memory-limit-mb] [program args...]
+int main(int argc, char** argv) {
+    if (argc < 3) return 127;
+    long timeLimit = argc > 3 ? atol(argv[3]) : 0;
+    long long memLimitMB = argc > 4 ? atoll(argv[4]) : 0;
+    char* solo[] = { argv[2], NULL };
+    char** args = solo;
+    if (argc > 4) { argv[4] = argv[2]; args = argv + 4; }
+
+    int startPipe[2];
+    if (pipe(startPipe) != 0) return 126;
+    fcntl(startPipe[1], F_SETFD, FD_CLOEXEC);
+
+    signal(SIGTERM, forward);
+    signal(SIGINT, forward);
+    signal(SIGALRM, onAlarm);
+
+    struct timespec t0, t1;
+    clock_gettime(CLOCK_MONOTONIC, &t0);
+    pid_t pid = fork();
+    if (pid < 0) return 126;
+    if (pid == 0) {
+        close(startPipe[0]);
+        signal(SIGTERM, SIG_DFL);
+        signal(SIGINT, SIG_DFL);
+        signal(SIGALRM, SIG_DFL);
+        execv(argv[2], args);
+        int err = errno;
+        (void)!write(startPipe[1], &err, sizeof(err));
+        _exit(126);
+    }
+    child = pid;
+    close(startPipe[1]);
+    if (timeLimit > 0) {
+        struct itimerval timer = {};
+        timer.it_value.tv_sec = timeLimit / 1000;
+        timer.it_value.tv_usec = (timeLimit % 1000) * 1000;
+        setitimer(ITIMER_REAL, &timer, NULL);
+    }
+
+    int startError = 0;
+    ssize_t got;
+    do { got = read(startPipe[0], &startError, sizeof(startError)); } while (got < 0 && errno == EINTR);
+    close(startPipe[0]);
+
+    int status = 0;
+    struct rusage usage = {};
+    while (wait4(pid, &status, 0, &usage) < 0 && errno == EINTR) { }
+    clock_gettime(CLOCK_MONOTONIC, &t1);
+
+    FILE* f = fopen(argv[1], "w");
+    if (got == (ssize_t)sizeof(startError)) {
+        if (f) { fprintf(f, "{\"startError\":%d}", startError); fclose(f); }
+        return 126;
+    }
+    // ru_maxrss is in bytes on macOS.
+    unsigned long long peakKB = (unsigned long long)usage.ru_maxrss / 1024;
+    double wallMs = (t1.tv_sec - t0.tv_sec) * 1000.0 + (t1.tv_nsec - t0.tv_nsec) / 1000000.0;
+    double cpuMs = (usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) * 1000.0
+        + (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / 1000.0;
+    int memLimitHit = memLimitMB > 0 && peakKB > (unsigned long long)memLimitMB * 1024;
+    if (f) {
+        fprintf(f, "{\"wallMs\":%.3f,\"cpuMs\":%.3f,\"peakKB\":%llu,\"wsKB\":%llu,\"timedOut\":%d,\"memLimitHit\":%d}",
+            wallMs, cpuMs, peakKB, peakKB, expired ? 1 : 0, memLimitHit);
+        fclose(f);
+    }
+    if (WIFSIGNALED(status)) {
+        signal(WTERMSIG(status), SIG_DFL);
+        raise(WTERMSIG(status));
+        return 128 + WTERMSIG(status);
+    }
+    return WEXITSTATUS(status);
+}
+`;
+
 let launcherPath = null;      // set once the helper exists on disk
 let buildPromise = null;
 let statsSeq = 0;
@@ -191,7 +286,7 @@ function toolsDir() {
  * @returns {Promise<string|null>}
  */
 function ensureLauncher() {
-    if (!IS_WIN) return Promise.resolve(null);
+    if (!HAS_LAUNCHER) return Promise.resolve(null);
     if (launcherPath) return Promise.resolve(launcherPath);
     if (buildPromise) return buildPromise;
 
@@ -207,17 +302,17 @@ function ensureLauncher() {
 
             const dir = toolsDir();
             if (!fs.existsSync(dir)) ensurePrivateDir(dir);
-            const exe = path.join(dir, `sameko_run-${tag}.exe`);
+            const exe = path.join(dir, `sameko_run-${tag}${EXE_SUFFIX}`);
             if (fs.existsSync(exe)) { launcherPath = exe; return resolve(exe); }
 
             // Unique per process: another app instance may build the same tag at once.
             const unique = `${process.pid}-${Date.now().toString(36)}`;
             const src = path.join(dir, `sameko_run-${tag}.${unique}.cpp`);
-            fs.writeFileSync(src, LAUNCHER_SOURCE, 'utf-8');
+            fs.writeFileSync(src, IS_MAC ? MAC_LAUNCHER_SOURCE : LAUNCHER_SOURCE, 'utf-8');
             const tmpExe = `${exe}.${unique}.tmp`;
             const dropTmp = () => { try { fs.unlinkSync(tmpExe); } catch (_) { } };
             const child = spawn(compilerExe,
-                [src, '-o', tmpExe, '-O2', '-s', '-static', '-municode', '-w'],
+                IS_MAC ? [src, '-o', tmpExe, '-O2', '-w'] : [src, '-o', tmpExe, '-O2', '-s', '-static', '-municode', '-w'],
                 { cwd: dir, env: getCompilerEnv(), windowsHide: true });
             child.on('error', () => { try { fs.unlinkSync(src); } catch (_) { } dropTmp(); resolve(null); });
             child.on('close', (code) => {
@@ -248,7 +343,7 @@ function getLauncherIfReady() {
         launcherPath = null;
         buildPromise = null;
     }
-    if (!launcherPath && IS_WIN) ensureLauncher(); // kick off for next time
+    if (!launcherPath && HAS_LAUNCHER) ensureLauncher(); // kick off for next time
     return launcherPath;
 }
 

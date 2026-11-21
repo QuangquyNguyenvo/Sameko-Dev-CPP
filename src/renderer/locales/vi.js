@@ -230,6 +230,7 @@
     'Build in progress...': 'Đang build...',
     'Building...': 'Đang build...',
     'Built-in Themes': 'Theme có sẵn',
+    'GCC is not installed. Run "brew install gcc" in Terminal, then restart the app.': 'Chưa cài GCC. Mở Terminal, chạy "brew install gcc" rồi khởi động lại app.',
     'Bundled compiler not found. Using system g++ from PATH.': 'Không tìm thấy compiler đi kèm. Đang dùng g++ của hệ thống từ PATH.',
     'Button hover': 'Nút khi di chuột',
     'Buttons': 'Nút',

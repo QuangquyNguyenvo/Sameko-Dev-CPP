@@ -1414,7 +1414,7 @@ function captureKeybinding(e) {
 
     // Build key string
     const parts = [];
-    if (e.ctrlKey) parts.push('Ctrl');
+    if (primaryModifier(e) || (IS_MAC_UI && e.ctrlKey && e.key === 'Tab')) parts.push('Ctrl');
     if (e.shiftKey) parts.push('Shift');
     if (e.altKey) parts.push('Alt');
 
