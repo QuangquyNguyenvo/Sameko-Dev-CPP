@@ -1,9 +1,12 @@
-# Builds an unsigned macOS arm64 test DMG and runs the test suites on a real macOS runner.
-name: macOS test build
+# Builds the macOS arm64 app and runs the test suites on a real macOS runner.
+# A published release also gets the DMG, the zip and latest-mac.yml, after the tests pass.
+name: macOS build
 
 on:
   push:
     branches: [mac-build]
+  release:
+    types: [published]
   workflow_dispatch:
 
 permissions:
@@ -12,9 +15,19 @@ permissions:
 jobs:
   build:
     runs-on: macos-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+
+      - name: Check the release version
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          test "v$VERSION" = "$TAG"
 
       - uses: actions/setup-node@v4
         with:
@@ -29,12 +42,12 @@ jobs:
           npm ci
           npx install-electron --no
 
-      - name: Build DMG
+      - name: Build DMG and zip
         run: npm run build:mac -- --arm64 --publish never
 
       - name: Check the app bundle
         run: |
-          ls -lh samekodevcpp/*.dmg
+          ls -lh samekodevcpp/*.dmg samekodevcpp/*.zip samekodevcpp/latest-mac.yml
           codesign --verify --deep --strict --verbose=2 "samekodevcpp/mac-arm64/Sameko Dev C++.app"
 
       - name: Launch the packaged app
@@ -44,9 +57,9 @@ jobs:
           sleep 20
           kill -0 "$APP_PID"
           kill "$APP_PID"
-          grep -E '\[Compiler\] Selected' launch.log || true
+          grep -E '\[Compiler\] Selected' launch.log
 
-      - name: Upload DMG
+      - name: Upload build
         uses: actions/upload-artifact@v4
         with:
           name: sameko-dev-cpp-mac-arm64
@@ -58,12 +71,12 @@ jobs:
           if-no-files-found: error
 
       - name: Unit tests
-        continue-on-error: true
+        continue-on-error: ${{ github.event_name != 'release' }}
         run: node test/run.js unit -v 2>&1 | tee unit.log; exit "${PIPESTATUS[0]}"
         shell: bash
 
       - name: GUI tests
-        continue-on-error: true
+        continue-on-error: ${{ github.event_name != 'release' }}
         timeout-minutes: 15
         run: node test/run.js gui -v 2>&1 | tee gui.log; exit "${PIPESTATUS[0]}"
         shell: bash
@@ -75,3 +88,11 @@ jobs:
           name: mac-test-logs
           path: '*.log'
           if-no-files-found: ignore
+
+      - name: Attach to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release upload "$TAG" samekodevcpp/*.dmg samekodevcpp/*.zip samekodevcpp/*.blockmap samekodevcpp/latest-mac.yml --clobber

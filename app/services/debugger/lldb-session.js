@@ -333,7 +333,7 @@ class LldbSession extends EventEmitter {
 
     async _syncData() {
         const list = [...this.breakpoints.values()].filter((bp) => bp.kind === 'data' && bp.enabled);
-        await this.request('setDataBreakpoints', {
+        return this.request('setDataBreakpoints', {
             breakpoints: list.map((bp) => ({ dataId: bp.dataId, accessType: 'write' })),
         });
     }
@@ -364,15 +364,33 @@ class LldbSession extends EventEmitter {
     async setWatchpoint(expr) {
         if (this.state !== 'stopped') throw new Error('Pause the debugger first.');
         if (!expr || /[\0\r\n]/.test(expr)) throw new Error('Enter a single watch expression.');
-        const info = await this.request('dataBreakpointInfo', { name: expr, frameId: this.frameId });
-        if (!info.dataId) throw new Error(info.description || 'LLDB cannot watch this expression.');
+        const dataId = await this._watchDataId(expr);
         const bp = {
-            id: this.nextBreakpointId++, kind: 'data', dataId: info.dataId, expr, enabled: true,
+            id: this.nextBreakpointId++, kind: 'data', dataId, expr, enabled: true,
             value: await this._quietEvaluate(expr),
         };
         this.breakpoints.set(bp.id, bp);
-        await this._syncData();
+        try {
+            const r = await this._syncData();
+            const list = [...this.breakpoints.values()].filter((b) => b.kind === 'data' && b.enabled);
+            const result = r.breakpoints?.[list.indexOf(bp)];
+            if (result && result.verified === false) throw new Error(result.message || 'LLDB cannot watch this expression.');
+        } catch (err) {
+            this.breakpoints.delete(bp.id);
+            await this._syncData().catch(() => { });
+            throw err;
+        }
         return { id: bp.id };
+    }
+
+    /** lldb-dap names watched memory "<address>/<size>"; it only looks up plain variables itself. */
+    async _watchDataId(expr) {
+        const info = await this.request('dataBreakpointInfo', { name: expr, frameId: this.frameId }).catch(() => null);
+        if (info?.dataId) return info.dataId;
+        const address = /0x[0-9a-f]+/i.exec(await this._quietEvaluate(`&(${expr})`) || '')?.[0];
+        const size = parseInt(await this._quietEvaluate(`sizeof(${expr})`) || '', 10);
+        if (!address || !(size > 0)) throw new Error(info?.description || 'LLDB cannot watch this expression.');
+        return `${address}/${size}`;
     }
 
     async removeBreakpoint(id) {
