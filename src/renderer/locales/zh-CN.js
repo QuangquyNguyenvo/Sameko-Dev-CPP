@@ -1263,7 +1263,8 @@
     'Windows or an antivirus blocked the program from starting. Add this folder to its exclusions: {0}': 'Windows 或杀毒软件阻止了程序启动。请把此文件夹加入其排除列表：{0}',
     // Settings › Compiler: Large Stack
     'Large Stack (256 MB)': '大栈（256 MB）',
-    'Give programs a 256 MB stack, as Codeforces and most judges do. Without it, a deep recursion (a DFS 100,000 levels deep) can crash with a stack overflow. Windows and macOS only.': '与 Codeforces 及多数评测系统一样，为程序提供 256 MB 的栈。关闭后，深递归（深度 100,000 的 DFS）可能栈溢出。仅限 Windows 和 macOS。',
+    'Give programs a 256 MB stack, as Codeforces and most judges do. Without it, a deep recursion (a DFS 100,000 levels deep) can crash with a stack overflow.': '与 Codeforces 及多数评测系统一样，为程序提供 256 MB 的栈。关闭后，深递归（深度 100,000 的 DFS）可能栈溢出。',
+    'g++ is not installed. Run "sudo apt install g++ gdb" (or use your distribution\'s package manager), then restart the app.': '未安装 g++。请运行 "sudo apt install g++ gdb"（或使用您的发行版的包管理器），然后重启应用。',
     'AStyle was not found. Run "brew install astyle" in Terminal, then restart the app.': '未找到 AStyle。请在终端运行 "brew install astyle"，然后重启应用。',
     // Stress test (STRESS tab, renderer/app/stress-test.js)
     'STRESS': '对拍',

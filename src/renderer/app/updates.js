@@ -100,6 +100,9 @@ function validateCompilerOnStartup() {
     window.electronAPI.getCompilerStatus().then(status => {
         if (IS_MAC_UI && (!status.found || status.path === '/usr/bin/g++')) {
             showToast('GCC is not installed. Run "brew install gcc" in Terminal, then restart the app.', 'warning');
+        } else if (/linux/i.test(navigator.platform || '') && (status.fallback || status.found === false)) {
+            // Linux has no bundled compiler: the "fallback" is a bare g++ that no search found.
+            showToast('g++ is not installed. Run "sudo apt install g++ gdb" (or use your distribution\'s package manager), then restart the app.', 'warning');
         } else if (status.fallback) {
             showToast('Bundled compiler not found. Using system g++ from PATH.', 'warning');
         } else if (status.found === false && status.error) {

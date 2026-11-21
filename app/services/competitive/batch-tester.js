@@ -16,7 +16,7 @@ const { runChecker } = require('./checker');
 const { describeExit, describeStartError } = require('../../shared/exit-codes');
 const { wasBuiltThisSession } = require('../compiler/executor');
 const { IS_WIN, IS_LINUX, readProcMemoryKB, killProcessTree } = require('../../shared/platform');
-const { getLauncherIfReady, newStatsFile, readStats } = require('../compiler/run-launcher');
+const { ensureLauncher, getLauncherIfReady, launcherEnv, newStatsFile, readStats } = require('../compiler/run-launcher');
 const languages = require('../compiler/languages');
 
 /**
@@ -39,6 +39,8 @@ const languages = require('../compiler/languages');
 async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memoryLimit = 0, compare, checker = '', cwd, args = [], debug = false, testMeta = null, profiling = false }) {
     memoryLimit = Number.isFinite(+memoryLimit) && +memoryLimit > 0 ? Math.round(+memoryLimit) : 0;
     const programArgs = programArguments(args);
+    // Linux judges memory and gives Large Stack only through the launcher: wait for its first build.
+    if (IS_LINUX) await ensureLauncher();
     return new Promise((resolve) => {
         if (!exePath || !fs.existsSync(exePath)) {
             // Built a moment ago and gone now: an antivirus quarantined it (executor.js).
@@ -97,7 +99,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
         let testProcess;
         try {
             testProcess = launcher
-                ? spawn(launcher, [statsFile, command.file, String(Math.round(timeLimit)), String(memoryLimit), ...command.args, ...programArgs], { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN })
+                ? spawn(launcher, [statsFile, command.file, String(Math.round(timeLimit)), String(memoryLimit), ...command.args, ...programArgs], { cwd: workingDir, env: { ...runEnv, ...launcherEnv() }, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN })
                 : spawn(command.file, [...command.args, ...programArgs], { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN });
         } catch (err) {
             // Windows refused to create the process; Node throws ("spawn UNKNOWN") rather than

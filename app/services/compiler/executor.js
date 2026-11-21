@@ -14,7 +14,7 @@ const { spawn, exec, execFile } = require('child_process');
 const { StringDecoder } = require('string_decoder');
 const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getWritableBasePath, getUnbufferObjectPath } = require('./detector');
 const { ensurePCH } = require('./pch-manager');
-const { getLauncherIfReady, newStatsFile, readStats } = require('./run-launcher');
+const { ensureLauncher, getLauncherIfReady, launcherEnv, newStatsFile, readStats } = require('./run-launcher');
 const languages = require('./languages');
 const { testlibIncludeDir } = require('../competitive/checker');
 const { validateCompilerFlags, splitFlags, joinFlags } = require('../../shared/validators');
@@ -564,7 +564,10 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
             if (activeCompilerProcess === compiler) activeCompilerProcess = null;
             let errorMessage = err.message;
             if (err.code === 'ENOENT') {
-                errorMessage = `Compiler not found: ${compilerExe}\n\nPlease ensure the bundled compiler is available or install MinGW/TDM-GCC.`;
+                const hint = IS_WIN ? 'Please ensure the bundled compiler is available or install MinGW/TDM-GCC.'
+                    : IS_MAC ? 'Run "brew install gcc" in Terminal, then restart the app.'
+                        : 'Install it, for example with "sudo apt install g++ gdb", then restart the app.';
+                errorMessage = `Compiler not found: ${compilerExe}\n\n${hint}`;
                 console.error(`[Compile] ENOENT - Compiler not found at: ${compilerExe}`);
             }
             resolve({
@@ -916,14 +919,16 @@ async function run({ exePath, cwd }) {
     }
     const runEnv = { ...env, ...command.env };
 
+    // Linux measures memory and gives Large Stack only through the launcher: wait for its first build.
+    if (IS_LINUX) await ensureLauncher();
     const launcher = getLauncherIfReady();
     const statsFile = launcher ? newStatsFile() : null;
 
     try {
         runningProcess = launcher
             ? spawn(launcher, command.args.length ? [statsFile, command.file, '0', '0', ...command.args] : [statsFile, exePath],
-                { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN })
-            : spawn(command.file, command.args, { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'] });
+                { cwd: workingDir, env: { ...runEnv, ...launcherEnv() }, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN })
+            : spawn(command.file, command.args, { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], detached: !IS_WIN });
     } catch (err) {
         // Windows refused to create the process. Node throws ("spawn UNKNOWN") instead of
         // emitting 'error': an antivirus block, or a file that is not a program. The renderer
@@ -1218,12 +1223,12 @@ function stopProcess() {
     }
 
     // Tear the pipes down first so no buffered output arrives after "Stopped".
-    // macOS runs the program under the launcher, in its own process group: the whole group
-    // goes, or the program would outlive the launcher.
+    // macOS and Linux run the program in its own process group: the whole group goes, or the
+    // program (or a child it forked) would outlive the launcher.
     try { if (child.stdin) child.stdin.destroy(); } catch (_) { }
     try { if (child.stdout) child.stdout.destroy(); } catch (_) { }
     try { if (child.stderr) child.stderr.destroy(); } catch (_) { }
-    try { if (IS_MAC) killProcessTree(child); else child.kill('SIGKILL'); } catch (_) { }
+    try { if (!IS_WIN) killProcessTree(child); else child.kill('SIGKILL'); } catch (_) { }
 
     sendToRenderer('process-stopped');
     return true;

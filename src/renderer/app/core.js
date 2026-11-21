@@ -44,7 +44,7 @@ const DEFAULT_SETTINGS = {
         warnings: false,
         useLLD: true,
         singleFileMode: true,
-        largeStack: true,   // Windows: link with a 256 MB stack, as judges give (buildCompileFlags)
+        largeStack: true,   // a 256 MB stack, as judges give (buildCompileFlags; Linux: run-launcher.js)
         fastDebugMode: true,
         disableExceptions: false,
         disableRTTI: false,

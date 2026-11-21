@@ -1,5 +1,8 @@
 /**
- * Sameko Dev C++ IDE - Run launcher (Windows and macOS)
+ * Sameko Dev C++ IDE - Run launcher (Windows, macOS and Linux)
+ *
+ * On macOS and Linux peak memory is the kernel's ru_maxrss (pages touched), read after the
+ * program exits, so a run that ends quickly is still measured exactly.
  *
  * A tiny native helper that starts the user's program, waits for it, and
  * reports what the OS itself recorded: wall time, CPU time and peak memory.
@@ -34,11 +37,12 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { getDetectedCompiler, getCompilerEnv } = require('./detector');
-const { IS_WIN, IS_MAC, EXE_SUFFIX, ensurePrivateDir, appTempDir } = require('../../shared/platform');
+const { readSettings } = require('../../shared/settings-store');
+const { IS_WIN, IS_MAC, IS_LINUX, EXE_SUFFIX, ensurePrivateDir, appTempDir } = require('../../shared/platform');
 
-const HAS_LAUNCHER = IS_WIN || IS_MAC;
+const HAS_LAUNCHER = IS_WIN || IS_MAC || IS_LINUX;
 
-const LAUNCHER_VERSION = 6; // bump when LAUNCHER_SOURCE changes
+const LAUNCHER_VERSION = 7; // bump when a launcher source changes
 
 const LAUNCHER_SOURCE = String.raw`
 #define UNICODE
@@ -179,7 +183,7 @@ int wmain(int argc, wchar_t** argv) {
 }
 `;
 
-const MAC_LAUNCHER_SOURCE = String.raw`
+const POSIX_LAUNCHER_SOURCE = String.raw`
 #include <errno.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -223,6 +227,22 @@ int main(int argc, char** argv) {
         signal(SIGTERM, SIG_DFL);
         signal(SIGINT, SIG_DFL);
         signal(SIGALRM, SIG_DFL);
+#ifdef __linux__
+        // Large Stack: an ELF program takes its stack size from this limit, not from the linker.
+        const char* stackMB = getenv("SAMEKO_STACK_MB");
+        if (stackMB) {
+            struct rlimit lim;
+            if (getrlimit(RLIMIT_STACK, &lim) == 0) {
+                rlim_t want = (rlim_t)atol(stackMB) * 1024 * 1024;
+                if (lim.rlim_max != RLIM_INFINITY && want > lim.rlim_max) want = lim.rlim_max;
+                if (lim.rlim_cur != RLIM_INFINITY && lim.rlim_cur < want) {
+                    lim.rlim_cur = want;
+                    setrlimit(RLIMIT_STACK, &lim);
+                }
+            }
+            unsetenv("SAMEKO_STACK_MB");
+        }
+#endif
         execv(argv[2], args);
         int err = errno;
         (void)!write(startPipe[1], &err, sizeof(err));
@@ -252,8 +272,12 @@ int main(int argc, char** argv) {
         if (f) { fprintf(f, "{\"startError\":%d}", startError); fclose(f); }
         return 126;
     }
-    // ru_maxrss is in bytes on macOS.
+    // ru_maxrss is in bytes on macOS and in KB on Linux.
+#ifdef __APPLE__
     unsigned long long peakKB = (unsigned long long)usage.ru_maxrss / 1024;
+#else
+    unsigned long long peakKB = (unsigned long long)usage.ru_maxrss;
+#endif
     double wallMs = (t1.tv_sec - t0.tv_sec) * 1000.0 + (t1.tv_nsec - t0.tv_nsec) / 1000000.0;
     double cpuMs = (usage.ru_utime.tv_sec + usage.ru_stime.tv_sec) * 1000.0
         + (usage.ru_utime.tv_usec + usage.ru_stime.tv_usec) / 1000.0;
@@ -308,11 +332,11 @@ function ensureLauncher() {
             // Unique per process: another app instance may build the same tag at once.
             const unique = `${process.pid}-${Date.now().toString(36)}`;
             const src = path.join(dir, `sameko_run-${tag}.${unique}.cpp`);
-            fs.writeFileSync(src, IS_MAC ? MAC_LAUNCHER_SOURCE : LAUNCHER_SOURCE, 'utf-8');
+            fs.writeFileSync(src, IS_WIN ? LAUNCHER_SOURCE : POSIX_LAUNCHER_SOURCE, 'utf-8');
             const tmpExe = `${exe}.${unique}.tmp`;
             const dropTmp = () => { try { fs.unlinkSync(tmpExe); } catch (_) { } };
             const child = spawn(compilerExe,
-                IS_MAC ? [src, '-o', tmpExe, '-O2', '-w'] : [src, '-o', tmpExe, '-O2', '-s', '-static', '-municode', '-w'],
+                IS_WIN ? [src, '-o', tmpExe, '-O2', '-s', '-static', '-municode', '-w'] : [src, '-o', tmpExe, '-O2', '-w'],
                 { cwd: dir, env: getCompilerEnv(), windowsHide: true });
             child.on('error', () => { try { fs.unlinkSync(src); } catch (_) { } dropTmp(); resolve(null); });
             child.on('close', (code) => {
@@ -347,6 +371,15 @@ function getLauncherIfReady() {
     return launcherPath;
 }
 
+/** Environment for the launcher: on Linux it applies the Large Stack setting to the program. */
+function launcherEnv() {
+    if (!IS_LINUX) return {};
+    try {
+        if (readSettings()?.compiler?.largeStack === false) return {};
+    } catch (_) { /* unreadable settings: keep the default, on */ }
+    return { SAMEKO_STACK_MB: '256' };
+}
+
 /** A fresh path for one run's stats file. */
 function newStatsFile() {
     const dir = toolsDir();
@@ -371,4 +404,4 @@ function readStats(file) {
     return null;
 }
 
-module.exports = { ensureLauncher, getLauncherIfReady, newStatsFile, readStats };
+module.exports = { ensureLauncher, getLauncherIfReady, launcherEnv, newStatsFile, readStats };

@@ -145,6 +145,17 @@ async function main() {
 
         const waitLine = line => page.waitForFunction(wanted => window.testDebugStops.at(-1)?.frame?.line === wanted, line, { timeout: 20000 });
         const lineFor = snippet => SOURCE.split('\n').findIndex(line => line.includes(snippet)) + 1;
+        // GCC on Linux may stop first on `int main() {` (stack protector setup), one step earlier.
+        const waitBody = async () => {
+            await page.waitForFunction(() => window.testDebugStops.length > 0, null, { timeout: 20000 });
+            const body = lineFor('int n = 0');
+            if (await page.evaluate(() => window.testDebugStops.at(-1)?.frame?.line) < body) {
+                const n = await page.evaluate(() => window.testDebugStops.length);
+                await page.evaluate(() => Debugger.stepOver());
+                await page.waitForFunction(count => window.testDebugStops.length > count, n, { timeout: 20000 });
+            }
+            await waitLine(body);
+        };
         const watch = async expr => {
             const field = page.locator('#sdbg-watchin');
             await field.fill(expr);
@@ -165,7 +176,7 @@ async function main() {
                 window.electronAPI.onDebugStopped(value => window.testDebugStops.push(value));
             });
             await tool(1, 'debug').click();
-            await waitLine(lineFor('int n = 0'));
+            await waitBody();
             for (let i = 0; i < 5; i++) await step();
             await waitLine(lineFor('a[0] = n'));
             await watch('n');
@@ -207,7 +218,7 @@ async function main() {
         await t.check('debugging an empty test sends EOF to the program', async () => {
             await page.evaluate(() => { window.testDebugStops.length = 0; });
             await tool(3, 'debug').click();
-            await waitLine(lineFor('int n = 0'));
+            await waitBody();
             await page.evaluate(() => Debugger.continue());
             await page.waitForFunction(() => !Debugger.isActive());
         });

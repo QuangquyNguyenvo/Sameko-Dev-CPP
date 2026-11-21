@@ -760,7 +760,8 @@ function buildCompileFlags(options = {}) {
     // n = 1e5) crashes with 0xC00000FD here while Codeforces, which allows 256 MB, accepts it.
     // Only address space is reserved; memory is used as the stack actually grows. Before the
     // extra flags, so a user's own -Wl,--stack=… wins (ld takes the last one).
-    // macOS gives 8 MB and its linker spells the option differently.
+    // macOS gives 8 MB and its linker spells the option differently. Linux takes the stack size
+    // from a limit, which the run launcher sets (run-launcher.js), so no flag is needed there.
     if (App.settings.compiler.largeStack !== false) {
         if (IS_MAC_UI) flags.push('-Wl,-stack_size,0x10000000');
         else if (/^win/i.test(navigator.platform || '')) flags.push('-Wl,--stack=268435456');
