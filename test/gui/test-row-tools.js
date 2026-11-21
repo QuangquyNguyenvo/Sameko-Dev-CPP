@@ -147,9 +147,11 @@ async function main() {
         const lineFor = snippet => SOURCE.split('\n').findIndex(line => line.includes(snippet)) + 1;
         // GCC on Linux may stop first on `int main() {` (stack protector setup), one step earlier.
         const waitBody = async () => {
-            await page.waitForFunction(() => window.testDebugStops.length > 0, null, { timeout: 20000 });
             const body = lineFor('int n = 0');
-            if (await page.evaluate(() => window.testDebugStops.at(-1)?.frame?.line) < body) {
+            const opening = lineFor('int main()');
+            // Only a stop on one of these two lines counts: LLDB can report a stop with no line yet.
+            await page.waitForFunction(lines => lines.includes(window.testDebugStops.at(-1)?.frame?.line), [opening, body], { timeout: 20000 });
+            if (await page.evaluate(() => window.testDebugStops.at(-1).frame.line) === opening) {
                 const n = await page.evaluate(() => window.testDebugStops.length);
                 await page.evaluate(() => Debugger.stepOver());
                 await page.waitForFunction(count => window.testDebugStops.length > count, n, { timeout: 20000 });
