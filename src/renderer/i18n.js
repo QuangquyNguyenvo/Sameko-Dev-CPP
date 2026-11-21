@@ -108,9 +108,9 @@ const I18n = {
         document.documentElement.lang = lang === 'zh-CN' ? 'zh-CN' : lang;
         document.documentElement.dataset.lang = lang;
         this._titleFont(lang);
-        if (lang === 'en') this._stopObserver();
-        if (changed || lang !== 'en') this.translateTree(document.body);
-        if (lang !== 'en') this._startObserver();
+        if (lang === 'en' && !this._observeAlways()) this._stopObserver();
+        if (changed || lang !== 'en' || this._observeAlways()) this.translateTree(document.body);
+        if (lang !== 'en' || this._observeAlways()) this._startObserver();
         if (changed) this._listeners.forEach((fn) => { try { fn(lang); } catch (e) { console.error(e); } });
     },
 
@@ -224,6 +224,15 @@ const I18n = {
         return lead + out + (key ? trail : '');
     },
 
+    /** macOS shows shortcuts as ⌘S, so its page is rewritten in English too. */
+    _observeAlways() {
+        return typeof IS_MAC_UI !== 'undefined' && IS_MAC_UI;
+    },
+
+    _display(text) {
+        return typeof macKeyLabel === 'function' ? macKeyLabel(text) : text;
+    },
+
     _skipped(el) {
         return !!(el && el.closest && el.closest(this.SKIP));
     },
@@ -235,7 +244,7 @@ const I18n = {
         // A value we did not write is new English text from the app.
         if (!rec || value !== rec.out) rec = { src: value, out: value };
         const out = this._render(rec.src);
-        rec.out = out === null ? rec.src : out;
+        rec.out = this._display(out === null ? rec.src : out);
         this._textSrc.set(node, rec);
         if (node.nodeValue !== rec.out) node.nodeValue = rec.out;
     },
@@ -251,7 +260,7 @@ const I18n = {
             let rec = recs[attr];
             if (!rec || value !== rec.out) rec = { src: value, out: value };
             const out = this._render(rec.src);
-            rec.out = out === null ? rec.src : out;
+            rec.out = this._display(out === null ? rec.src : out);
             recs[attr] = rec;
             if (value !== rec.out) el.setAttribute(attr, rec.out);
         }

@@ -3,7 +3,7 @@
 const { BrowserWindow, Menu, app, screen } = require('electron');
 const path = require('path');
 const { WINDOW } = require('../shared/constants');
-const { IS_WIN } = require('../shared/platform');
+const { IS_WIN, IS_MAC } = require('../shared/platform');
 const { readSettings, updateSettings } = require('../shared/settings-store');
 
 let mainWindow = null;
@@ -231,6 +231,22 @@ function attachDisplaySafetyListeners() {
     displayListenersAttached = true;
 }
 
+const MAC_MENU = [
+    { role: 'appMenu' },
+    {
+        label: 'Edit',
+        submenu: [
+            { role: 'undo' }, { role: 'redo' }, { type: 'separator' },
+            { role: 'cut' }, { role: 'copy' }, { role: 'paste' }, { role: 'selectAll' },
+        ],
+    },
+    {
+        label: 'Window',
+        role: 'window',
+        submenu: [{ role: 'minimize' }, { role: 'zoom' }, { type: 'separator' }, { role: 'front' }],
+    },
+];
+
 function createMainWindow() {
     const appRoot = getAppRoot();
 
@@ -241,7 +257,8 @@ function createMainWindow() {
         height: savedBounds?.height || WINDOW.DEFAULT_HEIGHT,
         x: savedBounds?.x,
         y: savedBounds?.y,
-        frame: false,
+        // macOS keeps its own window buttons over the app's header.
+        ...(IS_MAC ? { titleBarStyle: 'hidden', trafficLightPosition: { x: 16, y: 23 } } : { frame: false }),
         show: false,
         webPreferences: {
             nodeIntegration: false,
@@ -283,7 +300,8 @@ function createMainWindow() {
     // Dragged onto a screen with a different size or scaling.
     mainWindow.on('moved', () => applyUiScale(mainWindow));
 
-    Menu.setApplicationMenu(null);
+    // Without an Edit menu, Cmd+C/V/X/A do nothing in text fields on macOS.
+    Menu.setApplicationMenu(IS_MAC ? Menu.buildFromTemplate(MAC_MENU) : null);
 
     // The window only ever shows the app's own page. Refuse to navigate it
     // anywhere else (a dropped file or a stray link would otherwise replace the

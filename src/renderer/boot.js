@@ -6,6 +6,27 @@
  */
 
 // Surface every uncaught error in the console (and in electron-log via --enable-logging).
+// macOS: the app's "Ctrl" shortcuts are pressed with Cmd. Bindings stay stored as Ctrl+...,
+// so settings are shared across systems; only the key read and the label shown differ.
+const IS_MAC_UI = /mac/i.test(navigator.platform || '');
+if (IS_MAC_UI) document.documentElement.dataset.platform = 'mac';
+
+/** The modifier behind "Ctrl" in a shortcut: Cmd on macOS, Ctrl elsewhere. */
+function primaryModifier(e) {
+    return IS_MAC_UI ? e.metaKey : e.ctrlKey;
+}
+
+/** "Ctrl+Shift+S" as macOS writes it. Ctrl+Tab keeps the real Control key. */
+function macKeyLabel(text) {
+    if (!IS_MAC_UI || !text || !/(?:Ctrl|Shift|Alt)\+/.test(text)) return text;
+    return text.replace(/((?:(?:Ctrl|Shift|Alt)\+)+)([A-Za-z0-9]+|[^\s])/g, (_, mods, key) => {
+        const has = (name) => mods.includes(name + '+');
+        const control = has('Ctrl') && /^Tab/.test(key);
+        return (control ? '⌃' : '') + (has('Alt') ? '⌥' : '') + (has('Shift') ? '⇧' : '')
+            + (has('Ctrl') && !control ? '⌘' : '') + key;
+    });
+}
+
 window.onerror = function (msg, url, line, col, error) {
     console.error('[GLOBAL ERROR]', msg, url, line, col, error);
     return false;

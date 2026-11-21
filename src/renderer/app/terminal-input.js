@@ -134,7 +134,7 @@ function initTerminalUX() {
         // window-level listener stops Ctrl+D before it reaches the box.
         window.addEventListener('keydown', (e) => {
             if (e.target !== termInput || !App.isRunning) return;
-            if (e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey
+            if ((e.ctrlKey || primaryModifier(e)) && !e.shiftKey && !e.altKey
                 && (e.key === 'd' || (e.key === 'z' && termInput.value === ''))) {
                 e.preventDefault();
                 e.stopPropagation();

@@ -8,7 +8,7 @@ const { launchApp, checker, waitInPage } = require('../helpers/app');
 
 async function main() {
     const t = checker();
-    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'sameko-editor-batch-'));
+    const dir = await fs.realpath(await fs.mkdtemp(path.join(os.tmpdir(), 'sameko-editor-batch-')));
     const paths = Object.fromEntries(['main.cpp', 'other.cpp', 'value.hpp', 'quick.cpp', 'wide.cpp', 'hint.cpp', 'matches.txt'].map(name =>
         [name, path.join(dir, name)]
     ));
@@ -79,16 +79,16 @@ async function main() {
             });
             assert.ok(fixes.some(fix => fix.edits.some(edit => edit.newText === ';')), JSON.stringify(fixes));
             const fix = fixes.find(fix => fix.edits.some(edit => edit.newText === ';'));
-            await page.keyboard.press('Control+Period');
+            await page.keyboard.press('ControlOrMeta+Period');
             await page.getByText(fix.title, { exact: true }).click({ timeout: 10000 });
             assert.match(await page.evaluate(() => getActiveEditor().getValue()), /int n = 1;/);
-            await page.keyboard.press('Control+z');
+            await page.keyboard.press('ControlOrMeta+z');
             assert.equal(await page.evaluate(() => getActiveEditor().getValue()), source['quick.cpp']);
         });
 
         await t.check('Ctrl+Shift+F searches with both toggles and opens the selected line', async () => {
             await page.evaluate(folder => { FileExplorer.currentFolder = folder; }, dir);
-            await page.keyboard.press('Control+Shift+f');
+            await page.keyboard.press('ControlOrMeta+Shift+f');
             const input = page.locator('#find-files-query');
             const hits = page.locator('.find-files-match');
             await input.fill('Widget.');
@@ -113,20 +113,20 @@ async function main() {
             await page.evaluate(() => { FindInFiles.close(); FileExplorer.open(); return FileExplorer.refreshTree(); });
             await page.locator('.explorer-item', { hasText: 'other.cpp' }).first().click();
             await waitInPage(page, () => /other\.cpp$/.test(FileExplorer.selectedFilePath || ''));
-            await page.keyboard.press('Control+c');
+            await page.keyboard.press('ControlOrMeta+c');
             assert.match(await page.evaluate(() => FileExplorer.clipboardFile?.path || ''), /other\.cpp$/, 'Ctrl+C on the explorer copies the file');
             await page.evaluate(() => { FileExplorer.clipboardFile = null; });
             // The click opened other.cpp; copy all of it and paste it at the end.
             await page.locator('.monaco-editor .view-lines').first().click();
             const before = await page.evaluate(() => getActiveEditor().getValue());
-            await page.keyboard.press('Control+a');
-            await page.keyboard.press('Control+c');
-            await page.keyboard.press('Control+End');
-            await page.keyboard.press('Control+v');
+            await page.keyboard.press('ControlOrMeta+a');
+            await page.keyboard.press('ControlOrMeta+c');
+            await page.keyboard.press(process.platform === 'darwin' ? 'Meta+ArrowDown' : 'Control+End');
+            await page.keyboard.press('ControlOrMeta+v');
             await waitInPage(page, want => getActiveEditor().getValue() === want, before + before, 5000)
                 .catch(() => {});
             assert.equal(await page.evaluate(() => getActiveEditor().getValue()), before + before, 'the file was pasted after itself');
-            await page.keyboard.press('Control+z');
+            await page.keyboard.press('ControlOrMeta+z');
             const popups = () => page.evaluate(() => [...document.querySelectorAll('.cc-popup, dialog[open]')]
                 .filter(el => el.offsetParent || el.open).map(el => el.className || el.tagName).join('|'));
             const popupsBefore = await popups();
@@ -140,10 +140,10 @@ async function main() {
             await open('wide.cpp');
             await page.evaluate(() => compileOnly());
             await position(2, 13);
-            await page.keyboard.press('Control+Period');
+            await page.keyboard.press('ControlOrMeta+Period');
             await page.getByText('Replace full-width punctuation with ASCII', { exact: true }).click({ timeout: 10000 });
             assert.equal(await page.evaluate(() => getActiveEditor().getModel().getLineContent(2)), '    return 0; // keep this ；');
-            await page.keyboard.press('Control+z');
+            await page.keyboard.press('ControlOrMeta+z');
             assert.equal(await page.evaluate(() => getActiveEditor().getValue()), source['wide.cpp']);
         });
 

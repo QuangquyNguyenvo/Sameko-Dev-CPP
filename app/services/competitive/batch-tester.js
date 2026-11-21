@@ -97,7 +97,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
         let testProcess;
         try {
             testProcess = launcher
-                ? spawn(launcher, [statsFile, command.file, String(Math.round(timeLimit)), String(memoryLimit), ...command.args, ...programArgs], { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+                ? spawn(launcher, [statsFile, command.file, String(Math.round(timeLimit)), String(memoryLimit), ...command.args, ...programArgs], { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN })
                 : spawn(command.file, [...command.args, ...programArgs], { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN });
         } catch (err) {
             // Windows refused to create the process; Node throws ("spawn UNKNOWN") rather than

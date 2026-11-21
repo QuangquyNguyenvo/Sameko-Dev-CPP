@@ -25,7 +25,7 @@ const log = {
     warn: (...args) => getLog().warn(...args),
     error: (...args) => getLog().error(...args),
 };
-const { IS_WIN, IS_LINUX } = require('../shared/platform');
+const { IS_WIN, IS_MAC, IS_LINUX } = require('../shared/platform');
 const { readSettings } = require('../shared/settings-store');
 
 /**
@@ -81,7 +81,8 @@ class AutoUpdateService {
 
         // Auto-download updates in background. The zip build only says a new version is out
         // (with a download link): its installer would install into another folder.
-        autoUpdater.autoDownload = !require('../core/portable').isPortable();
+        // An unsigned macOS app cannot replace itself, so it gets the same download link.
+        autoUpdater.autoDownload = !IS_MAC && !require('../core/portable').isPortable();
 
         // Configure update check
         // Do NOT install silently on quit - require explicit restart
@@ -371,7 +372,7 @@ class AutoUpdateService {
             log.warn('[AutoUpdate] No update downloaded yet');
             return;
         }
-        if (require('../core/portable').isPortable()) {
+        if (IS_MAC || require('../core/portable').isPortable()) {
             log.warn('[AutoUpdate] Portable build: not installing, the user downloads the new zip');
             return;
         }

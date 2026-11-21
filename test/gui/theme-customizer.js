@@ -15,7 +15,7 @@ const path = require('path');
 const { _electron: electron } = require('playwright-core');
 const ROOT = path.join(__dirname, '..', '..');
 const artifacts = path.join(ROOT, 'plans', '_smoke-artifacts');
-const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-theme-gui-'));
+const profile = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'sameko-theme-gui-')));
 async function screenshot(name) {
     if (!process.env.SMOKE_SHOT) return;
     fs.mkdirSync(artifacts, { recursive: true });

@@ -1,0 +1,134 @@
+# Builds the macOS arm64 app and runs the test suites on a real macOS runner.
+# A published release also gets the DMG, the zip and latest-mac.yml, after the tests pass.
+name: macOS build
+
+on:
+  push:
+    branches: [mac-build]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the release version
+        if: github.event_name == 'release'
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          test "v$VERSION" = "$TAG"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install GCC
+        run: |
+          brew list gcc >/dev/null 2>&1 || brew install gcc
+          brew list astyle >/dev/null 2>&1 || brew install astyle
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx install-electron --no
+
+      - name: Build DMG and zip
+        run: npm run build:mac -- --arm64 --publish never
+
+      - name: Check the app bundle
+        run: |
+          ls -lh samekodevcpp/*.dmg samekodevcpp/*.zip samekodevcpp/latest-mac.yml
+          codesign --verify --deep --strict --verbose=2 "samekodevcpp/mac-arm64/Sameko Dev C++.app"
+
+      - name: Launch the packaged app
+        run: |
+          "samekodevcpp/mac-arm64/Sameko Dev C++.app/Contents/MacOS/Sameko Dev C++" --user-data-dir="$RUNNER_TEMP/profile" > launch.log 2>&1 &
+          APP_PID=$!
+          sleep 20
+          kill -0 "$APP_PID"
+          kill "$APP_PID"
+          grep -E '\[Compiler\] Selected' launch.log
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: sameko-dev-cpp-mac-arm64
+          path: |
+            samekodevcpp/*.dmg
+            samekodevcpp/*.zip
+            samekodevcpp/latest-mac.yml
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Check the app installed from the DMG
+        continue-on-error: ${{ github.event_name != 'release' }}
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          DMG=$(ls samekodevcpp/*.dmg)
+          MOUNT=$(hdiutil attach -nobrowse "$DMG" | tail -1 | awk -F'\t' '{print $NF}')
+          INSTALL="$RUNNER_TEMP/Apps Test"
+          mkdir -p "$INSTALL"
+          ditto "$MOUNT/Sameko Dev C++.app" "$INSTALL/Sameko Dev C++.app"
+          hdiutil detach "$MOUNT"
+          xattr -w com.apple.quarantine '0081;00000000;Test;' "$INSTALL/Sameko Dev C++.app"
+          xattr -cr "$INSTALL/Sameko Dev C++.app"
+          codesign --verify --deep --strict "$INSTALL/Sameko Dev C++.app"
+          mkdir -p mac-shots
+          node test/mac/packaged.js "$INSTALL/Sameko Dev C++.app/Contents/MacOS/Sameko Dev C++" mac-shots 2>&1 | tee packaged.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Unit tests
+        continue-on-error: ${{ github.event_name != 'release' }}
+        run: node test/run.js unit -v 2>&1 | tee unit.log; exit "${PIPESTATUS[0]}"
+        shell: bash
+
+      - name: GUI tests
+        continue-on-error: ${{ github.event_name != 'release' }}
+        timeout-minutes: 15
+        run: node test/run.js gui -v 2>&1 | tee gui.log; exit "${PIPESTATUS[0]}"
+        shell: bash
+
+      - name: Check a Mac without GCC
+        continue-on-error: ${{ github.event_name != 'release' }}
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/gcc-away"
+          for f in /opt/homebrew/bin/g++ /opt/homebrew/bin/g++-* /usr/local/bin/g++ /usr/local/bin/g++-*; do
+            if [ -e "$f" ] || [ -L "$f" ]; then mv "$f" "$RUNNER_TEMP/gcc-away/"; fi
+          done
+          node test/mac/no-gcc.js "$RUNNER_TEMP/Apps Test/Sameko Dev C++.app/Contents/MacOS/Sameko Dev C++" 2>&1 | tee no-gcc.log
+          STATUS="${PIPESTATUS[0]}"
+          mv "$RUNNER_TEMP"/gcc-away/* /opt/homebrew/bin/
+          exit "$STATUS"
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-test-logs
+          path: |
+            *.log
+            mac-shots/*.png
+          if-no-files-found: ignore
+
+      - name: Attach to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release upload "$TAG" samekodevcpp/*.dmg samekodevcpp/*.zip samekodevcpp/*.blockmap samekodevcpp/latest-mac.yml --clobber

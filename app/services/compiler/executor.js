@@ -19,7 +19,7 @@ const languages = require('./languages');
 const { testlibIncludeDir } = require('../competitive/checker');
 const { validateCompilerFlags, splitFlags, joinFlags } = require('../../shared/validators');
 const { describeExit, describeStartError } = require('../../shared/exit-codes');
-const { EXE_SUFFIX, IS_WIN, IS_MAC, IS_LINUX, ensurePrivateDir, readProcMemoryKB, which, appTempDir } = require('../../shared/platform');
+const { EXE_SUFFIX, IS_WIN, IS_MAC, IS_LINUX, ensurePrivateDir, readProcMemoryKB, which, appTempDir, killProcessTree } = require('../../shared/platform');
 
 let runningProcess = null;
 let activeCompilerProcess = null;
@@ -922,7 +922,7 @@ async function run({ exePath, cwd }) {
     try {
         runningProcess = launcher
             ? spawn(launcher, command.args.length ? [statsFile, command.file, '0', '0', ...command.args] : [statsFile, exePath],
-                { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true })
+                { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'], windowsHide: true, detached: !IS_WIN })
             : spawn(command.file, command.args, { cwd: workingDir, env: runEnv, stdio: ['pipe', 'pipe', 'pipe'] });
     } catch (err) {
         // Windows refused to create the process. Node throws ("spawn UNKNOWN") instead of
@@ -1218,13 +1218,12 @@ function stopProcess() {
     }
 
     // Tear the pipes down first so no buffered output arrives after "Stopped".
-    // NOTE (POSIX): this kills only the process itself, not a forked child tree.
-    // Killing a group would require spawning run() with `detached: true`, which
-    // risks breaking the stdin/stdout pipes the output panel depends on.
+    // macOS runs the program under the launcher, in its own process group: the whole group
+    // goes, or the program would outlive the launcher.
     try { if (child.stdin) child.stdin.destroy(); } catch (_) { }
     try { if (child.stdout) child.stdout.destroy(); } catch (_) { }
     try { if (child.stderr) child.stderr.destroy(); } catch (_) { }
-    try { child.kill('SIGKILL'); } catch (_) { }
+    try { if (IS_MAC) killProcessTree(child); else child.kill('SIGKILL'); } catch (_) { }
 
     sendToRenderer('process-stopped');
     return true;

@@ -695,7 +695,7 @@ Object.assign(FileExplorer, {
     handleExplorerKeydown(e) {
         if (!this.selectedFilePath) return;
 
-        if (e.key === 'Delete' && !e.ctrlKey) {
+        if ((e.key === 'Delete' && !e.ctrlKey) || (IS_MAC_UI && e.key === 'Backspace' && e.metaKey)) {
             e.preventDefault();
             e.stopImmediatePropagation();
             const selected = [...this.elements.tree.querySelectorAll('.explorer-item.selected')]
@@ -703,14 +703,14 @@ Object.assign(FileExplorer, {
             if (selected && selected.classList.contains('folder')) this.confirmDeleteFolder(this.selectedFilePath);
             else this.confirmDelete(this.selectedFilePath);
 
-        } else if (e.key === 'c' && e.ctrlKey && !e.shiftKey) {
+        } else if (e.key === 'c' && primaryModifier(e) && !e.shiftKey) {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.clipboardFile = { path: this.selectedFilePath, mode: 'copy' };
             // Remove any cut-visual from tree items
             this.elements.tree.querySelectorAll('.explorer-item.cut').forEach(el => el.classList.remove('cut'));
 
-        } else if (e.key === 'x' && e.ctrlKey && !e.shiftKey) {
+        } else if (e.key === 'x' && primaryModifier(e) && !e.shiftKey) {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.clipboardFile = { path: this.selectedFilePath, mode: 'cut' };
@@ -719,7 +719,7 @@ Object.assign(FileExplorer, {
             const selectedEl = this.elements.tree.querySelector(`.explorer-item[data-path="${CSS.escape(this.selectedFilePath)}"]`);
             if (selectedEl) selectedEl.classList.add('cut');
 
-        } else if (e.key === 'v' && e.ctrlKey && !e.shiftKey) {
+        } else if (e.key === 'v' && primaryModifier(e) && !e.shiftKey) {
             e.preventDefault();
             e.stopImmediatePropagation();
             this.pasteFile();

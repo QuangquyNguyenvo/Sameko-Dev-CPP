@@ -231,6 +231,23 @@ You can keep the AppImage wherever you like and run it again from that folder. T
 
 </details>
 
+### 🍎 macOS (Apple Silicon, beta)
+
+Sameko uses GCC from Homebrew and LLDB from Apple's Command Line Tools:
+
+```bash
+xcode-select --install
+brew install gcc astyle
+```
+
+Download the `mac-arm64.dmg` file from [GitHub Releases](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases) and drag Sameko into Applications. The app is not signed with an Apple Developer account, so macOS blocks its first launch. Allow it once with:
+
+```bash
+xattr -cr "/Applications/Sameko Dev C++.app"
+```
+
+Updates are not installed automatically on macOS: Sameko shows a download button when a new version is out.
+
 <br />
 
 ## 🛠️ Development

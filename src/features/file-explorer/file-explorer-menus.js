@@ -548,7 +548,7 @@ Object.assign(FileExplorer, {
         textarea.onkeydown = (e) => {
             if (e.key === 'Escape') {
                 closeDialog();
-            } else if (e.key === 'Enter' && e.ctrlKey) {
+            } else if (e.key === 'Enter' && primaryModifier(e)) {
                 saveNote();
             }
         };

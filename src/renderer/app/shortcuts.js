@@ -98,7 +98,8 @@ function stepUiScale(direction) {
 
 function normalizeKeyCombo(e) {
     const parts = [];
-    if (e.ctrlKey) parts.push('Ctrl');
+    const primary = primaryModifier(e) || (IS_MAC_UI && e.ctrlKey && e.key === 'Tab');
+    if (primary) parts.push('Ctrl');
     if (e.shiftKey) parts.push('Shift');
     if (e.altKey) parts.push('Alt');
 
@@ -106,7 +107,7 @@ function normalizeKeyCombo(e) {
     // With a modifier held, take letters and digits from the physical key: a
     // Vietnamese IME or a non-Latin layout can report e.key as "Process" or
     // another character, and Ctrl+W / Ctrl+T then matched nothing.
-    if ((e.ctrlKey || e.altKey) && /^(Key[A-Z]|Digit[0-9])$/.test(e.code)) key = e.code.slice(-1);
+    if ((primary || e.altKey) && /^(Key[A-Z]|Digit[0-9])$/.test(e.code)) key = e.code.slice(-1);
     if (key === ' ') key = 'Space';
     else if (key.length === 1) key = key.toUpperCase();
     else if (key.startsWith('Arrow')) key = key.replace('Arrow', '');
@@ -215,7 +216,7 @@ function initShortcuts() {
         // Ctrl+K chord handling (VS Code style) - ONLY if Ctrl+K is NOT customized
         // If user mapped Ctrl+K to something else, this logic might conflict.
         // But for now, preserve existing behavior with safety checks.
-        if (e.ctrlKey && e.key.toLowerCase() === 'k' && !e.shiftKey && !e.altKey) {
+        if (primaryModifier(e) && e.key.toLowerCase() === 'k' && !e.shiftKey && !e.altKey) {
             // Check if Ctrl+K is assigned to an action? 
             // If not, treat as chord starter.
             const kAction = currentShortcutMap.get('Ctrl+K');
@@ -229,7 +230,7 @@ function initShortcuts() {
         }
 
         // Reset chord if other key pressed
-        if (ctrlKPressed && e.key !== 'Control') {
+        if (ctrlKPressed && e.key !== 'Control' && e.key !== 'Meta') {
             ctrlKPressed = false;
             // Here we could handle Chord actions (Ctrl+K, Ctrl+O) if we implemented them.
             // For now, just reset and fall through to normal check.
