@@ -35,7 +35,9 @@ jobs:
           cache: npm
 
       - name: Install GCC
-        run: brew list gcc >/dev/null 2>&1 || brew install gcc
+        run: |
+          brew list gcc >/dev/null 2>&1 || brew install gcc
+          brew list astyle >/dev/null 2>&1 || brew install astyle
 
       - name: Install dependencies
         run: |
@@ -70,6 +72,24 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
+      - name: Check the app installed from the DMG
+        continue-on-error: ${{ github.event_name != 'release' }}
+        timeout-minutes: 10
+        shell: bash
+        run: |
+          DMG=$(ls samekodevcpp/*.dmg)
+          MOUNT=$(hdiutil attach -nobrowse "$DMG" | tail -1 | awk -F'\t' '{print $NF}')
+          INSTALL="$RUNNER_TEMP/Apps Test"
+          mkdir -p "$INSTALL"
+          ditto "$MOUNT/Sameko Dev C++.app" "$INSTALL/Sameko Dev C++.app"
+          hdiutil detach "$MOUNT"
+          xattr -w com.apple.quarantine '0081;00000000;Test;' "$INSTALL/Sameko Dev C++.app"
+          xattr -cr "$INSTALL/Sameko Dev C++.app"
+          codesign --verify --deep --strict "$INSTALL/Sameko Dev C++.app"
+          mkdir -p mac-shots
+          node test/mac/packaged.js "$INSTALL/Sameko Dev C++.app/Contents/MacOS/Sameko Dev C++" mac-shots 2>&1 | tee packaged.log
+          exit "${PIPESTATUS[0]}"
+
       - name: Unit tests
         continue-on-error: ${{ github.event_name != 'release' }}
         run: node test/run.js unit -v 2>&1 | tee unit.log; exit "${PIPESTATUS[0]}"
@@ -86,7 +106,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mac-test-logs
-          path: '*.log'
+          path: |
+            *.log
+            mac-shots/*.png
           if-no-files-found: ignore
 
       - name: Attach to the release
