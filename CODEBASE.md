@@ -24,7 +24,7 @@ primary target; Linux is supported.
 Startup (`app/main.js`): Node compile cache (`module.enableCompileCache`) → single-instance lock → `setupAppEvents()` →
 `app.whenReady()` → splash window → `initializeApp()` (dirs, compiler detection) →
 `createMainWindow()` → register all IPC handlers (`app/ipc/index.js`) → the main window is
-revealed on `ready-to-show` (10 s fallback) and the splash closes. Only after the page's
+revealed on `did-finish-load` (10 s fallback) and the splash closes. Only after the page's
 `did-finish-load` does `startDeferredWork()` start the compiler warm-up, run-launcher and PCH
 builds, and 1.5 s later auto-update and Discord RPC. `electron-updater`, `electron-log` and
 `discord-rpc` are required on first use, not at startup (they were ~170 ms of module loading).
