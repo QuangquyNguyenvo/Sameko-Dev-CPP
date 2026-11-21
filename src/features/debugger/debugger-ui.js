@@ -59,6 +59,11 @@
     let lastFrameKey = null;            // identity of the frame the trees reflect
     let lastLocalNames = null;          // signature of the local name set
     const watches = [];                 // array of expression strings
+    const watchpoints = new Map();
+    const pendingWatchpoints = new Map();
+    const watchArrays = new Map();
+    const WATCH_ARRAY_LIMIT = 200;
+    let stopNumber = 0;
     let stopFrames = [];
     let selectedFrame = 0;
     let lastRawEndedNL = true;           // did the last program-output chunk end with '\n'?
@@ -332,6 +337,31 @@
           color:var(--text-muted,#7990a0);transition:opacity .12s,color .12s}
         .sdbg-row:hover .sdbg-del{opacity:.7}
         .sdbg-del:hover{opacity:1;color:var(--error,#ff6b81)}
+        .sdbg-watchpoint{display:grid;place-items:center;flex:none;width:24px;min-height:24px;margin-left:auto;padding:1px;
+          color:var(--text-secondary);background:transparent;border:1px solid transparent;border-radius:4px;cursor:pointer}
+        .sdbg-watchpoint:hover,.sdbg-watchpoint[aria-pressed="true"]{color:var(--accent);border-color:currentColor}
+        .sdbg-watchpoint:disabled{opacity:.45;cursor:default}
+        .sdbg-watchpoint svg{width:14px;height:14px}
+        .sdbg-watchpoint+.sdbg-del{margin-left:0}
+        /* Watchpoint hit: a card above Variables, "expr  old → new". */
+        .sdbg-watchpoint-hit{margin:6px 10px 2px;padding:7px 10px;border-radius:10px;
+          background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--text-primary);overflow-wrap:anywhere}
+        .sdbg-wph-title{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:800;letter-spacing:.06em;
+          text-transform:uppercase;color:var(--accent)}
+        .sdbg-wph-title code{font-family:${MONO};font-size:12px;letter-spacing:0;text-transform:none;color:var(--text-primary)}
+        .sdbg-wph-vals{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px;margin-top:3px;font-family:${MONO};font-size:12px}
+        .sdbg-wph-vals .old{color:var(--text-muted);text-decoration:line-through}
+        .sdbg-wph-vals .new{color:var(--accent);font-weight:700}
+        .sdbg-wph-vals .arrow{color:var(--text-muted)}
+        .sdbg-body.replay>.sdbg-watchpoint-hit{display:none}
+        .sdbg-array{padding:4px 10px 6px 22px;font-family:${MONO};font-size:11px;color:var(--text-secondary)}
+        .sdbg-array-cells{display:flex;gap:3px;overflow-x:auto}
+        .sdbg-array-cells{padding-bottom:3px}
+        .sdbg-array-cell{flex:none;display:grid;gap:1px;min-width:26px;text-align:center;padding:3px 6px;border-radius:7px;
+          background:color-mix(in srgb,var(--text-primary) 7%,transparent);color:var(--text-primary)}
+        .sdbg-array-cell>span:first-child{font-size:9.5px;color:var(--text-muted)}
+        .sdbg-array-cell.changed{background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent);font-weight:700}
+        .sdbg-array-cell.changed>span:first-child{color:var(--accent)}
         /* Shortcuts moved out of the footer into a popover on the ? button, so
            the panel spends its height on data instead of a static cheat sheet. */
         .sdbg-pop{position:absolute;top:42px;right:9px;left:9px;z-index:6;display:none;
@@ -818,7 +848,8 @@
         updateAutoUI();
         els.watchIn.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && els.watchIn.value.trim()) {
-                watches.push(els.watchIn.value.trim());
+                const expr = els.watchIn.value.trim();
+                if (!watches.includes(expr)) watches.push(expr);
                 els.watchIn.value = '';
                 setCount('watch', watches.length);
                 if (state === 'stopped') refreshTrees();
@@ -857,6 +888,7 @@
     function showPop(show) { els.pop && els.pop.classList.toggle('open', !!show); }
     function setStatus(s) {
         state = s;
+        syncWatchpointButtons();
         if (els.statusText) els.statusText.textContent = s;
         if (els.status) els.status.dataset.s = s;
         for (const key of stoppedCtxKeys) { try { key.set(s === 'stopped'); } catch (_) { } }
@@ -1301,7 +1333,7 @@
         // then gives up instead of launching gdb afterwards.
         const gen = ++startGen;
         const cancelled = () => gen !== startGen;
-        let tab = activeTab();
+        const tab = opts?.tab || activeTab();
         if (!tab) { sys('⚠ Open a C++ file before debugging.', 'error'); return; }
         if (typeof isCppTab === 'function' && !isCppTab(tab)) {
             const other = typeof otherLanguageName === 'function' ? otherLanguageName(tab) : null;
@@ -1312,9 +1344,8 @@
         }
         if (!tab.path) {
             sys('⚠ Please save the file first (Ctrl+S) — the debugger needs a file on disk. Opening Save…', 'error');
-            try { if (typeof window.saveAs === 'function') await window.saveAs(); } catch (_) { }
-            tab = activeTab();
-            if (!tab || !tab.path) { sys('Debug cancelled: file not saved.', 'warning'); return; }
+            try { if (typeof saveAs === 'function') await saveAs(tab.id); } catch (_) { }
+            if (!tab.path || !window.App.tabs.includes(tab)) { sys('Debug cancelled: file not saved.', 'warning'); return; }
         }
         // The focused tab may be the right pane's: read its own model, never
         // whichever file the left editor happens to show.
@@ -1323,7 +1354,7 @@
         let saved = null;
         try { saved = await api().saveFile({ path: tab.path, content: text }); }
         catch (e) { saved = { success: false, error: e && e.message ? e.message : String(e) }; }
-        if (cancelled()) return;
+        if (cancelled() || !window.App.tabs.includes(tab)) return;
         if (!saved || saved.success === false) {
             sys('Could not save ' + tab.name + ': ' + ((saved && saved.error) || 'unknown error') + '. Debugging needs the file on disk.', 'error');
             return;
@@ -1352,6 +1383,7 @@
             // The PCH is keyed by every relevant flag (incl. -g), so a debug
             // build gets its own and no longer has to parse bits/stdc++.h.
             useLLD: false, realtimeOutput: false,
+            variant: opts?.stdin === undefined ? '' : 'debug-test',
         });
         if (cancelled()) return;
         if (!r || !r.success) {
@@ -1363,8 +1395,10 @@
         }
 
         // An input file attached to the tab is read by gdb in place.
-        const stdinPath = (typeof getTabInputFile === 'function' && getTabInputFile(tab.id)) || null;
-        const stdin = stdinPath ? '' : ((document.getElementById('input-area') || {}).value || '');
+        const stdinPath = opts?.stdin === undefined
+            ? ((typeof getTabInputFile === 'function' && getTabInputFile(tab.id)) || null)
+            : null;
+        const stdin = opts?.stdin ?? (stdinPath ? '' : (document.getElementById('input-area')?.value || ''));
         const bps = collectBreakpoints();
         const dir = tab.path.replace(/[\\/][^\\/]*$/, '');
         const res = await api().debugStart({ exePath: r.outputPath, cwd: dir, breakpoints: bps, stdin, stdinPath, breakAtMain });
@@ -1509,6 +1543,11 @@
         if (state === 'starting' && !force) return;
         stopAuto(autoRunning ? 'Auto dry run finished after ' + autoSteps + ' line(s).' : null);
         setStatus('idle');
+        stopToken++;
+        watchpoints.clear();
+        pendingWatchpoints.clear();
+        watchArrays.clear();
+        showWatchpointHit(null);
         stopFile = stopLine = null;
         renderCurrentLine();
         // gdb is gone — the varobjs died with it; just drop our registry.
@@ -1529,7 +1568,9 @@
     function wireEvents() {
         const a = api();
         a.onDebugRunning(() => {
+            stopToken++;
             setStatus('running');
+            showWatchpointHit(null);
             stopFile = stopLine = null;
             renderCurrentLine();
             // Never hit a breakpoint yet: say what is happening instead of
@@ -1563,6 +1604,7 @@
     // reports pending/unresolved ones — keep the glyph in sync with reality.
     function onNotify(n) {
         if (!n || !/^breakpoint-/.test(n.class || '')) return;
+        if (n.class === 'breakpoint-deleted') forgetWatchpoint(Number(n.results?.id));
         const bkpt = n.results && n.results.bkpt;
         if (!bkpt || bkpt.number == null) return;
         const id = parseInt(bkpt.number, 10);
@@ -1603,6 +1645,7 @@
     let stopToken = 0;
     async function onStopped(d) {
         const myToken = ++stopToken;   // supersede any older stop still mid-refresh
+        stopNumber++;
         // The program just moved, so a recording view is no longer what's on
         // screen — drop back to live before rendering the new state.
         if (isReplaying()) {
@@ -1621,6 +1664,8 @@
         stopFile = srcFrame ? srcFrame.file : null;
         stopLine = srcFrame ? srcFrame.line : null;
         setStatus('stopped');
+        if (d.expiredWatchpointId) forgetWatchpoint(d.expiredWatchpointId);
+        showWatchpointHit(d.watchpoint);
         // A pause (interrupt) surfaces as a signal stop — note it, don't alarm.
         if (d.reason && /signal/.test(d.reason)) sys('Paused.', 'system');
         // Bring the stopped file into view (open it or switch tabs) so the arrow
@@ -1656,7 +1701,10 @@
             lastLocalNames = names;
             await refreshTrees(d.locals);
         } else {
-            await applyVarUpdate();
+            await queueTreeRefresh(async token => {
+                await applyVarUpdate();
+                await refreshWatchArrays(token);
+            });
         }
 
         // Auto dry run: the trees now show this line's state — queue the next one.
@@ -1717,7 +1765,22 @@
     // ========================================================================
     // VARIABLE TREES (one mechanism: gdb variable objects)
     // ========================================================================
-    async function refreshTrees(localsMaybe) {
+    let treeRefresh = Promise.resolve();
+
+    function queueTreeRefresh(refresh) {
+        const token = stopToken;
+        const work = treeRefresh.then(() => {
+            if (token === stopToken && state === 'stopped') return refresh(token);
+        });
+        treeRefresh = work.catch(() => {});
+        return work;
+    }
+
+    function refreshTrees(localsMaybe) {
+        return queueTreeRefresh(token => rebuildTrees(localsMaybe, token));
+    }
+
+    async function rebuildTrees(localsMaybe, token) {
         // Full rebuild: drop every existing varobj, then recreate from scratch.
         // Used on the first stop, on a frame change, and on watch add/remove —
         // cases where the whole variable set changed.
@@ -1727,8 +1790,11 @@
         if (!locals) {
             try { const r = await api().debugSelectFrame(selectedFrame); locals = r && r.locals; } catch (_) { }
         }
-        await renderScope(els.locals, (locals || []).map(l => ({ label: l.name, expr: l.name, value: l.value })), 'local');
-        await renderScope(els.watch, watches.map(w => ({ label: w, expr: w, value: null, watch: true })), 'watch');
+        if (token !== stopToken) return;
+        await renderScope(els.locals, (locals || []).map(l => ({ label: l.name, expr: l.name, value: l.value })), 'local', token);
+        if (token !== stopToken) return;
+        await renderScope(els.watch, watches.map(w => ({ label: w, expr: w, value: null, watch: true })), 'watch', token);
+        await refreshWatchArrays(token);
     }
 
     /** Delete every tracked varobj in gdb and empty the registry. */
@@ -1789,7 +1855,7 @@
         g.addEventListener('click', (e) => { if (e.target === g) close(); });
     }
 
-    async function renderScope(container, entries, kind) {
+    async function renderScope(container, entries, kind, token) {
         container.innerHTML = '';
         setCount(kind === 'watch' ? 'watch' : 'locals', entries.length);
         if (!entries.length) {
@@ -1806,6 +1872,10 @@
             if (r && r.ok && Array.isArray(r.vars)) createdList = r.vars;
         } catch (_) { }
         for (let i = 0; i < entries.length; i++) {
+            if (token !== stopToken) {
+                await api().debugVarDeleteMany(names.slice(i)).catch(() => {});
+                return;
+            }
             const e = entries[i];
             const name = names[i];
             const created = (createdList[i] && createdList[i].ok) ? createdList[i].var : null;
@@ -1813,6 +1883,7 @@
                 // evaluate fallback (e.g. watch expr not addressable as a varobj)
                 let val = e.value;
                 if (val == null) { try { const ev = await api().debugEvaluate(e.expr); val = ev && ev.ok ? ev.value : '<error>'; } catch (_) { val = '<error>'; } }
+                if (token !== stopToken) continue;
                 const row = makeRow(e.label, val, 0, false, e.watch);
                 container.appendChild(row);
                 // Track eval-only rows so they can be re-evaluated on each stop.
@@ -1820,12 +1891,13 @@
                 continue;
             }
             const numchild = parseInt(created.numchild || '0', 10);
-            const expandable = isExpandable(created);
+            const arrayView = e.watch && isNumericSequence(created);
+            const expandable = !arrayView && isExpandable(created);
             const row = makeRow(e.label, created.value, 0, expandable, e.watch);
             container.appendChild(row);
             const node = {
                 row, name, exp: e.expr, valEl: row.querySelector('.sdbg-val'),
-                numchild, expandable, depth: 0, expanded: false, childRows: [], childNodes: [], kind,
+                numchild, expandable, arrayView, depth: 0, expanded: false, childRows: [], childNodes: [], kind,
             };
             varNodes.set(name, node);
             attachFormatToggle(node);
@@ -1855,14 +1927,17 @@
             if (!node) continue;                       // not currently rendered (e.g. collapsed subtree)
             const scope = c.in_scope;
             if (scope === 'invalid' || c.type_changed === 'true' || c.type_changed === true) {
+                node.arrayUnavailable = true;
                 // Type changed or the object is gone. Leave it; the next frame
                 // change rebuilds cleanly. Keep this minimal by design.
                 continue;
             }
             if (scope === 'false' || scope === false) {
+                node.arrayUnavailable = true;
                 if (node.valEl) node.valEl.textContent = '<out of scope>';
                 continue;
             }
+            if (scope === 'true' || scope === true) node.arrayUnavailable = false;
             if (c.value !== undefined && node.valEl) {
                 node.valEl.textContent = c.value;
                 node.valEl.classList.add('changed');
@@ -1899,18 +1974,179 @@
         row.innerHTML = `${tw}<span class="sdbg-name">${escHtml(label)}</span>`
             + `<span class="sdbg-eq">=</span><span class="sdbg-val">${escHtml(String(value))}</span>`;
         if (watch) {
+            const watchpoint = document.createElement('button');
+            watchpoint.type = 'button';
+            watchpoint.className = 'sdbg-watchpoint';
+            watchpoint.dataset.expr = label;
+            watchpoint.innerHTML = `<svg viewBox="0 0 24 24" ${SW} aria-hidden="true"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>`;
+            syncWatchpointButton(watchpoint);
+            watchpoint.addEventListener('click', () => changeWatchpoint(label, !watchpoints.has(label)));
+            row.appendChild(watchpoint);
             const del = document.createElement('span');
             del.className = 'sdbg-del';
             del.textContent = '×';
             del.title = 'Remove watch';
-            del.addEventListener('click', (ev) => {
+            del.addEventListener('click', async (ev) => {
                 ev.stopPropagation();
+                if (state !== 'stopped' || pendingWatchpoints.has(label)) return;
+                if (watchpoints.has(label) && !await changeWatchpoint(label, false)) return;
                 const idx = watches.indexOf(label);
-                if (idx >= 0) { watches.splice(idx, 1); refreshTrees(); }
+                if (idx >= 0) {
+                    watches.splice(idx, 1);
+                    watchArrays.delete(label);
+                    if (state === 'stopped') refreshTrees();
+                }
             });
             row.appendChild(del);
         }
         return row;
+    }
+
+    function syncWatchpointButton(button) {
+        const expr = button.dataset.expr;
+        const active = watchpoints.has(expr);
+        const label = active ? 'Remove watchpoint' : 'Break when value changes';
+        if (button.dataset.label !== label) {
+            button.dataset.label = label;
+            button.title = label;
+            button.setAttribute('aria-label', label);
+        }
+        button.setAttribute('aria-pressed', String(active));
+        button.disabled = state !== 'stopped' || isReplaying() || pendingWatchpoints.has(expr);
+    }
+
+    function syncWatchpointButtons() {
+        els.watch?.querySelectorAll('.sdbg-watchpoint').forEach(syncWatchpointButton);
+    }
+
+    async function changeWatchpoint(expr, add) {
+        if (state !== 'stopped' || isReplaying() || pendingWatchpoints.has(expr)) return false;
+        const request = {};
+        pendingWatchpoints.set(expr, request);
+        syncWatchpointButtons();
+        try {
+            const r = add ? await api().debugSetWatchpoint(expr) : await api().debugRemoveBreakpoint(watchpoints.get(expr));
+            if (pendingWatchpoints.get(expr) !== request) return false;
+            if (!r?.ok) throw new Error(r?.error);
+            if (add) watchpoints.set(expr, r.id);
+            else watchpoints.delete(expr);
+            return true;
+        } catch (err) {
+            sys(I18n.t('Could not update the watchpoint.'), 'error');
+            if (err.message) sys(I18n.t(err.message), 'error');
+            return false;
+        } finally {
+            if (pendingWatchpoints.get(expr) === request) pendingWatchpoints.delete(expr);
+            syncWatchpointButtons();
+        }
+    }
+
+    function forgetWatchpoint(id) {
+        for (const [expr, watchpointId] of watchpoints) {
+            if (watchpointId === id) watchpoints.delete(expr);
+        }
+        syncWatchpointButtons();
+    }
+
+    function showWatchpointHit(hit) {
+        els.watchpointHit?.remove();
+        els.watchpointHit = null;
+        if (!hit) return;
+        const notice = document.createElement('div');
+        notice.className = 'sdbg-watchpoint-hit';
+        notice.setAttribute('role', 'status');
+        els.locals.closest('.sdbg-sec').before(notice);
+        els.watchpointHit = notice;
+        const title = document.createElement('div');
+        title.className = 'sdbg-wph-title';
+        const expr = document.createElement('code');
+        expr.textContent = hit.expr;
+        title.append(document.createTextNode(I18n.t('Watchpoint hit')), expr);
+        const values = document.createElement('div');
+        values.className = 'sdbg-wph-vals';
+        const value = (cls, label, text) => {
+            const code = document.createElement('code');
+            code.className = cls;
+            code.title = I18n.t(label);
+            code.textContent = text ?? '—';
+            return code;
+        };
+        const arrow = document.createElement('span');
+        arrow.className = 'arrow';
+        arrow.setAttribute('aria-hidden', 'true');
+        arrow.textContent = '→';
+        values.append(value('old', 'Old value', hit.oldValue), arrow, value('new', 'New value', hit.newValue));
+        notice.append(title, values);
+    }
+
+    function isNumericSequence(variable) {
+        const type = variable.type || '';
+        const array = /^(.*?)\s*\[\d+\]$/.exec(type);
+        const vector = /^(?:std::(?:__debug::)?vector)\s*<\s*([^,>]+)/.exec(type);
+        const element = (array?.[1] || vector?.[1] || '').trim();
+        const numeric = /^(?:(?:signed|unsigned|short|long)\s+)*(?:bool|char|short|int|long|float|double|__int128|(?:std::)?(?:u?int(?:8|16|32|64)_t|size_t|ptrdiff_t))$/;
+        return numeric.test(element.replace(/\b(?:const|volatile)\b/g, '').trim()) && (!vector || variable.dynamic === '1');
+    }
+
+    async function refreshWatchArrays(token) {
+        if (token !== stopToken || state !== 'stopped') return;
+        const frame = lastFrameKey;
+        const stop = stopNumber;
+        await Promise.all(Array.from(varNodes.values()).filter(node => node.arrayView).map(async node => {
+            const known = watchArrays.get(node.exp);
+            let snapshot = known?.frame === frame && known.stop === stop ? known : null;
+            if (!snapshot && !node.arrayUnavailable) {
+                const r = await api().debugVarChildren(node.name, 0, WATCH_ARRAY_LIMIT).catch(() => null);
+                if (token !== stopToken || frame !== lastFrameKey || varNodes.get(node.name) !== node || !node.row.isConnected) return;
+                if (r?.ok) {
+                    const previous = known?.frame === frame && known.stop === stop - 1 ? known.values : [];
+                    snapshot = {
+                        frame, stop, previous,
+                        values: r.children.slice(0, WATCH_ARRAY_LIMIT).map(child => child.value),
+                        hasMore: r.hasMore || r.numchild > WATCH_ARRAY_LIMIT,
+                    };
+                    watchArrays.set(node.exp, snapshot);
+                }
+            }
+            if (node.arrayUnavailable) snapshot = null;
+            renderWatchArray(node, snapshot);
+        }));
+    }
+
+    function renderWatchArray(node, snapshot) {
+        const scroll = node.arrayRow?.firstElementChild?.scrollLeft || 0;
+        node.arrayRow?.remove();
+        if (!snapshot) return;
+        const row = document.createElement('div');
+        row.className = 'sdbg-array';
+        if (snapshot.values.length) {
+            const cells = document.createElement('div');
+            cells.className = 'sdbg-array-cells';
+            cells.tabIndex = 0;
+            cells.setAttribute('aria-label', 'Array elements');
+            for (const [i, value] of snapshot.values.entries()) {
+                const cell = document.createElement('div');
+                cell.className = 'sdbg-array-cell';
+                cell.translate = false;
+                const index = document.createElement('span');
+                index.textContent = `[${i}]`;
+                const text = document.createElement('span');
+                text.textContent = value ?? '—';
+                if (i < snapshot.previous.length && snapshot.previous[i] !== value) {
+                    cell.classList.add('changed');
+                    cell.title = I18n.t('Previous value: {0}', snapshot.previous[i] ?? '—');
+                }
+                cell.append(index, text);
+                cells.appendChild(cell);
+            }
+            row.appendChild(cells);
+        } else {
+            row.append(I18n.t('No elements'));
+        }
+        if (snapshot.hasMore) row.append(I18n.t('Showing the first {0} elements', WATCH_ARRAY_LIMIT));
+        node.row.after(row);
+        if (row.firstElementChild) row.firstElementChild.scrollLeft = scroll;
+        node.arrayRow = row;
     }
 
     /** Double-click a value to toggle hexadecimal / decimal display (gdb -var-set-format). */
@@ -2041,6 +2277,13 @@
     const Debugger = {
         init,
         start: () => start(),                       // never forward an event object as opts
+        startTest: (tab, stdin) => {
+            if (isSessionLive()) {
+                showToast(I18n.t('Stop the current debug session first.'), 'warning');
+                return;
+            }
+            return start({ tab, stdin, breakAtMain: true });
+        },
         continue: () => { stopAuto(null); return continueExec(); },
         stepOver: () => { stopAuto(null); return stepOver(); },
         stepInto: () => { stopAuto(null); return stepInto(); },

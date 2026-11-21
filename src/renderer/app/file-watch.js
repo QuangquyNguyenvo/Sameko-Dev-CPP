@@ -44,6 +44,16 @@ function dismissReloadNotification(filePath) {
     }
 }
 
+/**
+ * The file changed on disk and its Reload prompt is still unanswered: a build or test run
+ * would write the tab's older text over it. Returns the message to show, or '' when free.
+ */
+function externalChangeBlocksBuild(filePath) {
+    if (!filePath || !pendingReloadNotifications.has(pathKey(filePath))) return '';
+    const name = String(filePath).split(/[/\\]/).pop();
+    return I18n.t('{0} was changed outside the app. Choose Reload or Ignore first, so it is not overwritten.', name);
+}
+
 // Handle external file change notification
 function handleExternalFileChange(filePath) {
     const key = pathKey(filePath);

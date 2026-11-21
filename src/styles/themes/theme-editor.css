@@ -54,6 +54,10 @@
     color: var(--warning);
 }
 
+.problem-hint {
+    color: var(--text-secondary);
+}
+
 .problem-count {
     padding: 2px 8px;
     background: var(--bg-ocean-light);

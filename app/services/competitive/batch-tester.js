@@ -36,7 +36,7 @@ const languages = require('../compiler/languages');
  *   generator's seed): plain words only, anything else is dropped
  * @returns {Promise<import('../../shared/types').BatchTestResult>}
  */
-async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memoryLimit = 0, compare, checker = '', cwd, args = [], debug = false, testMeta = null }) {
+async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memoryLimit = 0, compare, checker = '', cwd, args = [], debug = false, testMeta = null, profiling = false }) {
     memoryLimit = Number.isFinite(+memoryLimit) && +memoryLimit > 0 ? Math.round(+memoryLimit) : 0;
     const programArgs = programArguments(args);
     return new Promise((resolve) => {
@@ -79,6 +79,8 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
             return;
         }
         const runEnv = { ...getCompilerEnv(), ...command.env };
+        // The profile reader expects gmon.out in this run's private working directory.
+        if (profiling) delete runEnv.GMON_OUT_PREFIX;
 
         const workingDir = cwd || path.dirname(exePath);
         let output = '';

@@ -27,6 +27,10 @@ function setMainWindow(window) {
  * Register all compiler-related IPC handlers
  */
 function registerHandlers() {
+    ipcMain.handle(IPC.COMPILER.RUN_INSTRUMENTED_TEST, async (event, options) => {
+        return require('../services/compiler/test-instrumentation').runInstrumentedTest(options);
+    });
+
     // Compile
     ipcMain.handle(IPC.COMPILER.COMPILE, async (event, { filePath, content, flags, useLLD, noBuildCache, singleFileMode, realtimeOutput, untitledId, untitledExt, variant }) => {
         return await compiler.compile({ filePath, content, flags, useLLD, noBuildCache, singleFileMode, realtimeOutput, untitledId, untitledExt, variant });
@@ -49,6 +53,11 @@ function registerHandlers() {
     // Send input to the running process (terminal input box / INPUT panel)
     ipcMain.handle(IPC.COMPILER.SEND_INPUT, async (event, input) => {
         return compiler.sendInput(input);
+    });
+
+    // End of input (EOF) for the running process (Ctrl+D / Ctrl+Z in the terminal)
+    ipcMain.handle(IPC.COMPILER.CLOSE_INPUT, async () => {
+        return compiler.closeInput();
     });
 
     // Stream a test input file into the running process (Input card › Load input from file)

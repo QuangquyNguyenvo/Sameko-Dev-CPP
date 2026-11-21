@@ -354,6 +354,10 @@ function registerHandlers() {
         }
     });
 
+    ipcMain.handle(IPC.FILE.SEARCH, (event, options) => {
+        return require('../services/file-search').searchInFiles(options);
+    });
+
     ipcMain.handle(IPC.FILE.DELETE, async (event, filePath) => {
         try {
             await fsp.unlink(filePath);

@@ -10,6 +10,7 @@
     color: var(--bg-ocean-dark, white);
     font-size: 11px;
     font-weight: 700;
+    white-space: nowrap;   /* "Run All" stayed on two lines in a narrow panel */
     cursor: pointer;
     transition: filter 0.2s, transform 0.2s, background 0.2s;
     margin-left: auto;
@@ -182,6 +183,469 @@
     transform: translateY(-1px);
 }
 
+.test-result-item:has(.test-row-actions) {
+    grid-template-columns: 56px minmax(0, 1fr) auto auto;
+    column-gap: 8px;
+}
+
+.test-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.test-tool-btn {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 28px;
+    padding: 0;
+    background: transparent;
+    color: var(--text-secondary);
+    fill: currentColor;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.test-tool-btn:hover,
+.test-tool-btn:focus-visible {
+    background: var(--bg-button);
+    color: var(--text-primary);
+}
+
+/* Test tool dialogs (test-row-tools.js): the look of the app's other popups (.cc-popup in
+   popups.css): thick theme frame, flat offset shadow, Fredoka title, round close button, pills. */
+.test-tool-dialog {
+    width: min(850px, calc(100vw - 48px));
+    max-height: calc(100vh - 48px);
+    margin: auto;
+    padding: 0;
+    overflow: auto;
+    color: var(--text-primary);
+    background: var(--pop-bg, var(--bg-panel));
+    border: 3px solid var(--border-strong, var(--border));
+    border-radius: 28px;
+    box-shadow: 6px 6px 0 var(--shadow-card, transparent);
+}
+
+.test-tool-dialog::backdrop {
+    background: var(--pop-dim, rgba(0, 0, 0, 0.45));
+}
+
+.test-tool-dialog header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 20px 10px 24px;
+}
+
+.test-tool-dialog h2,
+.test-tool-dialog h3,
+.test-tool-dialog p {
+    margin: 0;
+}
+
+.test-tool-dialog h2 {
+    font-family: 'Fredoka', sans-serif;
+    font-size: 19px;
+    font-weight: 700;
+}
+
+/* Fredoka has no Vietnamese letters: they came from Nunito inside a Fredoka word (ư ớ ạ ồ ị
+   in another face and weight). The Vietnamese interface uses Nunito, which has them all. */
+:root[lang="vi"] .test-tool-dialog h2 {
+    font-family: 'Nunito', sans-serif;
+    font-weight: 800;
+}
+
+.test-tool-dialog h3 {
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.test-tool-dialog header p {
+    margin-top: 2px;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.test-tool-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 999px;
+    background: var(--pop-soft, color-mix(in srgb, var(--text-primary) 8%, transparent));
+    color: var(--text-secondary);
+    cursor: pointer;
+}
+
+.test-tool-close:hover {
+    background: var(--pop-soft-hover, color-mix(in srgb, var(--text-primary) 14%, transparent));
+    color: var(--text-primary);
+}
+
+.test-tool-body,
+.test-graph-result {
+    display: grid;
+    gap: 8px;
+}
+
+.test-tool-body {
+    padding: 6px 24px 24px;
+}
+
+.test-tool-dialog pre {
+    margin: 0 0 8px;
+    max-height: 45vh;
+    padding: 12px 14px;
+    overflow: auto;
+    background: color-mix(in srgb, var(--text-primary) 6%, transparent);
+    border: none;
+    border-radius: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+}
+
+.test-tool-control {
+    height: 32px;
+    padding: 0 12px;
+    color: var(--text-primary);
+    background: var(--pop-soft, color-mix(in srgb, var(--text-primary) 8%, transparent));
+    border: none;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+select.test-tool-control {
+    padding-right: 8px;
+    cursor: pointer;
+}
+
+select.test-tool-control:focus:not(:focus-visible) {
+    outline: none;
+}
+
+.test-tool-control:focus-visible,
+.test-tool-btn:focus-visible,
+.test-tool-close:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+button.test-tool-control {
+    cursor: pointer;
+    font-weight: 800;
+}
+
+button.test-tool-control:hover {
+    background: var(--pop-soft-hover, color-mix(in srgb, var(--text-primary) 14%, transparent));
+}
+
+button.test-tool-control.primary {
+    padding: 0 16px;
+    background: var(--btn-primary-bg, var(--accent));
+    color: var(--btn-primary-text, #fff);
+}
+
+button.test-tool-control.primary:hover {
+    filter: brightness(1.07);
+}
+
+.test-graph-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+.test-graph-options label {
+    display: grid;
+    gap: 4px;
+    color: var(--text-secondary);
+    font-size: 11.5px;
+    font-weight: 700;
+}
+
+.test-graph-summary {
+    margin-left: auto;
+    align-self: center;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.test-graph-summary:empty {
+    display: none;
+}
+
+.test-graph-parent-hint {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.test-graph-issue {
+    color: var(--warning);
+    font-weight: 600;
+}
+
+/* Lines the chosen format could not read: one quiet warning line, the list on demand. */
+.test-graph-unparsed {
+    padding: 6px 12px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--warning) 12%, transparent);
+    font-size: 12px;
+}
+
+.test-graph-unparsed summary {
+    color: var(--warning);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.test-graph-unparsed ul {
+    max-height: 120px;
+    overflow: auto;
+    margin: 6px 0 2px;
+    padding: 0;
+    list-style: none;
+}
+
+.test-graph-unparsed li {
+    display: flex;
+    gap: 10px;
+    padding: 1px 0;
+}
+
+.test-graph-line-no {
+    min-width: 56px;
+    color: var(--text-muted);
+}
+
+.test-graph-unparsed code {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.test-graph-wrap {
+    position: relative;
+}
+
+.test-graph {
+    display: block;
+    width: 100%;
+    height: min(54vh, 520px);
+    background: color-mix(in srgb, var(--text-primary) 5%, transparent);
+    border-radius: 16px;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+
+.test-graph.panning {
+    cursor: grabbing;
+}
+
+.test-graph-tools {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 4px;
+}
+
+.test-graph-tool {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    padding: 0 12px;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    border: none;
+    border-radius: 999px;
+    background: var(--pop-bg, var(--bg-panel));
+    color: var(--text-secondary);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-primary) 12%, transparent);
+    cursor: pointer;
+}
+
+.test-graph-tool:hover {
+    color: var(--text-primary);
+    background: color-mix(in srgb, var(--accent) 18%, var(--editor-bg, #fff));
+}
+
+.test-graph-help {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 4px 14px;
+    margin-top: 8px !important;
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+.test-graph-note {
+    color: var(--text-muted);
+}
+
+.test-graph-note::before {
+    content: '·';
+    margin-right: 14px;
+}
+
+.test-graph-multi-hint {
+    color: var(--text-secondary);
+    font-size: 12px;
+}
+
+/* Case picker next to Test N under the title: Test 2 › Case ‹ 3 / 12 › */
+.test-graph-cases {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 8px;
+}
+
+.test-graph-cases[hidden] {
+    display: none;
+}
+
+.test-graph-cases-sep {
+    color: var(--text-muted);
+}
+
+.test-graph-cases-label {
+    color: var(--text-secondary);
+    font-weight: 700;
+}
+
+.test-graph-step {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border: none;
+    border-radius: 999px;
+    background: var(--pop-soft, color-mix(in srgb, var(--text-primary) 8%, transparent));
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.test-graph-step:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 22%, transparent);
+    color: var(--accent);
+}
+
+.test-graph-step:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+.test-graph-case {
+    height: 26px;
+    padding: 0 8px;
+    border: none;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.test-graph-edge {
+    fill: none;
+    stroke: color-mix(in srgb, var(--text-primary) 45%, transparent);
+    stroke-width: 2px;
+    transition: opacity 0.12s ease;
+}
+
+.test-graph-edge.multi {
+    stroke-width: 3.5px;
+}
+
+.test-graph marker path {
+    fill: color-mix(in srgb, var(--text-primary) 60%, transparent);
+}
+
+.test-graph-node {
+    cursor: grab;
+    transition: opacity 0.12s ease;
+}
+
+.test-graph.dragging-node,
+.test-graph.dragging-node .test-graph-node {
+    cursor: grabbing;
+}
+
+.test-graph-node circle {
+    fill: color-mix(in srgb, var(--accent) 22%, var(--editor-bg, #fff));
+    stroke: var(--accent);
+    stroke-width: 2.5px;
+}
+
+.test-graph-node text {
+    fill: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 800;
+    text-anchor: middle;
+    pointer-events: none;
+}
+
+.test-graph .test-graph-weight {
+    fill: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    text-anchor: middle;
+    paint-order: stroke fill;
+    stroke: var(--editor-bg, var(--bg-panel));
+    stroke-width: 6px;
+    stroke-linejoin: round;
+    pointer-events: none;
+}
+
+/* Hovering a node: it, its edges and its neighbours stay; everything else fades. */
+.test-graph.focus .test-graph-edge:not(.hl),
+.test-graph.focus .test-graph-weight:not(.hl),
+.test-graph.focus .test-graph-node:not(.hl) {
+    opacity: 0.32;
+}
+
+/* The node under the pointer: a thicker ring and a full accent fill (no filter: a glow
+   repaints the whole canvas while dragging). */
+.test-graph .test-graph-node.hover circle {
+    stroke-width: 4px;
+    fill: color-mix(in srgb, var(--accent) 60%, var(--editor-bg, #fff));
+}
+
+.test-graph .test-graph-edge.hl {
+    stroke: var(--accent);
+}
+
+.test-graph .test-graph-node.hl circle {
+    fill: color-mix(in srgb, var(--accent) 40%, var(--editor-bg, #fff));
+}
+
 .test-result-status {
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
@@ -193,6 +657,15 @@
     box-sizing: border-box;
     text-align: center;
     flex-shrink: 0;
+}
+
+/* The status column is 56px: the long words get a smaller pill instead of running into the title. */
+.test-result-status.pending,
+.test-result-status.SKIPPED {
+    max-width: 56px;
+    padding: 4px 5px;
+    font-size: 9.5px;
+    letter-spacing: 0;
 }
 
 .test-result-status.pending {

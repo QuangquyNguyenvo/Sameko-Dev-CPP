@@ -40,6 +40,7 @@ module.exports = {
     run: executor.run,
     runExternal: executor.runExternal,
     sendInput: executor.sendInput,
+    closeInput: executor.closeInput,
     sendInputFile: executor.sendInputFile,
     inputFileInfo: executor.inputFileInfo,
     stopProcess: executor.stopProcess,

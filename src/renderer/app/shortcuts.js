@@ -42,6 +42,10 @@ const ACTION_HANDLERS = {
     'formatCode': () => formatCode(),
     'markdownPreview': () => window.MarkdownPreview?.toggle(getActiveEditor()),
     'toggleExplorer': () => { if (window.FileExplorer) window.FileExplorer.toggle(); },
+    'findInFiles': () => FindInFiles.open(),
+    'goToDefinition': () => getActiveEditor()?.trigger('keyboard', 'editor.action.revealDefinition'),
+    'findAllReferences': () => getActiveEditor()?.trigger('keyboard', 'editor.action.referenceSearch.trigger'),
+    'quickFix': () => getActiveEditor()?.trigger('keyboard', 'editor.action.quickFix'),
     'commentLine': () => getActiveEditor()?.getAction('editor.action.commentLine')?.run(),
     'selectNextOccurrence': () => getActiveEditor()?.getAction('editor.action.addSelectionToNextFindMatch')?.run(),
     'selectAllOccurrences': () => getActiveEditor()?.getAction('editor.action.selectHighlights')?.run(),
@@ -198,7 +202,9 @@ function initShortcuts() {
         // BUT: F1-F12 are often single keys. 
         const isModifier = e.ctrlKey || e.altKey || e.shiftKey || e.metaKey;
         const isFunctionKey = e.key.startsWith('F');
-        const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable;
+        // Monaco takes keys in a plain div (.native-edit-context), not a textarea.
+        const isInput = e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable
+            || !!e.target.closest?.('.monaco-editor');
 
         // If user is typing in editor (isInput) and NOT pressing modifiers/Function keys,
         // let it pass immediately.

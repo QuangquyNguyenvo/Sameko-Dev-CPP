@@ -107,10 +107,34 @@ const I18n = {
         this.lang = lang;
         document.documentElement.lang = lang === 'zh-CN' ? 'zh-CN' : lang;
         document.documentElement.dataset.lang = lang;
+        this._titleFont(lang);
         if (lang === 'en') this._stopObserver();
         if (changed || lang !== 'en') this.translateTree(document.body);
         if (lang !== 'en') this._startObserver();
         if (changed) this._listeners.forEach((fn) => { try { fn(lang); } catch (e) { console.error(e); } });
+    },
+
+    /**
+     * Fredoka (titles, buttons) has no Vietnamese letters; fonts.css lends it Nunito's, so a
+     * Vietnamese word mixed two faces ("Xem đồ thị": X, e, m in Fredoka, đ, ồ, ị in Nunito).
+     * In Vietnamese, Fredoka is drawn wholly with Nunito. Later @font-face rules win, so this
+     * style, added after fonts.css, replaces Fredoka's latin files without touching any CSS.
+     */
+    _titleFont(lang) {
+        const id = 'i18n-title-font';
+        const old = document.getElementById(id);
+        if (lang !== 'vi') { old?.remove(); return; }
+        if (old) return;
+        const latin = 'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD';
+        const ext = 'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF';
+        // Fredoka weight -> the nearest bundled Nunito file.
+        const weights = [[300, 400], [400, 400], [500, 600], [600, 600], [700, 700]];
+        const face = (w, file, range) => `@font-face { font-family: 'Fredoka'; font-style: normal; font-weight: ${w}; font-display: swap; src: url('assets/fonts/${file}') format('woff2'); unicode-range: ${range}; }`;
+        const style = document.createElement('style');
+        style.id = id;
+        style.textContent = weights.map(([w, n]) =>
+            face(w, `nunito-${n}-latin-ext.woff2`, ext) + '\n' + face(w, `nunito-${n}-latin.woff2`, latin)).join('\n');
+        document.head.appendChild(style);
     },
 
     /**

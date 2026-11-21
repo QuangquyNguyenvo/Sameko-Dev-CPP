@@ -38,6 +38,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // File Explorer operations
     showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),
     readDirectory: (dirPath) => ipcRenderer.invoke('read-directory', dirPath),
+    searchInFiles: (options) => ipcRenderer.invoke('search-in-files', options),
     readFile: (filePath) => ipcRenderer.invoke('read-file', filePath),
     renameFile: (oldPath, newPath) => ipcRenderer.invoke('rename-file', { oldPath, newPath }),
     deleteFile: (filePath) => ipcRenderer.invoke('delete-file', filePath),
@@ -56,6 +57,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     compile: (data) => ipcRenderer.invoke('compile', data),
     run: (data) => ipcRenderer.invoke('run', data),
     sendInput: (input) => ipcRenderer.invoke('send-input', input),
+    closeInput: () => ipcRenderer.invoke('close-input'),
     sendInputFile: (filePath) => ipcRenderer.invoke('send-input-file', filePath),
     inputFileInfo: (filePath) => ipcRenderer.invoke('input-file-info', filePath),
     listLanguages: (typed) => ipcRenderer.invoke('languages-list', typed),
@@ -84,6 +86,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     debugStart: (data) => ipcRenderer.invoke('debug:start', data),
     debugStop: () => ipcRenderer.invoke('debug:stop'),
     debugSetBreakpoint: (data) => ipcRenderer.invoke('debug:setBreakpoint', data),
+    debugSetWatchpoint: (expr) => ipcRenderer.invoke('debug:setWatchpoint', { expr }),
+    runInstrumentedTest: (options) => ipcRenderer.invoke('run-instrumented-test', options),
     debugRemoveBreakpoint: (id) => ipcRenderer.invoke('debug:removeBreakpoint', { id }),
     debugEnableBreakpoint: (id) => ipcRenderer.invoke('debug:enableBreakpoint', { id }),
     debugDisableBreakpoint: (id) => ipcRenderer.invoke('debug:disableBreakpoint', { id }),
@@ -170,6 +174,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     syntaxCheck: (content, filePath, docId) => ipcRenderer.invoke('syntax-check', { content, filePath, docId }),
     getClangdCompletions: (filePath, content, line, character) => ipcRenderer.invoke('get-clangd-completions', { filePath, content, line, character }),
     getClangdHover: (filePath, content, line, character) => ipcRenderer.invoke('get-clangd-hover', { filePath, content, line, character }),
+    getClangdDefinition: (request) => ipcRenderer.invoke('get-clangd-definition', request),
+    getClangdReferences: (request) => ipcRenderer.invoke('get-clangd-references', request),
+    getClangdCodeActions: (request) => ipcRenderer.invoke('get-clangd-code-actions', request),
     clangdCloseDocument: (filePath) => ipcRenderer.invoke('clangd-close-document', filePath),
 
     // Local History - backup before save

@@ -298,6 +298,15 @@ class GdbSession extends EventEmitter {
      */
     breakAtMain() { return this.send('-break-insert -t main'); }
 
+    async setWatchpoint(expr) {
+        if (this.state !== 'stopped') throw new Error('Pause the debugger first.');
+        if (!expr || /[\0\r\n]/.test(expr)) throw new Error('Enter a single watch expression.');
+        const r = await this.send(`-break-watch ${quote(expr)}`);
+        const id = Number(r.wpt?.number);
+        if (!Number.isInteger(id) || id < 1) throw new Error('GDB did not return a watchpoint ID.');
+        return { id };
+    }
+
     removeBreakpoint(id) { return this.send(`-break-delete ${id}`); }
     enableBreakpoint(id) { return this.send(`-break-enable ${id}`); }
     disableBreakpoint(id) { return this.send(`-break-disable ${id}`); }
@@ -316,7 +325,7 @@ class GdbSession extends EventEmitter {
         if (stdinPath) {
             // The user's own test input file: read in place, and not deleted at cleanup.
             redirs.push(`< ${quote(stdinPath)}`);
-        } else if (typeof stdinContent === 'string' && stdinContent.length) {
+        } else if (typeof stdinContent === 'string') {
             this._stdinFile = path.join(os.tmpdir(), `sameko-stdin-${stamp}.txt`);
             fs.writeFileSync(this._stdinFile, stdinContent, 'utf8');
             redirs.push(`< ${quote(this._stdinFile)}`);

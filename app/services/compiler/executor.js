@@ -233,8 +233,7 @@ function sendToRenderer(channel, data) {
  * @param {string|null} options.filePath - Source file path (null for unsaved)
  * @param {string} options.content - Source code content
  * @param {string} [options.flags] - Compiler flags
- * @param {string} [options.variant] - 'judge' for the -O2 build of Run All Tests: its own exe, so
- *   switching between Run and the tests does not rebuild each time
+ * @param {string} [options.variant] - Use a separate artifact for judge, debug-test, checks or profile.
  * @returns {Promise<import('../../shared/types').CompileResult>}
  */
 async function compile({ filePath, content, flags, useLLD, noBuildCache = false, singleFileMode = false, realtimeOutput = true, untitledId = '', untitledExt = '', variant = '' }) {
@@ -339,7 +338,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
     const outputTag = usingTempFile
         ? ''
         : '-' + crypto.createHash('sha1').update(IS_LINUX ? path.resolve(actualFilePath) : path.resolve(actualFilePath).toLowerCase()).digest('hex').slice(0, 8);
-    const variantTag = variant === 'judge' ? '-judge' : '';
+    const variantTag = ['judge', 'debug-test', 'checks', 'profile'].includes(variant) ? '-' + variant : '';
     const outputPath = path.join(buildsDir, baseName + outputTag + variantTag + EXE_SUFFIX);
 
     // ===== MULTI-FILE PROJECT SUPPORT (fast lookup) =====
@@ -1115,10 +1114,23 @@ async function run({ exePath, cwd }) {
  */
 function sendInput(input) {
     if (runningProcess && runningProcess.stdin && !runningProcess.stdin.destroyed) {
+        if (runningProcess.stdin.writableEnded) return { success: false, error: 'Input is closed', closed: true };
         runningProcess.stdin.write(input + '\n');
         return { success: true };
     }
     return { success: false, error: 'No running process' };
+}
+
+/**
+ * End of input (EOF) for the running process, as a judge gives after the test: a loop like
+ * `while (cin >> x)` then ends. Pending writes are flushed first.
+ * @returns {{success: boolean, error?: string}}
+ */
+function closeInput() {
+    const stdin = runningProcess && runningProcess.stdin;
+    if (!stdin || stdin.destroyed) return { success: false, error: 'No running process' };
+    if (!stdin.writableEnded) stdin.end();
+    return { success: true };
 }
 
 /**
@@ -1231,6 +1243,7 @@ module.exports = {
     run,
     runExternal,
     sendInput,
+    closeInput,
     sendInputFile,
     inputFileInfo,
     stopProcess,

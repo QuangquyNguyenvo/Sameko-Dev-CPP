@@ -124,6 +124,8 @@ async function runAllTests() {
         log(notBuildableMessage(tab), 'warning');
         return;
     }
+    const changedOnDisk = externalChangeBlocksBuild(tab.path);
+    if (changedOnDisk) { log(changedOnDisk, 'warning'); return; }
     const problem = ccProblem;
     const tests = problem.tests.slice();
     const content = tabSourceText(tab);
@@ -365,8 +367,12 @@ async function runSingleTestByIndex(testIndex) {
         return;
     }
 
+    const changedOnDisk = externalChangeBlocksBuild(tab.path);
+    if (changedOnDisk) { log(changedOnDisk, 'warning'); return; }
+
     const runBtn = document.querySelector(`.test-run-btn[data-run-index="${testIndex}"]`);
     if (runBtn) runBtn.classList.add('running');
+    isBatchTesting = true;
 
     try {
         setStatus(`Single test ${testIndex + 1}: compiling...`, '');
@@ -456,6 +462,7 @@ async function runSingleTestByIndex(testIndex) {
         log(`Single test error: ${e.message}`, 'error');
         setStatus('Single Test Error', 'error');
     } finally {
+        isBatchTesting = false;
         if (runBtn) runBtn.classList.remove('running');
     }
 }
@@ -536,6 +543,7 @@ function renderTestResults() {
     }
 
     // List Tests
+    const tab = App.tabs.find(t => t.id === getPreferredTabId());
     tests.forEach((test, idx) => {
         // Find result for this test index
         const result = results.find(r => r.testIndex === idx);
@@ -573,17 +581,20 @@ function renderTestResults() {
                         <span class="test-result-time">${timeStr}</span>
                         <span class="test-result-mem">${memStr}</span>
                     </span>
+                    <div class="test-row-actions">
                     <button class="test-run-btn" data-run-index="${idx}" title="Run this test case">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                             <polygon points="8 5 19 12 8 19 8 5"></polygon>
                         </svg>
                     </button>
+                    ${TestRowTools.buttons(tab, result)}
                     <button class="test-delete-btn" data-delete-index="${idx}" title="Delete this test case">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                         </svg>
                     </button>
+                    </div>
                 </div>
                 `;
     });
@@ -622,6 +633,13 @@ function renderTestResults() {
             e.stopPropagation();
             const idx = parseInt(btn.dataset.runIndex);
             await runSingleTestByIndex(idx);
+        });
+    });
+
+    container.querySelectorAll('.test-tool-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            return TestRowTools.runAction(btn.dataset.testTool, Number(btn.closest('.test-result-item').dataset.index));
         });
     });
 
