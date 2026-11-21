@@ -4,11 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.5.0] - Unreleased
 
-Judge-style testing, stress tests and checkers, submitting to online judges from the app, a debugger that watches arrays and values, tools on each test row, clangd navigation, seven more languages, and smaller, faster updates.
+A macOS beta, judge-style testing, stress tests and checkers, submitting to online judges from the app, a debugger that watches arrays and values, tools on each test row, clangd navigation, seven more languages, and smaller, faster updates.
 
 ### Added
+
+**macOS (beta)**
+
+- **macOS on Apple Silicon** (#58): a DMG and a zip for M1 and later. It uses GCC from Homebrew, LLDB for debugging and clangd for code suggestions. Install steps are in the README.
+- **Mac-style app**: native window buttons, ⌘ shortcuts and labels, and C/C++ files can be opened from Finder.
+- The app is not signed with an Apple Developer account, so the first launch must be allowed once, and updates are downloaded by hand.
 
 **Online judges**
 
@@ -23,7 +29,7 @@ Judge-style testing, stress tests and checkers, submitting to online judges from
 - **Stress test** (STRESS tab): runs a generator, a brute force and your solution on seeded tests until the first wrong answer; the failing test can be added to your tests.
 - **Checkers**: judge a problem's tests with a testlib checker, or compare ignoring case. `testlib.h` ships with the app.
 - **Memory limit** for tests (default 256 MB; Competitive Companion problems bring their own), reported as MLE.
-- **Large Stack** (256 MB, on by default, Windows): deep recursion no longer overflows, as on judges.
+- **Large Stack** (256 MB, on by default): deep recursion no longer overflows, as on judges.
 - **Interactive problems by hand**: you answer the program's queries in the terminal. Your replies have their own colour, and the run ends with `Queries: N | Your replies: M`.
 - **Flush warning**: a C/C++ solution that prints `?` queries but never flushes is warned when it starts. It works locally, but a judge gives Idleness limit exceeded.
 
@@ -83,6 +89,12 @@ Judge-style testing, stress tests and checkers, submitting to online judges from
 - **Competitive Companion** accepts problems only from browser extensions, not from web pages.
 - **Python started through `py`** is timed and limited correctly; **Java** is no longer given MLE below the limit.
 - **Restore session prompt** is translated (#74).
+- **Linux memory limit**: a program that ends quickly is measured exactly, so going over the limit is always MLE.
+- **Stop on Linux** also ends the processes the program started.
+- **Linux without g++**: the app shows the command to install it instead of pointing to MinGW.
+- **IntelliSense safety**: clangd may run only the compiler the app detected, never a program named by a project's `compile_commands.json`.
+- **Undocking a panel** keeps the view you were on, and menu shortcuts no longer overlap their labels.
+- **Minimap switch** is greyed out while Performance Mode turns the minimap off.
 
 ## [1.4.1] - 2026-11-18
 

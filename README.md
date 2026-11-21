@@ -117,17 +117,17 @@ Explore the [user guide](https://sameko.dev/wiki) for more features and instruct
 
 <br />
 
-## 🆕 What's New in v1.4.0
+## 🆕 What's New in v1.5.0
 
-- **Vietnamese and Chinese interface.** Switch between English, Tiếng Việt and 简体中文 in Settings › Appearance.
-- **New themes.** Event Horizon, Catppuccin Mocha, Gruvbox Dark and Crimson, plus new Kawaii Dark and Kawaii Light. The old Kawaii Dark is still there as Pixel Night.
-- **A clearer Theme Customizer.** It now looks like Settings, and backgrounds can be up to 512 MB.
-- **Vim Mode, cursor trail and more editor options.** Scroll beyond the last line, indentation per file, and built-in snippets you can hide or edit.
-- **Stderr in its own card.** `cerr` output no longer mixes with Output, so AC/WA checks stdout only.
-- **Show Terminal on Run.** Turn it off to keep your panels as they are when you build and run.
-- **Safer saving and security fixes.** No half-written files after a crash, and themes can no longer reach network paths.
+- **macOS beta.** Runs on Apple Silicon (M1 and later) with Homebrew GCC and LLDB.
+- **Judge-style testing.** Memory limits, Large Stack, testlib checkers and stress tests that add the failing test for you.
+- **Tools on each test.** Debug a test, re-run it with checks, draw its input as a graph, or profile it.
+- **A stronger debugger.** Watchpoints and an array view that shows which elements changed.
+- **Better navigation.** Go to Definition, Find All References, Quick Fix and Find in Files.
+- **Seven more languages.** Python, Java, Kotlin, Rust, Go, Pascal and JavaScript, with the compiler on your machine.
+- **Smaller updates.** About 20 MB instead of the whole installer.
 
-See [CHANGELOG.md](CHANGELOG.md) for the full list and [the release notes](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/tag/v1.4.0) for screenshots.
+See [CHANGELOG.md](CHANGELOG.md) for the full list and [the release notes](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest) for screenshots.
 
 ### Multi-file project note
 
@@ -145,7 +145,7 @@ Then turn it **OFF** and build again.
   <img src="https://img.shields.io/badge/Official%20Site-sameko.dev-88c9ea?style=for-the-badge&logo=cloudflare&logoColor=white&labelColor=1a2530" alt="Official Website" />
 </a>
 <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/GitHub-v1.4.0%20Release-88c9ea?style=for-the-badge&logo=github&logoColor=white&labelColor=1a2530" alt="Latest Release" />
+  <img src="https://img.shields.io/badge/GitHub-v1.5.0%20Release-88c9ea?style=for-the-badge&logo=github&logoColor=white&labelColor=1a2530" alt="Latest Release" />
 </a>
 
 </div>
@@ -167,7 +167,7 @@ Then turn it **OFF** and build again.
 
 ### 🐧 Linux Installation Guide
 
-The v1.4.0 release provides an AppImage for 64-bit Linux. Sameko uses the compiler and tools installed on your system.
+Each release provides an AppImage for 64-bit Linux. Sameko uses the compiler and tools installed on your system.
 
 #### 📌 Step 1: Install the tools
 
@@ -188,7 +188,7 @@ sudo pacman -S --noconfirm gcc gdb clang astyle
 
 #### 📌 Step 2: Download Sameko
 
-Download `sameko-dev-cpp-1.4.0-linux-x86_64.AppImage` from [GitHub Releases](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/tag/v1.4.0) or visit [sameko.dev](https://sameko.dev/).
+Download `sameko-dev-cpp-1.5.0-linux-x86_64.AppImage` from [GitHub Releases](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest) or visit [sameko.dev](https://sameko.dev/).
 
 ---
 
@@ -197,8 +197,8 @@ Download `sameko-dev-cpp-1.4.0-linux-x86_64.AppImage` from [GitHub Releases](htt
 Open a terminal in the folder where you downloaded the file, then run:
 
 ```bash
-chmod +x sameko-dev-cpp-1.4.0-linux-x86_64.AppImage
-./sameko-dev-cpp-1.4.0-linux-x86_64.AppImage
+chmod +x sameko-dev-cpp-1.5.0-linux-x86_64.AppImage
+./sameko-dev-cpp-1.5.0-linux-x86_64.AppImage
 ```
 
 You can keep the AppImage wherever you like and run it again from that folder. To build `.deb` or `.tar.gz` packages yourself, see [Building](#building).
