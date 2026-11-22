@@ -376,30 +376,35 @@
         .sdbg-array-cell.changed>span:first-child{color:var(--accent)}
         /* Shortcuts moved out of the footer into a popover on the ? button, so
            the panel spends its height on data instead of a static cheat sheet. */
-        .sdbg-pop{position:absolute;top:42px;right:9px;left:9px;z-index:6;display:none;
-          background:var(--bg-glass-heavy,rgba(26,37,48,.99));border:1.5px solid var(--border,#3a6075);
+        .sdbg-pop{position:absolute;top:42px;right:9px;left:9px;z-index:6;display:none;box-sizing:border-box;
+          max-height:calc(100% - 52px);overflow-y:auto;
+          /* Always opaque, whatever the theme: the panel's text must not show through. */
+          background:rgb(from var(--bg-glass-heavy,#1a2530) r g b / 1);
+          border:1.5px solid var(--border,#3a6075);
           border-radius:var(--radius-sm,12px);box-shadow:var(--shadow-soft,0 14px 36px rgba(0,0,0,.45));
-          padding:11px 13px;color:var(--text-secondary,#a9c2d4);font-size:11px;line-height:1.6}
+          padding:2px 14px;color:var(--text-secondary,#a9c2d4);font-size:12px;line-height:1.4}
         .sdbg-pop.open{display:block}
         .sdbg-pop b{color:var(--text-primary,#e0f0ff);font-weight:700}
-        .sdbg-pop-h{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;
-          color:var(--accent,#88c9ea);margin:0 0 6px}
-        .sdbg-pop-h+*{margin-bottom:11px}
-        .sdbg-pop-h:not(:first-child){padding-top:9px;border-top:1px solid var(--border,#3a6075)}
-        /* Legend rows reuse the very images Monaco draws in the gutter. */
-        .sdbg-legend>div{display:flex;align-items:flex-start;gap:8px;margin-bottom:4px}
-        .sdbg-lg{width:15px;height:15px;flex:0 0 15px;margin-top:1px;background:center/14px no-repeat}
+        .sdbg-pop-sec{padding:9px 0}
+        .sdbg-pop-sec+.sdbg-pop-sec{border-top:1px solid color-mix(in srgb,var(--border,#3a6075) 65%,transparent)}
+        .sdbg-pop-h{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;
+          color:var(--accent,#88c9ea);margin:0 0 7px}
+        .sdbg-keys{display:grid;grid-template-columns:repeat(auto-fit,minmax(126px,1fr));gap:5px 14px}
+        .sdbg-rows{display:grid;gap:4px}
+        .sdbg-hk{display:flex;align-items:center;justify-content:space-between;gap:8px;min-width:0;min-height:21px}
+        .sdbg-hk>span:first-child{min-width:0;white-space:nowrap;color:var(--text-primary,#e0f0ff)}
+        .sdbg-chips{display:inline-flex;flex:none;gap:3px}
+        .sdbg-feats{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:baseline}
+        /* Legend marks reuse the very images Monaco draws in the gutter. */
+        .sdbg-legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:6px 8px}
+        .sdbg-legend>div{display:flex;align-items:center;gap:5px;min-width:0;white-space:nowrap}
+        .sdbg-lg{width:14px;height:14px;flex:0 0 14px;background:center/13px no-repeat}
         .sdbg-lg.bp{background-image:url("${GLYPH.bp}")}
         .sdbg-lg.hit{background-image:url("${GLYPH.hit}")}
         .sdbg-lg.cur{background-image:url("${GLYPH.cur}")}
         .sdbg-lg.cond{background-image:url("${GLYPH.cond}")}
         .sdbg-lg.off{background-image:url("${GLYPH.off}")}
         .sdbg-lg.hist{background-image:url("${GLYPH.hist}")}
-        .sdbg-keys{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px}
-        .sdbg-keys>div{display:flex;align-items:center;gap:5px}
-        .sdbg-keys span{color:var(--text-secondary,#a9c2d4)}
-        .sdbg-tips{margin:0;padding-left:15px}
-        .sdbg-tips li{margin-bottom:3px}
         .sdbg-pop kbd,.sdbg-idle kbd{background:var(--btn-bg,var(--bg-button,#2a4050));
           border:1px solid var(--border,#3a6075);border-bottom-width:2px;
           border-radius:6px;padding:1px 6px;font-family:${MONO};font-size:10px;font-weight:700;
@@ -736,40 +741,53 @@
             <button class="sdbg-hist-live">Back to live</button>
           </div>
           <div class="sdbg-pop">
-            <div class="sdbg-pop-h">Marks in the gutter</div>
-            <div class="sdbg-legend">
-              <div><span class="sdbg-lg bp"></span><span><b>Breakpoint</b>: the program stops here</span></div>
-              <div><span class="sdbg-lg cur"></span><span><b>Current line</b>: next to run, not run yet</span></div>
-              <div><span class="sdbg-lg hit"></span><span><b>Stopped at a breakpoint</b></span></div>
-              <div><span class="sdbg-lg cond"></span><span><b>Conditional</b>: stops only when its condition is true</span></div>
-              <div><span class="sdbg-lg off"></span><span><b>Disabled</b>: kept but skipped</span></div>
-              <div><span class="sdbg-lg hist"></span><span><b>History</b>: a past step you are viewing</span></div>
-            </div>
-            <div class="sdbg-pop-h">Keys</div>
-            <div class="sdbg-keys">
-              <div><kbd>F5</kbd><span>Start / Continue</span></div>
-              <div><kbd>F10</kbd><span>Step over</span></div>
-              <div><kbd>F11</kbd><span>Step into</span></div>
-              <div><kbd>Shift</kbd><kbd>F11</kbd><span>Step out</span></div>
-              <div><kbd>Shift</kbd><kbd>F5</kbd><span>Stop</span></div>
-            </div>
-            <div class="sdbg-pop-h">Mouse</div>
-            <ul class="sdbg-tips">
-              <li><b>Click</b> the gutter: add or remove a breakpoint</li>
-              <li><b>Alt</b>+click: conditional breakpoint · <b>Ctrl</b>+click: turn off / on</li>
-              <li><b>Right-click</b> a line: Run to Cursor</li>
-              <li><b>Double-click</b> a value: switch hex / decimal</li>
-            </ul>
-            <div class="sdbg-pop-h">Auto dry run</div>
-            <ul class="sdbg-tips">
-              <li>Steps through the program line by line on its own, starting at <b>main()</b>. No breakpoints needed.</li>
-              <li>Change the speed with the slider. <b>Pause</b>, <kbd>Esc</kbd> or any manual step stops it.</li>
-            </ul>
-            <div class="sdbg-pop-h">Back &amp; Restart</div>
-            <ul class="sdbg-tips">
-              <li><b>Back</b> replays steps you already took. The program does not run backwards. Press <kbd>Esc</kbd> or <b>Back to live</b> to return.</li>
-              <li><b>Restart</b> runs the program again from the start.</li>
-            </ul>
+            <section class="sdbg-pop-sec">
+              <div class="sdbg-pop-h">Keys</div>
+              <div class="sdbg-keys">
+                <div class="sdbg-hk"><span>Start / Continue</span><span class="sdbg-chips"><kbd>F5</kbd></span></div>
+                <div class="sdbg-hk"><span translate="no">Step over</span><span class="sdbg-chips"><kbd>F10</kbd></span></div>
+                <div class="sdbg-hk"><span translate="no">Step into</span><span class="sdbg-chips"><kbd>F11</kbd></span></div>
+                <div class="sdbg-hk"><span translate="no">Step out</span><span class="sdbg-chips"><kbd>Shift</kbd><kbd>F11</kbd></span></div>
+                <div class="sdbg-hk"><span>Stop</span><span class="sdbg-chips"><kbd>Shift</kbd><kbd>F5</kbd></span></div>
+              </div>
+            </section>
+            <section class="sdbg-pop-sec">
+              <div class="sdbg-pop-h">Left gutter</div>
+              <div class="sdbg-rows">
+                <div class="sdbg-hk"><span>Add or remove a breakpoint</span><span class="sdbg-chips"><kbd>Click</kbd></span></div>
+                <div class="sdbg-hk"><span>Conditional breakpoint</span><span class="sdbg-chips"><kbd>Alt+click</kbd></span></div>
+                <div class="sdbg-hk"><span>Turn off / on</span><span class="sdbg-chips"><kbd>Ctrl+click</kbd></span></div>
+              </div>
+            </section>
+            <section class="sdbg-pop-sec">
+              <div class="sdbg-pop-h">On a value</div>
+              <div class="sdbg-rows">
+                <div class="sdbg-hk"><span>Change the value</span><span class="sdbg-chips"><kbd>Alt+click</kbd></span></div>
+                <div class="sdbg-hk"><span>Hex / decimal</span><span class="sdbg-chips"><kbd>Double-click</kbd></span></div>
+              </div>
+            </section>
+            <section class="sdbg-pop-sec">
+              <div class="sdbg-pop-h">Tools</div>
+              <div class="sdbg-feats">
+                <b>Run to Cursor</b><span>Right-click a line while paused</span>
+                <b>Auto</b><span>Steps through the program by itself</span>
+                <b>Back</b><span>Replays the steps you already took</span>
+                <b>Restart</b><span>Runs again from the start</span>
+                <b>Watch</b><span>Stop when a value changes</span>
+                <b>Threads</b><span>Click one to inspect it</span>
+              </div>
+            </section>
+            <section class="sdbg-pop-sec">
+              <div class="sdbg-pop-h">Marks in the gutter</div>
+              <div class="sdbg-legend">
+                <div><span class="sdbg-lg bp"></span><span>Breakpoint</span></div>
+                <div><span class="sdbg-lg cur"></span><span>Next line</span></div>
+                <div><span class="sdbg-lg hit"></span><span>Stopped here</span></div>
+                <div><span class="sdbg-lg cond"></span><span>Conditional</span></div>
+                <div><span class="sdbg-lg off"></span><span>Disabled</span></div>
+                <div><span class="sdbg-lg hist"></span><span>History</span></div>
+              </div>
+            </section>
           </div>
           <div class="sdbg-auto">
             <span class="lbl">Auto</span>
