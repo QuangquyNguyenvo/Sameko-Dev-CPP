@@ -41,6 +41,7 @@ function loadTestStateFromTab(tab) {
     if (typeof refreshCheckerFiles === 'function') refreshCheckerFiles();
     // The verdict chip shows this tab's last submission (oj-submit.js).
     if (typeof renderOjVerdictChip === 'function') renderOjVerdictChip();
+    if (typeof renderStopwatch === 'function') renderStopwatch();
 
     // Show the selected test (and its last result) without taking keyboard
     // focus away from the editor — this runs on every tab switch.
@@ -49,14 +50,15 @@ function loadTestStateFromTab(tab) {
     const diffDisplay = document.getElementById('expected-diff');
     if (count > 0 && ccTestIndex >= 0) {
         const test = ccProblem.tests[ccTestIndex];
-        if (inputArea) inputArea.value = test.input || '';
-        if (expectedArea) expectedArea.value = test.output || '';
+        showTestInBoxes(test);
         const result = batchTestResults.find(r => r.testIndex === ccTestIndex);
         const actual = result?.actualOutput ?? result?.output;
         if (result && actual !== undefined) {
-            showTestResultDiff(test.output || '', actual);
+            showTestDiff(test, result, actual);
             return;
         }
+    } else {
+        showTestInBoxes(null);
     }
     if (expectedArea && diffDisplay) {
         expectedArea.style.display = 'block';
@@ -103,8 +105,7 @@ function initCompetitiveCompanion() {
 
     const saveCurrentTest = () => {
         if (ccProblem && ccProblem.tests && ccProblem.tests[ccTestIndex]) {
-            ccProblem.tests[ccTestIndex].input = inputArea.value;
-            ccProblem.tests[ccTestIndex].output = expectedArea.value;
+            storeBoxesInTest(ccProblem.tests[ccTestIndex]);
         }
     };
 
@@ -165,8 +166,7 @@ function addTestCase() {
     const inputArea = document.getElementById('input-area');
     const expectedArea = document.getElementById('expected-area');
     if (ccProblem.tests.length > 0 && ccProblem.tests[ccTestIndex]) {
-        ccProblem.tests[ccTestIndex].input = inputArea.value;
-        ccProblem.tests[ccTestIndex].output = expectedArea.value;
+        storeBoxesInTest(ccProblem.tests[ccTestIndex]);
     } else if (inputArea.value || expectedArea.value) {
         // No test selected (none yet, or after an import or a restored session) but text in the
         // boxes: keep it as a test of its own instead of losing it to the new empty one.
@@ -369,7 +369,7 @@ async function handleProblemReceived(problem) {
         const fileName = safeName + '.cpp';
 
         const id = 'tab_' + Date.now();
-        const template = App.settings.template?.code || DEFAULT_CODE;
+        const template = applyHeadComment(App.settings.template?.code || DEFAULT_CODE, problem);
 
         let targetPath = null;
         let finalFileName = fileName;
@@ -509,18 +509,12 @@ function updateTestNavUI() {
     const testLabel = document.getElementById('test-nav-label');
     const runAllBtn = document.getElementById('btn-run-all-tests');
     const deleteBtn = document.getElementById('btn-delete-test');
-    const deleteAllBtn = document.getElementById('btn-delete-all-tests');
 
     const testCount = ccProblem?.tests?.length || 0;
 
     // Show/hide Run All button in header
     if (runAllBtn) {
         runAllBtn.style.display = testCount > 0 ? 'flex' : 'none';
-    }
-
-    // Show/hide Delete All button in TESTS header
-    if (deleteAllBtn) {
-        deleteAllBtn.style.display = testCount > 0 ? 'flex' : 'none';
     }
 
     // Show/hide Panel Add button
@@ -572,11 +566,7 @@ function switchTestCase(index) {
     ccTestIndex = index;
     const test = ccProblem.tests[index];
 
-    const inputArea = document.getElementById('input-area');
-    const expectedArea = document.getElementById('expected-area');
-
-    if (inputArea) inputArea.value = test.input || '';
-    if (expectedArea) expectedArea.value = test.output || '';
+    showTestInBoxes(test);
 
     updateTestNavUI();
     if (typeof markSelectedTestRow === 'function') markSelectedTestRow();
@@ -586,7 +576,7 @@ function switchTestCase(index) {
     const result = batchTestResults?.find(r => r.testIndex === index);
     const actualOutput = result?.actualOutput ?? result?.output;
     if (result && actualOutput !== undefined) {
-        showTestResultDiff(test.output || '', actualOutput);
+        showTestDiff(test, result, actualOutput);
     } else {
         // Reset to edit mode if no result
         switchToExpectedEdit();

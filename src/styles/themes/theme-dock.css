@@ -264,6 +264,19 @@
     cursor: grabbing;
 }
 
+/* The bottom panel shows one body: the one its data-view names (layout.js switchDockedPanel). */
+.problems-panel:not([data-view="problems"]) > .problems-body,
+.problems-panel:not([data-view="tests"]) > .tests-results-body,
+.problems-panel:not([data-view="stress"]) > .stress-body,
+.problems-panel:not([data-view="io"]) > .docked-io-view {
+    display: none;
+}
+
+/* An input file attached to the tab replaces the box, docked as in the I/O column. */
+.docked-io-slot.has-file > #input-area {
+    display: none;
+}
+
 /* Docked I/O view - Split layout with INPUT and EXPECTED */
 .docked-io-view {
     display: flex;

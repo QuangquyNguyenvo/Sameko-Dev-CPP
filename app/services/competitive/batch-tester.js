@@ -15,9 +15,12 @@ const { normalizeOutput, compareOutputs } = require('../../shared/judge');
 const { runChecker } = require('./checker');
 const { describeExit, describeStartError } = require('../../shared/exit-codes');
 const { wasBuiltThisSession } = require('../compiler/executor');
-const { IS_WIN, IS_LINUX, readProcMemoryKB, killProcessTree } = require('../../shared/platform');
+const { IS_WIN, IS_LINUX, readProcMemoryKB, killProcessTree, appTempDir, ensurePrivateDir } = require('../../shared/platform');
+const { normalizeFileIO } = require('./test-files');
 const { ensureLauncher, getLauncherIfReady, launcherEnv, newStatsFile, readStats } = require('../compiler/run-launcher');
 const languages = require('../compiler/languages');
+
+const EXPECTED_PREVIEW_CHARS = 64 * 1024;
 
 /**
  * Run a single test case
@@ -34,14 +37,57 @@ const languages = require('../compiler/languages');
  * @param {string} [options.cwd] - Working directory
  * @param {string[]} [options.args] - command-line arguments for the program (a stress-test
  *   generator's seed): plain words only, anything else is dropped
+ * @param {string} [options.inputPath] - the test's input is this file (a large test kept on disk)
+ * @param {string} [options.expectedPath] - the expected output is this file
+ * @param {{input?: string, output?: string}} [options.fileIO] - a problem judged through files:
+ *   the program runs in a private folder holding the input file, and the output file is judged
+ * @param {string} [options.interactor] - a compiled testlib interactor that plays and judges
  * @returns {Promise<import('../../shared/types').BatchTestResult>}
  */
-async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memoryLimit = 0, compare, checker = '', cwd, args = [], debug = false, testMeta = null, profiling = false }) {
+async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memoryLimit = 0, compare, checker = '', cwd, args = [], debug = false, testMeta = null, profiling = false, inputPath = '', expectedPath = '', fileIO = null, interactor = '' }) {
     memoryLimit = Number.isFinite(+memoryLimit) && +memoryLimit > 0 ? Math.round(+memoryLimit) : 0;
     const programArgs = programArguments(args);
     // Linux judges memory and gives Large Stack only through the launcher: wait for its first build.
     if (IS_LINUX) await ensureLauncher();
-    return new Promise((resolve) => {
+
+    // A test kept on disk: its file may have been moved since it was imported.
+    let expectedPreview;
+    for (const file of [inputPath, expectedPath]) {
+        if (file && !fs.existsSync(file)) {
+            return { status: 'RE', error: 'Test file not found', details: `Test file not found: ${file}`, executionTime: 0 };
+        }
+    }
+    if (expectedPath) {
+        expectedOutput = await fs.promises.readFile(expectedPath, 'utf8');
+        expectedPreview = expectedOutput.slice(0, EXPECTED_PREVIEW_CHARS);
+    }
+    if (interactor) {
+        const { runInteractive } = require('./interactor');
+        const played = await runInteractive({ exePath, interactor, input, inputPath, expectedOutput, timeLimit, memoryLimit });
+        return expectedPreview === undefined ? played : { ...played, expectedPreview };
+    }
+
+    // Judged through files: a folder of its own per run, so tests running side by side and the
+    // user's own BAI.INP next to the source are never touched.
+    const io = normalizeFileIO(fileIO);
+    let ioDir = null;
+    if (io) {
+        if (profiling && cwd) {
+            ioDir = cwd;
+        } else {
+            const root = appTempDir('cpp-ide-fileio');
+            ensurePrivateDir(root);
+            ioDir = await fs.promises.mkdtemp(path.join(root, 'run-'));
+            cwd = ioDir;
+        }
+        if (io.input) {
+            const target = path.join(ioDir, io.input);
+            if (inputPath) await fs.promises.copyFile(inputPath, target);
+            else await fs.promises.writeFile(target, input || '');
+        }
+    }
+
+    const finished = await new Promise((resolve) => {
         if (!exePath || !fs.existsSync(exePath)) {
             // Built a moment ago and gone now: an antivirus quarantined it (executor.js).
             const gone = wasBuiltThisSession(exePath);
@@ -171,10 +217,16 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
         // A program that exits without reading its input closes the pipe; the
         // resulting EPIPE must not surface as an uncaught exception.
         testProcess.stdin.on('error', () => { });
-        if (input) {
-            testProcess.stdin.write(input);
+        if (inputPath) {
+            const stream = fs.createReadStream(inputPath);
+            stream.on('error', () => { try { testProcess.stdin.end(); } catch (_) { } });
+            stream.pipe(testProcess.stdin);
+        } else {
+            if (input) {
+                testProcess.stdin.write(input);
+            }
+            testProcess.stdin.end();
         }
-        testProcess.stdin.end();
         startTime = Date.now();
 
         // Cap what is kept: a runaway print loop inside the time limit would
@@ -224,6 +276,18 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
             const executionTime = timed ? Math.round(timed.wallMs) : Date.now() - startTime;
             if (timed) peakMemoryKB = timed.peakKB;
             if (timed && timed.timedOut) { killed = true; debugInfo.timeoutKilled = true; }
+            // The answer of a file-based problem is its output file. A program that printed to
+            // stdout instead (the freopen is under #ifdef) is judged on what it printed.
+            let outputFileMissing = false;
+            if (io && io.output) {
+                const file = path.join(ioDir, io.output);
+                try {
+                    if (fs.statSync(file).size > MAX_CAPTURE_CHARS) outputTruncated = true;
+                    else output = fs.readFileSync(file, 'utf8');
+                } catch (_) {
+                    outputFileMissing = !output;
+                }
+            }
             // Over the limit: the job refused an allocation (the program then crashes or exits
             // with bad_alloc), or it stayed under the job's cap but peaked past the limit.
             const overMemory = memoryLimit > 0 && ((timed && timed.memLimitHit) || peakMemoryKB > memoryLimit * 1024);
@@ -286,7 +350,9 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
 
                     if (!compared.matched) {
                         status = 'WA';
-                        details = `Expected: ${preview(expectedText, 100)}\nGot: ${preview(output, 100)}`;
+                        details = outputFileMissing
+                            ? `The program did not create ${io.output}`
+                            : `Expected: ${preview(expectedText, 100)}\nGot: ${preview(output, 100)}`;
                     }
                 }
             }
@@ -300,6 +366,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
                 details,
                 exitCode: code,
                 crash,
+                expectedPreview,
                 startErrorMessage: startError !== null ? describeStartError(startError) : undefined
             };
 
@@ -363,6 +430,9 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
             resolve(response);
         });
     });
+    // A profiling run's folder belongs to its caller, which reads gmon.out from it.
+    if (ioDir && !profiling) await fs.promises.rm(ioDir, { recursive: true, force: true }).catch(() => { });
+    return finished;
 }
 
 /**

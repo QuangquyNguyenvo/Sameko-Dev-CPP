@@ -358,6 +358,10 @@ function registerHandlers() {
         return require('../services/file-search').searchInFiles(options);
     });
 
+    ipcMain.handle(IPC.FILE.LIST_FILES, (event, folder) => {
+        return require('../services/file-search').listFiles(folder);
+    });
+
     ipcMain.handle(IPC.FILE.DELETE, async (event, filePath) => {
         try {
             await fsp.unlink(filePath);

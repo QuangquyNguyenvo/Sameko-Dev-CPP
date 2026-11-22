@@ -65,6 +65,9 @@
     const WATCH_ARRAY_LIMIT = 200;
     let stopNumber = 0;
     let stopFrames = [];
+    let stopDepth = 0;                  // the real stack depth; stopFrames holds the top 200
+    let stopThreads = [];               // threads running the user's code
+    let stopThreadId = null;
     let selectedFrame = 0;
     let lastRawEndedNL = true;           // did the last program-output chunk end with '\n'?
 
@@ -354,6 +357,15 @@
         .sdbg-wph-vals .new{color:var(--accent);font-weight:700}
         .sdbg-wph-vals .arrow{color:var(--text-muted)}
         .sdbg-body.replay>.sdbg-watchpoint-hit{display:none}
+        .sdbg-sec[hidden]{display:none}
+        .sdbg-map-key.changed{color:#ffcf5e;font-weight:700}
+        .sdbg-crash{margin:6px 10px 2px;padding:8px 10px;border-radius:10px;
+            border:1px solid color-mix(in srgb,var(--error,#e5484d) 55%,transparent);
+            background:color-mix(in srgb,var(--error,#e5484d) 13%,transparent);color:var(--text-primary)}
+        .sdbg-crash-title{color:var(--error,#e5484d);font-size:12.5px;font-weight:700}
+        .sdbg-crash-where{margin-top:3px;font-family:${MONO};font-size:11.5px;overflow-wrap:anywhere}
+        .sdbg-crash-hint{margin-top:4px;color:var(--text-secondary);font-size:11.5px;line-height:1.4}
+        .sdbg-body.replay>.sdbg-crash{display:none}
         .sdbg-array{padding:4px 10px 6px 22px;font-family:${MONO};font-size:11px;color:var(--text-secondary)}
         .sdbg-array-cells{display:flex;gap:3px;overflow-x:auto}
         .sdbg-array-cells{padding-bottom:3px}
@@ -473,7 +485,7 @@
     // Which sections are expanded, persisted so the panel returns the way it was
     // left. Call Stack starts collapsed: with a single frame it is pure noise.
     const SEC_KEY = 'sameko-debug-sections';
-    const secOpen = { locals: true, watch: true, stack: false };
+    const secOpen = { locals: true, watch: true, stack: false, threads: false };
     const secTouched = new Set();      // sections the user opened/closed by hand
     try {
         const saved = JSON.parse(localStorage.getItem(SEC_KEY) || 'null');
@@ -774,6 +786,7 @@
             ${sectionHtml('locals', 'Variables')}
             ${sectionHtml('watch', 'Watch', '<input class="sdbg-watchin" id="sdbg-watchin" placeholder="+ expression, Enter…" />')}
             ${sectionHtml('stack', 'Call Stack')}
+            ${sectionHtml('threads', 'Threads')}
           </div>`;
         (document.querySelector('.content-wrapper') || document.body).appendChild(p);
         els = {
@@ -1395,12 +1408,13 @@
         }
 
         // An input file attached to the tab is read by gdb in place.
-        const stdinPath = opts?.stdin === undefined
+        const stdinPath = opts?.stdinPath || (opts?.stdin === undefined
             ? ((typeof getTabInputFile === 'function' && getTabInputFile(tab.id)) || null)
-            : null;
-        const stdin = opts?.stdin ?? (stdinPath ? '' : (document.getElementById('input-area')?.value || ''));
+            : null);
+        const stdin = opts?.stdinPath ? '' : (opts?.stdin ?? (stdinPath ? '' : (document.getElementById('input-area')?.value || '')));
         const bps = collectBreakpoints();
-        const dir = tab.path.replace(/[\\/][^\\/]*$/, '');
+        // A file-based test runs in a folder holding its input file (test-manager.js).
+        const dir = opts?.cwd || tab.path.replace(/[\\/][^\\/]*$/, '');
         const res = await api().debugStart({ exePath: r.outputPath, cwd: dir, breakpoints: bps, stdin, stdinPath, breakAtMain });
         if (cancelled()) {
             // Stopped while gdb was starting: end the session it just began.
@@ -1548,6 +1562,10 @@
         pendingWatchpoints.clear();
         watchArrays.clear();
         showWatchpointHit(null);
+        showCrash(null);
+        stopThreads = [];
+        stopThreadId = null;
+        renderThreads();
         stopFile = stopLine = null;
         renderCurrentLine();
         // gdb is gone — the varobjs died with it; just drop our registry.
@@ -1571,6 +1589,7 @@
             stopToken++;
             setStatus('running');
             showWatchpointHit(null);
+            showCrash(null);
             stopFile = stopLine = null;
             renderCurrentLine();
             // Never hit a breakpoint yet: say what is happening instead of
@@ -1583,6 +1602,13 @@
         a.onDebugProgramExited((d) => {
             freshLine();
             const code = d && d.code != null ? d.code : '?';
+            if (d && d.crash) {
+                const name = I18n.t(d.crash.name);
+                sys(I18n.t('Program crashed: {0}', name), 'error');
+                if (d.crash.hint) sys(I18n.t(d.crash.hint), 'warning');
+                endSession(I18n.t('Crashed: {0} · F5 to run again.', name));
+                return;
+            }
             sys('Program exited (code ' + code + ').', 'system');
             endSession('Finished (exit ' + code + ') · F5 to run again.');
         });
@@ -1639,7 +1665,7 @@
      * function apart (recursion): their variable objects are bound to one frame,
      * so f(1) must not reuse the trees built for f(2).
      */
-    function frameKey(f, depth) { return f ? ((f.func || '') + '@' + (f.file || '') + '#' + (depth || 0)) : ''; }
+    function frameKey(f, depth) { return f ? ((f.func || '') + '@' + (f.file || '') + '#' + (depth || 0) + '/' + (stopThreadId || '')) : ''; }
     function localNamesSig(locals) { return (locals || []).map(l => l.name).sort().join(','); }
 
     let stopToken = 0;
@@ -1656,18 +1682,31 @@
             renderHistoryLine(null);
         }
         stopFrames = d.frames || [];
-        selectedFrame = 0;
+        stopDepth = d.depth || stopFrames.length;
+        stopThreads = d.threads || [];
+        stopThreadId = d.threadId || null;
+        selectedFrame = d.selectedLevel || 0;
         // Prefer the innermost frame that actually has a source file for the
         // arrow marker. gdb usually stops user code at frame 0, but a stop with
         // no source there (rare) shouldn't leave the marker nowhere.
-        const srcFrame = (d.frame && d.frame.file) ? d.frame : (stopFrames.find(f => f && f.file) || d.frame || null);
+        const chosen = stopFrames[selectedFrame];
+        const srcFrame = (chosen && chosen.file) ? chosen
+            : (d.frame && d.frame.file) ? d.frame : (stopFrames.find(f => f && f.file) || d.frame || null);
         stopFile = srcFrame ? srcFrame.file : null;
         stopLine = srcFrame ? srcFrame.line : null;
         setStatus('stopped');
         if (d.expiredWatchpointId) forgetWatchpoint(d.expiredWatchpointId);
         showWatchpointHit(d.watchpoint);
-        // A pause (interrupt) surfaces as a signal stop — note it, don't alarm.
-        if (d.reason && /signal/.test(d.reason)) sys('Paused.', 'system');
+        showCrash(d.crash, srcFrame);
+        // A pause (interrupt) is a signal stop too, but only a real crash carries `crash`.
+        if (d.crash) {
+            if (autoRunning) stopAuto(null);
+            freshLine();
+            sys(I18n.t('Program crashed: {0}', I18n.t(d.crash.name)), 'error');
+            if (d.crash.hint) sys(I18n.t(d.crash.hint), 'warning');
+        } else if (d.reason && /signal/.test(d.reason)) {
+            sys('Paused.', 'system');
+        }
         // Bring the stopped file into view (open it or switch tabs) so the arrow
         // is actually visible for multi-file programs.
         await revealFile(stopFile);
@@ -1677,11 +1716,12 @@
         // the combined dot+arrow mark), so they have to be redrawn on every stop.
         renderBreakpoints();
         renderStack();
+        renderThreads();
         recordStep(d);
         // The single most common beginner misreading, answered once per session:
         // a breakpoint looks like "where the program starts" because everything
         // before it ran in microseconds with nothing to see.
-        if (history.length === 1 && stopLine) {
+        if (history.length === 1 && stopLine && !d.crash) {
             sys('Paused at line ' + stopLine + '. Everything above it has already run — '
                 + 'a breakpoint stops the program there, it does not start it.', 'system');
         }
@@ -1693,8 +1733,8 @@
         // + same set of locals) as the trees currently show. Otherwise the whole
         // scope changed, so rebuild. This preserves expanded subtrees and lets
         // -var-update highlight only the values that actually changed.
-        const frame0 = stopFrames[0] || d.frame || null;
-        const key = frameKey(frame0, stopFrames.length);
+        const frame0 = stopFrames[selectedFrame] || d.frame || null;
+        const key = frameKey(frame0, stopDepth - selectedFrame);
         const names = localNamesSig(d.locals);
         if (varNodes.size === 0 || key !== lastFrameKey || names !== lastLocalNames) {
             lastFrameKey = key;
@@ -1746,6 +1786,93 @@
             row.addEventListener('click', () => selectFrame(i));
             els.stack.appendChild(row);
         });
+        if (stopDepth > stopFrames.length) {
+            const more = document.createElement('div');
+            more.className = 'sdbg-more';
+            more.textContent = I18n.t('Showing the top {0} frames.', stopFrames.length);
+            els.stack.appendChild(more);
+        }
+    }
+
+    /** The Threads section: only when the program really runs more than one of its own threads. */
+    function renderThreads() {
+        const sec = els.panel && els.panel.querySelector('.sdbg-sec[data-sec="threads"]');
+        if (!sec) return;
+        const list = sec.querySelector('#sdbg-threads');
+        const many = stopThreads.length > 1;
+        sec.hidden = !many;
+        setCount('threads', many ? stopThreads.length : 0);
+        list.replaceChildren();
+        if (!many) return;
+        setSection('threads', true, true);
+        for (const thread of stopThreads) {
+            const row = document.createElement('div');
+            row.className = 'sdbg-frame' + (thread.current ? ' sel' : '');
+            row.dataset.thread = thread.id;
+            const loc = (thread.file ? thread.file.split(/[\\/]/).pop() : '??') + (thread.line ? ':' + thread.line : '');
+            row.innerHTML = `<span class="tick">${thread.current ? '✓' : ''}</span>`
+                + `<span class="fn">#${escHtml(thread.id)} ${escHtml(thread.func || '??')}</span> <span class="loc">${escHtml(loc)}</span>`;
+            row.addEventListener('click', () => selectThread(thread.id));
+            list.appendChild(row);
+        }
+    }
+
+    async function selectThread(id) {
+        if (state !== 'stopped' || isReplaying()) return;
+        if (stopThreads.find(thread => thread.id === id)?.current) return;
+        const token = stopToken;
+        const r = await api().debugSelectThread(id).catch(err => ({ ok: false, error: err.message }));
+        if (token !== stopToken) return;
+        if (!r || !r.ok) {
+            sys(I18n.t('Could not switch to that thread.'), 'error');
+            return;
+        }
+        stopThreads = stopThreads.map(thread => ({ ...thread, current: thread.id === id }));
+        stopThreadId = id;
+        stopFrames = r.frames || [];
+        stopDepth = r.depth || stopFrames.length;
+        selectedFrame = r.selectedLevel || 0;
+        const frame = stopFrames[selectedFrame] || null;
+        stopFile = frame ? frame.file : null;
+        stopLine = frame ? frame.line : null;
+        await revealFile(stopFile);
+        if (token !== stopToken) return;
+        renderCurrentLine(true);
+        renderBreakpoints();
+        renderStack();
+        renderThreads();
+        lastFrameKey = frameKey(frame, stopDepth - selectedFrame);
+        lastLocalNames = localNamesSig(r.locals);
+        await refreshTrees(r.locals);
+    }
+
+    /** The red notice above Variables: what crashed, where, and what usually causes it. */
+    function showCrash(crash, frame) {
+        els.crashNotice?.remove();
+        els.crashNotice = null;
+        if (!crash) return;
+        const notice = document.createElement('div');
+        notice.className = 'sdbg-crash';
+        notice.setAttribute('role', 'alert');
+        const title = document.createElement('div');
+        title.className = 'sdbg-crash-title';
+        title.textContent = I18n.t('Program crashed: {0}', I18n.t(crash.name));
+        notice.append(title);
+        if (frame && frame.file) {
+            const where = document.createElement('div');
+            where.className = 'sdbg-crash-where';
+            where.setAttribute('translate', 'no');
+            where.textContent = `${frame.func || '??'} · ${frame.file.split(/[\\/]/).pop()}:${frame.line || '?'}`;
+            notice.append(where);
+        }
+        if (crash.hint) {
+            const hint = document.createElement('div');
+            hint.className = 'sdbg-crash-hint';
+            hint.textContent = I18n.t(crash.hint);
+            notice.append(hint);
+        }
+        els.locals.closest('.sdbg-sec').before(notice);
+        els.crashNotice = notice;
     }
 
     async function selectFrame(i) {
@@ -1756,7 +1883,7 @@
         if (r && r.ok) {
             // Trees now reflect this frame; record its identity so the next stop
             // (which resets to frame 0) sees a mismatch and rebuilds correctly.
-            lastFrameKey = frameKey(stopFrames[i], stopFrames.length - i);
+            lastFrameKey = frameKey(stopFrames[i], stopDepth - i);
             lastLocalNames = localNamesSig(r.locals);
             await refreshTrees(r.locals);
         }
@@ -1898,6 +2025,7 @@
             const node = {
                 row, name, exp: e.expr, valEl: row.querySelector('.sdbg-val'),
                 numchild, expandable, arrayView, depth: 0, expanded: false, childRows: [], childNodes: [], kind,
+                noEdit: created.displayhint === 'string',
             };
             varNodes.set(name, node);
             attachFormatToggle(node);
@@ -1909,7 +2037,7 @@
     // (pretty-printed) container — those report numchild="0" with dynamic="1"/
     // has_more="1" and only materialize children via -var-list-children.
     function isExpandable(rec) {
-        if (!rec) return false;
+        if (!rec || rec.displayhint === 'string') return false;
         return parseInt(rec.numchild || '0', 10) > 0 || rec.has_more === '1' || rec.dynamic === '1';
     }
 
@@ -2152,8 +2280,15 @@
     /** Double-click a value to toggle hexadecimal / decimal display (gdb -var-set-format). */
     function attachFormatToggle(node) {
         if (!node.valEl) return;
-        node.valEl.title = 'Double-click: toggle hex / dec';
+        node.valEl.title = node.expandable || node.noEdit ? 'Double-click: toggle hex / dec' : 'Double-click: toggle hex / dec. Alt+click: change value';
+        node.valEl.addEventListener('click', (ev) => {
+            if (!ev.altKey || node.expandable || node.noEdit || state !== 'stopped' || isReplaying()) return;
+            ev.preventDefault();
+            ev.stopPropagation();
+            editNodeValue(node);
+        });
         node.valEl.addEventListener('dblclick', async (ev) => {
+            if (node.valEl.querySelector('input')) return;
             ev.preventDefault(); ev.stopPropagation();
             if (state !== 'stopped') return;
             const next = node.fmt === 'hex' ? 'decimal' : 'hexadecimal';
@@ -2164,6 +2299,53 @@
                     node.fmt = (next === 'hexadecimal') ? 'hex' : 'dec';
                 }
             } catch (_) { }
+        });
+    }
+
+    /** Alt+click on a value: an inline field. Enter assigns it in the program, Esc cancels. */
+    function editNodeValue(node) {
+        if (node.valEl.querySelector('input')) return;
+        const original = node.valEl.textContent;
+        const field = document.createElement('input');
+        field.className = 'sdbg-val-edit';
+        field.value = original;
+        field.spellcheck = false;
+        field.setAttribute('aria-label', 'New value');
+        node.valEl.replaceChildren(field);
+        field.focus();
+        field.select();
+        let done = false;
+        const finish = (text) => {
+            if (done) return;
+            done = true;
+            node.valEl.textContent = text;
+        };
+        field.addEventListener('click', ev => ev.stopPropagation());
+        field.addEventListener('dblclick', ev => ev.stopPropagation());
+        field.addEventListener('blur', () => finish(original));
+        field.addEventListener('keydown', async (ev) => {
+            ev.stopPropagation();
+            if (ev.key === 'Escape') { ev.preventDefault(); finish(original); return; }
+            if (ev.key !== 'Enter') return;
+            ev.preventDefault();
+            const expr = field.value.trim();
+            if (!expr || expr === original) { finish(original); return; }
+            field.disabled = true;
+            const r = await api().debugVarAssign(node.name, expr).catch(err => ({ ok: false, error: err.message }));
+            if (!r?.ok) {
+                finish(original);
+                sys(I18n.t('Could not change the value.'), 'error');
+                if (r?.error) sys(I18n.t(r.error), 'error');
+                return;
+            }
+            finish(String(r.value));
+            node.valEl.classList.add('changed');
+            if (state === 'stopped') {
+                await queueTreeRefresh(async token => {
+                    await applyVarUpdate();
+                    await refreshWatchArrays(token);
+                });
+            }
         });
     }
 
@@ -2182,18 +2364,39 @@
         const to = node.numchild > 0 ? Math.min(node.numchild, 200) : 200;
         const r = await api().debugVarChildren(node.name, 0, to);
         const kids = (r && r.children) || [];
+        const isMap = !!r && r.hint === 'map';
         let anchor = node.row;
-        for (const c of kids) {
+        for (let i = 0; i < kids.length; i += isMap ? 2 : 1) {
+            const c = isMap ? kids[i + 1] : kids[i];
+            if (!c) break;
+            const mapKey = isMap ? kids[i] : null;
+            const keyIsPlain = !!mapKey && mapKey.value != null && mapKey.value !== '{...}';
+            const keyText = !mapKey ? '' : keyIsPlain ? mapKey.value : await mapKeySummary(mapKey);
+            if (!node.expanded) return;      // collapsed while a composite key was read
             const cn = parseInt(c.numchild || '0', 10);
             const cExpandable = isExpandable(c);
-            const cr = makeRow(c.exp || '?', c.value, node.depth + 1, cExpandable, false);
+            const cr = makeRow(mapKey ? `[${keyText}]` : (c.exp || '?'), c.value, node.depth + 1, cExpandable, false);
             node.row.parentNode.insertBefore(cr, anchor.nextSibling);
             anchor = cr;
             node.childRows.push(cr);
+            if (keyIsPlain && mapKey.name) {
+                // The key is a live varobj too: its text follows -var-update.
+                const keyEl = document.createElement('span');
+                keyEl.className = 'sdbg-map-key';
+                keyEl.textContent = keyText;
+                cr.querySelector('.sdbg-name').replaceChildren('[', keyEl, ']');
+                const keyNode = {
+                    row: cr, name: mapKey.name, exp: mapKey.exp, valEl: keyEl, numchild: 0, expandable: false,
+                    depth: node.depth + 1, expanded: false, childRows: [], childNodes: [], kind: 'child',
+                };
+                varNodes.set(mapKey.name, keyNode);
+                node.childNodes.push(keyNode);
+            }
             if (c.name) {
                 const child = {
                     row: cr, name: c.name, exp: c.exp, valEl: cr.querySelector('.sdbg-val'),
                     numchild: cn, expandable: cExpandable, depth: node.depth + 1, expanded: false,
+                    noEdit: c.displayhint === 'string',
                     childRows: [], childNodes: [], kind: 'child',
                 };
                 varNodes.set(c.name, child);
@@ -2205,10 +2408,27 @@
         if (r && r.hasMore) {
             const more = document.createElement('div');
             more.className = 'sdbg-more';
-            more.textContent = '… more elements (showing first 200)';
+            more.textContent = isMap ? '… more entries (showing first 100)' : '… more elements (showing first 200)';
             node.row.parentNode.insertBefore(more, anchor.nextSibling);
             node.childRows.push(more);
         }
+    }
+
+    /** A pair or struct used as a map key, as "(1, 2)". */
+    async function mapKeySummary(key) {
+        const parts = await compositeValues(key.name, 0);
+        return parts.length ? `(${parts.join(', ')})` : String(key.value ?? '?');
+    }
+
+    async function compositeValues(name, depth) {
+        if (!name || depth > 3) return [];
+        const r = await api().debugVarChildren(name, 0, 12).catch(() => null);
+        const parts = [];
+        for (const c of (r && r.children) || []) {
+            if (c.value == null || c.value === '{...}') parts.push(...await compositeValues(c.name, depth + 1));
+            else parts.push(c.value);
+        }
+        return parts;
     }
 
     /** Collapse a node: remove its child DOM rows and unregister the subtree. */
@@ -2277,12 +2497,12 @@
     const Debugger = {
         init,
         start: () => start(),                       // never forward an event object as opts
-        startTest: (tab, stdin) => {
+        startTest: (tab, stdin, extra = {}) => {
             if (isSessionLive()) {
                 showToast(I18n.t('Stop the current debug session first.'), 'warning');
                 return;
             }
-            return start({ tab, stdin, breakAtMain: true });
+            return start({ ...extra, tab, stdin, breakAtMain: true });
         },
         continue: () => { stopAuto(null); return continueExec(); },
         stepOver: () => { stopAuto(null); return stepOver(); },

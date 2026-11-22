@@ -23,6 +23,9 @@ const CHECKER_MODES = {
     lines: 'Exact lines'
 };
 
+// The TESTS header has room for a word or two; the full wording is the select's tooltip.
+const CHECKER_SHORT = { tokens: 'Words', nocase: 'Ignore case', lines: 'Exact lines' };
+
 const CHECKER_TEMPLATE = `#include "testlib.h"
 using namespace std;
 
@@ -131,8 +134,10 @@ function fillCheckerSelect(select) {
     };
     const builtins = document.createElement('optgroup');
     builtins.label = I18n.t('Compare output');
-    add(builtins, '', I18n.t('Default: {0}', I18n.t(CHECKER_MODES[settingsMode])));
-    for (const [value, text] of Object.entries(CHECKER_MODES)) add(builtins, value, text);
+    const short = select.id === 'checker-select';
+    const defaultText = I18n.t('Default: {0}', I18n.t(CHECKER_MODES[settingsMode]));
+    add(builtins, '', short ? I18n.t('Default') : defaultText);
+    for (const [value, text] of Object.entries(CHECKER_MODES)) add(builtins, value, short ? I18n.t(CHECKER_SHORT[value]) : text);
     select.appendChild(builtins);
 
     const chosenFile = checkerFilePath(choice);
@@ -148,7 +153,7 @@ function fillCheckerSelect(select) {
     if (group.children.length) select.appendChild(group);
     select.value = choice;
     if (select.value !== choice) select.value = '';
-    select.title = chosenFile || I18n.t('How the output of each test is judged');
+    select.title = chosenFile || (CHECKER_MODES[choice] ? I18n.t(CHECKER_MODES[choice]) : defaultText);
     select.classList.toggle('is-custom', !!choice);
 }
 
@@ -247,7 +252,7 @@ function initChecker() {
         select.addEventListener('focus', () => refreshCheckerFiles());
         select.addEventListener('click', (e) => e.stopPropagation());
     }
-    for (const id of ['checker-new', 'stress-new-checker']) {
+    for (const id of ['stress-new-checker']) {
         document.getElementById(id)?.addEventListener('click', (e) => {
             e.stopPropagation();
             createCheckerFile();

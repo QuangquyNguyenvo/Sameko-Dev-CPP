@@ -301,7 +301,15 @@ async function startLspInitialization() {
                     },
                     codeAction: {
                         codeActionLiteralSupport: { codeActionKind: { valueSet: ['quickfix'] } }
-                    }
+                    },
+                    signatureHelp: {
+                        signatureInformation: {
+                            documentationFormat: ['markdown', 'plaintext'],
+                            parameterInformation: { labelOffsetSupport: true }
+                        }
+                    },
+                    documentSymbol: { hierarchicalDocumentSymbolSupport: true },
+                    rename: { prepareSupport: true }
                 }
             },
             // Flags for every file that has no compile_commands.json /
@@ -441,8 +449,11 @@ async function spawnProcess() {
     // No --clang-tidy: its checks cost CPU on every reparse and are style
     // advice a compile would never report.
     const flags = [
-        '--background-index',
-        '--background-index-priority=low',
+        // The background index doubles clangd's memory (62 -> 127 MB on a bits/stdc++.h file) and
+        // only helps a real project: it stays off until a file has a compile_commands.json.
+        ...(wantsBackgroundIndex
+            ? ['--background-index', '--background-index-priority=low']
+            : ['--background-index=false']),
         // bundled groups function overloads into a single entry ("assign(…)
         // [3 overloads]") instead of one line per overload — a shorter, less
         // noisy completion list, better suited to competitive programming.
@@ -457,6 +468,7 @@ async function spawnProcess() {
     ];
     // Passed only to turn them off: without the flag a user's own clangd config
     // (Completion: ArgumentLists) still decides.
+    spawnedBackgroundIndex = wantsBackgroundIndex;
     spawnedArgPlaceholders = getArgumentPlaceholdersSetting();
     if (!spawnedArgPlaceholders) flags.push('--function-arg-placeholders=0');
 
@@ -705,6 +717,35 @@ async function init() {
 }
 
 let startPromise = null;
+let wantsBackgroundIndex = false;
+let spawnedBackgroundIndex = false;
+let indexRestart = null;
+const compileDatabaseByDir = new Map();
+
+/** Whether a folder or one of its parents (or their build/) has a compile_commands.json. */
+function hasCompileDatabase(dir) {
+    if (compileDatabaseByDir.has(dir)) return compileDatabaseByDir.get(dir);
+    const parent = path.dirname(dir);
+    const found = fs.existsSync(path.join(dir, 'compile_commands.json'))
+        || fs.existsSync(path.join(dir, 'build', 'compile_commands.json'))
+        || (parent !== dir && hasCompileDatabase(parent));
+    compileDatabaseByDir.set(dir, found);
+    return found;
+}
+
+/** clangd reads this flag only at launch: the first file of a real project restarts it once. */
+async function restartWithIndex() {
+    const old = clangdProcess;
+    isShuttingDown = true;
+    await new Promise((resolve) => {
+        const timer = setTimeout(resolve, 1500);
+        old.once('close', () => { clearTimeout(timer); resolve(); });
+        try { old.kill('SIGTERM'); } catch (_) { resolve(); }
+    });
+    isShuttingDown = false;
+    spawnProcess();
+    if (initializationPromise) await initializationPromise;
+}
 
 /**
  * Start clangd on first use. It used to start when the IPC handlers were
@@ -723,12 +764,18 @@ function start() {
  * @returns {Promise<boolean>}
  */
 async function ensureReady() {
+    if (indexRestart) await indexRestart;
     if (isPermanentlyDisabled || isShuttingDown) return false;
     // Every caller waits for the same start: a second request arriving while the
     // first is still querying g++ would otherwise see "not initializing" and give up.
     await start();
     if (!isEnabled || isPermanentlyDisabled || isShuttingDown) {
         return false;
+    }
+    if (wantsBackgroundIndex && !spawnedBackgroundIndex && clangdProcess) {
+        if (!indexRestart) indexRestart = restartWithIndex().finally(() => { indexRestart = null; });
+        await indexRestart;
+        if (!isEnabled || isPermanentlyDisabled || isShuttingDown) return false;
     }
     if (isInitialized) {
         return true;
@@ -748,6 +795,7 @@ async function ensureReady() {
 function getFileUri(filePath) {
     // 5. Path Type Safety: check if filePath is of type 'string'
     if (filePath && typeof filePath === 'string' && path.isAbsolute(filePath)) {
+        if (!wantsBackgroundIndex && hasCompileDatabase(path.dirname(filePath))) wantsBackgroundIndex = true;
         return url.pathToFileURL(filePath).href;
     }
     // Handle unsaved files with a stable identifier. Use the provided
@@ -957,6 +1005,78 @@ async function getCodeActions({ filePath, content, range }) {
     }
 }
 
+/** Sends the document, runs one request on it; null when it closed or changed meanwhile. */
+async function requestOnDocument({ filePath, content }, run) {
+    const uri = getFileUri(filePath);
+    const gen = closeGen(uri);
+    if (!await ensureReady() || closeGen(uri) !== gen) return null;
+    syncDocument(uri, content);
+    const result = await run(uri);
+    return closeGen(uri) === gen && documentText.get(uri) === content ? { uri, result } : null;
+}
+
+async function getSignatureHelp(request) {
+    try {
+        const done = await requestOnDocument(request, uri =>
+            sendRequest('textDocument/signatureHelp', { textDocument: { uri }, position: request.position }));
+        return done ? done.result : null;
+    } catch (err) {
+        console.error('[Clangd] Signature help failed:', err);
+        return null;
+    }
+}
+
+async function getDocumentSymbols(request) {
+    try {
+        const done = await requestOnDocument(request, uri =>
+            sendRequest('textDocument/documentSymbol', { textDocument: { uri } }));
+        return done && Array.isArray(done.result) ? done.result : [];
+    } catch (err) {
+        console.error('[Clangd] Document symbols failed:', err);
+        return [];
+    }
+}
+
+const RENAME_REFUSED = 'This symbol cannot be renamed.';
+const RENAME_OTHER_FILES = 'This symbol is used in other files, so it cannot be renamed here.';
+
+async function prepareRename(request) {
+    try {
+        const done = await requestOnDocument(request, uri =>
+            sendRequest('textDocument/prepareRename', { textDocument: { uri }, position: request.position }));
+        const range = done?.result?.range || done?.result;
+        return range?.start ? { range } : { error: RENAME_REFUSED };
+    } catch (_) {
+        return { error: RENAME_REFUSED };
+    }
+}
+
+/** Only edits of this one document are applied: other files may have unsaved text in their tabs. */
+async function rename(request) {
+    try {
+        const done = await requestOnDocument(request, uri => sendRequest('textDocument/rename', {
+            textDocument: { uri }, position: request.position, newName: request.newName
+        }));
+        if (!done?.result) return { error: RENAME_REFUSED };
+        const { changes, documentChanges } = done.result;
+        const groups = documentChanges
+            ? documentChanges.map(change => [change.textDocument?.uri, change.edits])
+            : Object.entries(changes || {});
+        const fold = (target) => {
+            const file = localPathFromUri(target) || '';
+            return IS_WIN || IS_MAC ? file.toLowerCase() : file;
+        };
+        if (groups.length !== 1 || fold(groups[0][0]) !== fold(done.uri)) return { error: RENAME_OTHER_FILES };
+        const edits = groups[0][1];
+        if (!Array.isArray(edits) || !edits.every(edit => edit.range && typeof edit.newText === 'string')) {
+            return { error: RENAME_REFUSED };
+        }
+        return { edits };
+    } catch (_) {
+        return { error: RENAME_REFUSED };
+    }
+}
+
 /**
  * Fetch autocompletions from clangd
  * @param {string} filePath 
@@ -1088,6 +1208,10 @@ module.exports = {
     getDefinition: (request) => getLocations(request, 'textDocument/definition'),
     getReferences: (request) => getLocations(request, 'textDocument/references'),
     getCodeActions,
+    getSignatureHelp,
+    getDocumentSymbols,
+    prepareRename,
+    rename,
     getDiagnostics,
     closeDocument,
     shutdown,

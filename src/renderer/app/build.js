@@ -881,6 +881,7 @@ async function renderInputFile(filePath) {
     const box = document.getElementById('input-file');
     if (!panel || !box) return;
     panel.classList.toggle('has-file', !!filePath);
+    document.getElementById('docked-input-slot')?.classList.toggle('has-file', !!filePath);
     box.classList.toggle('hidden', !filePath);
     if (!filePath) return;
 

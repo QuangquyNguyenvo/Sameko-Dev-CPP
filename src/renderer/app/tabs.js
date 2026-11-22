@@ -140,6 +140,26 @@ function closeClangdDocument(docId) {
     if (docId) window.electronAPI?.clangdCloseDocument?.(docId)?.catch?.(() => { });
 }
 
+// Saved files closed by the user, newest last, for Reopen Closed Tab (Ctrl+Shift+T).
+const recentlyClosedPaths = [];
+
+async function reopenClosedTab() {
+    while (recentlyClosedPaths.length) {
+        const file = recentlyClosedPaths.pop();
+        if (App.tabs.some(tab => tab.path && pathKey(tab.path) === pathKey(file))) continue;
+        await openFileFromPath(file);
+        return;
+    }
+}
+
+/** Closes every tab, one prompt per unsaved file; stops at the first one the user keeps. */
+async function closeAllTabs() {
+    for (const tab of [...App.tabs]) {
+        await closeTab(tab.id);
+        if (App.tabs.includes(tab)) return;
+    }
+}
+
 /** @param {{quiet?: boolean}} [options] quiet: no prompts (the caller knows nothing is lost) */
 async function closeTab(id, { quiet = false } = {}) {
     const idx = App.tabs.findIndex(t => t.id === id);
@@ -184,6 +204,10 @@ async function closeTab(id, { quiet = false } = {}) {
     const at = App.tabs.indexOf(tab);
     if (at === -1) return;   // already closed by another close
     App.tabs.splice(at, 1);
+    if (tab.path && !quiet) {
+        recentlyClosedPaths.push(tab.path);
+        if (recentlyClosedPaths.length > 30) recentlyClosedPaths.shift();
+    }
     delete App.ioByTab[id];
     delete App.outputByTab[id];
     releaseRunCapture(id);

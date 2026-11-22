@@ -263,6 +263,7 @@ async function startStressTest() {
     const problem = ccProblem;
     const timeLimit = (problem && problem.timeLimit) || (App.settings.execution.timeLimitSeconds * 1000) || 3000;
     const judge = judgeOptions(problem);
+    let bruteFileIO = null;
     const genPath = stressJoin(folder, choice.gen);
     const brutePath = stressJoin(folder, choice.brute);
     const solContent = tabSourceText(tab);
@@ -307,7 +308,13 @@ async function startStressTest() {
                 break;
             }
             exes[role] = res.outputPath;
-            if (role === 'sol') tab.exePath = res.outputPath;
+            if (role === 'sol') {
+                tab.exePath = res.outputPath;
+                const fileIO = problemFileIO(problem, content);
+                if (fileIO) judge.fileIO = fileIO;
+            } else if (role === 'brute') {
+                bruteFileIO = FileIODetect.detect(content);
+            }
         }
 
         // The problem's checker (checker.js) judges the solution against the brute force's answer.
@@ -322,7 +329,7 @@ async function startStressTest() {
         if (!run.result && !Stress.stopping) {
             run.phase = 'test';
             run.startedAt = Date.now();
-            run.result = await runStressTests(run, { exes, cwd: folder, timeLimit, judge });
+            run.result = await runStressTests(run, { exes, cwd: folder, timeLimit, judge, bruteFileIO });
         } else if (!run.result) {
             run.result = { kind: 'stopped' };
         }
@@ -366,7 +373,8 @@ async function runStressTest(i, seed, run, ctx) {
 
     const brute = await window.electronAPI.runTest({
         exePath: exes.brute, input, expectedOutput: null,
-        timeLimit: STRESS_HELPER_TIME_LIMIT, memoryLimit: 0, cwd
+        timeLimit: STRESS_HELPER_TIME_LIMIT, memoryLimit: 0, cwd,
+        ...(ctx.bruteFileIO ? { fileIO: ctx.bruteFileIO } : {})
     });
     if (brute.status !== 'AC') return { error: stressHelperError('brute', run.bruteName, brute, seed) };
     const expected = brute.output || '';

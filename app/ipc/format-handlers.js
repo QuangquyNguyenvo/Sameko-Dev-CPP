@@ -43,6 +43,10 @@ function registerHandlers() {
     ipcMain.handle(IPC.FORMAT.CLANGD_DEFINITION, (event, request) => syntax.getClangdDefinition(request));
     ipcMain.handle(IPC.FORMAT.CLANGD_REFERENCES, (event, request) => syntax.getClangdReferences(request));
     ipcMain.handle(IPC.FORMAT.CLANGD_CODE_ACTIONS, (event, request) => syntax.getClangdCodeActions(request));
+    ipcMain.handle(IPC.FORMAT.CLANGD_SIGNATURE_HELP, (event, request) => syntax.getClangdSignatureHelp(request));
+    ipcMain.handle(IPC.FORMAT.CLANGD_SYMBOLS, (event, request) => syntax.getClangdSymbols(request));
+    ipcMain.handle(IPC.FORMAT.CLANGD_PREPARE_RENAME, (event, request) => syntax.prepareClangdRename(request));
+    ipcMain.handle(IPC.FORMAT.CLANGD_RENAME, (event, request) => syntax.clangdRename(request));
 }
 
 module.exports = {

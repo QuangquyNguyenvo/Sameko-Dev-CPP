@@ -32,6 +32,7 @@ const SUITES = [
     { name: 'test row tools unit', group: 'unit', file: 'unit/test-row-tools.js' },
     { name: 'source bundler', group: 'unit', file: 'unit/source-bundler.js' },
     { name: 'editor batch unit', group: 'unit', file: 'unit/editor-batch.js' },
+    { name: 'test manager unit', group: 'unit', file: 'unit/test-manager.js' },
     { name: 'mi-parser', group: 'unit', file: 'e2e/debugger.js', args: ['--unit'] },
     { name: 'oj bridge', group: 'unit', file: 'unit/oj-bridge.js' },
     { name: 'oj round trip', group: 'unit', file: 'unit/oj-roundtrip.js' },
@@ -44,6 +45,8 @@ const SUITES = [
     { name: 'editor batch gui', group: 'gui', file: 'gui/editor-batch.js' },
     { name: 'run fixes gui', group: 'gui', file: 'gui/run-fixes.js' },
     { name: 'test row tools gui', group: 'gui', file: 'gui/test-row-tools.js' },
+    { name: 'test manager gui', group: 'gui', file: 'gui/test-manager.js' },
+    { name: 'docking gui', group: 'gui', file: 'gui/docking.js' },
     // e2e
     { name: 'gdb e2e', group: 'e2e', file: 'e2e/debugger.js', args: ['--e2e'] },
 ];

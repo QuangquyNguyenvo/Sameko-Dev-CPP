@@ -57,7 +57,7 @@ function summarizeFlatProfile(output) {
     return rows.length ? [...lines.slice(0, header + 1), ...rows.slice(0, 15)].join('\n') : '';
 }
 
-async function runInstrumentedTest({ mode, filePath, content, flags, untitledId, singleFileMode, input, timeLimit } = {}) {
+async function runInstrumentedTest({ mode, filePath, content, flags, untitledId, singleFileMode, input, inputPath = '', fileIO = null, timeLimit } = {}) {
     if (mode !== 'checks' && mode !== 'profile') return { issue: 'Invalid test action.' };
     const profiling = mode === 'profile';
     let tempDir;
@@ -82,7 +82,7 @@ async function runInstrumentedTest({ mode, filePath, content, flags, untitledId,
         stage = 'Could not run the test.';
         const limit = Number(timeLimit);
         const run = await require('../competitive/batch-tester').runTest({
-            exePath: built.outputPath, input, expectedOutput: '',
+            exePath: built.outputPath, input, inputPath, fileIO, expectedOutput: '',
             timeLimit: Math.max(5000, Number.isFinite(limit) ? limit : 0),
             cwd: profiling ? tempDir : (filePath ? path.dirname(filePath) : undefined),
             // Instrumentation has different memory requirements from the judge.

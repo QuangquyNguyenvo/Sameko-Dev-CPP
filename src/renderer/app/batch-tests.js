@@ -15,6 +15,7 @@ let isBatchTesting = false;
 
 function resetTestRunResults() {
     batchTestResults = [];
+    showTestInBoxes(null);
     switchToExpectedEdit();
 }
 
@@ -22,11 +23,6 @@ function initBatchTesting() {
     const runAllBtn = document.getElementById('btn-run-all-tests');
     if (runAllBtn) {
         runAllBtn.addEventListener('click', runAllTests);
-    }
-
-    const deleteAllBtn = document.getElementById('btn-delete-all-tests');
-    if (deleteAllBtn) {
-        deleteAllBtn.addEventListener('click', deleteAllTestCases);
     }
 
     const problemsPanel = document.getElementById('problems-panel');
@@ -51,7 +47,7 @@ function syncProblemStatusWithExplorer(tab = App.tabs.find(t => t.id === getPref
     // Determine overall status
     let overallEvent = null;
 
-    const totalCount = ccProblem.tests.length;
+    const totalCount = ccProblem.tests.filter(t => !t.disabled).length;
 
     // Find if there is any failure in the current results
     // The explorer has no MLE state; a memory verdict shows as a runtime error there.
@@ -128,6 +124,12 @@ async function runAllTests() {
     if (changedOnDisk) { log(changedOnDisk, 'warning'); return; }
     const problem = ccProblem;
     const tests = problem.tests.slice();
+    // Positions of the tests that are turned on; results keep each test's own number.
+    const order = tests.map((_, i) => i).filter(i => !tests[i].disabled);
+    if (!order.length) {
+        log('Every test is turned off. Tick one in the TESTS list.', 'warning');
+        return;
+    }
     const content = tabSourceText(tab);
 
     const runAllBtn = document.getElementById('btn-run-all-tests');
@@ -197,10 +199,22 @@ async function runAllTests() {
         }
         const judge = { ...judgeOptions(problem), ...judging };
 
+        // Input and output files, or a testlib interactor (test-manager.js).
+        const runOptions = await problemRunOptions(problem, content);
+        if (runOptions.error) {
+            log(`${runOptions.error.title}!`, 'error');
+            if (runOptions.error.detail) log(runOptions.error.detail, 'error');
+            setStatus(runOptions.error.title, 'error');
+            return;
+        }
+        if (runOptions.fileIO) {
+            log(I18n.t('Judging through files: {0}', [runOptions.fileIO.input, runOptions.fileIO.output].filter(Boolean).join(' → ')), 'info');
+        }
+
         const timeLimit = problem.timeLimit || (App.settings.execution.timeLimitSeconds * 1000) || 3000;
 
 
-        const totalTests = tests.length;
+        const totalTests = order.length;
         let passedCount = 0;
 
         const lastSlash = tab.path ? Math.max(tab.path.lastIndexOf('/'), tab.path.lastIndexOf('\\')) : -1;
@@ -208,16 +222,18 @@ async function runAllTests() {
 
         // Warm-up run (not counted) to reduce first-test cold-start skew on Windows.
         // This improves consistency of displayed timings between test cases.
-        if (totalTests > 0) {
+        if (totalTests > 0 && !runOptions.interactor) {
             try {
                 setStatus('Warming up...', '');
-                const warmupTest = tests[0] || { input: '' };
+                const warmupTest = tests[order[0]] || { input: '' };
                 await window.electronAPI.runTest({
                     exePath: tab.exePath,
-                    input: warmupTest.input || '',
+                    ...testRunArgs(warmupTest),
                     expectedOutput: null,
+                    expectedPath: undefined,
                     timeLimit: timeLimit,
                     ...judgeOptions(problem),
+                    ...runOptions,
                     cwd: sourceDir
                 });
             } catch (_) {
@@ -238,14 +254,15 @@ async function runAllTests() {
         let finished = 0;
         const worker = async () => {
             while (nextIndex < totalTests) {
-                const i = nextIndex++;
+                const position = nextIndex++;
+                const i = order[position];
                 const test = tests[i];
                 const result = await window.electronAPI.runTest({
                     exePath,
-                    input: test.input || '',
-                    expectedOutput: test.output || '',
+                    ...testRunArgs(test),
                     timeLimit: timeLimit,
                     ...judge,
+                    ...runOptions,
                     cwd: sourceDir,
                     debug: true,
                     testMeta: { index: i, name: `Test ${i + 1}` }
@@ -253,7 +270,7 @@ async function runAllTests() {
                 result.testIndex = i;
                 result.testName = `Test ${i + 1}`;
                 result.actualOutput = result.output ?? '';
-                results[i] = result;
+                results[position] = result;
                 finished++;
                 setStatus(`Testing ${finished}/${totalTests}...`, '');
             }
@@ -266,16 +283,17 @@ async function runAllTests() {
         // crowded run: anything that timed out or came close to the limit is
         // run again on its own and that result is the one reported.
         if (poolSize > 1) {
-            for (let i = 0; i < totalTests; i++) {
-                const first = results[i];
+            for (let position = 0; position < totalTests; position++) {
+                const i = order[position];
+                const first = results[position];
                 if (first.status !== 'TLE' && !(first.executionTime > timeLimit * 0.6)) continue;
                 setStatus(`Re-checking test ${i + 1} alone...`, '');
                 const again = await window.electronAPI.runTest({
                     exePath,
-                    input: tests[i].input || '',
-                    expectedOutput: tests[i].output || '',
+                    ...testRunArgs(tests[i]),
                     timeLimit: timeLimit,
                     ...judge,
+                    ...runOptions,
                     cwd: sourceDir,
                     debug: true,
                     testMeta: { index: i, name: `Test ${i + 1}` }
@@ -283,15 +301,16 @@ async function runAllTests() {
                 again.testIndex = i;
                 again.testName = `Test ${i + 1}`;
                 again.actualOutput = again.output ?? '';
-                results[i] = again;
+                results[position] = again;
             }
         }
 
         // Report in test order, whatever order they finished in.
         const finalResults = [];
         let ranCount = 0;
-        for (let i = 0; i < totalTests; i++) {
-            const result = results[i];
+        for (let position = 0; position < totalTests; position++) {
+            const i = order[position];
+            const result = results[position];
             finalResults.push(result);
 
             if (result.status === 'AC') {
@@ -408,6 +427,14 @@ async function runSingleTestByIndex(testIndex) {
             return;
         }
 
+        const runOptions = await problemRunOptions(problem, content);
+        if (runOptions.error) {
+            log(`${runOptions.error.title}!`, 'error');
+            if (runOptions.error.detail) log(runOptions.error.detail, 'error');
+            setStatus(runOptions.error.title, 'error');
+            return;
+        }
+
         const timeLimit = problem.timeLimit || (App.settings.execution.timeLimitSeconds * 1000) || 3000;
         const lastSlash = tab.path ? Math.max(tab.path.lastIndexOf('/'), tab.path.lastIndexOf('\\')) : -1;
         const sourceDir = lastSlash !== -1 ? tab.path.substring(0, lastSlash) : null;
@@ -415,11 +442,11 @@ async function runSingleTestByIndex(testIndex) {
         setStatus(`Running test ${testIndex + 1}...`, '');
         const result = await window.electronAPI.runTest({
             exePath: tab.exePath,
-            input: test.input || '',
-            expectedOutput: test.output || '',
+            ...testRunArgs(test),
             timeLimit: timeLimit,
             ...judgeOptions(problem),
             ...judging,
+            ...runOptions,
             cwd: sourceDir,
             debug: true,
             testMeta: { index: testIndex, name: `Test ${testIndex + 1}` }
@@ -489,7 +516,7 @@ function renderTestResults() {
     // Use ccProblem.tests as base if available, otherwise fall back to batch results
     const tests = ccProblem && ccProblem.tests ? ccProblem.tests : [];
     const results = batchTestResults || [];
-    const total = tests.length;
+    const total = tests.filter(t => !t.disabled).length;   // the tests a run covers
 
     // Calculate passed from results that match existing tests
     // Note: batchTestResults might be cleared or partial.
@@ -503,14 +530,14 @@ function renderTestResults() {
         if (executed > 0) {
             countEl.textContent = `${passed}/${total}`;
         } else {
-            countEl.textContent = `${total} tests`;
+            countEl.textContent = String(total);
         }
-        countEl.style.display = total > 0 ? 'inline' : 'none';
+        countEl.style.display = tests.length > 0 ? 'inline' : 'none';
     }
 
     // Auto-expand panel when we have test cases (like docked terminal)
     if (problemsPanel) {
-        if (total > 0) {
+        if (tests.length > 0) {
             problemsPanel.classList.add('has-tests');
         } else {
             problemsPanel.classList.remove('has-tests');
@@ -526,9 +553,10 @@ function renderTestResults() {
         const totalTime = results.reduce((s, r) => s + (r.executionTime || 0), 0);
         const summaryClass = allPassed ? 'test-results-summary all-passed' : 'test-results-summary has-failed';
         // One segment per test, in its verdict's color.
-        const bar = tests.map((_, idx) => {
+        const bar = tests.flatMap((t, idx) => {
             const r = results.find(x => x.testIndex === idx);
-            return `<span class="${r ? escHtml(r.status) : 'pending'}"></span>`;
+            if (t.disabled && !r) return [];
+            return [`<span class="${r ? escHtml(r.status) : 'pending'}"></span>`];
         }).join('');
         html += `
                 <div class="${summaryClass}">
@@ -548,11 +576,11 @@ function renderTestResults() {
         // Find result for this test index
         const result = results.find(r => r.testIndex === idx);
 
-        let status = 'PENDING';
+        let status = test.disabled ? 'OFF' : 'PENDING';
         let timeStr = '';
         let memStr = '';
         let details = '';
-        let statusClass = 'pending';
+        let statusClass = test.disabled ? 'off' : 'pending';
 
         if (result) {
             status = result.status;
@@ -563,15 +591,18 @@ function renderTestResults() {
         } else {
             // Format sample inputs for display if no result
             const inputPreview = (test.input || '').replace(/\n/g, ' ').substring(0, 20);
-            details = inputPreview ? `In: ${inputPreview}...` : 'Empty input';
+            details = test.inputPath ? `File: ${test.source || test.inputPath}`
+                : inputPreview ? `In: ${inputPreview}...` : 'Empty input';
         }
 
         const isAC = result && result.status === 'AC';
         const selected = typeof ccTestIndex === 'number' && ccTestIndex === idx;
-        const itemClass = `test-result-item status-${escHtml(statusClass)}${isAC ? ' item-ac' : ''}${selected ? ' selected' : ''}`;
+        const itemClass = `test-result-item status-${escHtml(statusClass)}${isAC ? ' item-ac' : ''}${test.disabled ? ' item-off' : ''}${selected ? ' selected' : ''}`;
 
         html += `
                 <div class="${itemClass}" data-index="${idx}">
+                    <input type="checkbox" class="test-enable" data-enable-index="${idx}" ${test.disabled ? '' : 'checked'}
+                        title="Include in Run All" aria-label="Include in Run All">
                     <span class="test-result-status ${escHtml(statusClass)}">${escHtml(status)}</span>
                     <div class="test-result-info">
                         <span class="test-result-title">Test ${idx + 1}</span>
@@ -588,6 +619,9 @@ function renderTestResults() {
                         </svg>
                     </button>
                     ${TestRowTools.buttons(tab, result)}
+                    ${result && result.status !== 'AC' && typeof (result.actualOutput ?? result.output) === 'string' ? `<button type="button" class="test-tool-btn test-use-output" data-use-output="${idx}" title="Use this output as expected" aria-label="Use this output as expected">
+                        <svg class="ico" width="16" height="16" viewBox="0 0 256 256" aria-hidden="true"><use href="#i-download-simple"/></svg>
+                    </button>` : ''}
                     <button class="test-delete-btn" data-delete-index="${idx}" title="Delete this test case">
                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
@@ -611,7 +645,18 @@ function renderTestResults() {
         `;
 
     container.innerHTML = html;
+    container.classList.toggle('hide-ac', !!ccProblem?.hideAC);
 
+    container.querySelectorAll('.test-enable').forEach(box => {
+        box.addEventListener('click', e => e.stopPropagation());
+        box.addEventListener('change', () => setTestEnabled(Number(box.dataset.enableIndex), box.checked));
+    });
+    container.querySelectorAll('.test-use-output').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.stopPropagation();
+            useOutputAsExpected(Number(btn.dataset.useOutput));
+        });
+    });
 
     container.querySelectorAll('.test-result-item').forEach(item => {
         item.addEventListener('click', (e) => {
@@ -636,7 +681,7 @@ function renderTestResults() {
         });
     });
 
-    container.querySelectorAll('.test-tool-btn').forEach(btn => {
+    container.querySelectorAll('.test-tool-btn[data-test-tool]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.stopPropagation();
             return TestRowTools.runAction(btn.dataset.testTool, Number(btn.closest('.test-result-item').dataset.index));

@@ -18,7 +18,9 @@ const pchDir = appTempDir('cpp-ide-pch');
 
 // A .gch for bits/stdc++.h is 110-120 MB, and every distinct flag set gets its
 // own. Keep the most recently used few and delete the rest.
-const MAX_PCH_VARIANTS = 4;
+const MAX_PCH_VARIANTS = 3;
+const MAX_PCH_IDLE_MS = 14 * 24 * 60 * 60 * 1000;   // a variant unused this long is deleted
+let prunedThisRun = false;
 
 /** Builds in flight, keyed by PCH key, so two callers never write one .gch at once. */
 const inFlight = new Map();
@@ -89,9 +91,19 @@ function compilerFingerprint(compilerExe) {
     }
 }
 
-/** Delete the least recently used PCH variants beyond MAX_PCH_VARIANTS. */
-function pruneOldVariants(keepKey) {
+/** Records that a variant was used, at most once an hour: the pruning below goes by this time. */
+function markUsed(infoFile) {
     try {
+        const now = Date.now();
+        if (now - fs.statSync(infoFile).mtimeMs > 60 * 60 * 1000) fs.utimesSync(infoFile, new Date(now), new Date(now));
+    } catch (_) { }
+}
+
+/** Delete the least recently used PCH variants beyond MAX_PCH_VARIANTS, and those long unused. */
+function pruneOldVariants(keepKey) {
+    prunedThisRun = true;
+    try {
+        const now = Date.now();
         const dirs = fs.readdirSync(pchDir, { withFileTypes: true })
             .filter((e) => e.isDirectory())
             .map((e) => {
@@ -101,7 +113,9 @@ function pruneOldVariants(keepKey) {
                 return { name: e.name, full, used };
             })
             .sort((a, b) => b.used - a.used);
-        for (const d of dirs.slice(MAX_PCH_VARIANTS)) {
+        // used = 0: no pch-info yet, possibly another app instance still building it.
+        const stale = dirs.filter((d, i) => i >= MAX_PCH_VARIANTS || (d.used && now - d.used > MAX_PCH_IDLE_MS));
+        for (const d of stale) {
             if (d.name === keepKey || inFlight.has(d.name)) continue;
             try { fs.rmSync(d.full, { recursive: true, force: true }); } catch (_) { }
         }
@@ -154,7 +168,11 @@ async function ensurePCH(flags = '', onMessage = null) {
             return false; // Invalid PCH info, will rebuild
         }
     };
-    if (isValid()) return { ready: true, pchSubDir, pchKey };
+    if (isValid()) {
+        markUsed(pchInfoFile);
+        if (!prunedThisRun) pruneOldVariants(pchKey);
+        return { ready: true, pchSubDir, pchKey };
+    }
 
     const pchFlags = getPCHFlags(flags);
     // The directory is shared by every app instance (a second IDE window, the

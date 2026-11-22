@@ -81,7 +81,8 @@ const TestRowTools = (() => {
         if (!test) return;
         const input = test.input || '';
         if (action === 'graph') {
-            showGraph(input, idx + 1);
+            const text = test.inputPath ? await window.electronAPI.readFile(test.inputPath).catch(() => '') : input;
+            showGraph(text || '', idx + 1);
             return;
         }
         const tab = App.tabs.find(candidate => candidate.id === getPreferredTabId());
@@ -102,7 +103,7 @@ const TestRowTools = (() => {
         if (action === 'debug') {
             startingDebug = true;
             try {
-                await Debugger.startTest(tab, input);
+                await Debugger.startTest(tab, input, await testDebugOptions(problem, test, tabSourceText(tab)));
             } catch (err) {
                 log(I18n.t('Could not debug this test.'), 'error');
                 log(err.message, 'error');
@@ -126,7 +127,8 @@ const TestRowTools = (() => {
                 mode: action, filePath: tab.path, untitledId: tab.path ? '' : tab.id,
                 content: tabSourceText(tab), flags: buildCompileFlags(),
                 singleFileMode: App.settings.compiler.singleFileMode !== false,
-                input, timeLimit: problem.timeLimit || App.settings.execution.timeLimitSeconds * 1000,
+                input, inputPath: test.inputPath || '', fileIO: problemFileIO(problem, tabSourceText(tab)),
+                timeLimit: problem.timeLimit || App.settings.execution.timeLimitSeconds * 1000,
             });
             status.textContent = result.issue ? I18n.t(result.issue) : result.run?.status !== 'RAN'
                 ? I18n.t('Run stopped ({0})', result.run?.status) : I18n.t('Run finished');

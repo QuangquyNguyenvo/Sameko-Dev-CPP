@@ -161,12 +161,95 @@ const CppLanguageTools = (() => {
             return isCurrent() ? links : [];
         };
 
+        const documentRequest = (model, position) => {
+            const tab = getTabForModel(model);
+            if (!tab || !clangdEnabled()) return null;
+            return {
+                tab, version: model.getVersionId(),
+                request: {
+                    filePath: tab.path || tab.id, content: model.getValue(),
+                    ...(position ? { position: { line: position.lineNumber - 1, character: position.column - 1 } } : {})
+                }
+            };
+        };
+        const stillCurrent = (doc, model, token) => !token.isCancellationRequested && !model.isDisposed() &&
+            model.getVersionId() === doc.version && (doc.tab.path || doc.tab.id) === doc.request.filePath;
+        const lspDoc = value => (value && typeof value === 'object' ? { value: value.value || '' } : value || undefined);
+        const toSymbol = symbol => {
+            const range = toRange(symbol.range);
+            const selectionRange = toRange(symbol.selectionRange) || range;
+            if (!range || !symbol.name) return null;
+            return {
+                name: symbol.name, detail: symbol.detail || '', kind: Math.max(0, (symbol.kind || 1) - 1), tags: [],
+                range, selectionRange, children: (symbol.children || []).map(toSymbol).filter(Boolean)
+            };
+        };
+        const renameRefused = reason => ({ edits: [], rejectReason: I18n.t(reason || 'This symbol cannot be renamed.') });
+
         const definition = locations(api.getClangdDefinition);
         const references = locations(api.getClangdReferences, true);
         for (const language of ['cpp', 'c']) {
             monaco.languages.registerDefinitionProvider(language, { provideDefinition: definition });
             monaco.languages.registerReferenceProvider(language, {
                 provideReferences: (model, position, context, token) => references(model, position, token, context.includeDeclaration)
+            });
+            monaco.languages.registerSignatureHelpProvider(language, {
+                signatureHelpTriggerCharacters: ['(', ','],
+                signatureHelpRetriggerCharacters: [')'],
+                async provideSignatureHelp(model, position, token) {
+                    const doc = documentRequest(model, position);
+                    if (!doc) return null;
+                    const help = await api.getClangdSignatureHelp(doc.request).catch(() => null);
+                    if (!stillCurrent(doc, model, token) || !help?.signatures?.length) return null;
+                    return {
+                        value: {
+                            signatures: help.signatures.map(signature => ({
+                                label: signature.label,
+                                documentation: lspDoc(signature.documentation),
+                                parameters: (signature.parameters || []).map(parameter => ({
+                                    label: parameter.label, documentation: lspDoc(parameter.documentation)
+                                }))
+                            })),
+                            activeSignature: help.activeSignature || 0,
+                            activeParameter: help.activeParameter || 0
+                        },
+                        dispose() {}
+                    };
+                }
+            });
+            monaco.languages.registerDocumentSymbolProvider(language, {
+                displayName: 'clangd',
+                async provideDocumentSymbols(model, token) {
+                    const doc = documentRequest(model);
+                    if (!doc) return [];
+                    const symbols = await api.getClangdSymbols(doc.request).catch(() => []);
+                    return stillCurrent(doc, model, token) ? symbols.map(toSymbol).filter(Boolean) : [];
+                }
+            });
+            monaco.languages.registerRenameProvider(language, {
+                async resolveRenameLocation(model, position, token) {
+                    const word = model.getWordAtPosition(position);
+                    const fallback = new monaco.Range(position.lineNumber, word?.startColumn || position.column,
+                        position.lineNumber, word?.endColumn || position.column);
+                    const refuse = reason => ({ range: fallback, text: word?.word || '', rejectReason: I18n.t(reason || 'This symbol cannot be renamed.') });
+                    const doc = documentRequest(model, position);
+                    if (!doc) return refuse('Rename needs IntelliSense to be on.');
+                    const result = await api.clangdPrepareRename(doc.request).catch(() => null);
+                    const range = toRange(result?.range);
+                    if (!stillCurrent(doc, model, token) || !range) return refuse(result?.error);
+                    return { range, text: model.getValueInRange(range) };
+                },
+                async provideRenameEdits(model, position, newName, token) {
+                    const doc = documentRequest(model, position);
+                    if (!doc) return renameRefused('Rename needs IntelliSense to be on.');
+                    const result = await api.clangdRename({ ...doc.request, newName }).catch(() => null);
+                    if (!stillCurrent(doc, model, token) || !result?.edits) return renameRefused(result?.error);
+                    const edits = result.edits.map(edit => ({ range: toRange(edit.range), text: edit.newText }));
+                    if (!edits.every(edit => edit.range)) return renameRefused();
+                    return {
+                        edits: edits.map(textEdit => ({ resource: model.uri, versionId: doc.version, textEdit }))
+                    };
+                }
             });
             monaco.languages.registerCodeActionProvider(language, {
                 providedCodeActionKinds: ['quickfix'],

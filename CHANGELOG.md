@@ -26,6 +26,11 @@ A macOS beta, judge-style testing, stress tests and checkers, submitting to onli
 
 **Testing**
 
+- **Problems judged through files**: a solution that reads `BAI.INP` and writes `BAI.OUT` is judged as written. The names are read from `freopen` or `fstream` in your code, including `#define NAME`, or set in Problem options.
+- **Manage tests**: turn single tests on or off, hide passed tests, use a program's output as the expected output, import a whole folder of tests (large files stay on disk), and save tests to a folder.
+- **Problem options**: time and memory limit per problem, input and output files, interactor.
+- **Interactor**: a testlib interactor plays against your solution and gives the verdict, in Run All Tests and on a single test.
+- **Stopwatch** for each problem, and a **head comment** (name, link, limits, date) for files made from an online judge.
 - **Stress test** (STRESS tab): runs a generator, a brute force and your solution on seeded tests until the first wrong answer; the failing test can be added to your tests.
 - **Checkers**: judge a problem's tests with a testlib checker, or compare ignoring case. `testlib.h` ships with the app.
 - **Memory limit** for tests (default 256 MB; Competitive Companion problems bring their own), reported as MLE.
@@ -44,12 +49,19 @@ A macOS beta, judge-style testing, stress tests and checkers, submitting to onli
 
 - **Watchpoints**: pause when a watched expression changes and see its old and new values.
 - **Array and vector watch view**: inspect the first 200 numeric elements and see which indices changed since the last stop.
+- **Change a value while paused**: Alt+click a variable's value in the debugger.
+- **Crashes are shown in the debugger**: it stops at your line with the error's name and a hint, instead of a bare "Paused". A stack overflow no longer freezes the panel.
+- **Threads panel**: a program with several threads lists them; click one to see its stack and variables.
+- **std::map shows `[key] = value`** instead of keys and values as separate items, and std::string is one value.
 
 **Editor**
 
 - **Go to Definition and Find All References**: F12 and Shift+F12 use clangd to navigate C/C++ symbols across files.
 - **Clangd Quick Fix**: Ctrl+. and the editor lightbulb apply suggested edits with undo support.
 - **Find in Files**: Ctrl+Shift+F searches the Explorer folder with case and regex options and opens matching lines.
+- **Rename Symbol** (F2), **parameter hints** while typing a call, and **Go to Symbol** (Ctrl+Shift+O), all from clangd.
+- **Go to File** (Ctrl+P): open a tab or a file of the Explorer folder by typing part of its name; `name:12` goes to line 12.
+- **More shortcuts**: Open Folder (Ctrl+K Ctrl+O), Command Palette (Ctrl+Shift+P), Reopen Closed Tab (Ctrl+Shift+T), Close All Tabs (Ctrl+K Ctrl+W), Ctrl+B for the sidebar and Ctrl+` for the terminal.
 - **Compile error explanations**: the first GCC build error gets a short hint in English, Vietnamese or Chinese when it matches a common case.
 - **Full-width punctuation fix**: Quick Fix can replace full-width punctuation on C/C++ error lines with ASCII.
 - **Snippets per language**: the editor suggests only the snippets of the file's language.
@@ -69,6 +81,7 @@ A macOS beta, judge-style testing, stress tests and checkers, submitting to onli
 - **Crashes are named** (stack overflow, access violation, division by zero…) instead of a bare exit code.
 - **A test without an expected output** is RAN, not AC.
 - **Updates download only what changed** (about 20 MB instead of the whole installer), keep GCC when it did not change, and show a progress window.
+- **Lighter on memory and disk**: clangd uses about half the memory (127 MB to 62 MB on a typical file), precompiled headers keep 3 variants and drop those unused for 14 days, and the app is about 75 MB smaller on disk.
 - **Rounded Chinese font** (#73, suggested by @Onlyanadvisor): the Simplified Chinese interface uses WenYuan Rounded SC (SIL OFL 1.1), cut to the interface's characters (about 240 KB).
 
 ### Fixed

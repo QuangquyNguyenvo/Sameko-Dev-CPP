@@ -333,44 +333,21 @@ function initDockablePanels() {
     if (!problemsPanel) return;
 
 
-    if (terminalHead) {
-        terminalHead.setAttribute('draggable', 'true');
-        terminalHead.style.cursor = 'grab';
-
-        terminalHead.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('application/x-sameko-panel', 'terminal');
+    // Dragging a section's header docks it into the bottom panel.
+    for (const [section, head, type] of [[terminalSection, terminalHead, 'terminal'], [ioSection, ioHead, 'io']]) {
+        if (!head) continue;
+        head.setAttribute('draggable', 'true');
+        head.style.cursor = 'grab';
+        head.addEventListener('dragstart', (e) => {
+            e.dataTransfer.setData('application/x-sameko-panel', type);
             e.dataTransfer.effectAllowed = 'move';
-            terminalSection.classList.add('panel-dragging');
-            DockingState.draggedPanel = 'terminal';
+            section.classList.add('panel-dragging');
+            DockingState.draggedPanel = type;
         });
-
-        terminalHead.addEventListener('dragend', () => {
-            terminalSection.classList.remove('panel-dragging');
+        head.addEventListener('dragend', () => {
+            section.classList.remove('panel-dragging');
             DockingState.draggedPanel = null;
-            document.querySelectorAll('.dock-drop-target').forEach(el => {
-                el.classList.remove('dock-drop-target');
-            });
-        });
-    }
-
-    // Make IO header draggable
-    if (ioHead) {
-        ioHead.setAttribute('draggable', 'true');
-        ioHead.style.cursor = 'grab';
-
-        ioHead.addEventListener('dragstart', (e) => {
-            e.dataTransfer.setData('application/x-sameko-panel', 'io');
-            e.dataTransfer.effectAllowed = 'move';
-            ioSection.classList.add('panel-dragging');
-            DockingState.draggedPanel = 'io';
-        });
-
-        ioHead.addEventListener('dragend', () => {
-            ioSection.classList.remove('panel-dragging');
-            DockingState.draggedPanel = null;
-            document.querySelectorAll('.dock-drop-target').forEach(el => {
-                el.classList.remove('dock-drop-target');
-            });
+            problemsPanel.classList.remove('dock-drop-target');
         });
     }
 
@@ -389,17 +366,13 @@ function initDockablePanels() {
     });
 
     problemsPanel.addEventListener('drop', (e) => {
+        const panelType = e.dataTransfer.getData('application/x-sameko-panel') || DockingState.draggedPanel;
+        // Anything else (a file from the desktop) belongs to the app's own drop handling.
+        if (panelType !== 'terminal' && panelType !== 'io') return;
         e.preventDefault();
         problemsPanel.classList.remove('dock-drop-target');
-
-        // Check for custom panel drag type
-        const panelType = e.dataTransfer.getData('application/x-sameko-panel');
-
-        if (panelType === 'terminal' || DockingState.draggedPanel === 'terminal') {
-            dockTerminalToProblems();
-        } else if (panelType === 'io' || DockingState.draggedPanel === 'io') {
-            dockIOToProblems();
-        }
+        if (panelType === 'terminal') dockTerminalToProblems();
+        else dockIOToProblems();
     });
 
     // Load saved state
@@ -407,7 +380,7 @@ function initDockablePanels() {
         setTimeout(() => dockTerminalToProblems({ open: false }), 100);
     }
     if (App.settings?.panels?.ioDocked) {
-        setTimeout(() => dockIOToProblems(), 150);
+        setTimeout(() => dockIOToProblems({ open: false }), 150);
     }
 }
 
@@ -460,9 +433,12 @@ function addDockedTab(problemsPanel, { id, view, label, undock }) {
         e.dataTransfer.effectAllowed = 'move';
         el.classList.add('dragging');
     });
-    el.addEventListener('dragend', () => {
+    el.addEventListener('dragend', (e) => {
         el.classList.remove('dragging');
-        undock();
+        // Let go over the panel it is already in: nothing moved.
+        const box = problemsPanel.getBoundingClientRect();
+        const inside = e.clientX >= box.left && e.clientX <= box.right && e.clientY >= box.top && e.clientY <= box.bottom;
+        if (!inside) undock();
     });
 }
 
@@ -515,59 +491,25 @@ function dockTerminalToProblems({ open = true } = {}) {
     refreshEditorLayout();
 }
 
+/**
+ * Shows one view of the bottom panel. Its data-view attribute alone decides which body is
+ * visible (theme-dock.css, islands.css), so a body added or moved later cannot show by mistake.
+ */
 function switchDockedPanel(panelId) {
     const problemsPanel = document.getElementById('problems-panel');
     if (!problemsPanel) return;
 
-    const problemsTitle = problemsPanel.querySelector('.panel-title.problems');
-    const testsTitle = problemsPanel.querySelector('.panel-title.tests');
-    const stressTitle = problemsPanel.querySelector('.panel-title.stress');
-    const terminalTab = document.getElementById('docked-terminal-tab');
-    const ioTab = document.getElementById('docked-io-tab');
+    // Terminal and I/O are views only while docked.
+    const tabOf = { terminal: 'docked-terminal-tab', io: 'docked-io-tab' };
+    const view = tabOf[panelId] && !document.getElementById(tabOf[panelId]) ? 'problems' : panelId;
 
-    const problemsBody = problemsPanel.querySelector('.problems-body');
-    const testsBody = document.getElementById('tests-results-list');
-    const stressBody = document.getElementById('stress-body');
-    let ioView = problemsPanel.querySelector('.docked-io-view');
+    problemsPanel.dataset.view = view;
+    problemsPanel.querySelectorAll('.panel-head .panel-title').forEach((title) => {
+        title.classList.toggle('active', title.classList.contains(view));
+    });
 
-    // The docked terminal is shown by CSS from this attribute (see mountTerminalView).
-    problemsPanel.dataset.view = panelId;
-
-    // Deactivate all headers
-    problemsTitle?.classList.remove('active');
-    testsTitle?.classList.remove('active');
-    stressTitle?.classList.remove('active');
-    terminalTab?.classList.remove('active');
-    ioTab?.classList.remove('active');
-
-    // Hide all bodies
-    if (problemsBody) problemsBody.style.display = 'none';
-    if (testsBody) testsBody.style.display = 'none';
-    if (stressBody) stressBody.style.display = 'none';
-    if (ioView) ioView.style.display = 'none';
-
-    if (panelId === 'problems') {
-        problemsTitle?.classList.add('active');
-        if (problemsBody) problemsBody.style.display = '';
-    } else if (panelId === 'tests') {
-        testsTitle?.classList.add('active');
-        if (testsBody) testsBody.style.display = 'block';
-    } else if (panelId === 'stress') {
-        stressTitle?.classList.add('active');
-        if (stressBody) stressBody.style.display = '';
-        if (typeof onStressViewShown === 'function') onStressViewShown();
-    } else if (panelId === 'terminal') {
-        terminalTab?.classList.add('active');
-        fitTerminal();
-    } else if (panelId === 'io') {
-        ioTab?.classList.add('active');
-        // Ensure docked shell exists (textareas are moved in by dockIOToProblems)
-        if (!ioView) {
-            createDockedIOView(problemsPanel);
-            ioView = problemsPanel.querySelector('.docked-io-view');
-        }
-        if (ioView) ioView.style.display = 'flex';
-    }
+    if (view === 'stress' && typeof onStressViewShown === 'function') onStressViewShown();
+    if (view === 'terminal') fitTerminal();
 }
 
 
@@ -605,7 +547,19 @@ function undockTerminal() {
 // I/O DOCKING FUNCTIONS
 // ============================================================================
 
-function dockIOToProblems() {
+// Where each moved I/O element came from: a comment node holds its place until it goes back.
+const dockedIOPlaces = new Map();
+
+function moveIntoDock(element, slot) {
+    if (!element || !slot || dockedIOPlaces.has(element)) return;
+    const place = document.createComment('docked');
+    element.before(place);
+    dockedIOPlaces.set(element, place);
+    slot.appendChild(element);
+}
+
+/** @param {{open?: boolean}} [opts] open the bottom panel on I/O (not when restoring at startup) */
+function dockIOToProblems({ open = true } = {}) {
     if (DockingState.ioDocked) return;
 
     const ioSection = document.getElementById('io-section');
@@ -614,37 +568,31 @@ function dockIOToProblems() {
 
     if (!ioSection || !problemsPanel) return;
 
-    // Hide IO section (textareas will be moved into docked shell)
     ioSection.classList.add('docked-away');
     if (resizerIO) resizerIO.classList.add('docked-away');
 
-    // Create docked shell (header + split containers, no clone textareas)
+    // Docked shell (header + split containers); the real elements move into it.
     createDockedIOView(problemsPanel);
-
-    // Move real textareas into the docked slots
-    const inputArea = document.getElementById('input-area');
-    const expectedArea = document.getElementById('expected-area');
-    const expectedDiff = document.getElementById('expected-diff');
     const inputSlot = document.getElementById('docked-input-slot');
     const expectedSlot = document.getElementById('docked-expected-slot');
-
-    if (inputArea && inputSlot) inputSlot.appendChild(inputArea);
-    if (expectedSlot) {
-        if (expectedArea) expectedSlot.appendChild(expectedArea);
-        if (expectedDiff) expectedSlot.appendChild(expectedDiff);
-    }
+    moveIntoDock(document.getElementById('input-area'), inputSlot);
+    moveIntoDock(document.getElementById('input-file'), inputSlot);
+    moveIntoDock(document.getElementById('expected-area'), expectedSlot);
+    moveIntoDock(document.getElementById('expected-diff'), expectedSlot);
+    inputSlot?.classList.toggle('has-file', !!ioSection.querySelector('.io-panel-input.has-file'));
 
     addDockedTab(problemsPanel, { id: 'docked-io-tab', view: 'io', label: 'I/O', undock: undockIO });
 
     DockingState.ioDocked = true;
 
-    // Save state
     if (!App.settings.panels) App.settings.panels = {};
     App.settings.panels.ioDocked = true;
     saveSettings();
 
-    // Show problems if hidden
-    if (!App.showProblems) {
+    // Dropped in by the user: open on it. Restored at startup: the panel keeps its view.
+    if (open) {
+        showBottomPanel('io');
+    } else if (!App.showProblems) {
         App.showProblems = true;
         updateUI();
     }
@@ -659,22 +607,8 @@ function undockIO() {
     const problemsPanel = document.getElementById('problems-panel');
     const resizerIO = document.getElementById('resizer-io');
 
-    // Move real textareas back to io-section
-    const inputArea = document.getElementById('input-area');
-    const expectedArea = document.getElementById('expected-area');
-    const expectedDiff = document.getElementById('expected-diff');
-
-    if (inputArea) {
-        const inputPanel = ioSection?.querySelector('.io-panel-input');
-        if (inputPanel) inputPanel.appendChild(inputArea);
-    }
-    if (expectedArea) {
-        const expectedPanel = ioSection?.querySelector('.io-panel-expected');
-        if (expectedPanel) {
-            expectedPanel.appendChild(expectedArea);
-            if (expectedDiff) expectedPanel.appendChild(expectedDiff);
-        }
-    }
+    for (const [element, place] of dockedIOPlaces) place.replaceWith(element);
+    dockedIOPlaces.clear();
 
     ioSection?.classList.remove('docked-away');
     resizerIO?.classList.remove('docked-away');
@@ -685,7 +619,6 @@ function undockIO() {
 
     DockingState.ioDocked = false;
 
-    // Save state
     if (App.settings.panels) {
         App.settings.panels.ioDocked = false;
         saveSettings();

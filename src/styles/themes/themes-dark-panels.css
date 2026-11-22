@@ -377,22 +377,12 @@
 }
 
 
-/* ===== DOCK TABS - Dark Theme ===== */
-[data-theme-variant="dark"] .dock-tabs {
-    background: rgba(0, 0, 0, 0.3);
-    border-bottom-color: rgba(255, 255, 255, 0.1);
-}
-
 [data-theme-variant="dark"] .dock-tab {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.1);
     color: var(--text-muted);
 }
 
-[data-theme-variant="dark"] .dock-tab:hover {
-    background: rgba(255, 255, 255, 0.15);
-    color: var(--text-primary);
-}
 
 [data-theme-variant="dark"] .dock-tab.active {
     background: var(--bg-primary);
@@ -400,10 +390,6 @@
     color: var(--text-primary);
 }
 
-[data-theme-variant="dark"] .dock-drop-indicator {
-    outline-color: var(--accent) !important;
-    background: rgba(136, 201, 234, 0.1) !important;
-}
 
 /* Docked terminal view - dark themes */
 [data-theme-variant="dark"] .problems-panel .terminal-body {

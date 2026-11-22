@@ -7,6 +7,7 @@ const { Worker, isMainThread, parentPort, workerData } = require('node:worker_th
 const MAX_FILE_BYTES = 2 * 1024 * 1024;
 const MAX_RESULTS = 2000;
 const MAX_QUERY_LENGTH = 512;
+const MAX_LISTED_FILES = 5000;
 const EXCLUDED_DIRECTORIES = new Set([
     '.git', 'node_modules', 'build', 'builds', 'dist', 'out', 'bin', 'obj', 'release', 'debug',
     '.next', 'cmakefiles', 'samekodevcpp'
@@ -110,8 +111,37 @@ async function searchInFiles(options) {
     });
 }
 
+/** Source and text files under a folder for Go to File: names only, nothing is read. */
+async function listFiles(folder) {
+    if (typeof folder !== 'string' || !path.isAbsolute(folder)) return { files: [], capped: false };
+    const files = [];
+    const folders = [folder];
+    const deadline = Date.now() + 3000;
+    while (folders.length) {
+        const dir = folders.pop();
+        let entries;
+        try {
+            entries = await fs.readdir(dir, { withFileTypes: true });
+        } catch (_) {
+            continue;
+        }
+        for (const entry of entries) {
+            const file = path.join(dir, entry.name);
+            if (entry.isDirectory()) {
+                const name = entry.name.toLowerCase();
+                if (!EXCLUDED_DIRECTORIES.has(name) && !name.startsWith('cmake-build-')) folders.push(file);
+            } else if (entry.isFile() && !BINARY_EXTENSION.test(entry.name)) {
+                files.push({ path: file, relativePath: path.relative(folder, file) });
+                if (files.length >= MAX_LISTED_FILES) return { files, capped: true };
+            }
+        }
+        if (Date.now() > deadline) return { files, capped: true };
+    }
+    return { files, capped: false };
+}
+
 if (isMainThread) {
-    module.exports = { searchInFiles };
+    module.exports = { searchInFiles, listFiles };
 } else {
     scan(workerData).then(result => parentPort.postMessage(result));
 }

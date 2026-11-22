@@ -257,10 +257,11 @@ class GdbSession extends EventEmitter {
         if (reason.startsWith('exited')) {
             this.state = 'stopped';
             this._stopPump(); // flush remaining program output before signalling exit
+            // MI prints the exit code in octal ("012" is 10).
             const code = results['exit-code'] !== undefined
-                ? parseInt(results['exit-code'], 10)
+                ? parseInt(results['exit-code'], 8)
                 : (reason === 'exited-normally' ? 0 : null);
-            this.emit('programExited', { code });
+            this.emit('programExited', { code, signal: results['signal-name'] || null, meaning: results['signal-meaning'] || '' });
             return;
         }
         this.state = 'stopped';
@@ -399,7 +400,19 @@ class GdbSession extends EventEmitter {
         return this.send('-exec-continue');
     }
 
-    listFrames() { return this.send('-stack-list-frames'); }
+    // Capped: a stack overflow has hundreds of thousands of frames, and listing them all
+    // kept gdb busy past the command timeout, so the panel looked frozen at the crash.
+    listFrames() { return this.send(`-stack-list-frames 0 ${MAX_LISTED_FRAMES - 1}`); }
+    async stackDepth() {
+        const r = await this.send(`-stack-info-depth ${MAX_COUNTED_FRAMES}`);
+        return parseInt(r.depth, 10) || 0;
+    }
+    listThreads() { return this.send('-thread-info'); }
+    framesOfThread(id) { return this.send(`-stack-list-frames --thread ${id} 0 31`); }
+    selectThread(id) {
+        if (!/^\d+$/.test(String(id))) throw new Error('Invalid thread ID');
+        return this.send(`-thread-select ${id}`);
+    }
     selectFrame(n) { return this.send(`-stack-select-frame ${n}`); }
     listLocals() { return this.send('-stack-list-variables --all-values'); }
     listLocalNames() { return this.send('-stack-list-variables --no-values'); }
@@ -417,6 +430,13 @@ class GdbSession extends EventEmitter {
     }
     varUpdate() { return this.send('-var-update --all-values *'); }
     varSetFormat(name, fmt) { return this.send(`-var-set-format ${name} ${fmt}`); }
+
+    /** Gives a variable a new value while paused. */
+    varAssign(name, expr) {
+        if (this.state !== 'stopped') throw new Error('Pause the debugger first.');
+        if (!expr || /[\0\r\n]/.test(expr)) throw new Error('Enter a single value.');
+        return this.send(`-var-assign ${name} ${quote(expr)}`);
+    }
 
     // ---- teardown ----------------------------------------------------------
 
@@ -516,6 +536,9 @@ class MiError extends Error {
  * escape backslashes + quotes so paths with spaces and expressions with quotes
  * (e.g. m["a"]) survive intact.
  */
+const MAX_LISTED_FRAMES = 200;
+const MAX_COUNTED_FRAMES = 2001;
+
 function quote(s) {
     return '"' + String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
 }

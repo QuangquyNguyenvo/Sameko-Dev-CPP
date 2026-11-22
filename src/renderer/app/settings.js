@@ -1085,6 +1085,7 @@ function openSettings() {
     // The mini editor is created only when its tab is visible.
     setTemplateText('cpp', App.settings.template?.code ?? DEFAULT_SETTINGS.template.code);
     setTemplateText('c', App.settings.template?.cCode ?? DEFAULT_SETTINGS.template.cCode);
+    document.getElementById('set-head-comment').value = App.settings.template?.headComment || '';
     for (const lang of Object.keys(OTHER_TEMPLATE_LANGS)) {
         setTemplateText(lang, App.settings.template?.others?.[lang] ?? templateDefault(lang));
     }
@@ -1228,6 +1229,7 @@ async function saveSettingsAndClose() {
         if (!App.settings.template) App.settings.template = {};
         App.settings.template.code = document.getElementById('set-template').value;
         App.settings.template.cCode = document.getElementById('set-template-c').value;
+        App.settings.template.headComment = document.getElementById('set-head-comment').value;
         App.settings.template.others = changedOtherTemplates();
         App.settings.template.newFileType = document.getElementById('set-new-file-type')?.value || 'cpp';
 
@@ -1348,7 +1350,16 @@ const KEYBINDING_LABELS = {
     uiZoomIn: 'Interface Scale: Larger',
     uiZoomOut: 'Interface Scale: Smaller',
     uiZoomReset: 'Interface Scale: Auto',
-    submitToOJ: 'Submit to Online Judge'
+    submitToOJ: 'Submit to Online Judge',
+    openFolder: 'Open Folder',
+    quickOpen: 'Go to File',
+    commandPalette: 'Command Palette',
+    goToSymbol: 'Go to Symbol in File',
+    renameSymbol: 'Rename Symbol',
+    reopenClosedTab: 'Reopen Closed Tab',
+    closeAllTabs: 'Close All Tabs',
+    toggleSidebar: 'Toggle Sidebar',
+    toggleTerminal: 'Toggle Terminal'
 };
 
 let editingKeybinding = null;

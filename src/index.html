@@ -844,6 +844,11 @@
                                 </select>
                                 </label>
                             </div>
+                            <div class="setting-row template-head-row">
+                                <label for="set-head-comment">Head comment <span class="tooltip" title="Added at the top of the file made for a problem from an online judge&#10;Values: {name} {url} {group} {time} {memory} {date}">?</span></label>
+                                <textarea id="set-head-comment" class="template-head-input" rows="2" spellcheck="false" translate="no"
+                                    placeholder="// {name}&#10;// {url}"></textarea>
+                            </div>
                             <div class="template-editor">
                                 <div class="template-editor-header">
                                     <span class="template-editor-file">
@@ -1245,7 +1250,7 @@
 
                     <div class="resizer-h" id="resizer-problems"></div>
 
-                    <div class="problems-panel hidden collapsed" id="problems-panel">
+                    <div class="problems-panel hidden collapsed" id="problems-panel" data-view="problems">
                         <div class="panel-head">
                             <span class="panel-title problems active" data-panel="problems">PROBLEMS</span>
                             <span class="problem-count hidden" id="problem-count">0</span>
@@ -1257,12 +1262,17 @@
                             <span class="panel-actions-spacer"></span>
                             <!-- How each test's output is judged; only on the TESTS tab (renderer/app/checker.js). -->
                             <span class="checker-pick" id="checker-pick">
-                                <label class="checker-pick-label" for="checker-select"
-                                    title="How the output of each test is judged">Checker</label>
-                                <select class="checker-select" id="checker-select"></select>
-                                <button class="checker-new-btn" id="checker-new" title="New testlib checker from a template"
-                                    aria-label="New testlib checker from a template">
-                                    <svg class="ico" data-icon="plus" width="12" height="12"><use href="#i-plus"/></svg>
+                                <!-- Only once it has been started (Problem options). -->
+                                <button type="button" class="test-stopwatch" id="test-stopwatch" aria-pressed="false" hidden
+                                    title="Stopwatch: click to start or pause, right-click to reset">
+                                    <svg class="ico" width="13" height="13" aria-hidden="true"><use href="#i-timer-duo"/></svg>
+                                    <span translate="no">00:00</span>
+                                </button>
+                                <select class="checker-select" id="checker-select" aria-label="Checker"></select>
+                                <button type="button" class="checker-new-btn" id="test-options"
+                                    title="Problem options: limits, input and output files, interactor, import and save tests"
+                                    aria-label="Problem options">
+                                    <svg class="ico" width="13" height="13" aria-hidden="true"><use href="#i-gear-six-duo"/></svg>
                                 </button>
                             </span>
                             <!-- Shown only on the STRESS tab (stress-test.css). -->
@@ -1270,10 +1280,6 @@
                                 <svg class="ico stress-ico-start" data-icon="play" data-weight="fill" width="12" height="12"><use href="#i-play-fill"/></svg>
                                 <svg class="ico stress-ico-stop" data-icon="stop" data-weight="fill" width="12" height="12"><use href="#i-stop-fill"/></svg>
                                 <span class="stress-run-label">Start</span>
-                            </button>
-                            <button class="run-all-btn danger" id="btn-delete-all-tests" title="Delete all test cases"
-                                aria-label="Delete all test cases" style="display:none">
-                                <svg class="ico" data-icon="trash" width="13" height="13"><use href="#i-trash"/></svg>
                             </button>
                             <button class="run-all-btn" id="btn-run-all-tests" title="Run all tests (Ctrl+Shift+F11)"
                                 style="display:none">
@@ -1295,9 +1301,9 @@
                             <button class="panel-close" id="close-problems" title="Hide">×</button>
                         </div>
                         <div class="problems-body" id="problems-list"></div>
-                        <div class="tests-results-body" id="tests-results-list" style="display:none"></div>
+                        <div class="tests-results-body" id="tests-results-list"></div>
                         <!-- STRESS tab (renderer/app/stress-test.js): setup on the left, run and result on the right. -->
-                        <div class="stress-body" id="stress-body" style="display:none">
+                        <div class="stress-body" id="stress-body">
                             <div class="stress-layout">
                                 <div class="stress-setup">
                                     <label class="stress-label" for="stress-gen"
@@ -1471,6 +1477,7 @@
     <script src="features/local-history/history-manager.js"></script>
     <script src="features/file-explorer/file-explorer.js"></script>
     <script src="features/file-explorer/find-in-files.js"></script>
+    <script src="features/file-explorer/quick-open.js"></script>
     <script src="features/file-explorer/file-explorer-tree.js"></script>
     <script src="features/file-explorer/file-explorer-menus.js"></script>
     <script src="features/file-explorer/file-explorer-approaches.js"></script>
@@ -1497,8 +1504,10 @@
     <script src="renderer/app/companion.js"></script>
     <script src="renderer/app/file-watch.js"></script>
     <script src="renderer/app/test-row-tools.js"></script>
+    <script src="renderer/file-io-detect.js"></script>
     <script src="renderer/app/batch-tests.js"></script>
     <script src="renderer/app/checker.js"></script>
+    <script src="renderer/app/test-manager.js"></script>
     <script src="renderer/app/stress-test.js"></script>
     <script src="renderer/app/oj-submit.js"></script>
     <script src="renderer/app/terminal-input.js"></script>

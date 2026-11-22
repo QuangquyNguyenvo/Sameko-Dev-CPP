@@ -57,7 +57,29 @@ const ACTION_HANDLERS = {
     'uiZoomOut': () => stepUiScale(-1),
     'uiZoomReset': () => setUiScale('auto'),
     'submitToOJ': () => submitToOJ(),
+    'openFolder': () => window.FileExplorer?.openFolderDialog(),
+    'quickOpen': () => QuickOpen.open(),
+    'commandPalette': () => focusedEditorAction('editor.action.quickCommand'),
+    'goToSymbol': () => focusedEditorAction('editor.action.quickOutline'),
+    'renameSymbol': () => focusedEditorAction('editor.action.rename'),
+    'reopenClosedTab': () => reopenClosedTab(),
+    'closeAllTabs': () => closeAllTabs(),
+    'toggleSidebar': () => { if (window.FileExplorer) window.FileExplorer.toggle(); },
+    'toggleTerminal': () => toggleProblems(),
 };
+
+// Shortcuts added after a user may already have given the same key to something else: they are
+// applied first, so the user's own binding keeps the key.
+const NEWER_SHORTCUTS = new Set(['openFolder', 'quickOpen', 'commandPalette', 'goToSymbol', 'renameSymbol',
+    'reopenClosedTab', 'closeAllTabs', 'toggleSidebar', 'toggleTerminal']);
+
+/** Runs a Monaco action on the active editor, which must hold focus for its widget to open. */
+function focusedEditorAction(id) {
+    const editor = getActiveEditor();
+    if (!editor) return;
+    editor.focus();
+    editor.getAction(id)?.run();
+}
 
 /** Ctrl+Tab / Ctrl+Shift+Tab: the next or previous tab in the tab bar, wrapping around. */
 function cycleTab(step) {
@@ -130,7 +152,10 @@ function updateShortcutMap() {
     currentShortcutMap.clear();
     const bindings = getEffectiveKeybindings();
 
-    for (const [action, combo] of Object.entries(bindings)) {
+    const entries = Object.entries(bindings);
+    const ordered = [...entries.filter(([action]) => NEWER_SHORTCUTS.has(action)),
+        ...entries.filter(([action]) => !NEWER_SHORTCUTS.has(action))];
+    for (const [action, combo] of ordered) {
         if (combo) {
             currentShortcutMap.set(combo, action);
         }
@@ -197,6 +222,21 @@ function initShortcuts() {
         // of Settings and then a search in Settings are closed first (settings.js).
         if (e.key === 'Escape') handleSettingsEscape(e);
 
+        // Second key of a Ctrl+K chord. Ctrl may be held or released (Ctrl+K Ctrl+O, Ctrl+K O).
+        // In the editor an unknown second key belongs to Monaco's own chords (Ctrl+K Ctrl+C...).
+        if (ctrlKPressed && !['Control', 'Meta', 'Shift', 'Alt'].includes(e.key)) {
+            ctrlKPressed = false;
+            clearTimeout(ctrlKTimer);
+            const second = normalizeKeyCombo(e);
+            const chord = currentShortcutMap.get(`Ctrl+K ${second}`) || currentShortcutMap.get(`Ctrl+K Ctrl+${second}`);
+            if (chord && ACTION_HANDLERS[chord]) {
+                e.preventDefault();
+                ACTION_HANDLERS[chord]();
+                return;
+            }
+            if (e.target.closest?.('.monaco-editor')) return;
+        }
+
         // PERFORMANCE: Early exit for uninteresting keys to prevent "freeze"
         // If it's a regular key typing in an input/editor, and NO modifiers are pressed, 
         // strictly ignore it (unless we have single-key shortcuts like F-keys).
@@ -227,13 +267,6 @@ function initShortcuts() {
                 ctrlKTimer = setTimeout(() => { ctrlKPressed = false; }, 2000);
                 return;
             }
-        }
-
-        // Reset chord if other key pressed
-        if (ctrlKPressed && e.key !== 'Control' && e.key !== 'Meta') {
-            ctrlKPressed = false;
-            // Here we could handle Chord actions (Ctrl+K, Ctrl+O) if we implemented them.
-            // For now, just reset and fall through to normal check.
         }
 
         const combo = normalizeKeyCombo(e);

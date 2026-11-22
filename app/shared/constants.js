@@ -25,6 +25,7 @@ const IPC = {
         READ: 'read-file',
         READ_DIR: 'read-directory',
         SEARCH: 'search-in-files',
+        LIST_FILES: 'list-workspace-files',
         DELETE: 'delete-file',
         RENAME: 'rename-file',
         WATCH: 'watch-file',
@@ -70,6 +71,15 @@ const IPC = {
         VAR_UPDATE: 'debug:varUpdate',
         VAR_CREATE_MANY: 'debug:varCreateMany',
         VAR_DELETE_MANY: 'debug:varDeleteMany',
+        VAR_ASSIGN: 'debug:varAssign',
+        SELECT_THREAD: 'debug:selectThread',
+    },
+
+    // Tests as files
+    TESTS: {
+        IMPORT: 'tests-import',
+        EXPORT: 'tests-export',
+        DEBUG_DIR: 'tests-debug-dir',
     },
 
     // Window Management
@@ -99,6 +109,10 @@ const IPC = {
         CLANGD_DEFINITION: 'get-clangd-definition',
         CLANGD_REFERENCES: 'get-clangd-references',
         CLANGD_CODE_ACTIONS: 'get-clangd-code-actions',
+        CLANGD_SIGNATURE_HELP: 'get-clangd-signature-help',
+        CLANGD_SYMBOLS: 'get-clangd-symbols',
+        CLANGD_PREPARE_RENAME: 'clangd-prepare-rename',
+        CLANGD_RENAME: 'clangd-rename',
     },
 
     // Theme assets (backgrounds picked in the Theme Customizer)

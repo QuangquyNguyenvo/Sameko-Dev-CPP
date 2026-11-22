@@ -93,9 +93,15 @@ function registerHandlers() {
     // Batch testing
     // args: a stress-test generator's seed (plain words only, see batch-tester.js).
     // checker: a compiled testlib checker that judges instead (competitive/checker.js).
-    ipcMain.handle('run-test', async (event, { exePath, input, expectedOutput, timeLimit, memoryLimit, compare, checker, cwd, args }) => {
-        return await competitive.runTest({ exePath, input, expectedOutput, timeLimit, memoryLimit, compare, checker, cwd, args });
+    // inputPath / expectedPath: a test kept on disk. fileIO: a problem judged through files.
+    // interactor: a compiled testlib interactor (competitive/interactor.js).
+    ipcMain.handle('run-test', async (event, { exePath, input, expectedOutput, timeLimit, memoryLimit, compare, checker, cwd, args, inputPath, expectedPath, fileIO, interactor }) => {
+        return await competitive.runTest({ exePath, input, expectedOutput, timeLimit, memoryLimit, compare, checker, cwd, args, inputPath, expectedPath, fileIO, interactor });
     });
+
+    ipcMain.handle(IPC.TESTS.IMPORT, (event, folder) => require('../services/competitive/test-files').importTests(folder));
+    ipcMain.handle(IPC.TESTS.EXPORT, (event, options) => require('../services/competitive/test-files').exportTests(options));
+    ipcMain.handle(IPC.TESTS.DEBUG_DIR, (event, options) => require('../services/competitive/test-files').prepareDebugDir(options));
 
     // ==================== .sameko file handlers ====================
 

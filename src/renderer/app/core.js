@@ -154,7 +154,16 @@ int main() {
         uiZoomIn: 'Ctrl+=',
         uiZoomOut: 'Ctrl+-',
         uiZoomReset: 'Ctrl+0',
-        submitToOJ: 'Ctrl+Alt+S'
+        submitToOJ: 'Ctrl+Alt+S',
+        openFolder: 'Ctrl+K Ctrl+O',
+        quickOpen: 'Ctrl+P',
+        commandPalette: 'Ctrl+Shift+P',
+        goToSymbol: 'Ctrl+Shift+O',
+        renameSymbol: 'F2',
+        reopenClosedTab: 'Ctrl+Shift+T',
+        closeAllTabs: 'Ctrl+K Ctrl+W',
+        toggleSidebar: 'Ctrl+B',
+        toggleTerminal: 'Ctrl+`'
     },
     snippets: [
         { trigger: 'hello', name: 'Hello World', content: '#include <iostream>\nusing namespace std;\n\nint main() {\n\tcout << "Hello World!";\n\treturn 0;\n}', lang: 'cpp' },
@@ -180,7 +189,12 @@ DEFAULT_SETTINGS.keybindingsVim = {
     closeTab: 'Ctrl+Shift+W',
     toggleProblems: 'Ctrl+Shift+J',
     toggleExplorer: 'Ctrl+Shift+E',
-    selectNextOccurrence: 'Ctrl+Shift+D'
+    selectNextOccurrence: 'Ctrl+Shift+D',
+    // Vim uses Ctrl+K (digraphs), Ctrl+B (page up), and New Tab has Ctrl+Shift+T here.
+    openFolder: 'Ctrl+Alt+F',
+    closeAllTabs: 'Ctrl+Alt+W',
+    reopenClosedTab: 'Ctrl+Alt+T',
+    toggleSidebar: 'Ctrl+Alt+B'
 };
 
 // ============================================================================
@@ -817,7 +831,7 @@ function initCtrlWheelZoom() {
         if (!e.ctrlKey) return;
 
         const editorContainer = e.target.closest('#editor-container, #editor-container-2');
-        const panelContainer = e.target.closest('.terminal-body, .terminal-input, .panel-textarea, .docked-io-textarea, .diff-display, #expected-diff, .io-section, .terminal-section, .docked-io-view');
+        const panelContainer = e.target.closest('.terminal-body, .terminal-input, .panel-textarea, .diff-display, #expected-diff, .io-section, .terminal-section, .docked-io-view');
 
         if (!editorContainer && !panelContainer) return;
 

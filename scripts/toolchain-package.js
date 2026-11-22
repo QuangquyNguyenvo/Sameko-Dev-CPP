@@ -94,6 +94,10 @@ function stashOf(appOutDir) {
 }
 
 async function afterPack(context) {
+    // Chromium's WebGPU shader compiler (26 MB): nothing in the app uses WebGPU.
+    if (context.electronPlatformName === 'win32') {
+        for (const file of ['dxcompiler.dll', 'dxil.dll']) fs.rmSync(path.join(context.appOutDir, file), { force: true });
+    }
     if (process.env.SAMEKO_SPLIT_TOOLCHAIN !== '1') return;
     if (context.electronPlatformName !== 'win32') return;
     const dir = path.join(context.appOutDir, 'resources', 'Sameko-GCC');

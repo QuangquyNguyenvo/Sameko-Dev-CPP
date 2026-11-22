@@ -133,6 +133,10 @@ function registerHandlers() {
 
     ipcMain.handle(IPC.DEBUG.VAR_DELETE_MANY, async (event, { names }) =>
         guard(() => dbg.varDeleteMany(names)));
+    ipcMain.handle(IPC.DEBUG.VAR_ASSIGN, async (event, { name, expr }) =>
+        guard(async () => { const r = await dbg.varAssign(name, expr); return { value: r.value }; }));
+    ipcMain.handle(IPC.DEBUG.SELECT_THREAD, async (event, { id }) =>
+        guard(() => dbg.selectThread(id)));
 }
 
 module.exports = { registerHandlers, setMainWindow };
