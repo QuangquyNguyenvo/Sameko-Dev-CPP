@@ -147,6 +147,9 @@ async function main() {
             const other = await page.evaluate(() => document.getElementById('checker-select').value);
             assert.equal(other, '', 'another file has its own (default) choice');
             await page.evaluate((id) => setActive(id), solTab);
+            // The picker is refilled after the tab's folder is read (refreshCheckerFiles), not at once.
+            await page.waitForFunction((v) => document.getElementById('checker-select').value === v,
+                'file:' + P + '/checker.cpp', { timeout: 5000 }).catch(() => { });
             const back = await page.evaluate(() => document.getElementById('checker-select').value);
             assert.equal(back, 'file:' + P + '/checker.cpp');
         });

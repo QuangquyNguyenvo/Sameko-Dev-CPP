@@ -203,7 +203,8 @@ async function main() {
     await check('Build & Run, then Stop, ends the program and the child it forked', async () => {
         const code = '#include <iostream>\n#include <unistd.h>\nint main(){fork();std::cout<<"started"<<std::endl;volatile int x=0;for(;;)x=x+1;}\n';
         await buildRunUntitled(code);
-        await page.waitForFunction(() => TerminalManager.getLines().some((l) => l.text === 'started'), null, { timeout: 30000 });
+        // Parent and child both print it, unit-buffered, so the two can share a line ("startedstarted").
+        await page.waitForFunction(() => TerminalManager.getLines().some((l) => l.text.includes('started')), null, { timeout: 30000 });
         await sleep(300);
         assert.ok(running('temp_code'), 'the program is running before Stop');
         await stopRun();
