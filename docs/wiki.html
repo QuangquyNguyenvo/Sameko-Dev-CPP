@@ -165,7 +165,7 @@
             </div>
             <div class="wiki-hero-wave" aria-hidden="true"></div>
             <div class="wiki-hero-copy" data-reveal>
-                <a class="wiki-release-pill" href="#whats-new"><b>v1.4.0</b> What's new &rarr;</a>
+                <a class="wiki-release-pill" href="#whats-new"><b>v1.5.0</b> What's new &rarr;</a>
                 <h1 id="wiki-hero-title">Build with less <span class="hl">friction.<svg class="hl__squiggle" viewBox="0 0 220 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 14C24 4 40 22 60 13S96 4 116 13s36 9 56 0 32-7 44-2"/></svg><svg class="hl__shine" viewBox="0 0 40 40" aria-hidden="true"><path pathLength="1" d="M9 31 4 22M20 26 19 12M31 29l7-9"/></svg></span></h1>
                 <p>Everything Sameko does, from <code>hello.cpp</code> to contest day.</p>
                 <form class="wiki-search" id="wiki-search-form" role="search">
@@ -209,7 +209,8 @@
                     <a href="#debugger" class="wiki-nav-link">Debugger</a>
                     <a href="#file-explorer" class="wiki-nav-link">File Explorer</a>
                     <a href="#checkpoints" class="wiki-nav-link">Checkpoints</a>
-                    <a href="#competitive" class="wiki-nav-link">Competitive Companion</a>
+                    <a href="#competitive" class="wiki-nav-link">Tests &amp; Judges</a>
+                    <a href="#languages" class="wiki-nav-link">Other Languages</a>
                     <a href="#snippets" class="wiki-nav-link">Snippets</a>
                     <a href="#auto-update" class="wiki-nav-link">Auto-Update</a>
                 </div>
@@ -230,44 +231,44 @@
 
                     <!-- WHAT'S NEW -->
                     <section id="whats-new" data-reveal>
-                        <span class="wiki-eyebrow">Release notes · 1.4.0 · 7 Nov 2026</span>
-                        <h2>What’s new in Sameko 1.4.0</h2>
-                        <p class="wiki-subtitle">Vietnamese and Chinese interface, Vim Mode, new themes and safer saving.</p>
+                        <span class="wiki-eyebrow">Release notes · 1.5.0 · 24 Nov 2026</span>
+                        <h2>What’s new in Sameko 1.5.0</h2>
+                        <p class="wiki-subtitle">Sameko now runs on Mac, judges your tests the way a real judge does, and can submit for you.</p>
 
                         <div class="wiki-update-grid">
                             <article class="wiki-update-card">
-                                <strong>Interface languages</strong>
-                                <p>English, Tiếng Việt and 简体中文 in Settings › Appearance › Language. Code and program output are never translated.</p>
+                                <strong>Hello, Mac</strong>
+                                <p>A beta for Apple Silicon (M1 and later). It uses GCC from Homebrew and debugs with LLDB. <a href="#installation">How to install</a></p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Vim Mode</strong>
-                                <p>Turn it on in Settings › Editor; <code>:w</code>, <code>:q</code> and <code>:wq</code> work, with its own shortcut profile.</p>
+                                <strong>Submit from the app</strong>
+                                <p>Press <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>S</kbd> and the Sameko Companion extension submits from your own browser, then the verdict shows up in the app.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Stderr card</strong>
-                                <p><code>cerr</code> output gets its own card under Input / Output / Expected; AC/WA is judged on stdout only.</p>
+                                <strong>Tests that judge like a judge</strong>
+                                <p>-O2 builds, a memory limit, a big stack, checkers, stress tests and <code>freopen</code> problems, all checked the way online judges do it.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>New themes</strong>
-                                <p>Catppuccin Mocha, Gruvbox Dark, Crimson, Event Horizon, and new Kawaii Dark and Kawaii Light with video backgrounds.</p>
+                                <strong>Tools on every test</strong>
+                                <p>Debug a test, re-run it with sanitizers, profile it, or draw its input as a graph you can drag around.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Safer saving</strong>
-                                <p>No half-written files after a crash or full disk, and a failed save stops Build, Run and F5.</p>
+                                <strong>See your arrays change</strong>
+                                <p>Watch a vector and the cells that changed light up. Watchpoints stop the moment a value changes.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Faster start</strong>
-                                <p>Later launches start faster, clangd starts with the first C++ tab, and typing in large files is lighter.</p>
+                                <strong>Seven more languages</strong>
+                                <p>Python, Java, Kotlin, Rust, Go, Pascal and JavaScript run with the compilers already on your machine.</p>
                             </article>
                         </div>
 
                         <div class="callout note">
-                            <div class="callout-title">Also since 1.3.0</div>
-                            <p><b>1.3.2</b> added Markdown preview, format on save with AStyle, renaming tabs and search in Settings. <b>1.3.1</b> rebuilt the Theme Customizer and added plain-text support for <code>.txt</code>, <code>.inp</code>, <code>.out</code> and <code>.ans</code>. <b>1.3.0</b> brought clangd live checking, parallel test runs, real run time and peak memory.</p>
+                            <div class="callout-title">Also new</div>
+                            <p>Go to Definition (<kbd>F12</kbd>), Find All References, Rename and Quick Fix from clangd, Find in Files (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd>), compile errors explained in plain words, and updates of about 20 MB instead of the whole installer.</p>
                         </div>
                         <div class="callout note">
-                            <div class="callout-title">Version scope</div>
-                            <p>Windows bundles GCC 16.1.0, clangd, GDB and AStyle; Linux uses the tools installed on your system.</p>
+                            <div class="callout-title">What runs where</div>
+                            <p>Windows comes with GCC 16.1.0, clangd, GDB and AStyle built in. Linux and macOS use the compiler and debugger installed on your system.</p>
                         </div>
                     </section>
 
@@ -278,8 +279,8 @@
 
                         <p>Sameko Dev C++ is a free, open-source (MIT) C++ IDE for competitive programming and education,
                             built on the Monaco editor. On Windows it bundles GCC 16.1.0, clangd and GDB, so you can write,
-                            run and debug C++ right after installing, without setting up MinGW yourself. This guide covers
-                            version 1.4.0.</p>
+                            run and debug C++ right after installing, without setting up MinGW yourself. Linux and macOS (beta)
+                            use the tools already on your system. This guide covers version 1.5.0.</p>
 
                         <h2>Who is Sameko for?</h2>
                         <ul>
@@ -301,7 +302,7 @@
                                     <b>Installer</b> (<code>sameko-dev-cpp-setup-&lt;version&gt;.exe</code>) - Start Menu and desktop shortcuts, "Open with" for C++ files, auto-updates and an uninstaller. Recommended for most users.
                                 </li>
                                 <li>
-                                    <b>Portable (.zip)</b> - Extract and run anywhere. No admin rights or registry changes. Great for USB drives or school computers. Auto-update is not available in portable mode.
+                                    <b>Portable (.zip)</b> - Extract and run anywhere, no admin rights needed. Your settings live in a <code>data</code> folder next to the exe, so they travel with it on a USB drive. Portable copies update by hand.
                                 </li>
                             </ul>
                         </div>
@@ -327,6 +328,11 @@
                         <div class="callout note">
                             <div class="callout-title">Windows Defender warning</div>
                             <p>A new app can show "not commonly downloaded" or SmartScreen. Choose <b>Keep</b>, or <b>More info</b> &rarr; <b>Run anyway</b>.</p>
+                        </div>
+
+                        <div class="callout note">
+                            <div class="callout-title">macOS (beta)</div>
+                            <p>For Apple Silicon Macs (M1 and later). Install the tools with <code>brew install gcc astyle</code>, open the <code>.dmg</code> and drag Sameko into Applications. The app is not signed by Apple yet, so allow it once in Terminal with <code>xattr -cr "/Applications/Sameko Dev C++.app"</code>. Mac copies do not auto-update; Sameko shows a download button when a new version is out.</p>
                         </div>
 
                         <div class="callout note">
@@ -378,7 +384,7 @@ int main() {
                             <tbody>
                                 <tr>
                                     <td>OS</td>
-                                    <td>Windows 10 64-bit, or Linux x64</td>
+                                    <td>Windows 10 64-bit, Linux x64, or macOS on Apple Silicon (beta)</td>
                                     <td>Windows 11</td>
                                 </tr>
                                 <tr>
@@ -459,7 +465,7 @@ int main() {
                     <!-- SHORTCUTS -->
                     <section id="shortcuts">
                         <h2>Keyboard Shortcuts</h2>
-                        <p>Default shortcuts. Change any of them in <b>Settings › Keybindings</b>.</p>
+                        <p>Default shortcuts. Change any of them in <b>Settings › Keybindings</b>. On a Mac, read <kbd>Ctrl</kbd> as <kbd>⌘</kbd>.</p>
 
                         <table>
                             <thead>
@@ -514,6 +520,34 @@ int main() {
                                     <td>Next / previous tab</td>
                                 </tr>
                                 <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd></td>
+                                    <td>Reopen the tab you just closed</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>P</kbd> / <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd></td>
+                                    <td>Go to file / Command palette</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></td>
+                                    <td>Find in files</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>F12</kbd> / <kbd>Shift</kbd> + <kbd>F12</kbd></td>
+                                    <td>Go to definition / Find all references</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>F2</kbd> / <kbd>Ctrl</kbd> + <kbd>.</kbd></td>
+                                    <td>Rename symbol / Quick fix</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F11</kbd></td>
+                                    <td>Run all tests</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>S</kbd></td>
+                                    <td>Submit to the online judge</td>
+                                </tr>
+                                <tr>
                                     <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd></td>
                                     <td>Format code (AStyle)</td>
                                 </tr>
@@ -530,7 +564,7 @@ int main() {
                                     <td>Show or hide the bottom panel (Problems / Terminal / Tests)</td>
                                 </tr>
                                 <tr>
-                                    <td><kbd>Ctrl</kbd> + <kbd>E</kbd></td>
+                                    <td><kbd>Ctrl</kbd> + <kbd>E</kbd> or <kbd>Ctrl</kbd> + <kbd>B</kbd></td>
                                     <td>Show or hide the Explorer</td>
                                 </tr>
                                 <tr>
@@ -602,18 +636,18 @@ int main() {
                     <!-- EDITOR FEATURES -->
                     <section id="editor-features">
                         <h2>Editor</h2>
-                        <p>Sameko uses the Monaco Editor, the same engine that powers VS Code, with clangd for C++ language features.</p>
+                        <p>The editor is Monaco, the same one inside VS Code, and clangd understands your C++ so it can help while you type.</p>
 
                         <h3>Key Editor Features</h3>
                         <ul>
-                            <li><b>IntelliSense</b> - clangd-backed completion, hover and signature help for the STL and your own code</li>
-                            <li><b>Live Code Checking</b> - errors and warnings while you type, from clangd (about 100&ndash;130 ms)</li>
-                            <li><b>Format Code</b> - <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd>, with 13 AStyle styles in Settings › Editor › Format Style, and <b>Format on Save</b> for C/C++ files</li>
-                            <li><b>Auto-close for types</b> - typing <code>{</code> after <code>struct Name</code> (or <code>class</code>, <code>union</code>, <code>enum</code>) closes it as <code>{};</code></li>
-                            <li><b>Multi-cursor</b> - hold <kbd>Alt</kbd> and click, or <kbd>Ctrl</kbd> + <kbd>D</kbd> to select the next match</li>
-                            <li><b>Find &amp; Replace</b> - <kbd>Ctrl</kbd> + <kbd>H</kbd> with regex support</li>
-                            <li><b>Split Editor</b> - <kbd>Ctrl</kbd> + <kbd>\</kbd> to work on two files side by side</li>
-                            <li><b>Bracket colorization, minimap and code folding</b></li>
+                            <li><b>Suggestions that know your code</b> - completion, hover docs and parameter hints for the STL and your own functions</li>
+                            <li><b>Errors as you type</b> - red and yellow marks appear a moment after you stop typing, no build needed</li>
+                            <li><b>Jump around</b> - <kbd>F12</kbd> goes to a definition, <kbd>Shift</kbd> + <kbd>F12</kbd> lists every use, <kbd>F2</kbd> renames a variable everywhere</li>
+                            <li><b>Quick Fix</b> - <kbd>Ctrl</kbd> + <kbd>.</kbd> or the lightbulb applies clangd's suggested fix, even swapping full-width punctuation for plain ASCII</li>
+                            <li><b>Find in Files</b> - <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd> searches the whole folder; <kbd>Ctrl</kbd> + <kbd>P</kbd> opens a file by typing part of its name (<code>main:12</code> jumps to line 12)</li>
+                            <li><b>Compile errors in plain words</b> - the first GCC error gets a short hint about what usually causes it</li>
+                            <li><b>Format Code</b> - <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd> with 13 AStyle styles, or let it format on save</li>
+                            <li><b>The usual comforts</b> - multi-cursor (<kbd>Alt</kbd> + click, <kbd>Ctrl</kbd> + <kbd>D</kbd>), Find &amp; Replace with regex, split editor (<kbd>Ctrl</kbd> + <kbd>\</kbd>), bracket colours, minimap and folding</li>
                         </ul>
 
                         <h3>Markdown and test files</h3>
@@ -628,7 +662,7 @@ int main() {
                     <section id="debugger" data-reveal>
                         <span class="wiki-eyebrow">Inspect, pause, understand</span>
                         <h2>Integrated GDB debugger</h2>
-                        <p>Set a breakpoint in the gutter and press <kbd>F5</kbd>: Sameko builds with debug information and opens the Debug panel beside the editor. It drives the bundled MinGW GDB on Windows; Linux uses the system <code>gdb</code>.</p>
+                        <p>Click in the gutter to set a breakpoint and press <kbd>F5</kbd>. Sameko builds with debug info and opens the Debug panel next to your code. It uses the bundled GDB on Windows, your system <code>gdb</code> on Linux and LLDB on Mac.</p>
 
                         <div class="wiki-update-grid">
                             <article class="wiki-update-card">
@@ -646,6 +680,22 @@ int main() {
                             <article class="wiki-update-card">
                                 <strong>Replay a pause</strong>
                                 <p>Back replays recorded pauses read-only; Back to live continues.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Watch arrays change</strong>
+                                <p>Add a vector or array to Watch and see its cells; the ones that changed since the last step light up.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Watchpoints</strong>
+                                <p>Stop the moment a variable changes and see its old and new value side by side.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Change a value</strong>
+                                <p><kbd>Alt</kbd> + click a value while paused to try a different one without rebuilding.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Crashes with a name</strong>
+                                <p>A crash stops at your line and says what happened, such as a stack overflow or an access out of bounds.</p>
                             </article>
                         </div>
 
@@ -691,32 +741,43 @@ int main() {
 
                     <!-- COMPETITIVE -->
                     <section id="competitive">
-                        <h2>Competitive Companion and tests</h2>
-                        <p>Competitive Companion is a browser extension that sends a problem and its sample tests from online judges such as Codeforces and AtCoder to the IDE.</p>
+                        <span class="wiki-eyebrow">From problem to Accepted</span>
+                        <h2>Tests and online judges</h2>
+                        <p>Grab a problem from the judge, test your solution the way the judge will, then submit, without leaving Sameko.</p>
 
-                        <h3>Setup</h3>
-                        <ol>
-                            <li>Install <a
-                                    href="https://chrome.google.com/webstore/detail/competitive-companion/cjnmckjndlpiamhfimnnjmnckgghkjbl"
-                                    target="_blank" rel="noopener noreferrer">Competitive Companion</a> on Chrome or Firefox</li>
-                            <li>Open Sameko IDE</li>
-                            <li>Navigate to a problem page and click the extension icon</li>
-                            <li>The problem file and its test cases appear in the IDE</li>
-                        </ol>
+                        <h3>Get the problem</h3>
+                        <p>Install <a href="https://chrome.google.com/webstore/detail/competitive-companion/cjnmckjndlpiamhfimnnjmnckgghkjbl" target="_blank" rel="noopener noreferrer">Competitive Companion</a>, open a problem in your browser and click its icon. Sameko opens a new file with the sample tests already filled in. The cloud button in the top bar walks you through the setup.</p>
+
+                        <h3>Submit from the app</h3>
+                        <p>The new <b>Sameko Companion</b> extension goes one step further: press <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>S</kbd> (or <b>Submit</b> in the Tests panel) and it submits from the browser you are already logged in to, then the verdict appears in the app. Sameko never sees your password. It works with Codeforces, AtCoder, CSES, VNOJ, LQDOJ, HNOJ, LTOJ and 28tech, on Chrome, Edge and Firefox. The extension is on its way to the browser stores; the Submit button appears once it has connected.</p>
 
                         <h3>Input, Output and Expected</h3>
-                        <p>Each tab has an <b>Input</b>, <b>Output</b> and <b>Expected</b> card. When Expected is filled, Output shows <b>AC</b> or <b>WA · N lines</b> after a run. The file button on the Input card (or dropping a file on it) feeds a <code>.txt</code> file to the program instead of the typed input, which suits very large tests.</p>
+                        <p>Each tab has an <b>Input</b>, <b>Output</b> and <b>Expected</b> card. Fill in Expected and Output tells you <b>AC</b> or <b>WA</b> after each run. For a huge test, drop a <code>.txt</code> file on the Input card and the program reads it straight from disk. Drag the cards into the bottom panel if you like them there.</p>
 
-                        <h3>Run All Tests and verdicts</h3>
-                        <p><b>Run All Tests</b> runs a tab's test cases on up to four workers; a test close to the time limit is run again on its own. Each case shows a verdict:</p>
-                        <ul>
-                            <li><b>AC</b> - Accepted, output matches expected</li>
-                            <li><b>WA</b> - Wrong Answer, output differs</li>
-                            <li><b>TLE</b> - Time Limit Exceeded</li>
-                            <li><b>MLE</b> - Memory Limit Exceeded</li>
-                            <li><b>RE</b> - Runtime Error</li>
-                            <li><b>CE</b> - Compilation Error</li>
-                        </ul>
+                        <h3>Run All Tests like a judge</h3>
+                        <p><b>Run All Tests</b> (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F11</kbd>) builds with -O2, compares word by word (real numbers within 1e-6), enforces the time and memory limit, and gives you a big stack so deep recursion behaves as it does on the judge. Each test gets a verdict: <b>AC</b>, <b>WA</b>, <b>TLE</b>, <b>MLE</b>, <b>RE</b> with the crash's name, or <b>CE</b>.</p>
+
+                        <div class="wiki-update-grid">
+                            <article class="wiki-update-card">
+                                <strong>Stress test</strong>
+                                <p>Give it a generator and a brute force; it runs random tests until your solution disagrees, then adds that test for you.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Checkers &amp; interactors</strong>
+                                <p>Judge with a testlib checker for problems with many answers, or play against an interactor. <code>testlib.h</code> comes with the app.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>File problems</strong>
+                                <p>Solutions that read <code>BAI.INP</code> and write <code>BAI.OUT</code> are judged as written; the names come from your <code>freopen</code>.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Your tests, your way</strong>
+                                <p>Turn tests on or off, import a folder of tests, save them, and set limits per problem in Problem options.</p>
+                            </article>
+                        </div>
+
+                        <h3>Tools on every test</h3>
+                        <p>Hover a test row for four buttons: <b>Debug</b> starts the debugger with that test as input, <b>Re-run with checks</b> adds STL checks and sanitizers to find the crash, <b>Graph</b> draws the input as a graph you can drag and zoom, and <b>Profile</b> shows which functions took the time.</p>
                     </section>
 
                     <!-- SNIPPETS -->
@@ -775,10 +836,17 @@ int main() {
                         <p>Go to <b>Settings › Snippets</b> to create your own: each has a prefix (trigger word) and a body (the inserted code). <b>Import from File(s)</b> adds one snippet per file, named after the file. Use it for your own BFS, DFS, Segment Tree or DSU templates.</p>
                     </section>
 
+                    <!-- OTHER LANGUAGES -->
+                    <section id="languages">
+                        <h2>Other languages</h2>
+                        <p>C++ is home, but Sameko can also build and run <b>Python, Java, Kotlin, Rust, Go, Pascal and JavaScript</b> with the compiler or interpreter already on your computer. Tests, stress tests and the external console work for them too. IntelliSense and the debugger stay C/C++ only.</p>
+                        <p>Each language gets its own template in Settings › Template, and you can choose what <b>New File</b> creates.</p>
+                    </section>
+
                     <!-- AUTO-UPDATE -->
                     <section id="auto-update">
                         <h2>Auto-Update</h2>
-                        <p>The installed version of Sameko checks GitHub Releases for updates in the background.</p>
+                        <p>The installed version checks for updates in the background and downloads only what changed, usually about 20 MB.</p>
 
                         <h3>How It Works</h3>
                         <ol>
@@ -794,7 +862,7 @@ int main() {
                         </div>
                         <div class="callout warning">
                             <div class="callout-title">Note</div>
-                            <p>Auto-update is only available in the installed version. Portable users download new versions manually.</p>
+                            <p>Auto-update is for the Windows installer and Linux AppImage. Portable and Mac copies show a download button when a new version is out.</p>
                         </div>
                     </section>
 

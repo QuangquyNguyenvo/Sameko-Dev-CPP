@@ -266,8 +266,11 @@ fetch('https://api.github.com/repos/QuangquyNguyenvo/Sameko-Dev-CPP/releases')
         // id phần tử -> hàm nhận diện tên file (đã toLowerCase)
         const MATCHERS = {
             // Chỉ bộ cài NSIS; bỏ qua bộ cài một cửa sổ (*-installer.exe, Sameko-Setup-*.exe) ở 1.3.0-1.3.1
-            'dl-installer': n => n.endsWith('.exe') && !n.endsWith('-installer.exe') && !n.startsWith('sameko-setup-'),
-            'dl-portable': n => n.endsWith('.zip'),
+            // Từ 1.5.0 còn có sameko-dev-cpp-update-*.exe (bản sao cho auto-update): không phải nút tải.
+            'dl-installer': n => n.endsWith('.exe') && !n.endsWith('-installer.exe') && !n.startsWith('sameko-setup-') && !n.includes('-update-'),
+            // Bản zip của Mac (*-mac-arm64.zip) không phải bản portable Windows.
+            'dl-portable': n => n.endsWith('.zip') && !n.includes('-mac-'),
+            'dl-dmg': n => n.endsWith('.dmg'),
             'dl-appimage': n => n.endsWith('.appimage'),
             'dl-deb': n => n.endsWith('.deb'),
             'dl-targz': n => n.endsWith('.tar.gz')
@@ -326,10 +329,19 @@ fetch('https://api.github.com/repos/QuangquyNguyenvo/Sameko-Dev-CPP/releases')
 
     const hint = document.getElementById('dl-hint');
     if (!hint) return;
-    if (os === 'windows') hint.textContent = 'Windows 10/11 · 64-bit · Free & open source';
-    else if (os === 'linux') hint.textContent = 'Linux x64 · AppImage, .deb, tar.gz · Free & open source';
-    else if (os === 'mac') hint.textContent = 'No official macOS build yet - see the wiki to build from source';
-    else hint.textContent = 'Windows 10/11 · Linux x64 · Free & open source';
+    const vi = (document.documentElement.lang || '').startsWith('vi');
+    const HINTS = vi ? {
+        windows: 'Windows 10/11 · 64-bit · Miễn phí & mã nguồn mở',
+        linux: 'Linux x64 · AppImage · Miễn phí & mã nguồn mở',
+        mac: 'macOS beta · Apple Silicon (M1 trở lên) · Miễn phí & mã nguồn mở',
+        other: 'Windows 10/11 · macOS (beta) · Linux x64 · Miễn phí & mã nguồn mở'
+    } : {
+        windows: 'Windows 10/11 · 64-bit · Free & open source',
+        linux: 'Linux x64 · AppImage · Free & open source',
+        mac: 'macOS beta · Apple Silicon (M1 and later) · Free & open source',
+        other: 'Windows 10/11 · macOS (beta) · Linux x64 · Free & open source'
+    };
+    hint.textContent = HINTS[os] || HINTS.other;
 })();
 } catch (e) { console.warn('Dropdown/fetch section error:', e); }
 

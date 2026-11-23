@@ -97,7 +97,7 @@
     <main id="main">
         <header class="band log-hero">
             <div class="log-hero__art" aria-hidden="true">
-                <span class="log-hero__word">v1.4</span>
+                <span class="log-hero__word">v1.5</span>
                 <span class="shape shape--circle" style="--x:6%;--y:22%;--sz:44px;--c:var(--shape-sky);--d:7s"></span>
                 <span class="shape shape--ring" style="--x:44%;--y:84%;--sz:36px;--c:var(--shape-butter);--d:10s"></span>
                 <span class="shape shape--pill" style="--x:86%;--y:70%;--sz:70px;--c:var(--shape-white);--d:8s;--r:-14deg"></span>
@@ -107,7 +107,7 @@
                 <div class="band__head">
                     <span class="eyebrow">Changelog</span>
                     <h1 class="h-display">What changed, <span class="hl">and when.</span></h1>
-                    <p class="lede">Every version of Sameko Dev C++, newest first. The latest is <a href="#v1-4-0">1.4.0</a>, released 7 November 2026.</p>
+                    <p class="lede">Every version of Sameko Dev C++, newest first. The latest is <a href="#v1-5-0">1.5.0</a>, released 24 November 2026.</p>
                 </div>
             </div>
         </header>
@@ -117,7 +117,9 @@
                 <aside class="log__nav" aria-label="Versions">
                     <p class="log__nav-title">Versions</p>
                     <ol>
-                        <li><a href="#v1-4-0"><b>1.4.0</b><i>Latest</i><span>2026-11</span></a></li>
+                        <li><a href="#v1-5-0"><b>1.5.0</b><i>Latest</i><span>2026-11</span></a></li>
+                        <li><a href="#v1-4-1"><b>1.4.1</b><span>2026-11</span></a></li>
+                        <li><a href="#v1-4-0"><b>1.4.0</b><span>2026-11</span></a></li>
                         <li><a href="#v1-3-2"><b>1.3.2</b><span>2026-10</span></a></li>
                         <li><a href="#v1-3-1"><b>1.3.1</b><span>2026-10</span></a></li>
                         <li><a href="#v1-3-0"><b>1.3.0</b><span>2026-10</span></a></li>
@@ -136,10 +138,162 @@
                     </ol>
                 </aside>
                 <div class="log__list">
-                    <article class="rel rel--latest" id="v1-4-0">
+                    <article class="rel rel--latest" id="v1-5-0">
+                        <header class="rel__head">
+                            <h2 class="rel__version"><a href="#v1-5-0">1.5.0</a></h2>
+                            <span class="rel__tag">Latest</span>
+                            <time class="rel__date" datetime="2026-11-24">24 November 2026</time>
+                            <a class="rel__gh" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/tag/v1.5.0" target="_blank" rel="noopener">Downloads on GitHub</a>
+                        </header>
+                        <div class="rel__intro"><p>A macOS beta, judge-style testing, stress tests and checkers, submitting to online judges from the app, a debugger that watches arrays and values, tools on each test row, clangd navigation, seven more languages, and smaller, faster updates.</p>
+</div>
+                        <section class="rel__sec rel__sec--added">
+                            <h3><span class="rel__chip">Added</span></h3>
+                            <ul>
+<li><strong>macOS (beta)</strong><ul>
+<li><strong>macOS on Apple Silicon</strong> (<a target="_blank" rel="noopener" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/58">#58</a>): a DMG and a zip for M1 and later. It uses GCC from Homebrew, LLDB for debugging and clangd for code suggestions. Install steps are in the README.</li>
+<li><strong>Mac-style app</strong>: native window buttons, ⌘ shortcuts and labels, and C/C++ files can be opened from Finder.</li>
+<li><strong>Debugger on Mac</strong>: LLDB names crashes (a stack overflow too), lists threads, and changes a value while paused, as on Windows and Linux.</li>
+<li>The app is not signed with an Apple Developer account, so the first launch must be allowed once, and updates are downloaded by hand.</li>
+</ul>
+</li>
+<li><strong>Online judges</strong><ul>
+<li><strong>Submit to Online Judge</strong> (Ctrl+Alt+S) through the new <strong>Sameko Companion</strong> browser extension: Codeforces, AtCoder, CSES and DMOJ-based judges (VNOI, LQDOJ). It submits from your logged-in browser and shows the verdict in the app. The extension is not on the browser stores yet, so Submit and the extension section appear only after one has connected.</li>
+<li><strong>More judges in the extension</strong>: HNOJ (hnoj.edu.vn), LTOJ (laptrinhonline.club) and 28tech (oj.28tech.com.vn).</li>
+<li><strong>Sameko Companion for Firefox</strong> (128+), next to Chrome and Edge.</li>
+<li><strong>One-file submit</strong>: quoted includes of your own headers (<code>#include "lib/dsu.hpp"</code>) are pasted into the submitted file, since a judge takes one file. Other includes are sent as written.</li>
+<li><strong>Open the app from the browser</strong>: the extension's Open button starts Sameko Dev C++ through a <code>samekodev://</code> link (it only opens the app; the uninstaller removes the link).</li>
+</ul>
+</li>
+<li><strong>Testing</strong><ul>
+<li><strong>Problems judged through files</strong>: a solution that reads <code>BAI.INP</code> and writes <code>BAI.OUT</code> is judged as written. The names are read from <code>freopen</code> or <code>fstream</code> in your code, including <code>#define NAME</code>, or set in Problem options.</li>
+<li><strong>Manage tests</strong>: turn single tests on or off, hide passed tests, use a program's output as the expected output, import a whole folder of tests (large files stay on disk), and save tests to a folder.</li>
+<li><strong>Problem options</strong>: time and memory limit per problem, input and output files, interactor.</li>
+<li><strong>Interactor</strong>: a testlib interactor plays against your solution and gives the verdict, in Run All Tests and on a single test.</li>
+<li><strong>Stopwatch</strong> for each problem, and a <strong>head comment</strong> (name, link, limits, date) for files made from an online judge.</li>
+<li><strong>Stress test</strong> (STRESS tab): runs a generator, a brute force and your solution on seeded tests until the first wrong answer; the failing test can be added to your tests.</li>
+<li><strong>Checkers</strong>: judge a problem's tests with a testlib checker, or compare ignoring case. <code>testlib.h</code> ships with the app.</li>
+<li><strong>Memory limit</strong> for tests (default 256 MB; Competitive Companion problems bring their own), reported as MLE.</li>
+<li><strong>Large Stack</strong> (256 MB, on by default): deep recursion no longer overflows, as on judges.</li>
+<li><strong>Interactive problems by hand</strong>: you answer the program's queries in the terminal. Your replies have their own colour, and the run ends with <code>Queries: N | Your replies: M</code>.</li>
+<li><strong>Flush warning</strong>: a C/C++ solution that prints <code>?</code> queries but never flushes is warned when it starts. It works locally, but a judge gives Idleness limit exceeded.</li>
+</ul>
+</li>
+<li><strong>Tools on a test row</strong><ul>
+<li><strong>Debug a test</strong>: start the debugger from a test row with that test's input on stdin.</li>
+<li><strong>Re-run with checks</strong>: build and run a failed test with STL checks and supported sanitizers, then inspect the diagnostics.</li>
+<li><strong>Test input graph</strong>: draw a test's input as a graph (edge list, <code>n m</code> header, parent array, several test cases), drag nodes, zoom, and see which lines could not be read.</li>
+<li><strong>Profile a test</strong>: run the selected input through a profiling build and show the top 15 functions from gprof.</li>
+</ul>
+</li>
+<li><strong>Debugger</strong><ul>
+<li><strong>Watchpoints</strong>: pause when a watched expression changes and see its old and new values.</li>
+<li><strong>Array and vector watch view</strong>: inspect the first 200 numeric elements and see which indices changed since the last stop.</li>
+<li><strong>Change a value while paused</strong>: Alt+click a variable's value in the debugger.</li>
+<li><strong>Crashes are shown in the debugger</strong>: it stops at your line with the error's name and a hint, instead of a bare "Paused". A stack overflow no longer freezes the panel.</li>
+<li><strong>Threads panel</strong>: a program with several threads lists them; click one to see its stack and variables.</li>
+<li><strong>std::map shows <code>[key] = value</code></strong> instead of keys and values as separate items, and std::string is one value.</li>
+</ul>
+</li>
+<li><strong>Editor</strong><ul>
+<li><strong>Go to Definition and Find All References</strong>: F12 and Shift+F12 use clangd to navigate C/C++ symbols across files.</li>
+<li><strong>Clangd Quick Fix</strong>: Ctrl+. and the editor lightbulb apply suggested edits with undo support.</li>
+<li><strong>Find in Files</strong>: Ctrl+Shift+F searches the Explorer folder with case and regex options and opens matching lines.</li>
+<li><strong>Rename Symbol</strong> (F2), <strong>parameter hints</strong> while typing a call, and <strong>Go to Symbol</strong> (Ctrl+Shift+O), all from clangd.</li>
+<li><strong>Go to File</strong> (Ctrl+P): open a tab or a file of the Explorer folder by typing part of its name; <code>name:12</code> goes to line 12.</li>
+<li><strong>More shortcuts</strong>: Open Folder (Ctrl+K Ctrl+O), Command Palette (Ctrl+Shift+P), Reopen Closed Tab (Ctrl+Shift+T), Close All Tabs (Ctrl+K Ctrl+W), Ctrl+B for the sidebar and Ctrl+` for the terminal.</li>
+<li><strong>Compile error explanations</strong>: the first GCC build error gets a short hint in English, Vietnamese or Chinese when it matches a common case.</li>
+<li><strong>Full-width punctuation fix</strong>: Quick Fix can replace full-width punctuation on C/C++ error lines with ASCII.</li>
+<li><strong>Snippets per language</strong>: the editor suggests only the snippets of the file's language.</li>
+</ul>
+</li>
+<li><strong>Languages and app</strong><ul>
+<li><strong>Other languages</strong> (<a target="_blank" rel="noopener" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/66">#66</a>, asked for by <a target="_blank" rel="noopener" href="https://github.com/hulgv">@hulgv</a>): build and run Python, Java, Kotlin, Rust, Go, Pascal and JavaScript with the compiler already on your machine. Tests, stress tests and the external console work for them; IntelliSense and the debugger stay C/C++.</li>
+<li><strong>Templates for the other languages</strong>, and a choice of what New File creates.</li>
+<li><strong>View › Reset Layout</strong>.</li>
+<li><strong>Portable zip</strong> keeps its data in <code>data\</code> next to the exe (<a target="_blank" rel="noopener" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/76">#76</a>, requested by <a target="_blank" rel="noopener" href="https://github.com/wudream813">@wudream813</a>).</li>
+</ul>
+</li>
+</ul>
+
+                        </section>
+                        <section class="rel__sec rel__sec--changed">
+                            <h3><span class="rel__chip">Changed</span></h3>
+                            <ul>
+<li><strong>Run All Tests judges like an online judge</strong>: tests are built with -O2 into their own program, output is compared word by word with real numbers within 1e-6, and the time limit counts from the program's start.</li>
+<li><strong>Faster judging of large outputs</strong>: Run All Tests compares in place and stops at the first difference (20 MB output: 1.1 s / 460 MB before, 0.3 s / 44 MB now). The diff view no longer copies or draws the whole output.</li>
+<li><strong>TESTS panel redesigned</strong>: verdict, details, time and memory on each row, and a verdict bar.</li>
+<li><strong>Crashes are named</strong> (stack overflow, access violation, division by zero…) instead of a bare exit code.</li>
+<li><strong>A test without an expected output</strong> is RAN, not AC.</li>
+<li><strong>Updates download only what changed</strong>, keep GCC when it did not change, and show a progress window. The first update from 1.4.1 still downloads the whole installer, since 1.4.1 cannot fetch only the changes.</li>
+<li><strong>Lighter on memory and disk</strong>: clangd uses about half the memory (127 MB to 62 MB on a typical file), precompiled headers keep 3 variants and drop those unused for 14 days, and the app is about 75 MB smaller on disk.</li>
+<li><strong>Debugger help</strong> is shorter, grouped by what you are doing, and readable on every theme.</li>
+<li><strong>Rounded Chinese font</strong> (<a target="_blank" rel="noopener" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/73">#73</a>, suggested by <a target="_blank" rel="noopener" href="https://github.com/Onlyanadvisor">@Onlyanadvisor</a>): the Simplified Chinese interface uses WenYuan Rounded SC (SIL OFL 1.1), cut to the interface's characters (about 240 KB).</li>
+</ul>
+
+                        </section>
+                        <section class="rel__sec rel__sec--fixed">
+                            <h3><span class="rel__chip">Fixed</span></h3>
+                            <ul>
+<li><strong>IntelliSense no longer fills the disk</strong>: clangd kept a 13 MB preamble-*.pch file in TEMP for each C++ file opened, and they were never deleted (several GB after a few months). It now keeps them in memory.</li>
+<li><strong>Typing <code>else {</code> and pressing Enter</strong> now opens an indented block. The suggestion list stayed open after the <code>{</code>, so Enter inserted clangd's <code>else</code> snippet without indentation, and Tab then turned it into <code>else if (condition)</code>. Reported by <a target="_blank" rel="noopener" href="https://github.com/JuggyBob">@JuggyBob</a>.</li>
+<li><strong>Antivirus or Windows blocking a program</strong>: the message says so and names the folder to exclude.</li>
+<li><strong>Run keeps working</strong> after an antivirus deletes the app's run helper.</li>
+<li><strong>Output card verdict</strong>: a program that prints the right answer but then crashes is RE, not AC, and the verdict follows the compare mode (Words, Ignore case) as TESTS does.</li>
+<li><strong>End of input</strong>: Ctrl+D in the terminal (or Ctrl+Z in an empty box) sends EOF, so <code>while (cin &gt;&gt; x)</code> can finish. A program still running 2 s after the Input box was sent gets a hint that it may be waiting for more input.</li>
+<li><strong>Stress test</strong> rechecks every test that looked like TLE in a parallel round, not only the first, so a real TLE is no longer reported as "All tests passed". It keeps its Tests/Max values, and stopping before any test ran is no longer shown as passed.</li>
+<li><strong>A file changed in another editor</strong> is no longer overwritten by Build or Run Tests while its Reload prompt is unanswered.</li>
+<li><strong>Build and Debug wait</strong> while tests or a stress test are running.</li>
+<li><strong>Adding a test with +</strong> keeps the text you typed.</li>
+<li><strong>Samples under a "Ví dụ" heading</strong> are now read from VNOJ-style problem pages.</li>
+<li><strong>Submitting twice</strong> with a double click no longer sends two submissions; the problem link is remembered after a restart.</li>
+<li><strong>A submission whose browser was closed</strong> ends with a message instead of showing "Judging" forever.</li>
+<li><strong>Competitive Companion</strong> accepts problems only from browser extensions, not from web pages.</li>
+<li><strong>Python started through <code>py</code></strong> is timed and limited correctly; <strong>Java</strong> is no longer given MLE below the limit.</li>
+<li><strong>Restore session prompt</strong> is translated (<a target="_blank" rel="noopener" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/74">#74</a>, reported by <a target="_blank" rel="noopener" href="https://github.com/Onlyanadvisor">@Onlyanadvisor</a>).</li>
+<li><strong>Linux memory limit</strong>: a program that ends quickly is measured exactly, so going over the limit is always MLE.</li>
+<li><strong>Stop on Linux</strong> also ends the processes the program started.</li>
+<li><strong>Linux without g++</strong>: the app shows the command to install it instead of pointing to MinGW.</li>
+<li><strong>Linux and macOS prompts</strong> printed before reading input now appear right away, without a flush.</li>
+<li><strong>Programs that print a lot are judged at full speed</strong>: Run All Tests and stress tests no longer build with realtime output, which made a million lines of <code>printf</code> take 12 s instead of 0.4 s and could give a false TLE.</li>
+<li><strong>Debugger</strong>: watching a <code>std::vector</code> before it is constructed no longer freezes the session.</li>
+<li><strong>IntelliSense safety</strong>: clangd may run only the compiler the app detected, never a program named by a project's <code>compile_commands.json</code>.</li>
+<li><strong>Undocking a panel</strong> keeps the view you were on, and menu shortcuts no longer overlap their labels.</li>
+<li><strong>Minimap switch</strong> is greyed out while Performance Mode turns the minimap off.</li>
+<li><strong>Docking panels</strong>: dragging Input/Output and the bottom panel around no longer leaves the wrong view showing.</li>
+<li><strong>Narrow panels</strong>: the TESTS header (Run All, Submit and the verdict) and the Input card's test switcher no longer overlap or get cut off when the debugger or the I/O column leaves them little room; labels shorten to icons instead.</li>
+<li><strong>Linux</strong>: the AppImage registers <code>samekodev://</code> links, Ptyxis, GNOME Console, foot and Ghostty work as the external terminal, C/C++ files can be opened with Sameko, and a blocked program no longer blames Windows.</li>
+</ul>
+
+                        </section>
+                    </article>
+                    <article class="rel" id="v1-4-1">
+                        <header class="rel__head">
+                            <h2 class="rel__version"><a href="#v1-4-1">1.4.1</a></h2>
+                            <time class="rel__date" datetime="2026-11-18">18 November 2026</time>
+                            <a class="rel__gh" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/tag/v1.4.1" target="_blank" rel="noopener">Downloads on GitHub</a>
+                        </header>
+                        <div class="rel__intro"><p>Bug fixes: copy and paste in the editor, builds under a Vietnamese Windows user name, and Restart to update.</p>
+</div>
+                        <section class="rel__sec rel__sec--fixed">
+                            <h3><span class="rel__chip">Fixed</span></h3>
+                            <ul>
+<li><strong>Ctrl+C, Ctrl+V, Ctrl+X and Delete in the editor</strong> work again while a file is selected in the Explorer. Before, the Explorer took them as file copy, paste and delete.</li>
+<li><strong>Unsaved work from the last session</strong> is kept when the same file is opened again before Restore is answered. Before, closing the app then lost it.</li>
+<li><strong>Builds under a non-English Windows user name</strong> (e.g. <code>C:\Users\Nguyễn</code>) no longer fail.</li>
+<li><strong>Restart to update</strong> no longer leaves an app with no window that cannot be opened again, and the update shows its progress.</li>
+<li><strong>Vietnamese letters</strong> use the app's fonts everywhere.</li>
+<li><strong>Vietnamese titles and buttons</strong> are drawn in one font. Fredoka has no Vietnamese letters, so a word such as "đồ thị" mixed two fonts; in Vietnamese, Fredoka is now drawn wholly with Nunito.</li>
+<li><strong>Find widget Close button</strong> is clickable (<a target="_blank" rel="noopener" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/71">#71</a>); Escape in Settings closes inner widgets first.</li>
+<li><strong>No blue line</strong> above the current line with word wrap on (<a target="_blank" rel="noopener" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/72">#72</a>).</li>
+<li><strong>Run button edge</strong> (<a target="_blank" rel="noopener" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/issues/75">#75</a>, by <a target="_blank" rel="noopener" href="https://github.com/baodao211">@baodao211</a>): hover no longer flickers and a click on the edge is no longer lost.</li>
+</ul>
+
+                        </section>
+                    </article>
+                    <article class="rel" id="v1-4-0">
                         <header class="rel__head">
                             <h2 class="rel__version"><a href="#v1-4-0">1.4.0</a></h2>
-                            <span class="rel__tag">Latest</span>
                             <time class="rel__date" datetime="2026-11-07">7 November 2026</time>
                             <a class="rel__gh" href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/tag/v1.4.0" target="_blank" rel="noopener">Downloads on GitHub</a>
                         </header>

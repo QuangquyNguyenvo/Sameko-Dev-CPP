@@ -1,6 +1,6 @@
 # Sameko Dev C++
 
-> Sameko Dev C++ is a free, open-source (MIT) C++ IDE for Windows and Linux, built on Electron and the Monaco editor. On Windows it bundles GCC 16.1.0 (MinGW), clangd and GDB, so you can write, compile, run and debug C++ without installing a compiler. The Linux AppImage uses the g++, gdb and clangd installed on the system. Current version: 1.4.0 (released 2026-11-07).
+> Sameko Dev C++ is a free, open-source (MIT) C++ IDE for Windows, Linux and macOS (beta), built on Electron and the Monaco editor. On Windows it bundles GCC 16.1.0 (MinGW), clangd and GDB, so you can write, compile, run and debug C++ without installing a compiler. The Linux AppImage and the macOS beta (Apple Silicon) use the compiler, debugger and clangd installed on the system. Current version: 1.5.0 (released 2026-11-24).
 
 It is aimed at beginners, students and competitive programmers. Key facts:
 

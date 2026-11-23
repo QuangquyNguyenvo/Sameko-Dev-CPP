@@ -5,7 +5,7 @@
     <!-- Canonical public pages. Keep lastmod aligned with content releases. -->
     <url>
         <loc>https://sameko.dev/</loc>
-        <lastmod>2026-11-13</lastmod>
+        <lastmod>2026-11-24</lastmod>
         <image:image>
             <image:loc>https://sameko.dev/assets/a.webp</image:loc>
             <image:title>Sameko Character (Hero Image)</image:title>
@@ -15,7 +15,7 @@
 
     <url>
         <loc>https://sameko.dev/vi</loc>
-        <lastmod>2026-11-13</lastmod>
+        <lastmod>2026-11-24</lastmod>
     </url>
 
     <url>
@@ -30,16 +30,16 @@
 
     <url>
         <loc>https://sameko.dev/changelog</loc>
-        <lastmod>2026-11-13</lastmod>
+        <lastmod>2026-11-24</lastmod>
     </url>
 
     <url>
         <loc>https://sameko.dev/wiki</loc>
-        <lastmod>2026-11-07</lastmod>
+        <lastmod>2026-11-24</lastmod>
     </url>
 
     <url>
         <loc>https://sameko.dev/wiki-vi</loc>
-        <lastmod>2026-11-07</lastmod>
+        <lastmod>2026-11-24</lastmod>
     </url>
 </urlset>

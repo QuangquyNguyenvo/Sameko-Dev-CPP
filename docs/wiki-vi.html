@@ -162,7 +162,7 @@
             </div>
             <div class="wiki-hero-wave" aria-hidden="true"></div>
             <div class="wiki-hero-copy" data-reveal>
-                <a class="wiki-release-pill" href="#whats-new"><b>v1.4.0</b> Có gì mới &rarr;</a>
+                <a class="wiki-release-pill" href="#whats-new"><b>v1.5.0</b> Có gì mới &rarr;</a>
                 <h1 id="wiki-hero-title" class="is-two-line">Code nhanh hơn,<br><span class="hl">hiểu rõ hơn.<svg class="hl__squiggle" viewBox="0 0 220 24" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" d="M4 14C24 4 40 22 60 13S96 4 116 13s36 9 56 0 32-7 44-2"/></svg><svg class="hl__shine" viewBox="0 0 40 40" aria-hidden="true"><path pathLength="1" d="M9 31 4 22M20 26 19 12M31 29l7-9"/></svg></span></h1>
                 <p>Mọi thứ về Sameko, từ <code>hello.cpp</code> đến ngày thi.</p>
                 <form class="wiki-search" id="wiki-search-form" role="search">
@@ -207,7 +207,8 @@
                         <a href="#debugger" class="wiki-nav-link">Debugger</a>
                         <a href="#file-explorer" class="wiki-nav-link">Quản lý File</a>
                         <a href="#checkpoints" class="wiki-nav-link">Checkpoints</a>
-                        <a href="#competitive" class="wiki-nav-link">Competitive Companion</a>
+                        <a href="#competitive" class="wiki-nav-link">Test &amp; nộp bài</a>
+                        <a href="#languages" class="wiki-nav-link">Ngôn ngữ khác</a>
                         <a href="#snippets" class="wiki-nav-link">Snippets</a>
                         <a href="#auto-update" class="wiki-nav-link">Tự động cập nhật</a>
                     </div>
@@ -229,44 +230,44 @@
                 <div>
                     <!-- CÓ GÌ MỚI -->
                     <section id="whats-new" data-reveal>
-                        <span class="wiki-eyebrow">Release notes · 1.4.0 · 07/11/2026</span>
-                        <h2>Có gì mới trong Sameko 1.4.0</h2>
-                        <p class="wiki-subtitle">Giao diện tiếng Việt và tiếng Trung, Vim Mode, theme mới, lưu file an toàn hơn.</p>
+                        <span class="wiki-eyebrow">Release notes · 1.5.0 · 24/11/2026</span>
+                        <h2>Có gì mới trong Sameko 1.5.0</h2>
+                        <p class="wiki-subtitle">Sameko đã chạy được trên Mac, chấm test y như online judge, và nộp bài giúp bạn luôn.</p>
 
                         <div class="wiki-update-grid">
                             <article class="wiki-update-card">
-                                <strong>Ngôn ngữ giao diện</strong>
-                                <p>English, Tiếng Việt và 简体中文 trong Settings › Appearance › Language. Code và output của chương trình không bao giờ bị dịch.</p>
+                                <strong>Chào Mac</strong>
+                                <p>Bản beta cho máy Apple Silicon (M1 trở lên), dùng GCC từ Homebrew và debug bằng LLDB. <a href="#installation">Xem cách cài</a></p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Vim Mode</strong>
-                                <p>Bật trong Settings › Editor; dùng được <code>:w</code>, <code>:q</code>, <code>:wq</code>, có bộ phím tắt riêng.</p>
+                                <strong>Nộp bài ngay trong app</strong>
+                                <p>Bấm <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>S</kbd>, extension Sameko Companion sẽ nộp bằng trình duyệt của bạn rồi báo kết quả về app.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Thẻ Stderr</strong>
-                                <p>Output của <code>cerr</code> có thẻ riêng dưới Input / Output / Expected; AC/WA chỉ chấm theo stdout.</p>
+                                <strong>Chấm test như judge thật</strong>
+                                <p>Build -O2, giới hạn bộ nhớ, stack lớn, checker, stress test và cả bài đọc ghi file. Chạy ở máy mà ra kết quả như lúc nộp.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Theme mới</strong>
-                                <p>Catppuccin Mocha, Gruvbox Dark, Crimson, Event Horizon, cùng Kawaii Dark và Kawaii Light mới có nền video.</p>
+                                <strong>Công cụ trên từng test</strong>
+                                <p>Debug đúng test đó, chạy lại kèm sanitizer, đo xem hàm nào chậm, hay vẽ input thành đồ thị để kéo thả.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Lưu file an toàn hơn</strong>
-                                <p>Không còn file ghi dở khi máy treo hoặc đầy ổ; lưu lỗi thì Build, Run và F5 sẽ dừng.</p>
+                                <strong>Nhìn mảng thay đổi</strong>
+                                <p>Thêm vector vào Watch là thấy từng ô, ô nào vừa đổi thì sáng lên. Watchpoint dừng ngay khi biến đổi giá trị.</p>
                             </article>
                             <article class="wiki-update-card">
-                                <strong>Khởi động nhanh hơn</strong>
-                                <p>Từ lần mở thứ hai khởi động nhanh hơn, clangd chạy cùng tab C++ đầu tiên, gõ file lớn nhẹ hơn.</p>
+                                <strong>Thêm 7 ngôn ngữ</strong>
+                                <p>Python, Java, Kotlin, Rust, Go, Pascal và JavaScript chạy được bằng compiler có sẵn trên máy bạn.</p>
                             </article>
                         </div>
 
                         <div class="callout note">
-                            <div class="callout-title">Từ bản 1.3.0 đến nay</div>
-                            <p><b>1.3.2</b> thêm xem trước Markdown, định dạng khi lưu bằng AStyle, đổi tên tab và tìm kiếm trong Settings. <b>1.3.1</b> làm lại Theme Customizer và đọc <code>.txt</code>, <code>.inp</code>, <code>.out</code>, <code>.ans</code> dạng văn bản thường. <b>1.3.0</b> mang lại kiểm tra lỗi trực tiếp bằng clangd, chạy test song song, đo đúng thời gian chạy và bộ nhớ tối đa.</p>
+                            <div class="callout-title">Còn nữa</div>
+                            <p>Nhảy tới định nghĩa (<kbd>F12</kbd>), tìm mọi chỗ dùng, đổi tên biến và Quick Fix nhờ clangd, tìm trong cả thư mục (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd>), lỗi biên dịch được giải thích dễ hiểu, và bản cập nhật chỉ còn khoảng 20 MB thay vì tải lại cả bộ cài.</p>
                         </div>
                         <div class="callout note">
-                            <div class="callout-title">Phạm vi phiên bản</div>
-                            <p>Windows có sẵn GCC 16.1.0, clangd, GDB và AStyle; Linux dùng công cụ đã cài trên máy.</p>
+                            <div class="callout-title">Mỗi máy dùng gì</div>
+                            <p>Windows có sẵn GCC 16.1.0, clangd, GDB và AStyle, cài xong là dùng. Linux và macOS dùng compiler và debugger đã cài trên máy bạn.</p>
                         </div>
                     </section>
 
@@ -277,7 +278,7 @@
 
                         <p>Sameko Dev C++ là IDE C++ miễn phí, mã nguồn mở (MIT), dành cho lập trình thi đấu và học tập,
                             xây dựng trên Monaco Editor. Trên Windows, Sameko có sẵn GCC 16.1.0, clangd và GDB nên bạn có thể
-                            viết, chạy và debug C++ ngay sau khi cài, không cần tự cài MinGW. Tài liệu này viết cho bản 1.4.0.</p>
+                            viết, chạy và debug C++ ngay sau khi cài, không cần tự cài MinGW. Linux và macOS (beta) dùng công cụ có sẵn trên máy. Tài liệu này viết cho bản 1.5.0.</p>
 
                         <h2>Sameko dành cho ai?</h2>
                         <ul>
@@ -299,7 +300,7 @@
                                     <b>Installer</b> (<code>sameko-dev-cpp-setup-&lt;version&gt;.exe</code>) - có shortcut ở Start Menu và Desktop, mở file C++ bằng "Open with", tự cập nhật và có trình gỡ cài đặt. Khuyên dùng cho đa số người dùng.
                                 </li>
                                 <li>
-                                    <b>Portable (.zip)</b> - giải nén là chạy, không cần quyền admin, không ghi registry. Hợp để chạy từ USB hoặc máy ở trường. Bản portable không tự cập nhật.
+                                    <b>Portable (.zip)</b> - giải nén là chạy, không cần quyền admin. Cài đặt của bạn nằm trong thư mục <code>data</code> cạnh file exe, nên cắm USB sang máy khác vẫn còn nguyên. Bản portable thì bạn tự tải bản mới nhé.
                                 </li>
                             </ul>
                         </div>
@@ -325,6 +326,11 @@
                         <div class="callout note">
                             <div class="callout-title">Cảnh báo của Windows Defender</div>
                             <p>App mới có thể bị báo "not commonly downloaded" hoặc SmartScreen. Chọn <b>Keep</b>, hoặc <b>More info</b> &rarr; <b>Run anyway</b>.</p>
+                        </div>
+
+                        <div class="callout note">
+                            <div class="callout-title">macOS (beta)</div>
+                            <p>Dành cho Mac chip Apple Silicon (M1 trở lên). Bạn cài công cụ bằng <code>brew install gcc astyle</code>, mở file <code>.dmg</code> rồi kéo Sameko vào Applications. App chưa được Apple ký nên lần đầu bạn cần cho phép một lần trong Terminal: <code>xattr -cr "/Applications/Sameko Dev C++.app"</code>. Bản Mac không tự cập nhật, khi có bản mới Sameko sẽ hiện nút tải về.</p>
                         </div>
 
                         <div class="callout note">
@@ -376,7 +382,7 @@ int main() {
                             <tbody>
                                 <tr>
                                     <td>Hệ điều hành</td>
-                                    <td>Windows 10 64-bit, hoặc Linux x64</td>
+                                    <td>Windows 10 64-bit, Linux x64, hoặc macOS chip Apple Silicon (beta)</td>
                                     <td>Windows 11</td>
                                 </tr>
                                 <tr>
@@ -457,7 +463,7 @@ int main() {
                     <!-- PHÍM TẮT -->
                     <section id="shortcuts">
                         <h2>Phím tắt</h2>
-                        <p>Phím tắt mặc định. Đổi được trong <b>Settings › Keybindings</b>.</p>
+                        <p>Phím tắt mặc định, đổi được trong <b>Settings › Keybindings</b>. Trên Mac thì <kbd>Ctrl</kbd> là <kbd>⌘</kbd> nhé.</p>
 
                         <table>
                             <thead>
@@ -512,6 +518,34 @@ int main() {
                                     <td>Tab kế / tab trước</td>
                                 </tr>
                                 <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>T</kbd></td>
+                                    <td>Mở lại tab vừa đóng</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>P</kbd> / <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>P</kbd></td>
+                                    <td>Mở nhanh file / Command palette</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></td>
+                                    <td>Tìm trong cả thư mục</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>F12</kbd> / <kbd>Shift</kbd> + <kbd>F12</kbd></td>
+                                    <td>Tới định nghĩa / Tìm mọi chỗ dùng</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>F2</kbd> / <kbd>Ctrl</kbd> + <kbd>.</kbd></td>
+                                    <td>Đổi tên biến / Quick Fix</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F11</kbd></td>
+                                    <td>Chạy tất cả test</td>
+                                </tr>
+                                <tr>
+                                    <td><kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>S</kbd></td>
+                                    <td>Nộp bài lên online judge</td>
+                                </tr>
+                                <tr>
                                     <td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd></td>
                                     <td>Định dạng code (AStyle)</td>
                                 </tr>
@@ -528,7 +562,7 @@ int main() {
                                     <td>Hiện/ẩn bảng dưới (Problems / Terminal / Tests)</td>
                                 </tr>
                                 <tr>
-                                    <td><kbd>Ctrl</kbd> + <kbd>E</kbd></td>
+                                    <td><kbd>Ctrl</kbd> + <kbd>E</kbd> hoặc <kbd>Ctrl</kbd> + <kbd>B</kbd></td>
                                     <td>Hiện/ẩn Explorer</td>
                                 </tr>
                                 <tr>
@@ -600,18 +634,18 @@ int main() {
                     <!-- EDITOR -->
                     <section id="editor-features">
                         <h2>Editor</h2>
-                        <p>Sameko dùng Monaco Editor, cùng nhân với VS Code, và clangd cho các tính năng ngôn ngữ C++.</p>
+                        <p>Editor của Sameko là Monaco, chính là editor trong VS Code, cộng thêm clangd hiểu code C++ của bạn nên gợi ý được ngay khi gõ.</p>
 
                         <h3>Tính năng chính</h3>
                         <ul>
-                            <li><b>IntelliSense</b> - gợi ý, hover và chữ ký hàm từ clangd cho STL và code của bạn</li>
-                            <li><b>Kiểm tra lỗi trực tiếp</b> - báo lỗi và cảnh báo ngay khi gõ, từ clangd (khoảng 100&ndash;130 ms)</li>
-                            <li><b>Định dạng code</b> - <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd>, có 13 kiểu AStyle trong Settings › Editor › Format Style, và <b>Format on Save</b> cho file C/C++</li>
-                            <li><b>Tự đóng kiểu</b> - gõ <code>{</code> sau <code>struct Name</code> (hoặc <code>class</code>, <code>union</code>, <code>enum</code>) sẽ thành <code>{};</code></li>
-                            <li><b>Nhiều con trỏ</b> - giữ <kbd>Alt</kbd> rồi click, hoặc <kbd>Ctrl</kbd> + <kbd>D</kbd> để chọn chỗ trùng tiếp theo</li>
-                            <li><b>Tìm &amp; thay thế</b> - <kbd>Ctrl</kbd> + <kbd>H</kbd>, hỗ trợ regex</li>
-                            <li><b>Chia đôi editor</b> - <kbd>Ctrl</kbd> + <kbd>\</kbd> để làm hai file cạnh nhau</li>
-                            <li><b>Tô màu ngoặc, minimap và thu gọn code</b></li>
+                            <li><b>Gợi ý hiểu code của bạn</b> - gợi ý, xem tài liệu khi rê chuột và tham số hàm, cho cả STL lẫn hàm bạn tự viết</li>
+                            <li><b>Báo lỗi ngay khi gõ</b> - gõ xong một nhịp là gạch đỏ, gạch vàng hiện lên, chưa cần build</li>
+                            <li><b>Nhảy qua lại trong code</b> - <kbd>F12</kbd> tới chỗ định nghĩa, <kbd>Shift</kbd> + <kbd>F12</kbd> xem mọi chỗ dùng, <kbd>F2</kbd> đổi tên biến ở mọi nơi</li>
+                            <li><b>Quick Fix</b> - <kbd>Ctrl</kbd> + <kbd>.</kbd> hoặc bấm bóng đèn để sửa theo gợi ý của clangd, sửa được cả dấu câu full-width lỡ gõ bằng bộ gõ tiếng Việt</li>
+                            <li><b>Tìm trong cả thư mục</b> - <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd>, còn <kbd>Ctrl</kbd> + <kbd>P</kbd> mở file chỉ cần gõ một phần tên (<code>main:12</code> là nhảy tới dòng 12)</li>
+                            <li><b>Lỗi biên dịch dễ hiểu</b> - lỗi GCC đầu tiên có thêm một dòng giải thích thường do đâu, bằng tiếng Việt luôn</li>
+                            <li><b>Định dạng code</b> - <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd> với 13 kiểu AStyle, hoặc để nó tự định dạng mỗi lần lưu</li>
+                            <li><b>Mấy thứ quen thuộc</b> - nhiều con trỏ (<kbd>Alt</kbd> + click, <kbd>Ctrl</kbd> + <kbd>D</kbd>), tìm và thay thế có regex, chia đôi editor (<kbd>Ctrl</kbd> + <kbd>\</kbd>), tô màu ngoặc, minimap và thu gọn code</li>
                         </ul>
 
                         <h3>Markdown và file test</h3>
@@ -626,7 +660,7 @@ int main() {
                     <section id="debugger" data-reveal>
                         <span class="wiki-eyebrow">Dừng, xem, hiểu</span>
                         <h2>Debugger GDB tích hợp</h2>
-                        <p>Đặt breakpoint ở lề trái rồi nhấn <kbd>F5</kbd>: Sameko build kèm thông tin debug và mở bảng Debug cạnh editor. Trên Windows dùng MinGW GDB đi kèm; Linux dùng <code>gdb</code> của hệ thống.</p>
+                        <p>Bấm vào lề trái để đặt breakpoint rồi nhấn <kbd>F5</kbd>. Sameko build kèm thông tin debug và mở bảng Debug ngay cạnh code. Windows dùng GDB có sẵn, Linux dùng <code>gdb</code> trên máy, còn Mac dùng LLDB.</p>
 
                         <div class="wiki-update-grid">
                             <article class="wiki-update-card">
@@ -644,6 +678,22 @@ int main() {
                             <article class="wiki-update-card">
                                 <strong>Xem lại các lần dừng</strong>
                                 <p>Back phát lại các lần dừng đã ghi (chỉ xem); Back to live để chạy tiếp.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Nhìn mảng thay đổi</strong>
+                                <p>Thêm vector hay mảng vào Watch để thấy từng ô, ô nào vừa đổi sau bước trước thì sáng lên.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Watchpoint</strong>
+                                <p>Dừng đúng lúc một biến đổi giá trị, hiện luôn giá trị cũ và mới cạnh nhau.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Sửa giá trị khi đang dừng</strong>
+                                <p><kbd>Alt</kbd> + click vào giá trị để thử số khác mà không cần build lại.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Crash có tên hẳn hoi</strong>
+                                <p>Chương trình crash là dừng ngay dòng của bạn và nói rõ lỗi gì, như tràn stack hay truy cập ngoài mảng.</p>
                             </article>
                         </div>
 
@@ -689,32 +739,43 @@ int main() {
 
                     <!-- COMPETITIVE -->
                     <section id="competitive">
-                        <h2>Competitive Companion và test</h2>
-                        <p>Competitive Companion là extension trình duyệt, gửi đề bài và test mẫu từ các online judge như Codeforces, AtCoder vào IDE.</p>
+                        <span class="wiki-eyebrow">Từ đề bài tới Accepted</span>
+                        <h2>Test và nộp bài</h2>
+                        <p>Lấy đề từ online judge, chấm thử y như judge sẽ chấm, rồi nộp luôn, khỏi phải rời Sameko.</p>
 
-                        <h3>Thiết lập</h3>
-                        <ol>
-                            <li>Cài <a
-                                    href="https://chrome.google.com/webstore/detail/competitive-companion/cjnmckjndlpiamhfimnnjmnckgghkjbl"
-                                    target="_blank" rel="noopener noreferrer">Competitive Companion</a> trên Chrome hoặc Firefox</li>
-                            <li>Mở Sameko IDE</li>
-                            <li>Vào trang đề bài và bấm icon extension</li>
-                            <li>File bài và test case xuất hiện trong IDE</li>
-                        </ol>
+                        <h3>Lấy đề</h3>
+                        <p>Bạn cài <a href="https://chrome.google.com/webstore/detail/competitive-companion/cjnmckjndlpiamhfimnnjmnckgghkjbl" target="_blank" rel="noopener noreferrer">Competitive Companion</a>, mở đề trên trình duyệt rồi bấm vào icon của nó. Sameko sẽ mở file mới với test mẫu điền sẵn. Nút hình đám mây trên thanh trên cùng có hướng dẫn từng bước.</p>
+
+                        <h3>Nộp bài ngay trong app</h3>
+                        <p>Extension mới <b>Sameko Companion</b> còn làm được hơn thế: bấm <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>S</kbd> (hoặc nút <b>Submit</b> ở bảng Tests) là nó nộp bằng trình duyệt bạn đang đăng nhập, rồi báo kết quả về app. Sameko không bao giờ thấy mật khẩu của bạn. Dùng được với Codeforces, AtCoder, CSES, VNOJ, LQDOJ, HNOJ, LTOJ và 28tech, trên Chrome, Edge và Firefox. Extension đang chờ lên kho tiện ích của trình duyệt, kết nối xong là nút Submit hiện ra.</p>
 
                         <h3>Input, Output và Expected</h3>
-                        <p>Mỗi tab có thẻ <b>Input</b>, <b>Output</b> và <b>Expected</b>. Khi đã điền Expected, sau mỗi lần chạy thẻ Output hiện <b>AC</b> hoặc <b>WA · N lines</b>. Nút file trên thẻ Input (hoặc kéo thả file vào) cho chương trình đọc input từ file <code>.txt</code> thay vì ô nhập, hợp với test rất lớn.</p>
+                        <p>Mỗi tab có thẻ <b>Input</b>, <b>Output</b> và <b>Expected</b>. Điền Expected vào là mỗi lần chạy Output sẽ báo <b>AC</b> hay <b>WA</b>. Test to quá thì kéo file <code>.txt</code> thả vào thẻ Input, chương trình đọc thẳng từ ổ đĩa. Thích để mấy thẻ này ở bảng dưới thì cứ kéo xuống.</p>
 
-                        <h3>Run All Tests và kết quả</h3>
-                        <p><b>Run All Tests</b> chạy các test của tab trên tối đa 4 luồng; test sát giới hạn thời gian được chạy lại riêng. Mỗi test hiện một kết quả:</p>
-                        <ul>
-                            <li><b>AC</b> - Accepted, output khớp expected</li>
-                            <li><b>WA</b> - Wrong Answer, output khác</li>
-                            <li><b>TLE</b> - Quá thời gian</li>
-                            <li><b>MLE</b> - Quá bộ nhớ</li>
-                            <li><b>RE</b> - Lỗi khi chạy</li>
-                            <li><b>CE</b> - Lỗi biên dịch</li>
-                        </ul>
+                        <h3>Chạy hết test như judge</h3>
+                        <p><b>Run All Tests</b> (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F11</kbd>) build với -O2, so từng từ (số thực lệch dưới 1e-6 vẫn tính đúng), giới hạn thời gian và bộ nhớ, lại cho stack lớn để đệ quy sâu chạy y như trên judge. Mỗi test nhận một kết quả: <b>AC</b>, <b>WA</b>, <b>TLE</b>, <b>MLE</b>, <b>RE</b> kèm tên lỗi, hoặc <b>CE</b>.</p>
+
+                        <div class="wiki-update-grid">
+                            <article class="wiki-update-card">
+                                <strong>Stress test</strong>
+                                <p>Đưa nó một file sinh test và một lời giải trâu, nó chạy test ngẫu nhiên tới khi bài của bạn ra khác thì dừng và thêm test đó vào cho bạn.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Checker và interactor</strong>
+                                <p>Chấm bằng checker testlib cho bài nhiều đáp án, hoặc đấu với interactor. <code>testlib.h</code> có sẵn trong app.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Bài đọc ghi file</strong>
+                                <p>Bài đọc <code>BAI.INP</code>, ghi <code>BAI.OUT</code> được chấm đúng như bạn viết, tên file lấy từ <code>freopen</code> trong code.</p>
+                            </article>
+                            <article class="wiki-update-card">
+                                <strong>Test theo ý bạn</strong>
+                                <p>Bật tắt từng test, nhập cả thư mục test, lưu test lại, và đặt giới hạn riêng cho từng bài trong Problem options.</p>
+                            </article>
+                        </div>
+
+                        <h3>Công cụ trên từng test</h3>
+                        <p>Rê chuột vào một dòng test là có bốn nút: <b>Debug</b> chạy debugger với chính test đó làm input, <b>Chạy lại kèm kiểm tra</b> bật STL checks và sanitizer để tìm chỗ crash, <b>Đồ thị</b> vẽ input thành đồ thị để kéo thả và phóng to, còn <b>Profile</b> cho biết hàm nào tốn thời gian nhất.</p>
                     </section>
 
                     <!-- SNIPPETS -->
@@ -773,10 +834,17 @@ int main() {
                         <p>Vào <b>Settings › Snippets</b> để tạo snippet riêng: mỗi snippet có tiền tố (từ kích hoạt) và nội dung (code được chèn). <b>Import from File(s)</b> thêm mỗi file thành một snippet, đặt tên theo file. Dùng để lưu template BFS, DFS, Segment Tree hay DSU của bạn.</p>
                     </section>
 
+                    <!-- NGÔN NGỮ KHÁC -->
+                    <section id="languages">
+                        <h2>Ngôn ngữ khác</h2>
+                        <p>C++ vẫn là chính, nhưng Sameko build và chạy được cả <b>Python, Java, Kotlin, Rust, Go, Pascal và JavaScript</b> bằng compiler hay trình thông dịch có sẵn trên máy bạn. Test, stress test và console ngoài đều dùng được. Riêng gợi ý code và debugger thì chỉ có cho C/C++.</p>
+                        <p>Ngôn ngữ nào cũng có template riêng trong Settings › Template, và bạn chọn được <b>New File</b> sẽ tạo file gì.</p>
+                    </section>
+
                     <!-- TỰ CẬP NHẬT -->
                     <section id="auto-update">
                         <h2>Tự cập nhật</h2>
-                        <p>Bản cài đặt của Sameko tự kiểm tra bản mới trên GitHub Releases ở chế độ nền.</p>
+                        <p>Bản cài đặt tự kiểm tra bản mới ở chế độ nền và chỉ tải phần thay đổi, thường khoảng 20 MB.</p>
 
                         <h3>Cách hoạt động</h3>
                         <ol>
@@ -792,7 +860,7 @@ int main() {
                         </div>
                         <div class="callout warning">
                             <div class="callout-title">Lưu ý</div>
-                            <p>Chỉ bản cài đặt mới tự cập nhật. Bản portable cần tải bản mới thủ công.</p>
+                            <p>Bản cài đặt trên Windows và AppImage trên Linux tự cập nhật. Bản portable và bản Mac sẽ hiện nút tải về khi có bản mới.</p>
                         </div>
                     </section>
 
