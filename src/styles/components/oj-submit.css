@@ -60,6 +60,86 @@
     flex-shrink: 0;
 }
 
+/* A narrow bottom panel (the debugger or the I/O column open beside it): nothing in the header
+ * shrinks below its own content, so nothing draws over its neighbour. Labels give way first
+ * (verdict text, then the Run All and Submit words), and the header scrolls sideways as a last
+ * resort. The checker select gets narrower, and in a very narrow panel only its options
+ * button stays (the panel shows the select again when it is wider). */
+.problems-panel {
+    container: bottom-panel / inline-size;
+}
+
+.problems-panel > .panel-head {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+}
+
+.problems-panel > .panel-head::-webkit-scrollbar {
+    display: none;
+}
+
+.problems-panel > .panel-head > :not(.panel-actions-spacer) {
+    flex-shrink: 0;
+}
+
+@container bottom-panel (max-width: 980px) {
+    .problems-panel .oj-verdict-text {
+        display: none;
+    }
+}
+
+/* Icon only; the words stay in the accessibility tree and the title says what each does. */
+@container bottom-panel (max-width: 860px) {
+    .problems-panel .checker-pick .checker-select {
+        width: 104px;
+    }
+
+    .problems-panel #btn-run-all-tests,
+    .problems-panel #btn-oj-submit {
+        font-size: 0;
+        gap: 0;
+        padding: 6px 9px;
+    }
+}
+
+@container bottom-panel (max-width: 780px) {
+    :root .problems-panel .panel-title {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
+    .problems-panel .oj-submit-group {
+        padding-left: 8px;
+        margin-right: 4px;
+    }
+
+    .problems-panel .checker-pick {
+        margin-right: 6px;
+    }
+
+    .problems-panel .checker-pick .checker-select {
+        width: 84px;
+    }
+}
+
+@container bottom-panel (max-width: 700px) {
+    :root .problems-panel .panel-title {
+        padding-left: 6px;
+        padding-right: 6px;
+    }
+
+    .problems-panel .checker-pick .checker-select {
+        display: none;
+    }
+}
+
+@container bottom-panel (max-width: 600px) {
+    .problems-panel .oj-verdict {
+        display: none;
+    }
+}
+
 /* Verdict chip: progress in the accent colour, AC green, the rest red or amber. */
 .oj-verdict {
     display: inline-flex;

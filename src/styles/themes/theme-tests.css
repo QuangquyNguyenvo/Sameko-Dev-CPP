@@ -1065,13 +1065,6 @@ button.test-tool-control.primary:hover {
     padding: 2px 6px;
 }
 
-/* Ultra compact for very narrow panels */
-@container (max-width: 200px) {
-    .test-nav-label {
-        display: none;
-    }
-}
-
 /* ===== TEMPLATE SETTINGS ===== */
 /* --text-muted is too faint for a sentence on the panel; this stays readable in every theme. */
 .setting-desc {

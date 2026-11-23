@@ -522,6 +522,32 @@
     margin-left: auto;
 }
 
+/* The Input head holds the title, the file button and the test switcher (about 235px). In a
+ * narrower column it tightens first, then the switcher takes a row of its own, so its buttons
+ * are never cut off at the edge. */
+.io-section > .io-panel {
+    container: io-panel / inline-size;
+}
+
+@container io-panel (max-width: 250px) {
+    .io-section > .io-panel > .panel-head {
+        gap: 4px;
+        padding-left: 10px;
+        padding-right: 6px;
+    }
+
+    .io-section .test-nav {
+        padding: 2px 4px;
+    }
+}
+
+@container io-panel (max-width: 200px) {
+    .io-section > .io-panel > .panel-head {
+        flex-wrap: wrap;
+        row-gap: 6px;
+    }
+}
+
 /* ---- Input from a file (#49): a file bar and the first lines, in place of the textarea ---- */
 .io-file-btn,
 .io-file-clear {
