@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-32 0 492 372" role="img" aria-label="A code window passing its tests with an AC verdict">
+  <defs>
+    <clipPath id="blob"><path d="M70 96C130 30 320 18 392 84C452 140 446 270 382 320C306 376 130 372 66 312C12 258 16 156 70 96Z"/></clipPath>
+    <clipPath id="title-bar"><path d="M58 108V92A22 22 0 0 1 80 70H376A22 22 0 0 1 398 92V108Z"/></clipPath>
+  </defs>
+  <g clip-path="url(#blob)">
+    <rect width="460" height="372" fill="#c9ecfa"/>
+    <path d="M-200 380V214q50 -16 100 0t100 0t100 0t100 0t100 0t100 0t100 0t100 0t100 0V380Z" fill="#88c9ea"><animateTransform attributeName="transform" type="translate" values="0 0;200 0" dur="7s" repeatCount="indefinite"/></path>
+    <path d="M-200 380V280q50 -12 100 0t100 0t100 0t100 0t100 0t100 0t100 0t100 0t100 0V380Z" fill="#5ba6d6"><animateTransform attributeName="transform" type="translate" values="0 0;-200 0" dur="5s" repeatCount="indefinite"/></path>
+    <g opacity="0"><animate attributeName="opacity" values="0;.95;.95;0" keyTimes="0;.15;.75;1" dur="5s" begin="0s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="36 350;42 300;33 240" dur="5s" begin="0s" repeatCount="indefinite"/><circle r="6" fill="#fff" fill-opacity=".3" stroke="#ffffff" stroke-width="2.2"/></g><g opacity="0"><animate attributeName="opacity" values="0;.95;.95;0" keyTimes="0;.15;.75;1" dur="4.2s" begin="1.5s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="118 350;124 300;115 240" dur="4.2s" begin="1.5s" repeatCount="indefinite"/><circle r="4.5" fill="#fff" fill-opacity=".3" stroke="#ffffff" stroke-width="2.2"/></g><g opacity="0"><animate attributeName="opacity" values="0;.95;.95;0" keyTimes="0;.15;.75;1" dur="4.8s" begin="0.8s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="350 350;356 300;347 240" dur="4.8s" begin="0.8s" repeatCount="indefinite"/><circle r="5.5" fill="#fff" fill-opacity=".3" stroke="#ffffff" stroke-width="2.2"/></g><g opacity="0"><animate attributeName="opacity" values="0;.95;.95;0" keyTimes="0;.15;.75;1" dur="4.4s" begin="2.4s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="420 350;426 300;417 240" dur="4.4s" begin="2.4s" repeatCount="indefinite"/><circle r="4" fill="#fff" fill-opacity=".3" stroke="#ffffff" stroke-width="2.2"/></g>
+  </g>
+  <rect x="55" y="70" width="352" height="238" rx="28" fill="#2d6ca6" opacity=".32"/>
+  <rect x="52" y="64" width="352" height="238" rx="28" fill="#ffffff"/>
+  <rect x="58" y="70" width="340" height="226" rx="22" fill="#fffdf6"/>
+  <g clip-path="url(#title-bar)"><rect x="58" y="70" width="340" height="38" fill="#88c9ea"/></g>
+  <circle cx="84" cy="89" r="5.5" fill="#f28585"/><circle cx="103" cy="89" r="5.5" fill="#ffd67e"/><circle cx="122" cy="89" r="5.5" fill="#ffffff"/>
+  <path d="M144 108V88A10 10 0 0 1 154 78H232A10 10 0 0 1 242 88V108Z" fill="#fffdf6"/>
+  <text x="193" y="98" text-anchor="middle" fill="#2d6ca6" font-family="Consolas, Menlo, 'DejaVu Sans Mono', monospace" font-size="12.5" font-weight="700">main.cpp</text>
+  <rect x="58" y="70" width="340" height="226" rx="22" fill="none" stroke="#2d6ca6" stroke-width="5"/>
+  <path d="M60 108H396" stroke="#2d6ca6" stroke-width="3"/>
+  <path d="M90 118V238" stroke="#c9ecfa" stroke-width="2"/>
+  <g font-family="Consolas, Menlo, 'DejaVu Sans Mono', monospace" font-size="14.5">
+    <clipPath id="line-0"><rect x="98" y="124" width="0" height="20"><animate attributeName="width" values="0;0;217;217;0" keyTimes="0;0.03;0.11;0.94;1" dur="9s" repeatCount="indefinite"/></rect></clipPath>
+    <text x="80" y="139" text-anchor="end" fill="#88c9ea" font-size="12">1</text>
+    <g clip-path="url(#line-0)"><text x="100" y="139" xml:space="preserve" fill="#35577e"><tspan fill="#e77a8a" font-weight="700">#include</tspan><tspan fill="#d9962a">&lt;bits/stdc++.h&gt;</tspan></text></g>
+    <rect y="126" width="2.5" height="16" rx="1" fill="#2d6ca6" opacity="0"><animate attributeName="x" values="100;100;289;289;100" keyTimes="0;0.03;0.11;0.94;1" dur="9s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.03;0.109;0.11;1" dur="9s" repeatCount="indefinite"/></rect>
+    <clipPath id="line-1"><rect x="98" y="145" width="0" height="20"><animate attributeName="width" values="0;0;201;201;0" keyTimes="0;0.125;0.205;0.94;1" dur="9s" repeatCount="indefinite"/></rect></clipPath>
+    <text x="80" y="160" text-anchor="end" fill="#88c9ea" font-size="12">2</text>
+    <g clip-path="url(#line-1)"><text x="100" y="160" xml:space="preserve" fill="#35577e"><tspan fill="#2d6ca6" font-weight="700">using namespace</tspan> std;</text></g>
+    <rect y="147" width="2.5" height="16" rx="1" fill="#2d6ca6" opacity="0"><animate attributeName="x" values="100;100;275;275;100" keyTimes="0;0.125;0.205;0.94;1" dur="9s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.125;0.204;0.205;1" dur="9s" repeatCount="indefinite"/></rect>
+    <clipPath id="line-2"><rect x="98" y="166" width="0" height="20"><animate attributeName="width" values="0;0;123;123;0" keyTimes="0;0.22;0.3;0.94;1" dur="9s" repeatCount="indefinite"/></rect></clipPath>
+    <text x="80" y="181" text-anchor="end" fill="#88c9ea" font-size="12">3</text>
+    <g clip-path="url(#line-2)"><text x="100" y="181" xml:space="preserve" fill="#35577e"><tspan fill="#2d6ca6" font-weight="700">int</tspan> main() {</text></g>
+    <rect y="168" width="2.5" height="16" rx="1" fill="#2d6ca6" opacity="0"><animate attributeName="x" values="100;100;207;207;100" keyTimes="0;0.22;0.3;0.94;1" dur="9s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.22;0.299;0.3;1" dur="9s" repeatCount="indefinite"/></rect>
+    <clipPath id="line-3"><rect x="98" y="187" width="0" height="20"><animate attributeName="width" values="0;0;253;253;0" keyTimes="0;0.315;0.395;0.94;1" dur="9s" repeatCount="indefinite"/></rect></clipPath>
+    <text x="80" y="202" text-anchor="end" fill="#88c9ea" font-size="12">4</text>
+    <g clip-path="url(#line-3)"><text x="100" y="202" xml:space="preserve" fill="#35577e">  cout &lt;&lt; <tspan fill="#d9962a">"Sameko Dev C++"</tspan>;</text></g>
+    <rect y="189" width="2.5" height="16" rx="1" fill="#2d6ca6" opacity="0"><animate attributeName="x" values="100;100;321;321;100" keyTimes="0;0.315;0.395;0.94;1" dur="9s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.315;0.394;0.395;1" dur="9s" repeatCount="indefinite"/></rect>
+    <clipPath id="line-4"><rect x="98" y="208" width="0" height="20"><animate attributeName="width" values="0;0;16;16;0" keyTimes="0;0.41;0.49;0.94;1" dur="9s" repeatCount="indefinite"/></rect></clipPath>
+    <text x="80" y="223" text-anchor="end" fill="#88c9ea" font-size="12">5</text>
+    <g clip-path="url(#line-4)"><text x="100" y="223" xml:space="preserve" fill="#35577e">}</text></g>
+    <rect y="210" width="2.5" height="16" rx="1" fill="#2d6ca6" opacity="0"><animate attributeName="x" values="100;100;113;113;100" keyTimes="0;0.41;0.49;0.94;1" dur="9s" repeatCount="indefinite"/><animate attributeName="opacity" values="0;0;1;0;0" keyTimes="0;0.41;0.489;0.49;1" dur="9s" repeatCount="indefinite"/></rect>
+    <g transform="translate(76 256)">
+      <rect width="52" height="24" rx="12" fill="#e4f4fc"/>
+      <rect width="52" height="24" rx="12" fill="#6fd6a8" opacity="0"><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.56;0.5800000000000001;0.94;1" dur="9s" repeatCount="indefinite"/></rect>
+      <path d="M14 12.5L19 17L27 8" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0"><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.56;0.5800000000000001;0.94;1" dur="9s" repeatCount="indefinite"/></path>
+      <text x="38" y="16.5" text-anchor="middle" font-size="11" font-weight="700" fill="#35577e">1</text>
+    </g>
+    <g transform="translate(136 256)">
+      <rect width="52" height="24" rx="12" fill="#e4f4fc"/>
+      <rect width="52" height="24" rx="12" fill="#6fd6a8" opacity="0"><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.615;0.635;0.94;1" dur="9s" repeatCount="indefinite"/></rect>
+      <path d="M14 12.5L19 17L27 8" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0"><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.615;0.635;0.94;1" dur="9s" repeatCount="indefinite"/></path>
+      <text x="38" y="16.5" text-anchor="middle" font-size="11" font-weight="700" fill="#35577e">2</text>
+    </g>
+    <g transform="translate(196 256)">
+      <rect width="52" height="24" rx="12" fill="#e4f4fc"/>
+      <rect width="52" height="24" rx="12" fill="#6fd6a8" opacity="0"><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.67;0.6900000000000001;0.94;1" dur="9s" repeatCount="indefinite"/></rect>
+      <path d="M14 12.5L19 17L27 8" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0"><animate attributeName="opacity" values="0;0;1;1;0" keyTimes="0;0.67;0.6900000000000001;0.94;1" dur="9s" repeatCount="indefinite"/></path>
+      <text x="38" y="16.5" text-anchor="middle" font-size="11" font-weight="700" fill="#35577e">3</text>
+    </g>
+  </g>
+  <g transform="translate(362 262) rotate(-10)"><g>
+    <animateTransform attributeName="transform" type="scale" values="0;0;1.18;1;1;0;0" keyTimes="0;.73;.77;.8;.94;.97;1" dur="9s" repeatCount="indefinite"/>
+    <circle cx="2" cy="5" r="47" fill="#2d6ca6" opacity=".32"/>
+    <circle r="47" fill="#ffffff"/>
+    <circle r="40" fill="#6fd6a8" stroke="#2d6ca6" stroke-width="4.5"/>
+    <circle r="31" fill="none" stroke="#ffffff" stroke-width="2" stroke-dasharray="5 4"/>
+    <path d="M-23 14L-12 -14L-1 14M-19 4H-5M23 -9C16 -18 4 -13 4 0C4 13 16 18 23 9" fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  </g></g>
+  <g transform="translate(326 40) rotate(-6)">
+    <animateTransform attributeName="transform" type="translate" additive="sum" values="0 2;3 -5;0 2" dur="3.2s" repeatCount="indefinite"/>
+    <g transform="scale(.052) translate(-960 -960)" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <clipPath id="about-fish-body"><path d="M1360 525C1560 525 1840 740 1840 1020C1840 1320 1500 1565 1160 1565C1040 1565 920 1530 825 1512C780 1545 750 1555 725 1553C680 1545 650 1470 635 1425C625 1400 600 1385 572 1365C500 1430 420 1470 340 1495C260 1520 180 1525 130 1515C95 1495 85 1460 100 1410C130 1310 210 1210 270 1135C295 1100 285 1070 260 1030C200 940 110 850 100 760C100 700 140 670 200 668C290 670 400 740 480 810C540 860 580 925 620 960C650 940 680 915 690 890C720 720 820 590 960 470C1030 410 1080 365 1130 365C1200 365 1260 400 1290 435Z"/></clipPath>
+      <path d="M1360 525C1560 525 1840 740 1840 1020C1840 1320 1500 1565 1160 1565C1040 1565 920 1530 825 1512C780 1545 750 1555 725 1553C680 1545 650 1470 635 1425C625 1400 600 1385 572 1365C500 1430 420 1470 340 1495C260 1520 180 1525 130 1515C95 1495 85 1460 100 1410C130 1310 210 1210 270 1135C295 1100 285 1070 260 1030C200 940 110 850 100 760C100 700 140 670 200 668C290 670 400 740 480 810C540 860 580 925 620 960C650 940 680 915 690 890C720 720 820 590 960 470C1030 410 1080 365 1130 365C1200 365 1260 400 1290 435Z" fill="#ffffff" stroke="#ffffff" stroke-width="190"/>
+      <path d="M1360 525C1560 525 1840 740 1840 1020C1840 1320 1500 1565 1160 1565C1040 1565 920 1530 825 1512C780 1545 750 1555 725 1553C680 1545 650 1470 635 1425C625 1400 600 1385 572 1365C500 1430 420 1470 340 1495C260 1520 180 1525 130 1515C95 1495 85 1460 100 1410C130 1310 210 1210 270 1135C295 1100 285 1070 260 1030C200 940 110 850 100 760C100 700 140 670 200 668C290 670 400 740 480 810C540 860 580 925 620 960C650 940 680 915 690 890C720 720 820 590 960 470C1030 410 1080 365 1130 365C1200 365 1260 400 1290 435Z" fill="#a6dcf3"/>
+      <g clip-path="url(#about-fish-body)">
+        <path d="M1760 760C1780 1000 1720 1200 1450 1340C1250 1450 1000 1450 620 1320C570 1180 480 1190 380 1300C300 1390 220 1450 110 1455L100 1600H1900V700Z" fill="#6fb9e4"/>
+        <path d="M120 780C170 880 280 930 340 1000C400 1070 350 1150 280 1175L60 1000Z" fill="#6fb9e4"/>
+        <path d="M715 860C820 720 1000 590 1240 545L1300 430L1130 340L880 500L680 880Z" fill="#6fb9e4"/>
+      </g>
+      <path d="M1115 435L1130 500M1025 485L1040 545M935 555L948 590" stroke="#a6dcf3" stroke-width="38"/>
+      <path d="M1015 750C960 770 970 835 1020 838M945 868C895 895 910 950 950 955M805 1060C755 1090 775 1140 820 1150C775 1180 790 1250 835 1250M930 1170C880 1200 900 1250 948 1262C900 1295 915 1355 960 1358" stroke="#e3f5fc" stroke-width="38"/>
+      <path d="M1205 975C1130 955 1010 965 995 1015C1005 1070 1005 1130 1020 1165C1060 1210 1060 1260 1110 1275C1160 1280 1210 1215 1245 1170Z" fill="#e3f5fc" stroke="#2d6ca6" stroke-width="52"/>
+      <path d="M1082 1070L1152 1056M1115 1158L1178 1118" stroke="#6fb9e4" stroke-width="38"/>
+      <path d="M1240 545C1040 580 880 700 770 825M1280 535L1282 540M1280 600C1255 640 1240 675 1232 705M1222 748L1215 775M1214 830C1205 1000 1240 1250 1405 1385" stroke="#2d6ca6" stroke-width="52"/>
+      <path d="M710 1440C735 1455 760 1465 785 1472" stroke="#2d6ca6" stroke-width="48"/>
+      <path d="M1442 742L1520 714L1612 968L1530 998Z" fill="#1f3f6b" stroke="#1f3f6b" stroke-width="14"/>
+      <path d="M1540 905L1562 898L1576 952L1548 962Z" fill="#7fb7e8" stroke="#7fb7e8" stroke-width="10"/>
+      <path d="M1360 525C1560 525 1840 740 1840 1020C1840 1320 1500 1565 1160 1565C1040 1565 920 1530 825 1512C780 1545 750 1555 725 1553C680 1545 650 1470 635 1425C625 1400 600 1385 572 1365C500 1430 420 1470 340 1495C260 1520 180 1525 130 1515C95 1495 85 1460 100 1410C130 1310 210 1210 270 1135C295 1100 285 1070 260 1030C200 940 110 850 100 760C100 700 140 670 200 668C290 670 400 740 480 810C540 860 580 925 620 960C650 940 680 915 690 890C720 720 820 590 960 470C1030 410 1080 365 1130 365C1200 365 1260 400 1290 435Z" stroke="#2d6ca6" stroke-width="52"/>
+    </g>
+  
+  </g>
+  <g transform="translate(420 58) scale(1.15)"><path d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animateTransform attributeName="transform" type="scale" values="1;.72;1" dur="2.7s" repeatCount="indefinite"/></path></g><g transform="translate(444 118) scale(0.68)"><path d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animateTransform attributeName="transform" type="scale" values="1;.72;1" dur="3.3s" repeatCount="indefinite"/></path></g><g transform="translate(24 184) scale(0.85)"><path d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animateTransform attributeName="transform" type="scale" values="1;.72;1" dur="3s" repeatCount="indefinite"/></path></g><g transform="translate(226 40) scale(0.6)"><path d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animateTransform attributeName="transform" type="scale" values="1;.72;1" dur="2.4s" repeatCount="indefinite"/></path></g>
+</svg>

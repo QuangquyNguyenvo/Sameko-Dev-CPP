@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="66" height="44" viewBox="-11 0 66 44" role="presentation">
+  <defs>
+    <path id="box" d="M9 21H35V38Q35 40 33 40H11Q9 40 9 38Z"/>
+    <path id="lid" d="M7 15H37Q38.500 15 38.500 16.500V21H5.500V16.500Q5.500 15 7 15Z"/>
+    <path id="bow" d="M0 0C-5 -11 -18 -12 -17 -5C-16.500 0 -7 2 0 0C7 2 16.500 0 17 -5C18 -12 5 -11 0 0Z"/>
+  </defs>
+  <g fill="#ffffff" stroke="#ffffff" stroke-width="7.5" stroke-linejoin="round">
+    <use href="#box"/><use href="#lid"/><use href="#bow" x="22" y="14"/>
+  </g>
+  <use href="#box" fill="#ffa6a6" stroke="#2d6ca6" stroke-width="3.2" stroke-linejoin="round"/>
+  <use href="#lid" fill="#ffc2c2" stroke="#2d6ca6" stroke-width="3.2" stroke-linejoin="round"/>
+  <path d="M19 16.600H25V38.400H19Z" fill="#fff5da"/>
+  <path d="M7 21H37" stroke="#2d6ca6" stroke-width="2.6"/>
+  <g transform="translate(22 14)">
+    <g>
+      <animateTransform attributeName="transform" type="scale" values="1;1.07;1" dur="2s" repeatCount="indefinite"/>
+      <use href="#bow" fill="#ffdf73" stroke="#2d6ca6" stroke-width="2.8" stroke-linejoin="round"/>
+      <circle r="3.600" fill="#ffc94f" stroke="#2d6ca6" stroke-width="2.4"/>
+    </g>
+  </g>
+</svg>

@@ -43,68 +43,117 @@
 
 <div align="center">
   <p>
-    <a href="#-features">Features</a> •
-    <a href="#-screenshots">Screenshots</a> •
-    <a href="#-download">Download</a> •
-    <a href="#-development">Development</a> •
-    <a href="#-shortcuts">Shortcuts</a>
+    <a href="#features">Features</a> •
+    <a href="#screenshots">Screenshots</a> •
+    <a href="#development">Development</a> •
+    <a href="#shortcuts">Shortcuts</a>
   </p>
-  <sub>Official downloads are only on <a href="https://sameko.dev/">sameko.dev</a> and in this repository's <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest">Releases</a>.</sub>
 </div>
 
-
 <br />
 
-## 🎯 About
+<div align="center">
 
-<table>
-  <tr>
-    <td width="70%">
-      <p><b>Sameko Dev C++</b> is a free, open-source C++ IDE for Windows and Linux, built for competitive programming and learning. The Windows build includes GCC 16, clangd and GDB. On Linux, Sameko uses the tools installed on your system.</p>
-      <blockquote>💡 Think of it as a modern Dev-C++ alternative: simple interface, fast compilation, works out of the box.</blockquote>
-      <p>🐟 <b>Unofficial fan project</b>, not affiliated with Sameko Saba. <a href="#-the-story-behind-it">Why the name?</a></p>
-    </td>
-    <td width="30%" align="center">
-      <img src="src/assets/icons/fish.png" alt="Sameko Fish" width="180" />
-    </td>
-  </tr>
-</table>
+### <img src="src/assets/vectors/section-wave-left.svg" alt="" width="31.4%" height="24" align="absmiddle" /><img src="src/assets/vectors/icon-sameko.svg" alt="" width="51" align="absmiddle" />About Sameko Dev C++<img src="src/assets/vectors/section-wave-right.svg" alt="" width="31.4%" height="24" align="absmiddle" />
 
-<br />
+</div>
 
-## ✨ Features
+<img src="src/assets/vectors/about-art.svg" alt="A Sameko code window passing three tests with an AC verdict" align="right" width="33.4%" />
 
-### Build and run
+**Code::Blocks and Dev-C++ feel too old? VS Code takes too much setup?**
 
-- 🚀 GCC 16 comes bundled on Windows. On Linux, Sameko uses your system's `g++`.
-- ⚡ Press `F11` to build and run. An unchanged file can run again without recompiling.
-- 🔗 Include a custom header to link its sibling `.cpp` file when multi-file mode is enabled.
-- 🧠 Get code completion and live diagnostics with clangd. Choose a C++ standard and add compiler flags in Settings.
+<img src="src/assets/vectors/icon-star.svg" alt="" width="20" align="top" /> **Sameko Dev C++** is an anime-styled, open-source IDE for C++ and competitive programming, with support for 7+ other languages. Open a file, press `F11`, and your code runs.
 
-### Practice and debug
+<img src="src/assets/vectors/icon-star.svg" alt="" width="20" align="top" /> The Windows version comes with GCC 16, clangd and GDB built in, so there's nothing to set up. Sameko also runs on Linux and macOS (beta).
 
-- ✅ Compare Input, Output and Expected results with AC, WA and TLE verdicts. `cerr` output gets its own Stderr card, so verdicts check stdout only. Load large inputs from a `.txt` file.
-- 🏆 Fetch problems and test cases with Competitive Companion. Run all tests in parallel or inspect them one at a time.
-- 🗂️ Organize problems into contests and collections, with statuses, notes and saved approaches.
-- 🐞 Debug with GDB using breakpoints, conditional breakpoints, watches and STL-aware variable trees. Auto dry run steps through code while you watch variables change.
+> [!NOTE]
+> Unofficial fan project, not affiliated with Sameko Saba. [Why the name?](#the-story-behind-it)
 
-### Edit and customize
+<br clear="right" />
 
-- 🌏 Use the interface in English, Tiếng Việt or 简体中文. Code and program output are never translated.
-- 📑 Work across tabs and split editor panes. Rename tabs, drag files into the window and create C++, C, input, output, text or Markdown files from the tab bar.
-- ⌨️ Turn on Vim Mode (`:w`, `:q`, `:wq`), a cursor trail and scrolling past the last line. Indentation (spaces or tabs) is kept per file.
-- 📝 Preview Markdown beside the editor as you type. Toggle the preview with `Ctrl+Shift+V`.
-- 🧹 Format C and C++ with AStyle. Choose from 13 styles and optionally format on `Ctrl+S`.
-- ✂️ Customize snippets and C or C++ templates, and hide or edit the built-in snippets. Import templates and snippets from files.
-- 💾 Use auto-save, session restore and local history checkpoints to return to your work. Sameko also notices changes made outside the editor.
-- 🎨 Choose from eleven built-in themes, including Catppuccin Mocha, Gruvbox Dark, the soft red-on-black Crimson and the space-themed Event Horizon, or create your own with the Theme Customizer. Add an image or video background and share your theme.
-- 🔎 Search settings and shortcuts from the Settings dialog. Keybindings can be customized there too.
+<div align="center">
+
+### <img src="src/assets/vectors/section-wave-left.svg" alt="" width="37.7%" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/features.svg" alt="" width="49" align="absmiddle" />Features<img src="src/assets/vectors/titles/features.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-wave-right.svg" alt="" width="37.7%" height="24" align="absmiddle" />
+
+</div>
+
+<img src="src/assets/vectors/features/build-art.svg" alt="A build window running C++, surrounded by bubbles for C, C++, Python, Java, Kotlin, Rust, Go, Pascal and JavaScript" align="left" width="45%" />
+
+#### <img src="src/assets/vectors/features/number-1.svg" alt="" width="39" align="absmiddle" />Build and run
+
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**GCC 16 bundled** on Windows, system `g++` on Linux<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**One-key run** with `F11`, skipping unchanged builds<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Multi-file** projects with your own headers<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**IntelliSense** by clangd with live diagnostics<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Compiler settings** for C++ standards and flags<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**9 languages**, from C++ to Python, Java and Rust<br clear="all" /><img src="src/assets/vectors/features/swim-1.svg" alt="" width="100%" />
+
+<img src="src/assets/vectors/features/practice-art.svg" alt="Test results with AC, WA and TLE verdicts, a bug under a magnifier, a trophy and a paper plane for submitting" align="right" width="45%" />
+
+#### <img src="src/assets/vectors/features/number-2.svg" alt="" width="39" align="absmiddle" />Practice and debug
+
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Judge verdicts** for AC, WA, TLE and memory limits<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Stress tests** with checkers and interactors<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Fetch problems** with Competitive Companion<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Submit to judges** like Codeforces, AtCoder and CSES<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Contests** with statuses, notes and saved approaches<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Visual debugger** with watches and STL variables<br clear="all" /><img src="src/assets/vectors/features/swim-2.svg" alt="" width="100%" />
+
+<img src="src/assets/vectors/features/customize-art.svg" alt="An editor changing between light, dark and sakura themes, with a Vim command, a Markdown note and a color palette" align="left" width="45%" />
+
+#### <img src="src/assets/vectors/features/number-3.svg" alt="" width="39" align="absmiddle" />Edit and customize
+
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**3 UI languages**: English, Tiếng Việt, 简体中文<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Tabs and split panes** you can drag and rename<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Vim mode** with a cursor trail<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Markdown preview** beside your code<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Code format** with 13 AStyle styles<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Snippets and templates** you can import<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Auto-save and local history** to keep work safe<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**11 themes**, plus your own with image or video<br />
+<img src="src/assets/vectors/icon-star.svg" alt="" width="16" align="absmiddle" />&nbsp;&nbsp;**Searchable settings** and custom keybindings<br clear="all" />
+
+<details>
+<summary><b>Read the full feature list</b></summary>
+
+##### Build and run
+
+- 🚀 **GCC 16 included** on Windows. On Linux, Sameko uses your system's `g++`.
+- ⚡ **Build and run with `F11`.** Unchanged files run again without recompiling.
+- 🔗 **Multi-file mode** links the matching `.cpp` for each custom header you include.
+- 🧠 **Code completion and live diagnostics** from clangd, with your choice of C++ standard and compiler flags.
+- 🧩 **Seven more languages:** run and test Python, Java, Kotlin, Rust, Go, Pascal and JavaScript with the compiler on your machine. Code completion and debugging are for C and C++.
+
+##### Practice and debug
+
+- ✅ **Judge-style results:** compare input, output and expected answers with AC, WA and TLE verdicts. `cerr` stays in its own Stderr card, and large inputs can load from a `.txt` file.
+- 🏆 **Competitive Companion:** fetch problems and tests, then run them all in parallel or one at a time.
+- 🗂️ **Contests and collections** keep your problems, statuses, notes and saved approaches together.
+- 🐞 **Visual debugger** with breakpoints, conditions, watches and STL-aware variable trees. Auto dry run steps through your code as values change.
+
+##### Edit and customize
+
+- 🌏 **English, Tiếng Việt and 简体中文** interface. Code and program output are never translated.
+- 📑 **Tabs and split panes:** rename tabs, drag files in, and create C++, C, input, output, text or Markdown files from the tab bar.
+- ⌨️ **Vim Mode** (`:w`, `:q`, `:wq`), a cursor trail, scrolling past the last line and per-file indentation.
+- 📝 **Live Markdown preview** beside the editor. Toggle it with `Ctrl+Shift+V`.
+- 🧹 **AStyle formatting** for C and C++, with 13 styles and optional format on `Ctrl+S`.
+- ✂️ **Snippets and templates:** write your own, import them from files, and edit or hide the built-ins.
+- 💾 **Auto-save, session restore and local history** protect your work, and Sameko notices changes made outside the editor.
+- 🎨 **Eleven built-in themes**, including Catppuccin Mocha, Gruvbox Dark, Crimson and Event Horizon. Build your own, add an image or video background, and share it.
+- 🔎 **Searchable settings and shortcuts**, with customizable keybindings.
+
+</details>
 
 Explore the [user guide](https://sameko.dev/wiki) for more features and instructions.
 
 <br />
 
-## 📸 Screenshots
+<div align="center">
+
+### <img src="src/assets/vectors/section-wave-left.svg" alt="" width="35.6%" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/screenshots.svg" alt="" width="49" align="absmiddle" />Screenshots<img src="src/assets/vectors/titles/screenshots.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-wave-right.svg" alt="" width="35.6%" height="24" align="absmiddle" />
+
+</div>
 
 <div align="center">
   <img src="src/assets/screenshots/preview.gif" alt="Sameko IDE Demo" width="100%" />
@@ -118,7 +167,11 @@ Explore the [user guide](https://sameko.dev/wiki) for more features and instruct
 
 <br />
 
-## 🆕 What's New in v1.5.0
+<div align="center">
+
+### <img src="src/assets/vectors/section-wave-left.svg" alt="" width="30.5%" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/whatsnew.svg" alt="" width="49" align="absmiddle" />What's New in v1.5.0<img src="src/assets/vectors/titles/whatsnew.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-wave-right.svg" alt="" width="30.5%" height="24" align="absmiddle" />
+
+</div>
 
 - **macOS beta.** Runs on Apple Silicon (M1 and later) with Homebrew GCC and LLDB.
 - **Judge-style testing.** Memory limits, Large Stack, testlib checkers and stress tests that add the failing test for you.
@@ -130,7 +183,7 @@ Explore the [user guide](https://sameko.dev/wiki) for more features and instruct
 
 See [CHANGELOG.md](CHANGELOG.md) for the full list and [the release notes](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest) for screenshots.
 
-### Multi-file project note
+#### Multi-file project note
 
 If your project is split across multiple `.cpp` files and you see linker errors like `undefined reference`, open:
 
@@ -138,41 +191,39 @@ If your project is split across multiple `.cpp` files and you see linker errors 
 
 Then turn it **OFF** and build again.
 
-## 📥 Download
-
 <div align="center">
 
-<a href="https://sameko.dev/" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/Official%20Site-sameko.dev-88c9ea?style=for-the-badge&logo=cloudflare&logoColor=white&labelColor=1a2530" alt="Official Website" />
-</a>
-<a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest" target="_blank" rel="noopener noreferrer">
-  <img src="https://img.shields.io/badge/GitHub-v1.5.0%20Release-88c9ea?style=for-the-badge&logo=github&logoColor=white&labelColor=1a2530" alt="Latest Release" />
-</a>
+### <img src="src/assets/vectors/section-wave-left.svg" alt="" width="36.6%" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/download.svg" alt="" width="49" align="absmiddle" />Download<img src="src/assets/vectors/titles/download.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-wave-right.svg" alt="" width="36.6%" height="24" align="absmiddle" />
 
 </div>
 
-<br />
+<p align="center">
+  <a href="https://sameko.dev/" target="_blank" rel="noopener noreferrer"><img src="src/assets/badges/website.svg" alt="Website: sameko.dev" height="42" /></a>
+  <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest" target="_blank" rel="noopener noreferrer"><img src="src/assets/badges/releases.svg" alt="Latest release on GitHub" height="42" /></a>
+  <br />
+  <sub>Only download Sameko from these two places.</sub>
+</p>
 
-### 🪟 Windows *(Compiler Bundled)*
-
-> 💡 **Zero setup required.** MinGW-w64 (GCC 16.1.0) is pre-packaged. Download and code!
-
-| Package | Format | Description | Recommendation |
-| :--- | :---: | :--- | :--- |
-| **Installer** | `sameko-dev-cpp-setup-<version>.exe` | Step-by-step installer with Start Menu shortcuts & auto-update | **⭐ Recommended for most users** |
-| **Portable** | `.zip` | Standalone archive. Extract anywhere (including USB drives) and run | Ideal for school / restricted PCs |
-
-> 🛡️ **Windows SmartScreen** may warn that the app is from an unknown publisher, because the builds are not code-signed yet. Click **More info → Run anyway**. You can check the 1.4.0 installer's [VirusTotal scan](https://www.virustotal.com/gui/file/f184db56cee5cefdc4a9b4d90a4535780c977d0cfd4a33b7d43db80c5f8b1449) (0/56).
+<details open>
+<summary><img src="src/assets/vectors/download/windows.svg" alt="" width="42" align="absmiddle" /><b>Windows</b>: GCC 16, clangd and GDB included</summary>
 
 <br />
 
-### 🐧 Linux Installation Guide
+- **Installer (recommended):** `sameko-dev-cpp-setup-<version>.exe`. Adds shortcuts and auto-update.
+- **Portable:** `sameko-dev-cpp-<version>-portable.zip`. Extract and run anywhere, even from a USB drive.
 
-Each release provides an AppImage for 64-bit Linux. Sameko uses the compiler and tools installed on your system.
+> [!TIP]
+> **SmartScreen warning?** Sameko is not code-signed yet. Click **More info**, then **Run anyway**. See the 1.4.0 [VirusTotal scan](https://www.virustotal.com/gui/file/f184db56cee5cefdc4a9b4d90a4535780c977d0cfd4a33b7d43db80c5f8b1449) (0/56).
 
-#### 📌 Step 1: Install the tools
+</details>
 
-Install `g++` to compile programs and `gdb` to debug them. Install `clangd` for code suggestions and live diagnostics, and `astyle` for code formatting. Open a terminal and run the command for your distribution:
+<a name="linux"></a>
+<details>
+<summary><img src="src/assets/vectors/download/linux.svg" alt="" width="42" align="absmiddle" /><b>Linux</b>: 64-bit AppImage, uses your system's tools</summary>
+
+<br />
+
+<img src="src/assets/vectors/features/number-1.svg" alt="" width="30" align="absmiddle" /> **Install the compiler, debugger, code suggestions and formatter**
 
 ```bash
 # Debian / Ubuntu / Linux Mint / Pop!_OS
@@ -185,134 +236,137 @@ sudo dnf install -y gcc-c++ gdb clang-tools-extra astyle
 sudo pacman -S --noconfirm gcc gdb clang astyle
 ```
 
----
+<img src="src/assets/vectors/features/number-2.svg" alt="" width="30" align="absmiddle" /> **Download** `sameko-dev-cpp-1.5.0-linux-x86_64.AppImage` from [Releases](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest) or [sameko.dev](https://sameko.dev/)
 
-#### 📌 Step 2: Download Sameko
-
-Download `sameko-dev-cpp-1.5.0-linux-x86_64.AppImage` from [GitHub Releases](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest) or visit [sameko.dev](https://sameko.dev/).
-
----
-
-#### 📌 Step 3: Make it executable and run it
-
-Open a terminal in the folder where you downloaded the file, then run:
+<img src="src/assets/vectors/features/number-3.svg" alt="" width="30" align="absmiddle" /> **Run it** from your download folder
 
 ```bash
 chmod +x sameko-dev-cpp-1.5.0-linux-x86_64.AppImage
 ./sameko-dev-cpp-1.5.0-linux-x86_64.AppImage
 ```
 
-You can keep the AppImage wherever you like and run it again from that folder. To build `.deb` or `.tar.gz` packages yourself, see [Building](#building).
-
----
+Need a `.deb` or `.tar.gz`? See [Building](#building).
 
 <details>
-<summary><b>🔍 Linux Troubleshooting Tips (FUSE 2 & Chrome Sandbox)</b></summary>
+<summary><b>Something not working?</b></summary>
 
 <br />
 
-- **AppImage fails to open**: Ubuntu 22.04+ may require FUSE 2:
+- **The AppImage does not open.** Ubuntu 22.04+ may need FUSE 2:
   ```bash
   sudo apt install libfuse2
   ```
-  *(Or run with `./sameko-dev-cpp-*.AppImage --appimage-extract-and-run`)*
+  Or run it with `./sameko-dev-cpp-*.AppImage --appimage-extract-and-run`.
 
-- **Chrome Sandbox permission error**: If running unpacked `.tar.gz` on Ubuntu 24.04+:
-  ```bash
-  sudo chown root:root chrome-sandbox && sudo chmod 4755 chrome-sandbox
-  ```
-  *(The `.deb` installer configures sandbox permissions automatically).*
-
-- **AppImage closes right away with a sandbox error** (`The SUID sandbox helper binary was found, but is not configured correctly`): Ubuntu 24.04+ can block the sandbox for apps that are not installed. A `.deb` built from source sets it up during installation. Another option is to start the AppImage with:
+- **It closes with a sandbox error** (`The SUID sandbox helper binary was found, but is not configured correctly`). Ubuntu 24.04+ can block the sandbox for apps that are not installed. Use a `.deb` built from source, or run:
   ```bash
   ./sameko-dev-cpp-*.AppImage --no-sandbox
   ```
 
-- **No IntelliSense or Format Code does nothing**: install `clangd` and `astyle` (Step 1), then restart Sameko.
+- **Chrome Sandbox error from a `.tar.gz`** on Ubuntu 24.04+:
+  ```bash
+  sudo chown root:root chrome-sandbox && sudo chmod 4755 chrome-sandbox
+  ```
+
+- **No IntelliSense, or Format Code does nothing.** Install `clangd` and `astyle`, then restart Sameko.
 
 </details>
 
-### 🍎 macOS (Apple Silicon, beta)
+</details>
 
-Sameko uses GCC from Homebrew and LLDB from Apple's Command Line Tools:
+<details>
+<summary><img src="src/assets/vectors/download/macos.svg" alt="" width="42" align="absmiddle" /><b>macOS (beta)</b>: Apple Silicon, M1 and later</summary>
+
+<br />
+
+<img src="src/assets/vectors/features/number-1.svg" alt="" width="30" align="absmiddle" /> **Install GCC and AStyle** (LLDB comes with Apple's Command Line Tools)
 
 ```bash
 xcode-select --install
 brew install gcc astyle
 ```
 
-Download the `mac-arm64.dmg` file from [GitHub Releases](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases) and drag Sameko into Applications. The app is not signed with an Apple Developer account, so macOS blocks its first launch. Allow it once with:
+<img src="src/assets/vectors/features/number-2.svg" alt="" width="30" align="absmiddle" /> **Download** `mac-arm64.dmg` from [Releases](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest) and drag Sameko into Applications
+
+<img src="src/assets/vectors/features/number-3.svg" alt="" width="30" align="absmiddle" /> **Allow the first launch**, because the app is not signed by Apple
 
 ```bash
 xattr -cr "/Applications/Sameko Dev C++.app"
 ```
 
-Updates are not installed automatically on macOS: Sameko shows a download button when a new version is out.
+> [!NOTE]
+> macOS does not auto-update. Sameko shows a download button when a new version is out.
+
+</details>
 
 <br />
 
-## 🛠️ Development
+<div align="center">
 
-### Prerequisites
-- Node.js v18+
-- npm or yarn
-- On Linux: `g++` and `gdb` (see [Linux](#linux) above)
+### <img src="src/assets/vectors/section-wave-left.svg" alt="" width="34.7%" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/development.svg" alt="" width="49" align="absmiddle" />Development<img src="src/assets/vectors/titles/development.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-wave-right.svg" alt="" width="34.7%" height="24" align="absmiddle" />
 
-### Setup
+</div>
+
+You need [Node.js](https://nodejs.org/) 22.12+ and npm. On Linux or macOS, also install the compiler tools from [Download](#download).
 
 ```bash
-# Clone the repository
 git clone https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP.git
 cd Sameko-Dev-CPP
-
-# Install dependencies
 npm install
-
-# Run in development mode
 npm start
 ```
 
-### Building
+#### Building
 
-```bash
-npm run build        # the three release artifacts: Windows installer + portable .zip + Linux AppImage
-npm run build:win    # Windows only
-npm run build:linux  # AppImage + .deb + .tar.gz  (run this on Linux or WSL)
-npm run build:all    # everything, in one pass
-```
-
-Everything lands in `samekodevcpp/`. A full `npm run build` produces:
-
-| Artifact | Notes |
+| Command | Builds |
 | :--- | :--- |
-| `sameko-dev-cpp-setup-<version>.exe` | Windows installer (NSIS); the in-app updater uses this one too |
-| `sameko-dev-cpp-<version>-portable.zip` | Windows portable folder, zipped |
-| `sameko-dev-cpp-<version>-linux-x86_64.AppImage` | Linux, runs on any distribution |
-| `latest.yml` + `.blockmap` | Update metadata the in-app updater reads |
+| `npm run build` | Windows installer, portable `.zip` and Linux AppImage |
+| `npm run build:win` | Windows only |
+| `npm run build:linux` | AppImage, `.deb` and `.tar.gz` (on Linux or WSL) |
+| `npm run build:mac` | macOS `.dmg` and `.zip` |
+| `npm run build:all` | Windows and all Linux packages |
 
-> **How the AppImage gets built on Windows.** Packing an AppImage requires creating symlinks, which
-> Windows only allows from an elevated terminal or with Developer Mode on; otherwise electron-builder
-> stops at `A required privilege is not held by the client`. `scripts/build-appimage.js` checks for
-> that permission up front and, when it is missing, runs the same build **through WSL** - which has
-> no such restriction and can build in place from `/mnt/<drive>`. So `npm run build` produces all
-> three artifacts on a plain terminal as long as WSL is installed; if it is not, the script prints
-> every way to fix it. The Windows targets are built first either way, so they survive a Linux-side
-> failure.
->
-> `.deb` additionally needs `fpm`, which has no Windows build - run `npm run build:linux` inside WSL
-> or on a real Linux machine for the `.deb` and `.tar.gz`.
+Finished files go to `samekodevcpp/`.
 
-### Housekeeping
-
-```bash
-npm run clean        # wipe settings/history/snippets (the app's user-data folder)
-npm run clean:dist   # wipe samekodevcpp/
-npm run rebuild      # clean:dist, then a full build
-```
+<details>
+<summary><b>Release files and build notes</b></summary>
 
 <br />
 
-## ⌨️ Shortcuts
+| File | What it is |
+| :--- | :--- |
+| `sameko-dev-cpp-setup-<version>.exe` | Windows installer people download |
+| `sameko-dev-cpp-update-<version>.exe` + `.blockmap` | Copy used by the in-app updater. Upload it with every release |
+| `sameko-dev-cpp-<version>-portable.zip` | Windows portable build |
+| `sameko-dev-cpp-<version>-linux-x86_64.AppImage` | Linux build for any distribution |
+| `latest.yml` | Update info the app reads |
+
+- **AppImage on Windows** needs symlink permission. `npm run build` switches to WSL by itself when that permission is missing.
+- **`.deb` packages** need `fpm`, which has no Windows build. Run `npm run build:linux` in WSL or on Linux.
+
+</details>
+
+<details>
+<summary><b>Test and cleanup commands</b></summary>
+
+<br />
+
+```bash
+npm test             # run every test suite
+npm run clean        # delete your local settings, history and snippets
+npm run clean:dist   # delete samekodevcpp/
+npm run rebuild      # clean:dist, then a full build
+```
+
+</details>
+
+<br />
+
+<div align="center">
+
+### <img src="src/assets/vectors/section-wave-left.svg" alt="" width="37%" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/shortcuts.svg" alt="" width="49" align="absmiddle" />Shortcuts<img src="src/assets/vectors/titles/shortcuts.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-wave-right.svg" alt="" width="37%" height="24" align="absmiddle" />
+
+</div>
 
 | Key                | Action               |
 | :----------------- | :------------------- |
@@ -330,7 +384,7 @@ npm run rebuild      # clean:dist, then a full build
 | `Ctrl + Alt + S`   | Toggle Auto-Save     |
 | `Ctrl + Shift + P` | Command Palette      |
 
-### While debugging
+#### While debugging
 
 Click the left gutter to set a breakpoint, then press `F5`. `F10` and `F11` switch to stepping for
 as long as the session is live, and go back to Run / Compile & Run once it ends.
@@ -349,11 +403,16 @@ as long as the session is live, and go back to Run / Compile & Run once it ends.
 
 <br />
 
-## 🤝 Contributing
+<div align="center">
+
+### <img src="src/assets/vectors/section-wave-left.svg" alt="" width="35.1%" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/contributing.svg" alt="" width="49" align="absmiddle" />Contributing<img src="src/assets/vectors/titles/contributing.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-wave-right.svg" alt="" width="35.1%" height="24" align="absmiddle" />
+
+</div>
 
 **💖 Contributors**
 
-- **Yunchan** (Special thanks for designing the logo!)
+- **[Yunchan](https://yunchancomms.carrd.co/)** (Special thanks for designing the logo!)
+- **[Nuu (@XD_zow)](https://x.com/XD_zow)** (Drew the Saba illustration on the website)
 - **[KingShiba3766](https://github.com/daonghiemminh-collab)** (Donated the `sameko.dev` domain)
 - **[aiko-chan-ai](https://github.com/aiko-chan-ai)** (Fixed G++ spawn issue on some machines)
 - **[aguajardoc](https://github.com/aguajardoc)** (Added template and snippet imports and fixed the Linux dock icon)
@@ -367,17 +426,15 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
 
 <br />
 
-## 🐟 The story behind it
+<div align="center">
 
-I like making my coding space feel like mine: themes, wallpapers, characters I like. Sameko Saba is one of them.
+### <img src="src/assets/vectors/section-wave-left.svg" alt="" width="31.4%" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/story.svg" alt="" width="49" align="absmiddle" />The story behind it<img src="src/assets/vectors/titles/story.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-wave-right.svg" alt="" width="31.4%" height="24" align="absmiddle" />
 
-Classic Dev-C++ can barely be customized. VS Code can, but every time I changed computers (at school, for example) I had to set everything up again: the compiler, extensions, settings, theme. So I made my own IDE, one that comes with its compiler, works as soon as you open it, and lets me change every colour.
+</div>
 
-To be honest, most of this started because I just wanted to customize things my way. Saba is what kept me motivated while building it, so the app is named after her.
+Sameko Dev C++ started because I wanted a nicer place to practice CP. Dev-C++ felt too old and barely let me customize anything, while VS Code made me set everything up again every time I switched computers at school, so I started building my own. The problem was I had no idea what it should look like. I always had Saba's covers (and the graduated shork vtuber's, iykyk :P) playing while I worked. Then one of her songs came on and I thought, hey, why not build it around her? She's cute and one of a kind, exactly what I wanted for my own little waifu IDE, and that's how it became Sameko Dev C++.
 
-**Not an official project.** Sameko Dev C++ is a free, unofficial fan project. It is not affiliated with or endorsed by Sameko Saba or anyone who represents her. All rights to her name, likeness and artwork belong to their owners. The built-in themes don't use her artwork; I'd love to make a Saba theme one day, but only with permission.
-
-**Art credits.** The Saba illustration on the website is by **[Nuu (@XD_zow)](https://x.com/XD_zow)**. Saba's character design is by Shouu and her illustration by Tousaki Shiina. The logo was designed by Yunchan.
+**Not an official project.** Sameko Dev C++ is a free, unofficial fan project. It is not affiliated with or endorsed by Sameko Saba or anyone who represents her. All rights to her name, likeness and artwork belong to their owners. Saba's character design is by Shouu and her illustration by Tousaki Shiina. The built-in themes don't use her artwork; I'd love to make a Saba theme one day, but only with permission.
 
 **Saba, if you ever see this:** hi! I wanted to ask your permission, but I couldn't find a way to message you. If you'd rather I change the name or anything else, please email me at [nguyenvoquangquy.it@gmail.com](mailto:nguyenvoquangquy.it@gmail.com) and I'll do it right away.
 
@@ -385,9 +442,13 @@ If you own any of the artwork above and want something changed or removed, email
 
 <br />
 
-## 📄 License
+<div align="center">
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+### <img src="src/assets/vectors/section-wave-left.svg" alt="" width="38.4%" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/license.svg" alt="" width="49" align="absmiddle" />License<img src="src/assets/vectors/titles/license.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-wave-right.svg" alt="" width="38.4%" height="24" align="absmiddle" />
+
+</div>
+
+The source code of Sameko Dev C++ is licensed under the **MIT License**, see [LICENSE](LICENSE). Bundled tools keep their own licenses, such as GCC and GDB (GPL) and clangd (Apache 2.0). Saba's name and artwork are not covered by this license and belong to their owners.
 
 <br />
 

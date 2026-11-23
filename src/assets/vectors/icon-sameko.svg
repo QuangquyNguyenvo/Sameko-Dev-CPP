@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="116" height="76" viewBox="0 0 116 76" role="presentation">
+  <defs>
+    <path id="c" d="M50 29A20 20 0 1 0 50 57" fill="none" stroke-linecap="round"/>
+    <path id="ear-l" d="M17 31L18 10Q19 6 23 9L36 20Z" stroke-linejoin="round"/>
+    <path id="ear-r" d="M36 20L47 8Q50 5 52 9L55 29Z" stroke-linejoin="round"/>
+    <path id="plus" d="M0 -5V5M-5 0H5" fill="none" stroke-linecap="round"/>
+    <mask id="c-fill" maskUnits="userSpaceOnUse" x="0" y="0" width="84" height="76"><use href="#c" stroke="#fff" stroke-width="13"/></mask>
+  </defs>
+  <g stroke="#ffffff" stroke-width="9" fill="#ffffff">
+    <use href="#ear-l"/><use href="#ear-r"/>
+  </g>
+  <use href="#c" stroke="#ffffff" stroke-width="24"/>
+  <g stroke="#2d6ca6" stroke-width="4" fill="#fff5da">
+    <use href="#ear-l"/><use href="#ear-r"/>
+  </g>
+  <path d="M21.5 22L22 14L29 20ZM44 19L48.5 13.5L50.5 23Z" fill="#f7b6c2"/>
+  <use href="#c" stroke="#2d6ca6" stroke-width="19"/>
+  <g mask="url(#c-fill)">
+    <rect width="84" height="76" fill="#fff5da"/>
+    <path d="M-40 43q10 -6 20 0t20 0t20 0t20 0t20 0t20 0t20 0V80H-40Z" fill="#88c9ea">
+      <animateTransform attributeName="transform" type="translate" values="0 0;40 0" dur="3s" repeatCount="indefinite"/>
+    </path>
+    <path d="M-40 55q10 -4 20 0t20 0t20 0t20 0t20 0t20 0t20 0V80H-40Z" fill="#5ba6d6">
+      <animateTransform attributeName="transform" type="translate" values="40 0;0 0" dur="2.4s" repeatCount="indefinite"/>
+    </path>
+  </g>
+  <g transform="translate(69 43)">
+    <use href="#plus" stroke="#ffffff" stroke-width="9"/>
+    <use href="#plus" x="15" stroke="#ffffff" stroke-width="9"/>
+    <use href="#plus" stroke="#2d6ca6" stroke-width="4.5"/>
+    <use href="#plus" x="15" stroke="#2d6ca6" stroke-width="4.5"/>
+  </g>
+  <g transform="translate(55 14) scale(.68)">
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="-7;7;-7" dur="2.8s" repeatCount="indefinite"/>
+      <path d="M0 0L-14 -8Q-18 -9 -18 -5V5Q-18 9 -14 8ZM0 0L14 -8Q18 -9 18 -5V5Q18 9 14 8Z" fill="#ffffff" stroke="#ffffff" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M0 0L-14 -8Q-18 -9 -18 -5V5Q-18 9 -14 8ZM0 0L14 -8Q18 -9 18 -5V5Q18 9 14 8Z" fill="#2d6ca6" stroke="#1f4f80" stroke-width="2.5" stroke-linejoin="round"/>
+      <path d="M-12 -4V4M-7 -2V2M12 -4V4M7 -2V2" stroke="#ffffff" stroke-width="2" stroke-linecap="round"/>
+      <circle r="4" fill="#ffdf73" stroke="#f0ae38" stroke-width="1.6"/>
+    </g>
+  </g>
+</svg>
