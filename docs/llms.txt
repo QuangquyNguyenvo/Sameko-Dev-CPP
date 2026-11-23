@@ -29,7 +29,7 @@ It is aimed at beginners, students and competitive programmers. Key facts:
 
 ## Download
 
-- [GitHub releases](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases): Windows installer, Windows portable zip and Linux AppImage
+- [GitHub releases](https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases): Windows installer, Windows portable zip, Linux AppImage, and the macOS beta for Apple Silicon (DMG and zip)
 
 ## Optional
 
