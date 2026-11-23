@@ -497,9 +497,19 @@ class LldbSession extends EventEmitter {
     }
 
     async listThreads() {
-        const r = await this.request('threads');
-        const threads = (r.threads || []).map((t) => ({ id: String(t.id), 'target-id': t.name || '', name: t.name || '' }));
-        return { threads, 'current-thread-id': this.threadId === null ? '' : String(this.threadId) };
+        const current = this.threadId === null ? '' : String(this.threadId);
+        let list = [];
+        // The first answer after a stop can be lldb-dap's list from before it: a thread started
+        // since then is missing, even the one that stopped. Ask again until that one is listed.
+        for (let attempt = 0; attempt < 5; attempt++) {
+            const r = await this.request('threads');
+            list = r.threads || [];
+            if (!current || list.some((t) => String(t.id) === current)) break;
+            await new Promise((resolve) => setTimeout(resolve, 40));
+        }
+        const threads = list.map((t) => ({ id: String(t.id), 'target-id': t.name || '', name: t.name || '' }));
+        if (current && !threads.some((t) => t.id === current)) threads.push({ id: current, 'target-id': '', name: '' });
+        return { threads, 'current-thread-id': current };
     }
 
     async framesOfThread(id) {
