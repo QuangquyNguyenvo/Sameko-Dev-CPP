@@ -1,0 +1,110 @@
+# Builds the Linux AppImage and runs the test suites on a real Ubuntu runner.
+# Nothing is published: the release AppImage is still built and uploaded as before.
+name: Linux build
+
+on:
+  push:
+    branches: [mac-build]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install the compiler, the debugger and a display
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends g++ gdb clangd astyle xvfb xauth xdg-utils \
+            libnss3 libgbm1 libasound2t64 libgtk-3-0t64 libxss1 libsecret-1-0
+
+      - name: Let Chromium's sandbox run
+        # Ubuntu 24.04 blocks the user namespaces the sandbox needs in apps it did not install.
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
+      - name: Start a virtual display
+        run: |
+          Xvfb :99 -screen 0 1920x1080x24 > /dev/null 2>&1 &
+          echo "DISPLAY=:99" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        id: deps
+        run: |
+          npm ci
+          npx install-electron --no
+
+      - name: Build the AppImage
+        id: appimage
+        run: |
+          node scripts/build-monaco.js
+          npx electron-builder --linux AppImage -c.productName=Sameko-Dev-CPP --publish never
+          APP=$(ls "$GITHUB_WORKSPACE"/samekodevcpp/*.AppImage)
+          chmod +x "$APP"
+          echo "APPIMAGE_FILE=$APP" >> "$GITHUB_ENV"
+          (cd "$RUNNER_TEMP" && "$APP" --appimage-extract > /dev/null)
+          ls -lh "$APP" samekodevcpp/latest-linux.yml "$RUNNER_TEMP/squashfs-root/sameko-dev-cpp"
+
+      - name: Launch the packaged app
+        run: |
+          "$RUNNER_TEMP/squashfs-root/sameko-dev-cpp" --user-data-dir="$RUNNER_TEMP/profile" > launch.log 2>&1 &
+          APP_PID=$!
+          sleep 20
+          kill -0 "$APP_PID"
+          kill "$APP_PID"
+          grep -E '\[Compiler\] Selected' launch.log
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: sameko-dev-cpp-linux-x86_64
+          path: |
+            samekodevcpp/*.AppImage
+            samekodevcpp/latest-linux.yml
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Check the packaged app
+        if: ${{ !cancelled() && steps.appimage.outcome == 'success' }}
+        timeout-minutes: 15
+        shell: bash
+        run: |
+          mkdir -p linux-shots
+          node test/linux/packaged.js "$RUNNER_TEMP/squashfs-root/sameko-dev-cpp" "$APPIMAGE_FILE" linux-shots 2>&1 | tee packaged.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Unit tests
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' }}
+        shell: bash
+        run: node test/run.js unit -v 2>&1 | tee unit.log; exit "${PIPESTATUS[0]}"
+
+      - name: GUI tests
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' }}
+        timeout-minutes: 20
+        shell: bash
+        run: node test/run.js gui -v 2>&1 | tee gui.log; exit "${PIPESTATUS[0]}"
+
+      - name: gdb end-to-end tests
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' }}
+        timeout-minutes: 10
+        shell: bash
+        run: node test/run.js e2e -v 2>&1 | tee e2e.log; exit "${PIPESTATUS[0]}"
+
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-test-logs
+          path: |
+            *.log
+            linux-shots/*.png
+          if-no-files-found: ignore
