@@ -1,52 +1,26 @@
-<svg width="100%" height="250" viewBox="0 0 1440 250" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 210" role="img" aria-label="Thanks for visiting!">
   <defs>
-    <linearGradient id="gradInv" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#4895d6;stop-opacity:0.8" />
-      <stop offset="100%" style="stop-color:#88c9ea;stop-opacity:0.65" />
-    </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000000" flood-opacity="0.3" />
-    </filter>
+    <linearGradient id="deep" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#4895d6"/><stop offset="1" stop-color="#5ba6d6"/></linearGradient>
+    <clipPath id="frame"><rect width="1440" height="210"/></clipPath>
+    <g id="thanks" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M363.6 154.1L385.1 152.3M374.3 153.2L376.8 181"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="0.00s" repeatCount="indefinite"/></path><path d="M407.9 156.4L406.4 184.9M425.9 157.3L424.4 185.8M407.2 170.6L425.1 171.6"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="0.08s" repeatCount="indefinite"/></path><path d="M447.2 182.5L456.3 153.7L467.4 181.8M450.5 173.1L463.4 172.7"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="0.16s" repeatCount="indefinite"/></path><path d="M487.9 185.1L490.4 156.7L505.9 186.7L508.4 158.3"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="0.24s" repeatCount="indefinite"/></path><path d="M529.7 153.3L532.1 181.7M546.2 152.5L531.8 169.9M537.1 163.9L550.1 180.2"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="0.32s" repeatCount="indefinite"/></path><path d="M589.7 161.7C586.4 155.3 572.7 154.6 571.6 162.6C570.5 170 589.2 169.7 589.5 178.4C589.8 187.1 573.2 187.5 569.2 179.9"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="0.40s" repeatCount="indefinite"/></path><path d="M653 154L636.4 154.6L637.4 182.5M636.9 168.2L650.6 167.7"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="0.48s" repeatCount="indefinite"/></path><path d="M687.8 157.5C696.4 158.3 697.9 165.9 697.3 172.7C696.6 180.1 693.2 186.6 685.3 185.9C677.4 185.2 675.1 178.2 675.8 170.8C676.3 164 679.9 156.8 687.8 157.5Z"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="0.56s" repeatCount="indefinite"/></path><path d="M720.1 181.7L717.7 153.3C738.4 150.3 739.9 167.6 719 168.8M726.2 168.1L737.4 180.2"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="0.64s" repeatCount="indefinite"/></path><path d="M782.5 156.3L791.1 185.3L802.6 157.4"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="0.72s" repeatCount="indefinite"/></path><path d="M824.4 154L825.4 182.5"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="0.80s" repeatCount="indefinite"/></path><path d="M867 162.6C863.9 156.1 850.3 154.9 848.9 162.9C847.5 170.2 866.3 170.6 866.2 179.3C866.2 188 849.6 187.8 845.9 180"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="0.88s" repeatCount="indefinite"/></path><path d="M888.7 153.3L891.1 181.7"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="0.96s" repeatCount="indefinite"/></path><path d="M912.4 156.9L934 158.1M923.2 157.5L921.8 185.4"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="1.04s" repeatCount="indefinite"/></path><path d="M954.4 154L955.4 182.5"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="1.12s" repeatCount="indefinite"/></path><path d="M976.9 185.1L979.4 156.7L994.9 186.7L997.4 158.3"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="1.20s" repeatCount="indefinite"/></path><path d="M1037 156.7C1029.1 149.3 1017.3 154.7 1018.5 167.7C1019.6 180.6 1032.9 183.8 1038.6 174.6L1037.9 167.2L1030.1 167.9"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="1.28s" repeatCount="indefinite"/></path><path d="M1060.9 156.4L1059.9 175.6M1059.5 184.3L1059.4 184.6"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 2;0 0;0 0" keyTimes="0;.11;.2;.27;1" dur="3.2s" begin="1.36s" repeatCount="indefinite"/></path></g>
+    <mask id="thanks-fill" maskUnits="userSpaceOnUse" x="340" y="130" width="760" height="80"><use href="#thanks" stroke="#fff" stroke-width="10"/></mask>
   </defs>
-
-  <!-- Layer 1 (Furthest) -->
-  <path fill="#88c9ea" fill-opacity="0.25" d="M0,150 C320,70 420,250 740,170 C1060,90 1180,190 1440,150 V250 H0 V150 Z">
-     <animate attributeName="d" 
-              values="M0,150 C320,70 420,250 740,170 C1060,90 1180,190 1440,150 V250 H0 V150 Z;
-                      M0,150 C320,170 420,90 740,130 C1060,170 1180,70 1440,150 V250 H0 V150 Z;
-                      M0,150 C320,70 420,250 740,170 C1060,90 1180,190 1440,150 V250 H0 V150 Z"
-              dur="22s" repeatCount="indefinite"/>
-  </path>
-  
-  <!-- Layer 2 (Middle) -->
-  <path fill="#5ba6d6" fill-opacity="0.4" d="M0,120 C300,190 600,50 900,150 C1200,250 1400,130 1440,120 V250 H0 V120 Z">
-      <animate attributeName="d" 
-              values="M0,120 C300,190 600,50 900,150 C1200,250 1400,130 1440,120 V250 H0 V120 Z;
-                      M0,120 C300,70 600,150 900,90 C1200,170 1400,170 1440,120 V250 H0 V120 Z;
-                      M0,120 C300,190 600,50 900,150 C1200,250 1400,130 1440,120 V250 H0 V120 Z"
-              dur="17s" repeatCount="indefinite"/>
-  </path>
-
-  <!-- Layer 3 (Closest) -->
-  <path fill="url(#gradInv)" d="M0,90 C360,10 720,170 1080,90 C1260,50 1380,110 1440,90 V250 H0 V90 Z">
-      <animate attributeName="d" 
-              values="M0,90 C360,10 720,170 1080,90 C1260,50 1380,110 1440,90 V250 H0 V90 Z;
-                      M0,90 C360,130 720,50 1080,110 C1260,150 1380,50 1440,90 V250 H0 V90 Z;
-                      M0,90 C360,10 720,170 1080,90 C1260,50 1380,110 1440,90 V250 H0 V90 Z"
-              dur="12s" repeatCount="indefinite"/>
-  </path>
-
-  <!-- Bubbles Rising -->
-   <g opacity="0.6">
-      <circle cx="15%" cy="100%" r="12" fill="#ffffff">
-        <animate attributeName="cy" values="250; 50" dur="8s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="0;0.8;0" dur="8s" repeatCount="indefinite" />
-      </circle>
-      <circle cx="75%" cy="100%" r="8" fill="#ffffff">
-        <animate attributeName="cy" values="250; 50" dur="10s" begin="2s" repeatCount="indefinite" />
-        <animate attributeName="opacity" values="0;0.8;0" dur="10s" begin="2s" repeatCount="indefinite" />
-      </circle>
+  <g clip-path="url(#frame)">
+    <g><animateTransform attributeName="transform" type="translate" values="0 0;480 0" dur="15s" repeatCount="indefinite"/>
+      <path d="M-480 210V46q120 -26 240 0t240 0t240 0t240 0t240 0t240 0t240 0t240 0t240 0t240 0V210Z" fill="#ffffff"/>
+      <path d="M-480 210V57q120 -26 240 0t240 0t240 0t240 0t240 0t240 0t240 0t240 0t240 0t240 0V210Z" fill="#c9ecfa"/>
+    </g>
+    <path d="M-480 210V90q120 -22 240 0t240 0t240 0t240 0t240 0t240 0t240 0t240 0t240 0t240 0V210Z" fill="#88c9ea"><animateTransform attributeName="transform" type="translate" values="0 0;-480 0" dur="11s" repeatCount="indefinite"/></path>
+    <path d="M-480 210V138q120 -16 240 0t240 0t240 0t240 0t240 0t240 0t240 0t240 0t240 0t240 0V210Z" fill="url(#deep)"><animateTransform attributeName="transform" type="translate" values="0 0;480 0" dur="8s" repeatCount="indefinite"/></path>
+    <path d="M60 188H210M260 188H292M1180 182H1340M1386 182H1412" stroke="#fff" stroke-opacity=".45" stroke-width="7" stroke-linecap="round"/>
+    <path transform="translate(322 166) scale(0.8)" d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animate attributeName="opacity" values="1;.25;1" dur="2.8s" repeatCount="indefinite"/></path><path transform="translate(1120 166) scale(0.9)" d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animate attributeName="opacity" values="1;.25;1" dur="3.4s" repeatCount="indefinite"/></path><path transform="translate(214 158) scale(0.7)" d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animate attributeName="opacity" values="1;.25;1" dur="2.4s" repeatCount="indefinite"/></path><path transform="translate(1250 156) scale(0.7)" d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animate attributeName="opacity" values="1;.25;1" dur="3s" repeatCount="indefinite"/></path>
+    <g opacity="0"><animate attributeName="opacity" values="0;.9;.9;0" keyTimes="0;.15;.75;1" dur="7s" begin="0s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="130 202;138 140;126 72" dur="7s" begin="0s" repeatCount="indefinite"/><circle r="11" fill="#fff" fill-opacity=".2" stroke="#fff" stroke-width="2.5"/><path d="M-4.95 -2.2q1.65 -3.8499999999999996 5.5 -4.62" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g><g opacity="0"><animate attributeName="opacity" values="0;.9;.9;0" keyTimes="0;.15;.75;1" dur="5.5s" begin="1.4s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="262 202;270 140;258 72" dur="5.5s" begin="1.4s" repeatCount="indefinite"/><circle r="7" fill="#fff" fill-opacity=".2" stroke="#fff" stroke-width="2.5"/><path d="M-3.15 -1.4000000000000001q1.05 -2.4499999999999997 3.5 -2.94" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g><g opacity="0"><animate attributeName="opacity" values="0;.9;.9;0" keyTimes="0;.15;.75;1" dur="8s" begin="2.6s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="1170 202;1178 140;1166 72" dur="8s" begin="2.6s" repeatCount="indefinite"/><circle r="12" fill="#fff" fill-opacity=".2" stroke="#fff" stroke-width="2.5"/><path d="M-5.4 -2.4000000000000004q1.7999999999999998 -4.199999999999999 6 -5.04" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g><g opacity="0"><animate attributeName="opacity" values="0;.9;.9;0" keyTimes="0;.15;.75;1" dur="6s" begin="0.8s" repeatCount="indefinite"/><animateTransform attributeName="transform" type="translate" values="1310 202;1318 140;1306 72" dur="6s" begin="0.8s" repeatCount="indefinite"/><circle r="9" fill="#fff" fill-opacity=".2" stroke="#fff" stroke-width="2.5"/><path d="M-4.05 -1.8q1.3499999999999999 -3.15 4.5 -3.78" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>
+    <use href="#thanks" x="1.5" y="4" stroke="#2d6ca6" stroke-opacity=".6" stroke-width="23"/>
+    <use href="#thanks" stroke="#ffffff" stroke-width="23"/>
+    <use href="#thanks" stroke="#2d6ca6" stroke-width="16.5"/>
+    <g mask="url(#thanks-fill)">
+      <rect x="340" y="130" width="760" height="80" fill="#fff5da"/>
+      <path d="M200 171q30 -5 60 0t60 0t60 0t60 0t60 0t60 0t60 0t60 0t60 0t60 0t60 0t60 0t60 0t60 0t60 0t60 0V210H200Z" fill="#88c9ea"><animateTransform attributeName="transform" type="translate" values="0 0;120 0" dur="4s" repeatCount="indefinite"/></path>
+    </g>
   </g>
-  
-  <text x="50%" y="200" text-anchor="middle" font-size="26" fill="#ffffff" font-family="'Nunito', 'Segoe UI', sans-serif" font-weight="800" letter-spacing="4" opacity="0.95" filter="url(#shadow)">THANKS FOR VISITING!</text>
 </svg>

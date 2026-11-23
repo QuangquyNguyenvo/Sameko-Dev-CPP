@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="203" height="58" viewBox="-6 -4 203 58" role="img" aria-label="LICENSE: MIT">
+  <defs><filter id="soft" x="-10%" y="-25%" width="120%" height="160%"><feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#5FA8D3" flood-opacity=".45"/></filter></defs>
+  <rect width="191" height="44" rx="22" fill="#ffffff" filter="url(#soft)"/>
+  <rect x="126.2" y="5" width="59.8" height="34" rx="17" fill="#88c9ea"/>
+  <g transform="translate(25 22)"><circle r="15" fill="#e4f4fc"/><g fill="none" stroke="#3f86c2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M-5.5 -8H3L6 -5V8H-5.5Z"/><path d="M-2.4 1L-.4 3.2L3 -1"/></g></g>
+  <path d="M47 16.9L47 27.1L52.4 27.1M58.2 16.9L58.2 27.1M70.8 18.7C68.4 15.8 64.2 17.4 64.2 22C64.2 26.6 68.4 28.2 70.8 25.3M81.5 17.2L75.9 17.2L75.9 26.8L81.8 26.8M75.9 22L80.6 22M86.8 27.1L86.8 16.9L93 27.1L93 16.9M104.2 18.5C103 16.3 98.3 16.3 98 19.1C97.8 21.8 104.2 21.3 104.4 24.4C104.7 27.5 99 27.9 97.5 25.3M115.1 17.2L109.5 17.2L109.5 26.8L115.4 26.8M109.5 22L114.2 22" fill="none" stroke="#4f9acb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M140.1 28L140.4 16.3L143.9 23.6L147.4 16.3L147.7 28M153.8 16L153.8 28M160.7 16.3L169.4 16.3M165.1 16.3L165.1 28" fill="none" stroke="#1f4f80" stroke-width="3.1" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

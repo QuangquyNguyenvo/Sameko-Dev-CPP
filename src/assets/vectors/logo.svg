@@ -1,226 +1,59 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 350">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -10 812 322" role="img" aria-label="Sameko IDE Project">
   <defs>
-    <!-- Bubbly Text Filter with softer glow -->
-    <filter id="bubble-glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur"/>
-      <feOffset in="blur" dx="0" dy="3" result="offsetBlur"/>
-      <feComponentTransfer in="offsetBlur" result="shadow">
-        <feFuncA type="linear" slope="0.3"/>
-      </feComponentTransfer>
-      <feMerge>
-        <feMergeNode in="shadow"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-
-    <filter id="drop-shadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#5FA8D3" flood-opacity="0.4" />
-    </filter>
-    
-    <!-- Gradient for Text (Split in half) -->
-    <linearGradient id="text-grad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <!-- Top Half (White to Cyan) -->
-      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
-      <stop offset="50%" style="stop-color:#e0f7fa;stop-opacity:1" />
-      <!-- Sharp transition -->
-      <stop offset="50.1%" style="stop-color:#A2D9F5;stop-opacity:1" />
-      <!-- Bottom Half (Blue to Darker Blue) -->
-      <stop offset="100%" style="stop-color:#6ebbdf;stop-opacity:1" />
-    </linearGradient>
-
-    <!-- Subtitle Glow -->
-    <filter id="sub-glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="1.5" result="blur" />
-      <feComposite in="SourceGraphic" in2="blur" operator="over" />
-    </filter>
+    <path id="word" d="M110 101.7C97.8 79.8 55.2 82.4 51.9 113.6C50 142.8 109.7 130.7 116.6 164.7C121.7 197 69.9 206.3 52.2 179.2M166.5 188L207 72.9L235.3 191.6M178.4 164.6L225.9 167.1M294.8 201L294 85.7L332.5 153.5L366.1 83.2L375.1 198.2M487.2 79.1L431.6 76.2L425.8 185.5L483.2 188.5M428.7 129.9L474.6 132.3M540.6 84.3L546.8 201.2M596.5 85.2L545.8 151.3M564.3 129.2L607.4 198M703.4 76C740.2 79.2 747.2 112.6 745 137.4C742.3 168 726.9 193.7 693.4 190.7C658.3 187.7 649.2 159.9 651.9 129.3C654.2 102.5 666.7 72.8 703.4 76Z" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="sub" d="M319.7 275.2L319.7 290.8M326.4 275.2L326.4 290.8C340.3 291.5 340.3 274.5 326.4 275.2ZM353.9 275.5L344.2 275.5L344.2 290.5L354.3 290.5M344.2 283L352.2 283M370 290.8L370 275.2C382.2 274.5 382.2 284 370 283.7M387.1 290.8L387.1 275.2C399.3 274.5 399.3 284 387.1 283.7M391.3 283.7L397.2 290.8M410 275.2C415 275.2 416.3 279.3 416.3 283C416.3 287.1 414.6 290.8 410 290.8C405.4 290.8 403.7 287.1 403.7 283C403.7 279.3 405.4 275.2 410 275.2ZM432.3 275.2L432.3 286.1C432.3 291.8 423.4 291.8 422.6 286.7M448.9 275.5L439.3 275.5L439.3 290.5L449.4 290.5M439.3 283L447.3 283M466.3 277.9C462.1 273.5 454.9 275.9 454.9 283C454.9 290.1 462.1 292.5 466.3 288.1M471.7 275.5L484.3 275.5M478 275.5L478 290.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <mask id="word-fill" maskUnits="userSpaceOnUse" x="0" y="0" width="800" height="350"><use href="#word" stroke="#fff" stroke-width="33"/></mask>
   </defs>
-
-  <!-- Background decorative elements (Bubbles & Stars) -->
-  <g opacity="0.6">
-    <circle cx="100" cy="250" r="18" fill="none" stroke="#7fcbee" stroke-width="4" opacity="0.6">
-      <animate attributeName="cy" values="250;230;250" dur="5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-    </circle>
-    <circle cx="130" cy="270" r="8" fill="none" stroke="#7fcbee" stroke-width="3" opacity="0.8">
-      <animate attributeName="cy" values="270;240;270" dur="4s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-    </circle>
-    <circle cx="80" cy="220" r="12" fill="none" stroke="#7fcbee" stroke-width="3" opacity="0.5">
-      <animate attributeName="cy" values="220;190;220" dur="6s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-    </circle>
-    
-    <circle cx="700" cy="100" r="22" fill="none" stroke="#7fcbee" stroke-width="4" opacity="0.5">
-      <animate attributeName="cy" values="100;70;100" dur="5.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-    </circle>
-    <circle cx="740" cy="130" r="10" fill="none" stroke="#7fcbee" stroke-width="3" opacity="0.7">
-      <animate attributeName="cy" values="130;110;130" dur="4.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-    </circle>
-    <circle cx="670" cy="60" r="14" fill="none" stroke="#7fcbee" stroke-width="3" opacity="0.6">
-      <animate attributeName="cy" values="60;40;60" dur="6.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-    </circle>
-    
-    <circle cx="180" cy="80" r="10" fill="none" stroke="#7fcbee" stroke-width="3" opacity="0.4">
-      <animate attributeName="cy" values="80;50;80" dur="5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-    </circle>
-    <circle cx="620" cy="260" r="15" fill="none" stroke="#7fcbee" stroke-width="4" opacity="0.5">
-      <animate attributeName="cy" values="260;230;260" dur="6s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-    </circle>
+  <g><circle cx="42" cy="262" r="13" fill="#88c9ea" fill-opacity=".14" stroke="#88c9ea" stroke-width="3"><animate attributeName="cy" values="262;253;262" dur="4s" repeatCount="indefinite"/></circle><path d="M36.15 259.4q1.95 -4.55 6.5 -5.46" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 0" dur="4s" repeatCount="indefinite"/></path><circle cx="112" cy="272" r="20" fill="#88c9ea" fill-opacity=".14" stroke="#88c9ea" stroke-width="3"><animate attributeName="cy" values="272;263;272" dur="5s" repeatCount="indefinite"/></circle><path d="M103 268q3 -7 10 -8.4" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 0" dur="5s" repeatCount="indefinite"/></path><circle cx="690" cy="272" r="16" fill="#88c9ea" fill-opacity=".14" stroke="#88c9ea" stroke-width="3"><animate attributeName="cy" values="272;263;272" dur="4.5s" repeatCount="indefinite"/></circle><path d="M682.8 268.8q2.4 -5.6 8 -6.72" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 0" dur="4.5s" repeatCount="indefinite"/></path><circle cx="760" cy="258" r="10" fill="#88c9ea" fill-opacity=".14" stroke="#88c9ea" stroke-width="3"><animate attributeName="cy" values="258;249;258" dur="3.6s" repeatCount="indefinite"/></circle><path d="M755.5 256q1.5 -3.5 5 -4.2" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round"><animateTransform attributeName="transform" type="translate" values="0 0;0 -9;0 0" dur="3.6s" repeatCount="indefinite"/></path></g>
+  <use href="#word" x="3" y="8" stroke="#2d6ca6" stroke-opacity=".5" stroke-width="70"/>
+  <use href="#word" stroke="#ffffff" stroke-width="70"/>
+  <use href="#word" stroke="#2d6ca6" stroke-width="53"/>
+  <g mask="url(#word-fill)">
+    <rect width="800" height="350" fill="#fff5da"/>
+    <path d="M-400 128q100 -18 200 0t200 0t200 0t200 0t200 0t200 0t200 0t200 0V350H-400Z" fill="#88c9ea"><animateTransform attributeName="transform" type="translate" values="0 0;400 0" dur="7s" repeatCount="indefinite"/></path>
+    <path d="M-400 168q100 -13 200 0t200 0t200 0t200 0t200 0t200 0t200 0t200 0V350H-400Z" fill="#5ba6d6"><animateTransform attributeName="transform" type="translate" values="0 0;400 0" dur="4.8s" repeatCount="indefinite"/></path>
+    <path d="M0 92L800 84" stroke="#ffffff" stroke-width="9" stroke-linecap="round" stroke-dasharray="26 86"/>
+    <path d="M-120 0L-60 0L-190 350L-250 350Z" fill="#ffffff" opacity=".6"><animateTransform attributeName="transform" type="translate" values="0 0;0 0;1150 0;1150 0" keyTimes="0;.45;.75;1" dur="6s" repeatCount="indefinite"/></path>
   </g>
-
-  <!-- Cute sparkles blinking animation -->
-  <g fill="#A2D9F5" opacity="0.8">
-    <g transform="translate(150,110)">
-      <path d="M0,10 Q10,10 10,0 Q10,10 20,10 Q10,10 10,20 Q10,10 0,10 Z">
-        <animate attributeName="opacity" values="0.2;1;0.2" dur="3s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-        <animateTransform attributeName="transform" type="scale" values="0.8;1.2;0.8" dur="3s" repeatCount="indefinite" additive="sum" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-      </path>
-    </g>
-    <g transform="translate(650,190)">
-      <path d="M0,5 Q5,5 5,0 Q5,5 10,5 Q5,5 5,10 Q5,5 0,5 Z">
-        <animate attributeName="opacity" values="0.2;1;0.2" dur="4s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-        <animateTransform attributeName="transform" type="scale" values="0.5;1;0.5" dur="4s" repeatCount="indefinite" additive="sum" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-      </path>
-    </g>
-    <g transform="translate(300,40)">
-      <path d="M0,10 Q10,10 10,0 Q10,10 20,10 Q10,10 10,20 Q10,10 0,10 Z">
-        <animate attributeName="opacity" values="0.2;1;0.2" dur="3.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-        <animateTransform attributeName="transform" type="scale" values="0.7;1.1;0.7" dur="3.5s" repeatCount="indefinite" additive="sum" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-      </path>
+  <g id="label" transform="translate(0 -18)">
+    <filter id="label-shadow" x="-10%" y="-30%" width="120%" height="170%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#5FA8D3" flood-opacity=".4"/></filter>
+    <g>
+      <animateTransform attributeName="transform" type="rotate" values="-2 400 283;2 400 283;-2 400 283" keyTimes="0;.5;1" calcMode="spline" keySplines=".4 0 .6 1;.4 0 .6 1" dur="6s" repeatCount="indefinite"/>
+      <rect x="260" y="258" width="280" height="50" rx="25" fill="#ffffff" filter="url(#label-shadow)"/>
+      <rect x="268" y="266" width="264" height="34" rx="17" fill="none" stroke="#A2D9F5" stroke-width="2" stroke-dasharray="6 4" opacity=".8"/>
+      <path transform="translate(296 283)" d="M-7 0Q0 0 0-7Q0 0 7 0Q0 0 0 7Q0 0-7 0Z" fill="#6ebbdf" stroke="#6ebbdf" stroke-width="1.2" stroke-linejoin="round"/><path transform="translate(504 283)" d="M-7 0Q0 0 0-7Q0 0 7 0Q0 0 0 7Q0 0-7 0Z" fill="#6ebbdf" stroke="#6ebbdf" stroke-width="1.2" stroke-linejoin="round"/>
+      <use href="#sub" stroke="#5FA8D3" stroke-width="4"/>
     </g>
   </g>
-
-  <!-- Floating Group -->
-  <g>
-    <!-- Main "SAMEKO" Text -->
-    <g transform="translate(400, 180)" filter="url(#drop-shadow)">
-      <!-- Deepest shadow/outline -->
-      <text x="0" y="0" text-anchor="middle" 
-            font-family="'Fredoka One', 'Nunito', 'Segoe UI', sans-serif" 
-            font-weight="900" 
-            font-size="140" 
-            fill="none" 
-            stroke="#4293ca" 
-            stroke-width="32"
-            stroke-linejoin="round"
-            letter-spacing="5">
-        SAMEKO
-      </text>
-
-      <!-- White outer rim -->
-      <text x="0" y="0" text-anchor="middle" 
-            font-family="'Fredoka One', 'Nunito', 'Segoe UI', sans-serif" 
-            font-weight="900" 
-            font-size="140" 
-            fill="none" 
-            stroke="#ffffff" 
-            stroke-width="18"
-            stroke-linejoin="round"
-            letter-spacing="5">
-        SAMEKO
-      </text>
-
-      <!-- Inner dark blue outline -->
-      <text x="0" y="0" text-anchor="middle" 
-            font-family="'Fredoka One', 'Nunito', 'Segoe UI', sans-serif" 
-            font-weight="900" 
-            font-size="140" 
-            fill="none" 
-            stroke="#5FA8D3" 
-            stroke-width="10"
-            stroke-linejoin="round"
-            letter-spacing="5">
-        SAMEKO
-      </text>
-
-      <!-- Full Unified Gradient Fill -->
-      <text x="0" y="0" text-anchor="middle" 
-            font-family="'Fredoka One', 'Nunito', 'Segoe UI', sans-serif" 
-            font-weight="900" 
-            font-size="140" 
-            fill="url(#text-grad)"
-            letter-spacing="5">
-        SAMEKO
-      </text>
-
-      <!-- Cute Highlights/Reflections on letters -->
-      <path d="M-230,-80 C-210,-90 -160,-90 -140,-80" stroke="white" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.6"/>
-      <path d="M40,-80 C60,-90 100,-90 120,-80" stroke="white" stroke-width="8" stroke-linecap="round" fill="none" opacity="0.6"/>
-      <path d="M-300,-15 C-290,-35 -260,-35 -250,-15" stroke="white" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.4"/>
-      <path d="M210,-15 C230,-35 250,-35 270,-15" stroke="white" stroke-width="6" stroke-linecap="round" fill="none" opacity="0.4"/>
-    </g>
-
-    <!-- "IDE PROJECT" Subtitle Tag (Sticker style) -->
-    <g transform="translate(400, 270)">
-      <g>
-        <!-- Slow & Smooth Swing animation -->
-        <animateTransform attributeName="transform" type="rotate" values="-2;2;-2" dur="6s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-        
-        <!-- White background sticker padding -->
-        <rect x="-140" y="-30" width="280" height="50" rx="25" fill="#ffffff" filter="url(#drop-shadow)" />
-        
-        <!-- Subtle inner dash border -->
-        <rect x="-132" y="-22" width="264" height="34" rx="17" fill="none" stroke="#A2D9F5" stroke-width="2" stroke-dasharray="6,4" opacity="0.8" />
-        
-        <text x="0" y="3" text-anchor="middle" 
-              font-family="'Nunito', 'Segoe UI', sans-serif" 
-              font-weight="800" 
-              font-size="22" 
-              fill="#5FA8D3" 
-              letter-spacing="4"
-              filter="url(#sub-glow)">
-          IDE PROJECT
-        </text>
-
-        <!-- Little star icon next to text -->
-        <path d="M-105,-4 Q-100,-4 -100,-9 Q-100,-4 -95,-4 Q-100,-4 -100,1 Q-100,-4 -105,-4 Z" fill="#6ebbdf" />
-        <path d="M105,-4 Q100,-4 100,-9 Q100,-4 95,-4 Q100,-4 100,1 Q100,-4 105,-4 Z" fill="#6ebbdf" />
+  <g transform="translate(64 33) rotate(-8)">
+    <animateTransform attributeName="transform" type="translate" additive="sum" values="0 0;3 -6;0 0" dur="3s" repeatCount="indefinite"/>
+    <animateTransform attributeName="transform" type="rotate" additive="sum" values="-4;4;-4" dur="3s" repeatCount="indefinite"/>
+    <g transform="scale(.034) translate(-960 -960)" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <clipPath id="fish-body"><path d="M1360 525C1560 525 1840 740 1840 1020C1840 1320 1500 1565 1160 1565C1040 1565 920 1530 825 1512C780 1545 750 1555 725 1553C680 1545 650 1470 635 1425C625 1400 600 1385 572 1365C500 1430 420 1470 340 1495C260 1520 180 1525 130 1515C95 1495 85 1460 100 1410C130 1310 210 1210 270 1135C295 1100 285 1070 260 1030C200 940 110 850 100 760C100 700 140 670 200 668C290 670 400 740 480 810C540 860 580 925 620 960C650 940 680 915 690 890C720 720 820 590 960 470C1030 410 1080 365 1130 365C1200 365 1260 400 1290 435Z"/></clipPath>
+      <path d="M1360 525C1560 525 1840 740 1840 1020C1840 1320 1500 1565 1160 1565C1040 1565 920 1530 825 1512C780 1545 750 1555 725 1553C680 1545 650 1470 635 1425C625 1400 600 1385 572 1365C500 1430 420 1470 340 1495C260 1520 180 1525 130 1515C95 1495 85 1460 100 1410C130 1310 210 1210 270 1135C295 1100 285 1070 260 1030C200 940 110 850 100 760C100 700 140 670 200 668C290 670 400 740 480 810C540 860 580 925 620 960C650 940 680 915 690 890C720 720 820 590 960 470C1030 410 1080 365 1130 365C1200 365 1260 400 1290 435Z" fill="#ffffff" stroke="#ffffff" stroke-width="190"/>
+      <path d="M1360 525C1560 525 1840 740 1840 1020C1840 1320 1500 1565 1160 1565C1040 1565 920 1530 825 1512C780 1545 750 1555 725 1553C680 1545 650 1470 635 1425C625 1400 600 1385 572 1365C500 1430 420 1470 340 1495C260 1520 180 1525 130 1515C95 1495 85 1460 100 1410C130 1310 210 1210 270 1135C295 1100 285 1070 260 1030C200 940 110 850 100 760C100 700 140 670 200 668C290 670 400 740 480 810C540 860 580 925 620 960C650 940 680 915 690 890C720 720 820 590 960 470C1030 410 1080 365 1130 365C1200 365 1260 400 1290 435Z" fill="#a6dcf3"/>
+      <g clip-path="url(#fish-body)">
+        <path d="M1760 760C1780 1000 1720 1200 1450 1340C1250 1450 1000 1450 620 1320C570 1180 480 1190 380 1300C300 1390 220 1450 110 1455L100 1600H1900V700Z" fill="#6fb9e4"/>
+        <path d="M120 780C170 880 280 930 340 1000C400 1070 350 1150 280 1175L60 1000Z" fill="#6fb9e4"/>
+        <path d="M715 860C820 720 1000 590 1240 545L1300 430L1130 340L880 500L680 880Z" fill="#6fb9e4"/>
       </g>
-    </g>
-
-    <!-- Little fish illustration sitting on the logo -->
-    <g transform="translate(140, 60)">
-      <g transformOrigin="40 30">
-        <!-- Relaxed, slow rocking for the fish -->
-        <animateTransform attributeName="transform" type="rotate" values="-15;-23;-15" dur="5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-      
-        <!-- Fish shadow -->
-        <path d="M40,50 Q10,50 0,30 Q10,10 40,10 Q60,10 70,30 Q60,50 40,50 Z" fill="rgba(66, 147, 202, 0.2)" filter="url(#bubble-glow)"/>
-        
-        <!-- White outline for sticker effect -->
-        <path d="M40,56 Q10,56 -6,30 Q10,4 40,4 Q66,4 76,30 Q66,56 40,56 Z" fill="#ffffff" />
-        <path d="M70,30 L96,4 L96,56 Z" fill="#ffffff" />
-
-        <!-- Fish Tail -->
-        <g>
-          <path d="M70,30 L90,10 L90,50 Z" fill="#6ebbdf" />
-          <path d="M70,30 L85,15 L85,45 Z" fill="#4293ca" />
-        </g>
-
-        <!-- Fish Body main -->
-        <path d="M40,50 Q10,50 0,30 Q10,10 40,10 Q60,10 70,30 Q60,50 40,50 Z" fill="#6ebbdf" />
-        
-        <!-- Fish Eye -->
-        <circle cx="20" cy="25" r="4" fill="#ffffff" />
-        <circle cx="19" cy="24" r="2" fill="#1a2530" />
-        
-        <!-- Fish Fin -->
-        <path d="M35,25 Q45,20 50,30 Q40,35 35,25 Z" fill="#A2D9F5" opacity="0.8">
-        </path>
-      </g>
-    </g>
-
-    <!-- Crown decoration -->
-    <g transform="translate(620, -10)">
-      <!-- Smooth gentle tilt -->
-      <g>
-        <animateTransform attributeName="transform" type="rotate" values="15;10;15" dur="5.5s" repeatCount="indefinite" calcMode="spline" keySplines="0.4 0 0.6 1; 0.4 0 0.6 1" />
-        <g transform="scale(0.9)">
-           <path d="M10,60 L20,30 L40,45 L60,20 L80,45 L100,30 L110,60 Z" fill="#ffffff" stroke="#ffffff" stroke-width="8" stroke-linejoin="round"/>
-           <path d="M10,60 L20,30 L40,45 L60,20 L80,45 L100,30 L110,60 Z" fill="#ffd166" stroke="#f4a261" stroke-width="3" stroke-linejoin="round"/>
-           <!-- Crown Jewels -->
-           <circle cx="20" cy="30" r="4" fill="#ffffff" />
-           <circle cx="60" cy="20" r="4" fill="#ffffff" />
-           <circle cx="100" cy="30" r="4" fill="#ffffff" />
-        </g>
-      </g>
+      <path d="M1115 435L1130 500M1025 485L1040 545M935 555L948 590" stroke="#a6dcf3" stroke-width="38"/>
+      <path d="M1015 750C960 770 970 835 1020 838M945 868C895 895 910 950 950 955M805 1060C755 1090 775 1140 820 1150C775 1180 790 1250 835 1250M930 1170C880 1200 900 1250 948 1262C900 1295 915 1355 960 1358" stroke="#e3f5fc" stroke-width="38"/>
+      <path d="M1205 975C1130 955 1010 965 995 1015C1005 1070 1005 1130 1020 1165C1060 1210 1060 1260 1110 1275C1160 1280 1210 1215 1245 1170Z" fill="#e3f5fc" stroke="#2d6ca6" stroke-width="52"/>
+      <path d="M1082 1070L1152 1056M1115 1158L1178 1118" stroke="#6fb9e4" stroke-width="38"/>
+      <path d="M1240 545C1040 580 880 700 770 825M1280 535L1282 540M1280 600C1255 640 1240 675 1232 705M1222 748L1215 775M1214 830C1205 1000 1240 1250 1405 1385" stroke="#2d6ca6" stroke-width="52"/>
+      <path d="M710 1440C735 1455 760 1465 785 1472" stroke="#2d6ca6" stroke-width="48"/>
+      <path d="M1442 742L1520 714L1612 968L1530 998Z" fill="#1f3f6b" stroke="#1f3f6b" stroke-width="14"/>
+      <path d="M1540 905L1562 898L1576 952L1548 962Z" fill="#7fb7e8" stroke="#7fb7e8" stroke-width="10"/>
+      <path d="M1360 525C1560 525 1840 740 1840 1020C1840 1320 1500 1565 1160 1565C1040 1565 920 1530 825 1512C780 1545 750 1555 725 1553C680 1545 650 1470 635 1425C625 1400 600 1385 572 1365C500 1430 420 1470 340 1495C260 1520 180 1525 130 1515C95 1495 85 1460 100 1410C130 1310 210 1210 270 1135C295 1100 285 1070 260 1030C200 940 110 850 100 760C100 700 140 670 200 668C290 670 400 740 480 810C540 860 580 925 620 960C650 940 680 915 690 890C720 720 820 590 960 470C1030 410 1080 365 1130 365C1200 365 1260 400 1290 435Z" stroke="#2d6ca6" stroke-width="52"/>
     </g>
   </g>
+  <g transform="translate(716 33) rotate(12) scale(.62)">
+    <animateTransform attributeName="transform" type="rotate" additive="sum" values="0 0 30;-5 0 30;4 0 30;0 0 30;0 0 30" keyTimes="0;.12;.26;.38;1" dur="4s" repeatCount="indefinite"/>
+    <path d="M-48 28L-55 -20L-24 2L0 -34L24 2L55 -20L48 28Z" fill="#ffd67e" stroke="#ffffff" stroke-width="16" stroke-linejoin="round"/>
+    <path d="M-48 28L-55 -20L-24 2L0 -34L24 2L55 -20L48 28Z" fill="#ffd67e" stroke="#2d6ca6" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M-45 17L45 17L48 28L-48 28Z" fill="#ffb56b"/><circle cx="0" cy="11" r="7" fill="#f28585" stroke="#2d6ca6" stroke-width="3.5"/>
+    <path d="M-48 28L-55 -20L-24 2L0 -34L24 2L55 -20L48 28Z" fill="none" stroke="#2d6ca6" stroke-width="6" stroke-linejoin="round"/>
+  </g>
+  <path transform="translate(238 22) scale(1.1)" d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animateTransform attributeName="transform" type="scale" additive="sum" values="1;.45;1" dur="2.00s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;.35;1" dur="2.00s" repeatCount="indefinite"/></path><path transform="translate(585 22) scale(0.8)" d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animateTransform attributeName="transform" type="scale" additive="sum" values="1;.45;1" dur="3.00s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;.35;1" dur="3.00s" repeatCount="indefinite"/></path><path transform="translate(128 18) scale(0.75)" d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animateTransform attributeName="transform" type="scale" additive="sum" values="1;.45;1" dur="2.50s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;.35;1" dur="2.50s" repeatCount="indefinite"/></path><path transform="translate(782 212) scale(0.8)" d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animateTransform attributeName="transform" type="scale" additive="sum" values="1;.45;1" dur="3.25s" repeatCount="indefinite"/><animate attributeName="opacity" values="1;.35;1" dur="3.25s" repeatCount="indefinite"/></path>
 </svg>

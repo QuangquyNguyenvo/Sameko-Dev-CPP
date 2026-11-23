@@ -1,75 +1,27 @@
-<svg width="800" height="50" viewBox="0 0 800 50" xmlns="http://www.w3.org/2000/svg">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 56" role="img" aria-label="Divider">
   <defs>
-    <linearGradient id="dividerGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#A2D9F5;stop-opacity:0"/>
-      <stop offset="20%" style="stop-color:#A2D9F5;stop-opacity:1"/>
-      <stop offset="50%" style="stop-color:#5FA8D3;stop-opacity:1"/>
-      <stop offset="80%" style="stop-color:#A2D9F5;stop-opacity:1"/>
-      <stop offset="100%" style="stop-color:#A2D9F5;stop-opacity:0"/>
-    </linearGradient>
-    
-    <!-- Animated Gradient -->
-    <linearGradient id="flowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0">
-        <animate attributeName="offset" values="-0.2;1.2" dur="3s" repeatCount="indefinite"/>
-      </stop>
-      <stop offset="10%" style="stop-color:#ffffff;stop-opacity:0.8">
-        <animate attributeName="offset" values="-0.1;1.3" dur="3s" repeatCount="indefinite"/>
-      </stop>
-      <stop offset="20%" style="stop-color:#ffffff;stop-opacity:0">
-        <animate attributeName="offset" values="0;1.4" dur="3s" repeatCount="indefinite"/>
-      </stop>
-    </linearGradient>
+    <path id="rope" d="M36 28q40 -11 80 0t80 0t80 0t80 0M444 28q40 11 80 0t80 0t80 0t80 0" fill="none" stroke-linecap="round">
+      <animate attributeName="d" values="M36 28q40 -11 80 0t80 0t80 0t80 0M444 28q40 11 80 0t80 0t80 0t80 0;M36 28q40 11 80 0t80 0t80 0t80 0M444 28q40 -11 80 0t80 0t80 0t80 0;M36 28q40 -11 80 0t80 0t80 0t80 0M444 28q40 11 80 0t80 0t80 0t80 0" dur="4s" calcMode="spline" keyTimes="0;.5;1" keySplines=".4 0 .6 1;.4 0 .6 1" repeatCount="indefinite"/>
+    </path>
   </defs>
-  
-  <!-- Main Wave Line -->
-  <path d="M0,25 Q100,15 200,25 T400,25 T600,25 T800,25" stroke="url(#dividerGrad)" stroke-width="3" fill="none">
-    <animate attributeName="d" 
-             values="M0,25 Q100,15 200,25 T400,25 T600,25 T800,25;
-                     M0,25 Q100,35 200,25 T400,25 T600,25 T800,25;
-                     M0,25 Q100,15 200,25 T400,25 T600,25 T800,25" 
-             dur="4s" repeatCount="indefinite"/>
-  </path>
-  
-  <!-- Shimmer Overlay on Wave -->
-  <path d="M0,25 Q100,15 200,25 T400,25 T600,25 T800,25" stroke="url(#flowGrad)" stroke-width="4" fill="none" opacity="0.6">
-    <animate attributeName="d" 
-             values="M0,25 Q100,15 200,25 T400,25 T600,25 T800,25;
-                     M0,25 Q100,35 200,25 T400,25 T600,25 T800,25;
-                     M0,25 Q100,15 200,25 T400,25 T600,25 T800,25" 
-             dur="4s" repeatCount="indefinite"/>
-  </path>
-  
-  <!-- Decorative Bubbles -->
-  <g opacity="0.6">
-    <circle cx="100" cy="25" r="4" fill="#5FA8D3">
-      <animate attributeName="r" values="4;6;4" dur="2s" repeatCount="indefinite"/>
-      <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="300" cy="25" r="3" fill="#89CFF0">
-      <animate attributeName="r" values="3;5;3" dur="2.5s" begin="0.5s" repeatCount="indefinite"/>
-      <animate attributeName="opacity" values="0.6;1;0.6" dur="2.5s" begin="0.5s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="400" cy="25" r="5" fill="#5FA8D3">
-      <animate attributeName="r" values="5;7;5" dur="2s" begin="0.3s" repeatCount="indefinite"/>
-      <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" begin="0.3s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="500" cy="25" r="3" fill="#89CFF0">
-      <animate attributeName="r" values="3;5;3" dur="2.5s" begin="0.8s" repeatCount="indefinite"/>
-      <animate attributeName="opacity" values="0.6;1;0.6" dur="2.5s" begin="0.8s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="700" cy="25" r="4" fill="#5FA8D3">
-      <animate attributeName="r" values="4;6;4" dur="2s" begin="0.2s" repeatCount="indefinite"/>
-      <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" begin="0.2s" repeatCount="indefinite"/>
-    </circle>
+  <use href="#rope" x="1" y="3" stroke="#2d6ca6" stroke-opacity=".4" stroke-width="13"/>
+  <use href="#rope" stroke="#ffffff" stroke-width="13"/>
+  <use href="#rope" stroke="#2d6ca6" stroke-width="8.5"/>
+  <use href="#rope" stroke="#88c9ea" stroke-width="4"/>
+  <g stroke-dasharray="14 22">
+    <animate attributeName="stroke-dashoffset" values="0;-36" dur="1.8s" repeatCount="indefinite"/>
+    <use href="#rope" stroke="#fff5da" stroke-width="4"/>
   </g>
-  
-  <!-- Center Bubble Decoration -->
-  <g transform="translate(390, 18)">
-    <circle cx="10" cy="10" r="10" fill="#5FA8D3" opacity="0.8">
-      <animate attributeName="opacity" values="0.6;1;0.6" dur="1.5s" repeatCount="indefinite"/>
-      <animate attributeName="r" values="10;12;10" dur="1.5s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="6" cy="6" r="3" fill="white" opacity="0.6"/>
+  <g transform="translate(116 28)"><g><animateTransform attributeName="transform" type="scale" values="1;1.22;1" dur="2.6s" begin="0s" repeatCount="indefinite"/><circle r="8" fill="#ffffff"/><circle r="5.5" fill="#c9ecfa" stroke="#2d6ca6" stroke-width="2.5"/><circle cx="-1.65" cy="-1.65" r="1.54" fill="#ffffff"/></g></g><g transform="translate(276 28)"><g><animateTransform attributeName="transform" type="scale" values="1;1.22;1" dur="3.1s" begin="0.5s" repeatCount="indefinite"/><circle r="7" fill="#ffffff"/><circle r="4.5" fill="#c9ecfa" stroke="#2d6ca6" stroke-width="2.5"/><circle cx="-1.3499999999999999" cy="-1.3499999999999999" r="1.2600000000000002" fill="#ffffff"/></g></g><g transform="translate(524 28)"><g><animateTransform attributeName="transform" type="scale" values="1;1.22;1" dur="3.1s" begin="0.9s" repeatCount="indefinite"/><circle r="7" fill="#ffffff"/><circle r="4.5" fill="#c9ecfa" stroke="#2d6ca6" stroke-width="2.5"/><circle cx="-1.3499999999999999" cy="-1.3499999999999999" r="1.2600000000000002" fill="#ffffff"/></g></g><g transform="translate(684 28)"><g><animateTransform attributeName="transform" type="scale" values="1;1.22;1" dur="2.6s" begin="0.3s" repeatCount="indefinite"/><circle r="8" fill="#ffffff"/><circle r="5.5" fill="#c9ecfa" stroke="#2d6ca6" stroke-width="2.5"/><circle cx="-1.65" cy="-1.65" r="1.54" fill="#ffffff"/></g></g>
+  <path transform="translate(368 28) scale(0.5)" d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animateTransform attributeName="transform" type="scale" additive="sum" values="1;.6;1" dur="2.4s" repeatCount="indefinite"/></path><path transform="translate(432 28) scale(0.5)" d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animateTransform attributeName="transform" type="scale" additive="sum" values="1;.6;1" dur="2.9s" repeatCount="indefinite"/></path>
+  <g transform="translate(400 28)">
+    <g><animateTransform attributeName="transform" type="translate" values="0 -2;0 2;0 -2" dur="3s" repeatCount="indefinite"/>
+      <circle cx="1" cy="3" r="20" fill="#2d6ca6" opacity=".4"/>
+      <circle r="20" fill="#ffffff"/>
+      <circle r="15.5" fill="#fff5da" stroke="#2d6ca6" stroke-width="4"/>
+      <path d="M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5.87L8.35 -5.6Q11.06 -5.16 9.55 -2.82L8.63 -1.39Q6.87 1.34 7.74 4.8L8.19 6.61Q8.93 9.58 6.04 8.78L4.28 8.28Q0.9 7.34 -1.92 8.67L-3.4 9.36Q-5.82 10.5 -6.04 7.8L-6.18 6.15Q-6.43 3 -8.97 0.72L-10.3 -0.47Q-12.47 -2.42 -9.75 -3.45L-8.08 -4.07Q-4.91 -5.27 -3.51 -8.47Z" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round">
+        <animateTransform attributeName="transform" type="rotate" values="-12;12;-12" dur="3s" repeatCount="indefinite"/>
+      </path>
+    </g>
   </g>
 </svg>

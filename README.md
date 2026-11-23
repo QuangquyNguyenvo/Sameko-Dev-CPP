@@ -4,20 +4,21 @@
   <br />
   <img src="src/assets/vectors/logo.svg" alt="Sameko Logo" width="650" />
   <br />
+  <img src="src/assets/vectors/logo-wave.svg" alt="" width="100%" />
 
-  # 🐟 Sameko Dev C++ ⚓
-  
+  ### 🐟 Sameko Dev C++ ⚓
+
   **The cutest & fastest C++ IDE for your coding adventures! (≧◡≦) ♡**
 
   <p>
     <a href="https://sameko.dev/" target="_blank" rel="noopener noreferrer">
-      <img src="https://img.shields.io/badge/Download-Sameko%20IDE-88c9ea?style=for-the-badge&labelColor=1a2530" alt="Download" />
+      <img src="https://sameko.dev/badge/downloads.svg" alt="Downloads" height="42" />
     </a>
     <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/blob/main/LICENSE">
-      <img src="https://img.shields.io/github/license/QuangquyNguyenvo/Sameko-Dev-CPP?style=for-the-badge&color=88c9ea&labelColor=1a2530" alt="License" />
+      <img src="src/assets/badges/license.svg" alt="License" height="42" />
     </a>
     <a href="https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP">
-      <img src="https://img.shields.io/github/stars/QuangquyNguyenvo/Sameko-Dev-CPP?style=for-the-badge&color=88c9ea&labelColor=1a2530" alt="Stars" />
+      <img src="https://sameko.dev/badge/stars.svg" alt="Stars" height="42" />
     </a>
   </p>
 </div>
