@@ -273,7 +273,9 @@ async function submitTabToOJ(api, tab) {
     if (ojBridge.connected) {
         setStatus('Submitting…', 'running');
     } else {
-        const msg = 'The browser extension is not connected. Open the browser with the Sameko extension; the submission waits 60 seconds for it.';
+        const msg = ojBridge.paired
+            ? 'The browser extension is not connected. Open the browser with the Sameko extension; the submission waits 60 seconds for it.'
+            : 'The browser extension is not connected, and it is not on the browser stores yet. The submission waits 60 seconds for it.';
         ojLog(msg, 'warning');
         setStatus('Waiting for the browser extension…', 'warning');
     }
@@ -427,6 +429,8 @@ function openOjSubmission() {
 // GET TESTS POPUP: the Sameko extension section
 // ============================================================================
 function renderOjBridgeState() {
+    // The extension is not on the browser stores yet: its controls appear once one has connected.
+    document.body.classList.toggle('oj-no-extension', !(ojBridge.connected || ojBridge.paired || ojBridge.pendingPair));
     const state = document.getElementById('oj-ext-state');
     if (!state) return;
     let key = 'off';
@@ -588,6 +592,7 @@ function ojThemeSnapshot() {
 // ============================================================================
 function initOjSubmit() {
     const api = window.electronAPI;
+    renderOjBridgeState();
     document.getElementById('btn-oj-submit')?.addEventListener('click', () => submitToOJ());
     document.getElementById('oj-verdict')?.addEventListener('click', openOjSubmission);
     document.getElementById('oj-fetch-current')?.addEventListener('click', () => ojFetchProblem());

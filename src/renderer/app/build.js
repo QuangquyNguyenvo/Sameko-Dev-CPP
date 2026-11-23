@@ -988,7 +988,7 @@ function warnIfInteractiveWithoutFlush(tab) {
     // Comments do not count: "// remember to flush" is not a flush.
     const src = String(tab.content || '').replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
     if (!INTERACTIVE_QUERY_RE.test(src) || FLUSH_RE.test(src)) return;
-    log('Your code prints queries but never flushes. It works here, but a judge will give Idleness limit exceeded. Use endl, or cout.flush() / fflush(stdout) after each query.', 'warning');
+    log('Your code prints queries but never flushes. A judge will give Idleness limit exceeded. Use endl, or cout.flush() / fflush(stdout) after each query.', 'warning');
 }
 
 /** Counts lines the program starts with "?" (queries), across output chunks. Native indexOf, so cheap. */

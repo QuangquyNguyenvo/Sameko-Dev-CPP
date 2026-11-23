@@ -86,7 +86,28 @@ function describeExit(code, signal) {
  * @param {number} winError
  * @returns {string}
  */
-function describeStartError(winError) {
+// What the launcher's execv() errno means on macOS and Linux, by errno name.
+const POSIX_START_ERRORS = {
+    EPERM: 'The system refused to start the program (operation not permitted). Make sure the build folder allows running programs.',
+    ENOENT: 'The program file is gone: it was removed after it was built. Build it again.',
+    ENOEXEC: 'The built file is not a valid program for this system. Build it again.',
+    EACCES: 'The system refused to start the program (permission denied). Make sure the file is executable and the build folder allows running programs.',
+    ETXTBSY: 'The program file is still being written. Run it again in a moment.',
+};
+
+function errnoName(code) {
+    const errno = require('os').constants.errno;
+    return Object.keys(errno).find((name) => errno[name] === code) || '';
+}
+
+/** The code shown next to a start error: "Windows error 5", or "error EACCES" on macOS and Linux. */
+function startErrorCode(code, platform = process.platform) {
+    return platform === 'win32' ? `Windows error ${code}` : `error ${errnoName(code) || code}`;
+}
+
+/** Why the program could not start: a Windows error code, or an errno from macOS and Linux. */
+function describeStartError(winError, platform = process.platform) {
+    if (platform !== 'win32') return POSIX_START_ERRORS[errnoName(winError)] || 'The system could not start the program.';
     switch (winError) {
         case 2: case 3:
             return 'The program file is gone: it was removed after it was built, most likely quarantined by an antivirus.';
@@ -107,4 +128,4 @@ function describeStartError(winError) {
     }
 }
 
-module.exports = { describeExit, describeStartError };
+module.exports = { describeExit, describeStartError, startErrorCode };

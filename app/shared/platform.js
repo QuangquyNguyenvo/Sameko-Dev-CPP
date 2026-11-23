@@ -224,7 +224,15 @@ function macToolPath(current, home, exists = fs.existsSync) {
     return [...dirs.slice(0, at), ...extra, ...dirs.slice(at)].join(':');
 }
 
+/** The error for a program the system would not start; only Windows has an antivirus to name. */
+function blockedStartMessage(dir) {
+    return IS_WIN
+        ? `Windows or an antivirus blocked the program from starting. Add this folder to its exclusions: ${dir}`
+        : `The system refused to start the program. Make sure this folder allows running programs: ${dir}`;
+}
+
 module.exports = {
+    blockedStartMessage,
     macToolPath,
     IS_WIN,
     IS_MAC,

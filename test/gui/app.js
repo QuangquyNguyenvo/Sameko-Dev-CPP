@@ -635,6 +635,22 @@ async function main() {
         assert.match(result.summary, /1 not judged/);
     });
 
+    await check('a million lines of printf output are judged within the time limit (no realtime shim in judge builds)', async () => {
+        const result = await page.evaluate(async () => {
+            if (App.isSplit) closeSplit();
+            newFile();
+            const tab = App.tabs.find(t => t.id === App.activeTabId);
+            // Linked with the realtime shim this took 12.6 s on Windows; buffered, about 0.4 s.
+            setTabText(tab, '#include <cstdio>\nint main() { for (int i = 0; i < 1000000; i++) printf("%d\\n", i); }\n');
+            const expected = Array.from({ length: 1000000 }, (_, i) => i).join('\n') + '\n';
+            ccProblem = { name: 'Heavy output check', timeLimit: 2000, tests: [{ input: '', output: expected }] };
+            await runAllTests();
+            return batchTestResults.map(r => ({ status: r.status, time: r.time, details: String(r.details || '').slice(0, 200) }));
+        });
+        assert.equal(result.length, 1);
+        assert.equal(result[0].status, 'AC', JSON.stringify(result[0]));
+    });
+
     await check('stress test: seeds the generator, stops at the first wrong test, adds it to TESTS', async () => {
         const dir = path.join(profile, 'stress');
         fs.mkdirSync(dir, { recursive: true });
@@ -855,6 +871,22 @@ async function main() {
         assert.match(r.log, /extension is not connected|did not pick up/);
         assert.match(r.theme.bg, /^rgb\(/);
         assert.match(r.theme.accent, /^rgba?\(/);
+    });
+
+    await check('Submit and the extension section stay hidden until an extension has connected', async () => {
+        const r = await page.evaluate(() => {
+            const saved = ojBridge;
+            const shown = () => ['#btn-oj-submit', '#oj-ext', '.dropdown-item[data-action="submittooj"]']
+                .map(s => getComputedStyle(document.querySelector(s)).display !== 'none');
+            onOjBridgeStatus({ ...saved, connected: false, paired: false, pendingPair: null });
+            const none = shown();
+            onOjBridgeStatus({ ...saved, connected: false, paired: true, pendingPair: null });
+            const paired = shown();
+            onOjBridgeStatus(saved);
+            return { none, paired };
+        });
+        assert.deepEqual(r.none, [false, false, false]);
+        assert.deepEqual(r.paired, [true, true, true]);
     });
 
     await check('Submit pastes the file\'s own headers in (#include "lib/…") and says so', async () => {

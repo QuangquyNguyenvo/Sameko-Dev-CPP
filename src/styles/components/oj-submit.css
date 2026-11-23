@@ -84,6 +84,13 @@
     display: none;
 }
 
+/* No Sameko extension has connected yet (renderOjBridgeState). */
+body.oj-no-extension #btn-oj-submit,
+body.oj-no-extension #oj-ext,
+body.oj-no-extension .dropdown-item[data-action="submittooj"] {
+    display: none;
+}
+
 .oj-verdict.has-link {
     cursor: pointer;
 }

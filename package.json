@@ -279,6 +279,12 @@
             "artifactName": "sameko-dev-cpp-${version}-linux-${arch}.${ext}",
             "icon": "src/assets/icons/linux",
             "category": "Development",
+            "mimeTypes": [
+                "text/x-c++src",
+                "text/x-csrc",
+                "text/x-c++hdr",
+                "text/x-chdr"
+            ],
             "synopsis": "A fast, modern C++ IDE",
             "maintainer": "QuangquyNguyenvo <QuangquyNguyenvo@users.noreply.github.com>",
             "desktop": {

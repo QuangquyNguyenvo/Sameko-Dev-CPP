@@ -213,7 +213,8 @@ async function compileStressProgram(filePath, content, flags) {
         flags,
         singleFileMode: App.settings.compiler.singleFileMode !== false,
         useLLD: App.settings.compiler.useLLD !== false,
-        realtimeOutput: App.settings.execution.realtimeOutput !== false,
+        // Judged like an online judge: buffered output (the realtime shim makes a million lines ~20x slower).
+        realtimeOutput: false,
         variant: 'judge'
     });
 }

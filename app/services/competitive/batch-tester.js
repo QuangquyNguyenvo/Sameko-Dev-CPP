@@ -13,9 +13,9 @@ const { spawn, exec } = require('child_process');
 const { getCompilerEnv } = require('../compiler/detector');
 const { normalizeOutput, compareOutputs } = require('../../shared/judge');
 const { runChecker } = require('./checker');
-const { describeExit, describeStartError } = require('../../shared/exit-codes');
+const { describeExit, describeStartError, startErrorCode } = require('../../shared/exit-codes');
 const { wasBuiltThisSession } = require('../compiler/executor');
-const { IS_WIN, IS_LINUX, readProcMemoryKB, killProcessTree, appTempDir, ensurePrivateDir } = require('../../shared/platform');
+const { blockedStartMessage, IS_WIN, IS_LINUX, readProcMemoryKB, killProcessTree, appTempDir, ensurePrivateDir } = require('../../shared/platform');
 const { normalizeFileIO } = require('./test-files');
 const { ensureLauncher, getLauncherIfReady, launcherEnv, newStatsFile, readStats } = require('../compiler/run-launcher');
 const languages = require('../compiler/languages');
@@ -157,7 +157,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
                 error: err && err.message,
                 executionTime: 0,
                 details: blocked
-                    ? `Windows or an antivirus blocked the program from starting. Add this folder to its exclusions: ${path.dirname(launcher || exePath)}`
+                    ? blockedStartMessage(path.dirname(launcher || exePath))
                     : `Could not start the program: ${err && err.message}`
             });
             return;
@@ -304,7 +304,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
 
             if (startError !== null) {
                 status = 'RE';
-                details = `${describeStartError(startError)} (Windows error ${startError}; build folder: ${path.dirname(exePath)})`;
+                details = `${describeStartError(startError)} (${startErrorCode(startError)}; build folder: ${path.dirname(exePath)})`;
             } else if (killed) {
                 status = 'TLE';
                 details = 'Time limit exceeded';
@@ -418,7 +418,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
             const response = { status: 'RE', error: err.message, executionTime: 0 };
             // "spawn UNKNOWN": Windows or an antivirus refused to start the file (launcher or program).
             if (err && ['UNKNOWN', 'EACCES', 'EPERM'].includes(err.code)) {
-                response.details = `Windows or an antivirus blocked the program from starting. Add this folder to its exclusions: ${path.dirname(launcher || exePath)}`;
+                response.details = blockedStartMessage(path.dirname(launcher || exePath));
             }
             if (debugInfo.enabled) {
                 response.debug = {

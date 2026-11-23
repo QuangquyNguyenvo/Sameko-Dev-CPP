@@ -14,11 +14,12 @@ A macOS beta, judge-style testing, stress tests and checkers, submitting to onli
 
 - **macOS on Apple Silicon** (#58): a DMG and a zip for M1 and later. It uses GCC from Homebrew, LLDB for debugging and clangd for code suggestions. Install steps are in the README.
 - **Mac-style app**: native window buttons, ⌘ shortcuts and labels, and C/C++ files can be opened from Finder.
+- **Debugger on Mac**: LLDB names crashes (a stack overflow too), lists threads, and changes a value while paused, as on Windows and Linux.
 - The app is not signed with an Apple Developer account, so the first launch must be allowed once, and updates are downloaded by hand.
 
 **Online judges**
 
-- **Submit to Online Judge** (Ctrl+Alt+S) through the new **Sameko Companion** browser extension: Codeforces, AtCoder, CSES and DMOJ-based judges (VNOI, LQDOJ). It submits from your logged-in browser and shows the verdict in the app.
+- **Submit to Online Judge** (Ctrl+Alt+S) through the new **Sameko Companion** browser extension: Codeforces, AtCoder, CSES and DMOJ-based judges (VNOI, LQDOJ). It submits from your logged-in browser and shows the verdict in the app. The extension is not on the browser stores yet, so Submit and the extension section appear only after one has connected.
 - **More judges in the extension**: HNOJ (hnoj.edu.vn), LTOJ (laptrinhonline.club) and 28tech (oj.28tech.com.vn).
 - **Sameko Companion for Firefox** (128+), next to Chrome and Edge.
 - **One-file submit**: quoted includes of your own headers (`#include "lib/dsu.hpp"`) are pasted into the submitted file, since a judge takes one file. Other includes are sent as written.
@@ -80,8 +81,9 @@ A macOS beta, judge-style testing, stress tests and checkers, submitting to onli
 - **TESTS panel redesigned**: verdict, details, time and memory on each row, and a verdict bar.
 - **Crashes are named** (stack overflow, access violation, division by zero…) instead of a bare exit code.
 - **A test without an expected output** is RAN, not AC.
-- **Updates download only what changed** (about 20 MB instead of the whole installer), keep GCC when it did not change, and show a progress window.
+- **Updates download only what changed**, keep GCC when it did not change, and show a progress window. The first update from 1.4.1 still downloads about 80 to 180 MB.
 - **Lighter on memory and disk**: clangd uses about half the memory (127 MB to 62 MB on a typical file), precompiled headers keep 3 variants and drop those unused for 14 days, and the app is about 75 MB smaller on disk.
+- **Debugger help** is shorter, grouped by what you are doing, and readable on every theme.
 - **Rounded Chinese font** (#73, suggested by @Onlyanadvisor): the Simplified Chinese interface uses WenYuan Rounded SC (SIL OFL 1.1), cut to the interface's characters (about 240 KB).
 
 ### Fixed
@@ -105,9 +107,14 @@ A macOS beta, judge-style testing, stress tests and checkers, submitting to onli
 - **Linux memory limit**: a program that ends quickly is measured exactly, so going over the limit is always MLE.
 - **Stop on Linux** also ends the processes the program started.
 - **Linux without g++**: the app shows the command to install it instead of pointing to MinGW.
+- **Linux and macOS prompts** printed before reading input now appear right away, without a flush.
+- **Programs that print a lot are judged at full speed**: Run All Tests and stress tests no longer build with realtime output, which made a million lines of `printf` take 12 s instead of 0.4 s and could give a false TLE.
+- **Debugger**: watching a `std::vector` before it is constructed no longer freezes the session.
 - **IntelliSense safety**: clangd may run only the compiler the app detected, never a program named by a project's `compile_commands.json`.
 - **Undocking a panel** keeps the view you were on, and menu shortcuts no longer overlap their labels.
 - **Minimap switch** is greyed out while Performance Mode turns the minimap off.
+- **Docking panels**: dragging Input/Output and the bottom panel around no longer leaves the wrong view showing.
+- **Linux**: the AppImage registers `samekodev://` links, Ptyxis, GNOME Console, foot and Ghostty work as the external terminal, C/C++ files can be opened with Sameko, and a blocked program no longer blames Windows.
 
 ## [1.4.1] - 2026-11-18
 

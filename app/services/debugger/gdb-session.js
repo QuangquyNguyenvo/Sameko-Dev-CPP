@@ -37,6 +37,7 @@ const { parseLine } = require('./mi-parser');
 const { IS_WIN, killPosixTree } = require('../../shared/platform');
 
 const COMMAND_TIMEOUT_MS = 20000; // guard against a wedged gdb; generous for big containers
+const MAX_VAR_CHILDREN = 200;     // what -var-update may walk in one container
 const INFERIOR_PID_TIMEOUT_MS = 400; // dispose() must stay snappy; see _inferiorPid()
 
 class GdbSession extends EventEmitter {
@@ -421,12 +422,30 @@ class GdbSession extends EventEmitter {
     evaluate(expr) { return this.send(`-data-evaluate-expression ${quote(expr)}`); }
 
     // Variable objects — the engine behind Locals / Watch trees.
-    varCreate(name, expr) { return this.send(`-var-create ${name} * ${quote(expr)}`); }
+    async varCreate(name, expr) {
+        const r = await this.send(`-var-create ${name} * ${quote(expr)}`);
+        if (r && String(r.dynamic) === '1') await this._capVarUpdate(name);
+        return r;
+    }
+
+    /**
+     * Without a range, -var-update walks every child of a container. A std::vector that is not
+     * constructed yet holds garbage pointers, so that walk can keep gdb busy for minutes.
+     */
+    _capVarUpdate(name) {
+        return this.send(`-var-set-update-range ${name} 0 ${MAX_VAR_CHILDREN}`).catch(() => { });
+    }
     varDelete(name) { return this.send(`-var-delete ${name}`); }
-    varListChildren(name, from, to) {
-        let cmd = `-var-list-children --all-values ${name}`;
-        if (Number.isInteger(from) && Number.isInteger(to)) cmd += ` ${from} ${to}`;
-        return this.send(cmd);
+    async varListChildren(name, from, to) {
+        const ranged = Number.isInteger(from) && Number.isInteger(to);
+        const cmd = `-var-list-children --all-values ${name} ${ranged ? from : 0} ${ranged ? to : MAX_VAR_CHILDREN}`;
+        const r = await this.send(cmd);
+        const kids = Array.isArray(r && r.children) ? r.children : [];
+        await Promise.all(kids.map((kid) => {
+            const child = kid && kid.child ? kid.child : kid;
+            return child && String(child.dynamic) === '1' && child.name ? this._capVarUpdate(child.name) : null;
+        }));
+        return r;
     }
     varUpdate() { return this.send('-var-update --all-values *'); }
     varSetFormat(name, fmt) { return this.send(`-var-set-format ${name} ${fmt}`); }

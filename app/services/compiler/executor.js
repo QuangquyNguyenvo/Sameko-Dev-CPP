@@ -18,8 +18,8 @@ const { ensureLauncher, getLauncherIfReady, launcherEnv, newStatsFile, readStats
 const languages = require('./languages');
 const { testlibIncludeDir } = require('../competitive/checker');
 const { validateCompilerFlags, splitFlags, joinFlags } = require('../../shared/validators');
-const { describeExit, describeStartError } = require('../../shared/exit-codes');
-const { EXE_SUFFIX, IS_WIN, IS_MAC, IS_LINUX, ensurePrivateDir, readProcMemoryKB, which, appTempDir, killProcessTree } = require('../../shared/platform');
+const { describeExit, describeStartError, startErrorCode } = require('../../shared/exit-codes');
+const { blockedStartMessage, EXE_SUFFIX, IS_WIN, IS_MAC, IS_LINUX, ensurePrivateDir, readProcMemoryKB, which, appTempDir, killProcessTree } = require('../../shared/platform');
 
 let runningProcess = null;
 let activeCompilerProcess = null;
@@ -95,7 +95,7 @@ const SPAWN_BLOCKED = new Set(['UNKNOWN', 'EACCES', 'EPERM']);
 /** The error for a program (or the run launcher) that could not be spawned at all. */
 function startFailureMessage(err, file) {
     if (err && SPAWN_BLOCKED.has(err.code)) {
-        return `Windows or an antivirus blocked the program from starting. Add this folder to its exclusions: ${path.dirname(file)}`;
+        return blockedStartMessage(path.dirname(file));
     }
     return `Could not start the program: ${err && err.message ? err.message : err}`;
 }
@@ -103,7 +103,8 @@ function startFailureMessage(err, file) {
 /** The launcher could not start the program: tell the user why, and where the build folder is. */
 function reportStartError(winError, exePath) {
     sendToRenderer('system-message', { type: 'error', message: describeStartError(winError) });
-    sendToRenderer('system-message', { type: 'info', message: `Windows error ${winError}. Build folder: ${path.dirname(exePath)}` });
+    const folder = path.dirname(exePath);
+    sendToRenderer('system-message', { type: 'info', message: IS_WIN ? `Windows error ${winError}. Build folder: ${folder}` : `Error ${startErrorCode(winError).replace(/^error /, '')}. Build folder: ${folder}` });
 }
 
 // Flags that make a build read files the cache key cannot see. `-Wl,--stack=N` and macOS's
@@ -404,7 +405,10 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
         resolvedFlags = '-std=c++17 -O0 -w';
     }
 
-    const unbufferObj = getUnbufferObjectPath();
+    let unbufferObj = getUnbufferObjectPath();
+    if (!unbufferObj && !IS_WIN && realtimeOutput !== false) {
+        unbufferObj = await require('./unbuffer-shim').ensureUnbufferObject(getDetectedCompiler() || 'g++');
+    }
 
     // `#include "testlib.h"` (checkers, generators): the bundled copy, after every other
     // include folder so a testlib.h next to the source wins (competitive/checker.js). Before
@@ -789,6 +793,11 @@ const LINUX_TERMINALS = [
     { bin: 'xfce4-terminal', waits: true, args: (s) => ['--disable-server', '-x', 'bash', s] },
     { bin: 'mate-terminal', waits: false, args: (s) => ['--', 'bash', s] },
     { bin: 'tilix', waits: false, args: (s) => ['-e', `bash ${s}`] },
+    { bin: 'foot', waits: true, args: (s) => ['bash', s] },
+    // These hand the window to a running instance, so their process ending says nothing.
+    { bin: 'ptyxis', waits: false, args: (s) => ['--new-window', '-x', `bash '${s.replace(/'/g, "'\\''")}'`] },
+    { bin: 'kgx', waits: false, args: (s) => ['--', 'bash', s] },
+    { bin: 'ghostty', waits: false, args: (s) => ['-e', 'bash', s] },
     // Debian's generic alternative — LAST on purpose: it may resolve to
     // gnome-terminal, whose `-e` is deprecated/removed in newer versions, so we
     // only reach for it when nothing above exists.
@@ -815,7 +824,7 @@ async function runExternalLinux({ command, workingDir, env, startTime }) {
     if (!term) {
         return {
             success: false,
-            error: 'No terminal emulator found. Install one of: gnome-terminal, konsole, xterm — '
+            error: 'No terminal emulator found. Install one of: gnome-terminal, konsole, ptyxis, foot, xterm — '
                 + 'or turn off "Run in external terminal" in Settings.',
         };
     }
