@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.5.0] - 2026-11-23
+## [1.5.0] - 2026-11-24
 
 A macOS beta, judge-style testing, stress tests and checkers, submitting to online judges from the app, a debugger that watches arrays and values, tools on each test row, clangd navigation, seven more languages, and smaller, faster updates.
 
@@ -69,10 +69,10 @@ A macOS beta, judge-style testing, stress tests and checkers, submitting to onli
 
 **Languages and app**
 
-- **Other languages** (#66): build and run Python, Java, Kotlin, Rust, Go, Pascal and JavaScript with the compiler already on your machine. Tests, stress tests and the external console work for them; IntelliSense and the debugger stay C/C++.
+- **Other languages** (#66, asked for by @hulgv): build and run Python, Java, Kotlin, Rust, Go, Pascal and JavaScript with the compiler already on your machine. Tests, stress tests and the external console work for them; IntelliSense and the debugger stay C/C++.
 - **Templates for the other languages**, and a choice of what New File creates.
 - **View › Reset Layout**.
-- **Portable zip** keeps its data in `data\` next to the exe.
+- **Portable zip** keeps its data in `data\` next to the exe (#76, requested by @wudream813).
 
 ### Changed
 
@@ -103,7 +103,7 @@ A macOS beta, judge-style testing, stress tests and checkers, submitting to onli
 - **A submission whose browser was closed** ends with a message instead of showing "Judging" forever.
 - **Competitive Companion** accepts problems only from browser extensions, not from web pages.
 - **Python started through `py`** is timed and limited correctly; **Java** is no longer given MLE below the limit.
-- **Restore session prompt** is translated (#74).
+- **Restore session prompt** is translated (#74, reported by @Onlyanadvisor).
 - **Linux memory limit**: a program that ends quickly is measured exactly, so going over the limit is always MLE.
 - **Stop on Linux** also ends the processes the program started.
 - **Linux without g++**: the app shows the command to install it instead of pointing to MinGW.
@@ -114,6 +114,7 @@ A macOS beta, judge-style testing, stress tests and checkers, submitting to onli
 - **Undocking a panel** keeps the view you were on, and menu shortcuts no longer overlap their labels.
 - **Minimap switch** is greyed out while Performance Mode turns the minimap off.
 - **Docking panels**: dragging Input/Output and the bottom panel around no longer leaves the wrong view showing.
+- **Narrow panels**: the TESTS header (Run All, Submit and the verdict) and the Input card's test switcher no longer overlap or get cut off when the debugger or the I/O column leaves them little room; labels shorten to icons instead.
 - **Linux**: the AppImage registers `samekodev://` links, Ptyxis, GNOME Console, foot and Ghostty work as the external terminal, C/C++ files can be opened with Sameko, and a blocked program no longer blames Windows.
 
 ## [1.4.1] - 2026-11-18
