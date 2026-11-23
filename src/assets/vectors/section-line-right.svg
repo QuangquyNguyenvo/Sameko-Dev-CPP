@@ -1,10 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="170" height="24" viewBox="0 0 170 24" role="presentation">
-  <defs><clipPath id="run"><rect width="148" height="24"/></clipPath></defs>
-  <g transform="translate(170 0) scale(-1 1)">
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="24" viewBox="0 0 200 24" role="presentation">
+  <defs><clipPath id="run"><rect width="178" height="24"/></clipPath></defs>
+  <g transform="translate(200 0) scale(-1 1)">
     <g clip-path="url(#run)" fill="none" stroke-linecap="round">
       <path d="M-120 10q30 -6 60 0t60 0t60 0t60 0t60 0t60 0t60 0" stroke="#88c9ea" stroke-width="3.5"><animateTransform attributeName="transform" type="translate" values="0 0;120 0" dur="7s" repeatCount="indefinite"/></path>
       <path d="M-120 15q30 -4 60 0t60 0t60 0t60 0t60 0t60 0t60 0" stroke="#4895d6" stroke-opacity=".75" stroke-width="2"><animateTransform attributeName="transform" type="translate" values="120 0;0 0" dur="5s" repeatCount="indefinite"/></path>
     </g>
-    <circle cx="159" cy="12" r="5" fill="#c9ecfa" stroke="#4895d6" stroke-width="2.2"><animate attributeName="r" values="4.6;5.6;4.6" dur="2.8s" repeatCount="indefinite"/></circle>
+    <circle cx="189" cy="12" r="5" fill="#c9ecfa" stroke="#4895d6" stroke-width="2.2"><animate attributeName="r" values="4.6;5.6;4.6" dur="2.8s" repeatCount="indefinite"/></circle>
   </g>
 </svg>
