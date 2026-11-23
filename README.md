@@ -368,21 +368,28 @@ npm run rebuild      # clean:dist, then a full build
 
 </div>
 
-| Key                | Action               |
-| :----------------- | :------------------- |
-| `F9`               | Compile              |
-| `F10`              | Run                  |
-| `F11`              | Compile & Run        |
-| `Ctrl + N`         | New file             |
-| `Ctrl + O`         | Open file            |
-| `Ctrl + S`         | Save file            |
-| `Ctrl + Shift + S` | Save As              |
-| `Ctrl + J`         | Toggle Panel         |
-| `Ctrl + \`         | Split Editor         |
-| `Ctrl + Shift + A` | Auto Format (AStyle) |
-| `Ctrl + Shift + V` | Toggle Markdown preview |
-| `Ctrl + Alt + S`   | Toggle Auto-Save     |
-| `Ctrl + Shift + P` | Command Palette      |
+| Key                   | Action                          |
+| :-------------------- | :------------------------------ |
+| `F9`                  | Compile                         |
+| `F10`                 | Run                             |
+| `F11`                 | Compile & Run                   |
+| `Ctrl + Shift + F11`  | Run all tests                   |
+| `Ctrl + Alt + S`      | Submit to the online judge      |
+| `Ctrl + N`            | New file                        |
+| `Ctrl + O`            | Open file                       |
+| `Ctrl + P`            | Go to file                      |
+| `Ctrl + S`            | Save file                       |
+| `Ctrl + Shift + S`    | Save As                         |
+| `Ctrl + Shift + F`    | Find in files                   |
+| `F12` / `Shift + F12` | Go to definition / references   |
+| `F2` / `Ctrl + .`     | Rename symbol / Quick fix       |
+| `Ctrl + J`            | Toggle Panel                    |
+| `Ctrl + \`            | Split Editor                    |
+| `Ctrl + Shift + A`    | Auto Format (AStyle)            |
+| `Ctrl + Shift + V`    | Toggle Markdown preview         |
+| `Ctrl + Shift + P`    | Command Palette                 |
+
+On a Mac, use `⌘` instead of `Ctrl`.
 
 #### While debugging
 
