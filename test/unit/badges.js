@@ -38,12 +38,33 @@ function check(name, ok) {
         const stars = await (await badge.onRequestGet({ params: { name: 'stars.svg' } })).text();
         check('the stars badge shortens large counts', stars.includes('aria-label="STARS: 1.3K"'));
         check('an unknown badge is a 404', (await badge.onRequestGet({ params: { name: 'constructor' } })).status === 404);
+        const store = new Map();
+        Object.defineProperty(globalThis, 'caches', {
+            configurable: true,
+            value: { default: {
+                put: async (request, response) => { store.set(request.url, await response.text()); },
+                match: async (request) => (store.has(request.url) ? new Response(store.get(request.url)) : undefined),
+            } },
+        });
+        const waits = [];
+        await badge.onRequestGet({ params: { name: 'downloads.svg' }, waitUntil: (p) => waits.push(p) });
+        await Promise.all(waits);
+        check('a live count is remembered', waits.length === 1 && [...store.values()].includes('123'));
+
         globalThis.fetch = async () => new Response('{}', { status: 403 });
         const down = await badge.onRequestGet({ params: { name: 'downloads.svg' } });
-        check('a GitHub failure still draws a badge', down.status === 200 && (await down.text()).includes('DOWNLOADS: -'));
-        check('a failure is cached briefly', down.headers.get('Cache-Control').includes('max-age=300'));
+        check('a GitHub refusal draws the last count', down.status === 200 && (await down.text()).includes('DOWNLOADS: 123'));
+        check('a refusal is cached briefly', down.headers.get('Cache-Control').includes('max-age=300'));
+
+        store.clear();
+        const first = await (await badge.onRequestGet({ params: { name: 'downloads.svg' } })).text();
+        check('with no last count, the snapshot is drawn', first.includes('DOWNLOADS: 5.7K') && !first.includes(': -'));
+        delete globalThis.caches;
+        const noCache = await (await badge.onRequestGet({ params: { name: 'stars.svg' } })).text();
+        check('it works without an edge cache', noCache.includes('STARS: 116'));
     } finally {
         globalThis.fetch = realFetch;
+        delete globalThis.caches;
     }
     process.exit(failed ? 1 : 0);
 })();

@@ -5,6 +5,7 @@ const CACHE_SECONDS = 3600;
 
 const GLYPHS = {
   A: 'M2 96L30 4L58 96M12 66L48 66',
+  B: 'M8 4L8 96M8 4C58 0 58 50 8 48C66 46 66 100 8 96',
   C: 'M58 20C38 -6 4 8 4 50C4 92 38 106 58 80',
   D: 'M8 4L8 96C74 100 74 0 8 4Z',
   E: 'M54 6L8 6L8 94L56 94M8 50L46 50',
@@ -17,6 +18,7 @@ const GLYPHS = {
   R: 'M8 96L8 4C66 0 66 56 8 54M28 54L56 96',
   S: 'M56 18C46 -2 8 -2 6 24C4 48 56 44 58 72C60 100 14 104 2 80',
   T: 'M2 6L62 6M32 6L32 96',
+  V: 'M2 4L30 96L58 4',
   W: 'M2 4L16 96L32 36L48 96L62 4',
   0: 'M30 4C52 4 58 28 58 50C58 74 52 96 30 96C8 96 2 74 2 50C2 28 8 4 30 4Z',
   1: 'M12 22L30 4L30 96',
@@ -36,6 +38,8 @@ const STAR = 'M-2.78 -10.15Q-1.58 -12.9 0.26 -10.56L1.39 -9.12Q3.54 -6.38 6.7 -5
 const ICONS = {
   star: `<path d="${STAR}" fill="#ffdf73" stroke="#f0ae38" stroke-width="2.3" stroke-linejoin="round"><animateTransform attributeName="transform" type="scale" values="1;.8;1" dur="2.6s" repeatCount="indefinite"/></path>`,
   download: '<g fill="none" stroke="#3f86c2" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 -7V3M-4.5 -1L0 3.5L4.5 -1"><animateTransform attributeName="transform" type="translate" values="0 -1;0 1;0 -1" dur="1.8s" repeatCount="indefinite"/></path><path d="M-6.5 7.5H6.5"/></g>',
+  site: '<g fill="none" stroke="#3f86c2" stroke-width="2.4" stroke-linecap="round"><circle r="9"/><path d="M-9 0H9M0 -9C-5 -4 -5 4 0 9M0 -9C5 -4 5 4 0 9"/></g>',
+  release: '<g fill="none" stroke="#3f86c2" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"><path d="M-8 -4L0 -8.500L8 -4V5L0 9.500L-8 5Z"/><path d="M-8 -4L0 .5L8 -4M0 .5V9.500"/></g>',
   license: '<g fill="none" stroke="#3f86c2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M-5.5 -8H3L6 -5V8H-5.5Z"/><path d="M-2.4 1L-.4 3.2L3 -1"/></g>',
 };
 
@@ -85,7 +89,7 @@ export function isInstaller(name) {
 async function github(path) {
   const response = await fetch(`https://api.github.com/repos/${REPO}${path}`, {
     headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'sameko-badge' },
-    cf: { cacheTtl: CACHE_SECONDS, cacheEverything: true },
+    cf: { cacheEverything: true, cacheTtlByStatus: { '200-299': CACHE_SECONDS, '400-599': 0 } },
   });
   if (!response.ok) throw new Error(`GitHub ${response.status}`);
   return response.json();
@@ -112,20 +116,51 @@ const BADGES = {
   'downloads.svg': { icon: 'download', label: 'DOWNLOADS', load: fetchDownloads },
 };
 
-export async function onRequestGet({ params }) {
+// GitHub allows 60 anonymous requests an hour per address, and Workers share addresses. When it
+// refuses, draw the last count this edge saw, or this snapshot if it has none yet.
+const SNAPSHOT = { 'stars.svg': 116, 'downloads.svg': 5666 };
+const LAST_COUNT_SECONDS = 60 * 60 * 24 * 30;
+const lastCountKey = name => new Request(`https://sameko.dev/__badge-last/${name}`);
+const edgeCache = () => (typeof caches !== 'undefined' && caches.default) || null;
+
+async function rememberCount(name, count) {
+  const cache = edgeCache();
+  if (!cache) return;
+  await cache.put(lastCountKey(name), new Response(String(count), {
+    headers: { 'Cache-Control': `public, max-age=${LAST_COUNT_SECONDS}` },
+  }));
+}
+
+async function lastCount(name) {
+  try {
+    const hit = await edgeCache()?.match(lastCountKey(name));
+    const count = hit ? Number(await hit.text()) : NaN;
+    if (Number.isFinite(count)) return count;
+  } catch {
+    // The snapshot below still draws a real number.
+  }
+  return SNAPSHOT[name];
+}
+
+export async function onRequestGet({ params, waitUntil }) {
   const badge = Object.hasOwn(BADGES, params.name) ? BADGES[params.name] : null;
   if (!badge) return new Response('Not found', { status: 404 });
-  let count = NaN;
+  let count;
+  let live = true;
   try {
     count = await badge.load();
+    if (!Number.isFinite(count)) throw new Error('GitHub sent no count');
+    const saved = rememberCount(params.name, count).catch(() => {});
+    if (waitUntil) waitUntil(saved);
+    else await saved;
   } catch {
-    // Draw "-" and retry soon.
+    live = false;
+    count = await lastCount(params.name);
   }
-  const ok = Number.isFinite(count);
   return new Response(renderBadge({ icon: badge.icon, label: badge.label, value: formatCount(count) }), {
     headers: {
       'Content-Type': 'image/svg+xml; charset=utf-8',
-      'Cache-Control': `public, max-age=${ok ? CACHE_SECONDS : 300}`,
+      'Cache-Control': `public, max-age=${live ? CACHE_SECONDS : 300}`,
       'X-Content-Type-Options': 'nosniff',
     },
   });
