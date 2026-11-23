@@ -335,7 +335,7 @@ async function main() {
             const code = '#include <chrono>\n#include <iostream>\n#include <thread>\nvoid work(int n) {\n'
                 + '    std::this_thread::sleep_for(std::chrono::milliseconds(300));\n'
                 + '    std::cout << n << "\\n";\n}\nint main() {\n    std::thread t(work, 5);\n    t.join();\n}\n';
-            const stop = await debugFirstStop('threads.cpp', code, [6], '-g -O0 -std=c++20 -pthread');
+            const stop = await debugFirstStop('threadpair.cpp', code, [6], '-g -O0 -std=c++20 -pthread');
             assert.equal(stop.frame?.line, 6, JSON.stringify(stop.frame));
             assert.ok(Array.isArray(stop.threads) && stop.threads.length >= 2, JSON.stringify(stop.threads));
             const other = stop.threads.find((t) => !t.current) || stop.threads.find((t) => t.id !== String(stop.threadId));
@@ -344,7 +344,8 @@ async function main() {
             assert.ok(r.ok, JSON.stringify(r));
             assert.ok(r.frames.length > 0 && r.frames.some((f) => f.func.includes('main')), JSON.stringify(r.frames.slice(0, 8)));
         } finally {
-            await endDebug('threads');
+            // Not 'threads': Chromium's own --num-raster-threads flag would match it.
+            await endDebug('threadpair');
         }
     });
 
