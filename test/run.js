@@ -36,6 +36,8 @@ const SUITES = [
     { name: 'mi-parser', group: 'unit', file: 'e2e/debugger.js', args: ['--unit'] },
     { name: 'oj bridge', group: 'unit', file: 'unit/oj-bridge.js' },
     { name: 'oj round trip', group: 'unit', file: 'unit/oj-roundtrip.js' },
+    { name: 'update asset', group: 'unit', file: 'unit/update-asset.js' },
+    { name: 'readme badges', group: 'unit', file: 'unit/badges.js' },
     { name: 'extension', group: 'unit', file: '../extension/test/run.js' },
     { name: 'extension adapters', group: 'unit', file: '../extension/test/adapter-fixtures.js' },
     // gui

@@ -21,6 +21,7 @@ const fs = require('fs');
 const path = require('path');
 const { spawnSync } = require('child_process');
 const { restore } = require('./toolchain-package');
+const { splitUpdateAsset } = require('./split-update-asset');
 
 const ROOT = path.join(__dirname, '..');
 const CLI = path.join(ROOT, 'node_modules', 'electron-builder', 'cli.js');
@@ -54,6 +55,8 @@ try {
     if (!fs.existsSync(path.join(appOutDir, 'resources', 'app-update.yml'))) {
         throw new Error(`build-win: ${appOutDir}\\resources\\app-update.yml was not written`);
     }
+    const { updateName } = splitUpdateAsset(outputDir(), require(path.join(ROOT, 'package.json')).version);
+    console.log(`build-win: latest.yml now points to ${updateName}`);
     if (!noZip) run(['zip'], { SAMEKO_SPLIT_TOOLCHAIN: '' }, ['--prepackaged', appOutDir]);
 } catch (err) {
     console.error(err.message);
