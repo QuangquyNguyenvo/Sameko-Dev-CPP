@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.5.0] - Unreleased
+## [1.5.0] - 2026-11-23
 
 A macOS beta, judge-style testing, stress tests and checkers, submitting to online judges from the app, a debugger that watches arrays and values, tools on each test row, clangd navigation, seven more languages, and smaller, faster updates.
 

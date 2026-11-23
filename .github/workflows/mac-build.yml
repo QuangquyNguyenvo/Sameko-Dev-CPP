@@ -1,5 +1,6 @@
 # Builds the macOS arm64 app and runs the test suites on a real macOS runner.
-# A published release also gets the DMG, the zip and latest-mac.yml, after the tests pass.
+# A published release also gets the DMG, the zip and latest-mac.yml, after the tests pass. If the
+# release did not start this workflow, run it by hand with the tag: gh workflow run mac-build.yml -f tag=v1.5.0
 name: macOS build
 
 on:
@@ -8,6 +9,10 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build and attach to (for example v1.5.0). Empty builds the branch only.
+        required: false
 
 permissions:
   contents: read
@@ -18,13 +23,15 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: write
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag || '' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag || github.ref }}
 
       - name: Check the release version
-        if: github.event_name == 'release'
-        env:
-          TAG: ${{ github.event.release.tag_name }}
+        if: env.TAG != ''
         run: |
           VERSION=$(node -p "require('./package.json').version")
           test "v$VERSION" = "$TAG"
@@ -73,7 +80,7 @@ jobs:
           if-no-files-found: error
 
       - name: Check the app installed from the DMG
-        continue-on-error: ${{ github.event_name != 'release' }}
+        continue-on-error: ${{ env.TAG == '' }}
         timeout-minutes: 10
         shell: bash
         run: |
@@ -96,18 +103,18 @@ jobs:
           exit "$STATUS"
 
       - name: Unit tests
-        continue-on-error: ${{ github.event_name != 'release' }}
+        continue-on-error: ${{ env.TAG == '' }}
         run: node test/run.js unit -v 2>&1 | tee unit.log; exit "${PIPESTATUS[0]}"
         shell: bash
 
       - name: GUI tests
-        continue-on-error: ${{ github.event_name != 'release' }}
+        continue-on-error: ${{ env.TAG == '' }}
         timeout-minutes: 15
         run: node test/run.js gui -v 2>&1 | tee gui.log; exit "${PIPESTATUS[0]}"
         shell: bash
 
       - name: Check a Mac without GCC
-        continue-on-error: ${{ github.event_name != 'release' }}
+        continue-on-error: ${{ env.TAG == '' }}
         timeout-minutes: 5
         shell: bash
         run: |
@@ -131,9 +138,8 @@ jobs:
           if-no-files-found: ignore
 
       - name: Attach to the release
-        if: github.event_name == 'release'
+        if: env.TAG != ''
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
         run: |
           gh release upload "$TAG" samekodevcpp/*.dmg samekodevcpp/*.zip samekodevcpp/*.blockmap samekodevcpp/latest-mac.yml --clobber

@@ -1,11 +1,18 @@
 # Builds the Linux AppImage and runs the test suites on a real Ubuntu runner.
-# Nothing is published: the release AppImage is still built and uploaded as before.
+# A published release also gets the AppImage and latest-linux.yml, after every test passes. If the
+# release did not start this workflow, run it by hand with the tag: gh workflow run linux-build.yml -f tag=v1.5.0
 name: Linux build
 
 on:
   push:
     branches: [mac-build]
+  release:
+    types: [published]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build and attach to (for example v1.5.0). Empty builds the branch only.
+        required: false
 
 permissions:
   contents: read
@@ -14,8 +21,20 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    permissions:
+      contents: write
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag || '' }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag || github.ref }}
+
+      - name: Check the release version
+        if: env.TAG != ''
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          test "v$VERSION" = "$TAG"
 
       - uses: actions/setup-node@v4
         with:
@@ -108,3 +127,9 @@ jobs:
             *.log
             linux-shots/*.png
           if-no-files-found: ignore
+
+      - name: Attach to the release
+        if: env.TAG != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" samekodevcpp/*.AppImage samekodevcpp/latest-linux.yml --clobber
