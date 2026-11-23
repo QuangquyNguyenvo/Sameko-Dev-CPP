@@ -51,6 +51,43 @@ const STOP_REASONS = {
     watchpoint: 'watchpoint-trigger',
 };
 
+// How lldb-dap describes a crash (Apple Silicon reports Mach exceptions), as the signal gdb names.
+const CRASH_PATTERNS = [
+    [/\bEXC_BAD_ACCESS\b/, 'SIGSEGV'], // code=2 too: a stack overflow is a bad access
+    [/\bEXC_ARITHMETIC\b/, 'SIGFPE'],
+    [/\bEXC_BAD_INSTRUCTION\b/, 'SIGILL'],
+    [/\bEXC_CRASH\b/, 'SIGABRT'],
+];
+// Signals that mean "stopped from outside" (Pause on macOS stops with SIGSTOP), not a crash.
+const PAUSE_SIGNALS = new Set(['SIGSTOP', 'SIGINT', 'SIGTRAP', 'SIGTSTP', 'SIGCONT']);
+// Frames counted for the stack-overflow check; gdb's session counts to the same limit.
+const MAX_COUNTED_FRAMES = 2001;
+const FRAME_PAGE = 200;
+
+/** The gdb-style signal name of a crash stop, or '' when the stop is not a crash. */
+function crashSignal(body) {
+    if (body.reason !== 'exception' && body.reason !== 'signal') return '';
+    const text = `${body.description || ''}\n${body.text || ''}`;
+    const signal = /\bsignal\s+(SIG[A-Z0-9]+)\b/.exec(text)?.[1];
+    if (signal) return PAUSE_SIGNALS.has(signal) ? '' : signal;
+    for (const [pattern, name] of CRASH_PATTERNS) if (pattern.test(text)) return name;
+    // __builtin_trap() on arm64; a user breakpoint arrives with reason "breakpoint" instead.
+    if (body.reason === 'exception' && /\bEXC_BREAKPOINT\b/.test(text)) return 'SIGILL';
+    return '';
+}
+
+function toFrame(f, level) {
+    return {
+        level: String(level),
+        id: f.id,
+        func: f.name,
+        file: f.source?.path || f.source?.name || undefined,
+        fullname: f.source?.path || undefined,
+        line: f.line ? String(f.line) : undefined,
+        addr: f.instructionPointerReference,
+    };
+}
+
 function formatValue(value, fmt) {
     if (fmt !== 'hexadecimal') return value;
     const text = String(value).trim();
@@ -91,6 +128,7 @@ class LldbSession extends EventEmitter {
         this._outOffset = 0;
         this._errOffset = 0;
         this._pumpTimer = null;
+        this._pauseRequested = false;
     }
 
     // ---- protocol ----------------------------------------------------------
@@ -178,6 +216,12 @@ class LldbSession extends EventEmitter {
         await this._loadFrames();
         let reason = STOP_REASONS[body.reason] || body.reason || '';
         const results = {};
+        const signal = this._pauseRequested ? '' : crashSignal(body);
+        this._pauseRequested = false;
+        if (signal) {
+            results['signal-name'] = signal;
+            results['signal-meaning'] = String(body.description || body.text || signal).trim();
+        }
 
         // lldb-dap versions name this stop differently, and a step can change a watched value
         // too, so the value itself decides, as with a GDB watchpoint.
@@ -204,16 +248,8 @@ class LldbSession extends EventEmitter {
     }
 
     async _loadFrames() {
-        const r = await this.request('stackTrace', { threadId: this.threadId, startFrame: 0, levels: 200 });
-        this.frames = (r.stackFrames || []).map((f, level) => ({
-            level: String(level),
-            id: f.id,
-            func: f.name,
-            file: f.source?.path || f.source?.name || undefined,
-            fullname: f.source?.path || undefined,
-            line: f.line ? String(f.line) : undefined,
-            addr: f.instructionPointerReference,
-        }));
+        const r = await this.request('stackTrace', { threadId: this.threadId, startFrame: 0, levels: FRAME_PAGE });
+        this.frames = (r.stackFrames || []).map(toFrame);
     }
 
     get frameId() {
@@ -436,12 +472,57 @@ class LldbSession extends EventEmitter {
             const r = await this.request('threads');
             this.threadId = r.threads?.[0]?.id ?? null;
         }
-        return this.request('pause', { threadId: this.threadId });
+        this._pauseRequested = true;
+        return this.request('pause', { threadId: this.threadId }).catch((err) => {
+            this._pauseRequested = false;
+            throw err;
+        });
     }
 
     // ---- frames and values -------------------------------------------------
 
     async listFrames() { return { stack: this.frames.map(({ id, ...frame }) => frame) }; }
+
+    /**
+     * The selected thread's depth, counted up to MAX_COUNTED_FRAMES as gdb's session does. Newer
+     * lldb-dap only estimates totalFrames, so when the loaded page is full the rest is fetched in
+     * one request instead of trusting it.
+     */
+    async stackDepth() {
+        if (this.frames.length < FRAME_PAGE) return this.frames.length;
+        const r = await this.request('stackTrace', {
+            threadId: this.threadId, startFrame: this.frames.length, levels: MAX_COUNTED_FRAMES - this.frames.length,
+        });
+        return this.frames.length + (r.stackFrames || []).length;
+    }
+
+    async listThreads() {
+        const r = await this.request('threads');
+        const threads = (r.threads || []).map((t) => ({ id: String(t.id), 'target-id': t.name || '', name: t.name || '' }));
+        return { threads, 'current-thread-id': this.threadId === null ? '' : String(this.threadId) };
+    }
+
+    async framesOfThread(id) {
+        if (!/^\d+$/.test(String(id))) throw new Error('Invalid thread ID');
+        const r = await this.request('stackTrace', { threadId: Number(id), startFrame: 0, levels: 32 });
+        return { stack: (r.stackFrames || []).map((f, level) => { const { id: _ref, ...frame } = toFrame(f, level); return frame; }) };
+    }
+
+    async selectThread(id) {
+        if (!/^\d+$/.test(String(id))) throw new Error('Invalid thread ID');
+        if (this.state !== 'stopped') throw new Error('Pause the debugger first.');
+        const previous = this.threadId;
+        this.threadId = Number(id);
+        this.frameIndex = 0;
+        try {
+            await this._loadFrames();
+        } catch (err) {
+            this.threadId = previous;
+            await this._loadFrames().catch(() => { });
+            throw err;
+        }
+        return {};
+    }
 
     async selectFrame(n) {
         if (!this.frames[n]) throw new Error('No such frame');
@@ -537,7 +618,7 @@ class LldbSession extends EventEmitter {
             const childCount = await this._childCount(item);
             const child = {
                 name: childName, expr: null, parent: name, index, ref: item.variablesReference || 0,
-                value: item.value, type: item.type || '', count: childCount, fmt: v.fmt,
+                key: item.name, evaluateName: item.evaluateName || '', value: item.value, type: item.type || '', count: childCount, fmt: v.fmt,
             };
             this.vars.set(childName, child);
             children.push({ ...this._record(childName, child, childCount), exp: item.name });
@@ -582,6 +663,75 @@ class LldbSession extends EventEmitter {
             if (changed) changelist.push({ ...entry, value: formatValue(v.value, v.fmt) });
         }
         return { changelist };
+    }
+
+    /**
+     * Change a variable's value while paused. DAP setVariable needs the container and the child's
+     * name there: a child knows its parent, a root (a local or a watch) is looked up in the frame's
+     * scopes. Anything else is assigned as an expression.
+     */
+    async varAssign(name, expr) {
+        if (this.state !== 'stopped') throw new Error('Pause the debugger first.');
+        if (!expr || /[\0\r\n]/.test(expr)) throw new Error('Enter a single value.');
+        const v = this.vars.get(name);
+        if (!v) throw new Error('Unknown variable');
+        let done = false;
+        try {
+            const target = await this._assignTarget(v);
+            if (target) {
+                await this.request('setVariable', { variablesReference: target.ref, name: target.name, value: expr });
+                done = true;
+            }
+        } catch (_) { done = false; }
+        const lhs = v.parent ? v.evaluateName : v.expr;
+        if (!done && lhs) {
+            try {
+                await this.request('evaluate', { expression: `(${lhs}) = (${expr})`, frameId: this.frameId, context: 'watch' });
+                done = true;
+            } catch (_) { done = false; }
+        }
+        if (!done) throw new Error('LLDB cannot change this value.');
+        // Read it back the way varUpdate() does, so the next update does not report it again.
+        const value = await this._readValue(v);
+        if (value === null) throw new Error('LLDB cannot change this value.');
+        v.value = value;
+        v.gone = false;
+        return { value: formatValue(v.value, v.fmt) };
+    }
+
+    /** Where setVariable can change this varobj: its container's reference and its name there. */
+    async _assignTarget(v) {
+        if (v.parent) {
+            const parent = this.vars.get(v.parent);
+            const ref = parent ? await this._ensureRef(parent) : 0;
+            return ref && v.key ? { ref, name: v.key } : null;
+        }
+        if (!/^[A-Za-z_]\w*$/.test(v.expr || '') || this.frameId === undefined) return null;
+        const { scopes = [] } = await this.request('scopes', { frameId: this.frameId });
+        for (const scope of scopes) {
+            if (!scope.variablesReference || /^registers$/i.test(scope.name)) continue;
+            const r = await this.request('variables', { variablesReference: scope.variablesReference });
+            if ((r.variables || []).some((item) => item.name === v.expr)) return { ref: scope.variablesReference, name: v.expr };
+        }
+        return null;
+    }
+
+    async _readValue(v) {
+        try {
+            if (!v.parent) {
+                const r = await this.request('evaluate', { expression: v.expr, frameId: this.frameId, context: 'watch' });
+                v.ref = r.variablesReference || 0;
+                return r.result ?? null;
+            }
+            const parent = this.vars.get(v.parent);
+            const parentRef = parent ? await this._ensureRef(parent) : 0;
+            if (!parentRef) return null;
+            const r = await this.request('variables', { variablesReference: parentRef, start: v.index, count: 1 });
+            const item = r.variables?.[0];
+            if (!item) return null;
+            v.ref = item.variablesReference || 0;
+            return item.value ?? null;
+        } catch (_) { return null; }
     }
 
     async varSetFormat(name, fmt) {

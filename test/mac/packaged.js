@@ -14,6 +14,7 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { _electron } = require('playwright-core');
+const { describeExit } = require('../../app/shared/exit-codes');
 
 const [, , executablePath, shotDir] = process.argv;
 const TAG = `sameko-mac-check-${process.pid}`;
@@ -283,6 +284,91 @@ async function main() {
         await page.evaluate(() => window.electronAPI.debugStop());
         await noProcess('lldb-dap');
         await noProcess(`${TAG}.*dbg`);
+    });
+
+    // Starts the debugger on a fresh -g build and returns its first stop.
+    const debugFirstStop = async (name, code, breakpoints, flags = '-g -O0 -std=c++20') => {
+        const source = path.join(project, name);
+        const exe = await build(name, code, flags);
+        await page.evaluate(() => {
+            if (!window.macStops) window.electronAPI.onDebugStopped((s) => window.macStops.push(s));
+            window.macStops = [];
+        });
+        const started = await page.evaluate(({ exe, project, bps }) => window.electronAPI.debugStart({
+            exePath: exe, cwd: project, stdin: '', breakpoints: bps,
+        }), { exe, project, bps: breakpoints.map((line) => ({ file: source, line, enabled: true })) });
+        assert.ok(started.ok, JSON.stringify(started));
+        await page.waitForFunction(() => window.macStops.length > 0, null, { timeout: 30000 });
+        return page.evaluate(() => window.macStops[0]);
+    };
+    const endDebug = async (stem) => {
+        await page.evaluate(() => window.electronAPI.debugStop());
+        await noProcess('lldb-dap');
+        await noProcess(`${TAG}.*${stem}`);
+    };
+
+    await check('LLDB names a null-pointer write as a segmentation fault at the user\'s line', async () => {
+        try {
+            const stop = await debugFirstStop('nullwrite.cpp', 'int main() {\n    int *p = nullptr;\n    *p = 1;\n    return 0;\n}\n', []);
+            assert.ok(stop.crash, `no crash in the stop: ${JSON.stringify(stop).slice(0, 600)}`);
+            assert.equal(stop.crash.name, describeExit(null, 'SIGSEGV').name, JSON.stringify(stop.crash));
+            assert.ok(stop.frames.some((f) => f.line === 3 && /nullwrite\.cpp$/.test(f.file || '')), JSON.stringify(stop.frames.slice(0, 5)));
+        } finally {
+            await endDebug('nullwrite');
+        }
+    });
+
+    await check('LLDB names endless recursion as a stack overflow', async () => {
+        try {
+            const code = 'int f(int d) {\n    volatile char a[64];\n    a[d & 63] = 1;\n    return f(d + 1) + a[0];\n}\nint main() { return f(0); }\n';
+            const stop = await debugFirstStop('overflow.cpp', code, []);
+            assert.ok(stop.crash, `no crash in the stop: ${JSON.stringify({ reason: stop.reason, depth: stop.depth })}`);
+            assert.equal(stop.crash.name, describeExit(0xC00000FD).name, JSON.stringify({ crash: stop.crash, depth: stop.depth }));
+            assert.ok(stop.depth >= 2000, `depth ${stop.depth}`);
+        } finally {
+            await endDebug('overflow');
+        }
+    });
+
+    await check('LLDB lists threads at a breakpoint inside a std::thread, and switching thread shows its frames', async () => {
+        try {
+            const code = '#include <chrono>\n#include <iostream>\n#include <thread>\nvoid work(int n) {\n'
+                + '    std::this_thread::sleep_for(std::chrono::milliseconds(300));\n'
+                + '    std::cout << n << "\\n";\n}\nint main() {\n    std::thread t(work, 5);\n    t.join();\n}\n';
+            const stop = await debugFirstStop('threads.cpp', code, [6], '-g -O0 -std=c++20 -pthread');
+            assert.equal(stop.frame?.line, 6, JSON.stringify(stop.frame));
+            assert.ok(Array.isArray(stop.threads) && stop.threads.length >= 2, JSON.stringify(stop.threads));
+            const other = stop.threads.find((t) => !t.current) || stop.threads.find((t) => t.id !== String(stop.threadId));
+            assert.ok(other, JSON.stringify(stop.threads));
+            const r = await page.evaluate((id) => window.electronAPI.debugSelectThread(id), other.id);
+            assert.ok(r.ok, JSON.stringify(r));
+            assert.ok(r.frames.length > 0 && r.frames.some((f) => f.func.includes('main')), JSON.stringify(r.frames.slice(0, 8)));
+        } finally {
+            await endDebug('threads');
+        }
+    });
+
+    await check('LLDB changes a local while paused, and the program uses the new value', async () => {
+        try {
+            const code = '#include <iostream>\nint main() {\n    int value = 41;\n    value++;\n    std::cout << value << "\\n";\n    return value;\n}\n';
+            const stop = await debugFirstStop('assign.cpp', code, [4, 6]);
+            assert.equal(stop.frame?.line, 4, JSON.stringify(stop.frame));
+            // The Locals panel creates one variable object per local, then Alt+click assigns to it.
+            const created = await page.evaluate(() => window.electronAPI.debugVarCreateMany([{ name: 'vmac1', expr: 'value' }]));
+            assert.ok(created.ok && created.vars?.[0]?.ok, JSON.stringify(created));
+            const r = await page.evaluate(() => window.electronAPI.debugVarAssign('vmac1', '7'));
+            assert.ok(r.ok, JSON.stringify(r));
+            assert.equal(String(r.value), '7', JSON.stringify(r));
+            const update = await page.evaluate(() => window.electronAPI.debugVarUpdate());
+            assert.ok(!(update.changed || []).some((c) => c.name === 'vmac1'), JSON.stringify(update));
+            await page.evaluate(() => window.electronAPI.debugContinue());
+            await page.waitForFunction(() => window.macStops.length > 1, null, { timeout: 20000 });
+            const second = await page.evaluate(() => window.macStops[1]);
+            assert.equal(second.frame?.line, 6, JSON.stringify(second.frame));
+            assert.ok(second.locals.some((l) => l.name === 'value' && String(l.value) === '8'), JSON.stringify(second.locals));
+        } finally {
+            await endDebug('assign');
+        }
     });
 
     await check('no renderer errors so far', async () => assert.deepEqual(pageErrors, []));
