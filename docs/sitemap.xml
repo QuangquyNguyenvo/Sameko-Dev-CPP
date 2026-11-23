@@ -8,8 +8,8 @@
         <lastmod>2026-11-24</lastmod>
         <image:image>
             <image:loc>https://sameko.dev/assets/a.webp</image:loc>
-            <image:title>Sameko Character (Hero Image)</image:title>
-            <image:caption>Sameko Dev C++ mascot</image:caption>
+            <image:title>Sameko Saba illustration on the Sameko Dev C++ home page</image:title>
+            <image:caption>Illustration by Nuu (@XD_zow) for Sameko Dev C++, a free C++ IDE</image:caption>
         </image:image>
     </url>
 
@@ -20,12 +20,12 @@
 
     <url>
         <loc>https://sameko.dev/dev-cpp-alternative</loc>
-        <lastmod>2026-11-13</lastmod>
+        <lastmod>2026-11-24</lastmod>
     </url>
 
     <url>
         <loc>https://sameko.dev/thay-the-dev-cpp</loc>
-        <lastmod>2026-11-13</lastmod>
+        <lastmod>2026-11-24</lastmod>
     </url>
 
     <url>

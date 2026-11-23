@@ -6,9 +6,12 @@ It is aimed at beginners, students and competitive programmers. Key facts:
 
 - C++98 through C++26 (C++17 by default), chosen in Settings → Compiler.
 - Live diagnostics from clangd (about 100–130 ms), with g++ -fsyntax-only as fallback.
-- GDB debugger with breakpoints, variables and call stack.
-- Test cases with Output / Expected cards, parallel "Run All Tests", real wall time and peak memory.
+- GDB debugger (LLDB on macOS) with breakpoints, watchpoints, array and vector views, threads, call stack, and changing a value while paused.
+- Judge-style "Run All Tests" (-O2, AC/WA/TLE/MLE/RE, real wall time and peak memory), stress testing with a generator and brute force, testlib checkers and interactors, and problems that read and write files such as BAI.INP / BAI.OUT.
 - Competitive Companion integration to import problems and tests from online judges.
+- Submit from the app (Ctrl+Alt+S) through the Sameko Companion browser extension: Codeforces, AtCoder, CSES, VNOI, LQDOJ, HNOJ, LTOJ and 28tech.
+- clangd navigation: Go to Definition, Find All References, Rename Symbol and Quick Fix. Find in Files across a folder.
+- Also builds and runs Python, Java, Kotlin, Rust, Go, Pascal and JavaScript with compilers already on the machine.
 - Markdown preview, AStyle formatting with format on save, and plain-text support for test files (.txt, .inp, .out, .ans).
 - Snippets, checkpoints (local history), and a Theme Customizer with background images or video.
 - Two Windows downloads: an installer (.exe, auto-updates) and a portable zip that runs from a USB drive without admin rights.

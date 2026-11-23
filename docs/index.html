@@ -12,7 +12,7 @@
 
     <title>Sameko Dev C++ | Download Free C++ IDE for Competitive Programming</title>
     <meta name="description"
-        content="Download Sameko Dev C++, a free C++ IDE for competitive programming and learning, with GCC 16, clangd and GDB bundled on Windows. Linux AppImage too.">
+        content="Download Sameko Dev C++, a free C++ IDE for competitive programming and learning. GCC 16, clangd and GDB bundled on Windows. Also on Linux and macOS.">
     <meta name="author" content="QuangquyNguyenvo">
     <meta name="google-site-verification" content="qhHZsB3wWbPMabTTEiDGclupbVZCNy1GHtSfSX8JC74" />
     <meta name="google-site-verification" content="hicbny1fy3tMA3dvY0VtqTfdX8-ImsSURm8oVDjf52A" />
@@ -31,7 +31,7 @@
     <meta property="og:url" content="https://sameko.dev/">
     <meta property="og:title" content="Sameko Dev C++ | Download Free C++ IDE for Competitive Programming">
     <meta property="og:description"
-        content="Download the free C++ IDE with GCC 16, clangd and GDB bundled for Windows; Linux AppImage uses your system compiler tools. C++26 support included.">
+        content="A free, open-source C++ IDE to get problems, run tests, stress test, debug and submit in one app. GCC 16 bundled on Windows, plus Linux and macOS beta.">
     <meta property="og:image"
         content="https://sameko.dev/assets/og-image.png">
     <meta property="og:image:width" content="1200">
@@ -44,7 +44,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Sameko Dev C++ | Download Free C++ IDE for Competitive Programming">
     <meta name="twitter:description"
-        content="Download the free C++ IDE with GCC 16, clangd and GDB bundled for Windows; Linux AppImage uses your system compiler tools. C++26 support included.">
+        content="A free, open-source C++ IDE to get problems, run tests, stress test, debug and submit in one app. GCC 16 bundled on Windows, plus Linux and macOS beta.">
     <meta name="twitter:image"
         content="https://sameko.dev/assets/og-image.png">
     <meta name="twitter:image:alt" content="Sameko Dev C++ mascot illustration">
@@ -59,21 +59,22 @@
             "name": "Sameko Dev C++",
             "applicationCategory": "DeveloperApplication",
             "operatingSystem": "Windows 10, Windows 11, Linux x64, macOS (Apple Silicon, beta)",
-            "description": "A free C++ IDE with GCC 16, clangd and GDB bundled on Windows; Linux packages use the system compiler tools installed on the machine. C++26 support is included.",
+            "description": "A free, open-source C++ IDE for beginners, students and competitive programmers. GCC 16, clangd and GDB are bundled on Windows; Linux and the macOS beta (Apple Silicon) use the compiler tools installed on the machine. C++98 through C++26.",
             "url": "https://sameko.dev/",
             "author": { "@type": "Person", "name": "QuangquyNguyenvo", "url": "https://github.com/QuangquyNguyenvo" },
             "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
             "isAccessibleForFree": true,
-            "downloadUrl": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases",
+            "downloadUrl": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP/releases/latest",
             "softwareVersion": "1.5.0",
-            "datePublished": "2026-10-04",
-            "dateModified": "2026-11-13",
-            "releaseNotes": "https://sameko.dev/wiki#whats-new",
+            "datePublished": "2025-12-17",
+            "dateModified": "2026-11-24",
+            "releaseNotes": "https://sameko.dev/changelog",
             "softwareHelp": { "@type": "CreativeWork", "url": "https://sameko.dev/wiki" },
             "image": "https://sameko.dev/assets/og-image.png",
-            "featureList": "Windows bundle with GCC 16, clangd and GDB; Linux packages using system compiler tools; Monaco Editor; C++26 support; Competitive Companion; portable Windows package",
+            "featureList": "GCC 16, clangd and GDB bundled on Windows; Linux AppImage; macOS beta for Apple Silicon; C++98 through C++26; Monaco Editor; Competitive Companion; submit to Codeforces, AtCoder, CSES, VNOI and other judges; judge-style Run All Tests; stress testing; testlib checkers and interactors; watchpoints and array view in the debugger; portable Windows package; English, Vietnamese and Simplified Chinese interface",
             "license": "https://opensource.org/license/mit",
-            "sameAs": "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP"
+            "screenshot": [ "https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/screenshots/editor.png", "https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/screenshots/customizer.png", "https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/screenshots/settings.png" ],
+            "sameAs": [ "https://github.com/QuangquyNguyenvo/Sameko-Dev-CPP", "https://unikorn.vn/p/sameko-dev-cpp" ]
           },
           {
             "@type": "WebSite",
@@ -101,7 +102,7 @@
               {
                 "@type": "Question",
                 "name": "Do I need to install a compiler?",
-                "acceptedAnswer": { "@type": "Answer", "text": "Not on Windows: GCC 16, clangd and GDB are bundled. On Linux, install g++, gdb and clangd from your distro." }
+                "acceptedAnswer": { "@type": "Answer", "text": "Not on Windows: GCC 16, clangd and GDB are bundled. On Linux, install g++, gdb and clangd from your distro. On macOS, install GCC with Homebrew." }
               },
               {
                 "@type": "Question",
@@ -117,6 +118,16 @@
                 "@type": "Question",
                 "name": "Windows Defender blocks the download.",
                 "acceptedAnswer": { "@type": "Answer", "text": "A common false positive for new Electron apps. Choose \"More info\" → \"Run anyway\", or right-click the .exe → Properties → Unblock." }
+              },
+              {
+                "@type": "Question",
+                "name": "Does it run on macOS?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes, as a beta for Apple Silicon (M1 and later). It uses GCC from Homebrew, LLDB for debugging and clangd for code suggestions. The app is not signed by Apple, so the first launch must be allowed once." }
+              },
+              {
+                "@type": "Question",
+                "name": "Can I submit to online judges from the app?",
+                "acceptedAnswer": { "@type": "Answer", "text": "Yes. With the Sameko Companion browser extension, Ctrl+Alt+S submits to Codeforces, AtCoder, CSES and DMOJ-based judges such as VNOI and LQDOJ, plus HNOJ, LTOJ and 28tech. It uses your logged-in browser and shows the verdict in the app." }
               },
               {
                 "@type": "Question",
@@ -707,7 +718,7 @@
                             <svg class="faq-chevron icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
                         <div class="faq-answer"><div class="faq-answer__inner">
-                            <p>Not on Windows: GCC&nbsp;16, clangd and GDB are bundled. On Linux, install <code>g++</code>, <code>gdb</code> and <code>clangd</code> from your distro.</p></div>
+                            <p>Not on Windows: GCC&nbsp;16, clangd and GDB are bundled. On Linux, install <code>g++</code>, <code>gdb</code> and <code>clangd</code> from your distro. On macOS, install GCC with Homebrew.</p></div>
                         </div>
                     </div>
                     <div class="faq-item">
@@ -744,6 +755,24 @@
                         </button>
                         <div class="faq-answer"><div class="faq-answer__inner">
                             <p>Yes. Click any part of the UI in the Theme Customizer to recolor it, add a background image or video, then export the theme.</p></div>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <button class="faq-question" aria-expanded="false">
+                            <span>Does it run on macOS?</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="faq-answer"><div class="faq-answer__inner">
+                            <p>Yes, as a beta for Apple Silicon (M1 and later). It uses GCC from Homebrew, LLDB for debugging and clangd for code suggestions. The app is not signed by Apple, so the first launch must be allowed once.</p></div>
+                        </div>
+                    </div>
+                    <div class="faq-item">
+                        <button class="faq-question" aria-expanded="false">
+                            <span>Can I submit to online judges from the app?</span>
+                            <svg class="faq-chevron icon" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
+                        <div class="faq-answer"><div class="faq-answer__inner">
+                            <p>Yes. With the Sameko Companion browser extension, Ctrl+Alt+S submits to Codeforces, AtCoder, CSES and DMOJ-based judges such as VNOI and LQDOJ, plus HNOJ, LTOJ and 28tech. It uses your logged-in browser and shows the verdict in the app.</p></div>
                         </div>
                     </div>
                     <div class="faq-item">
