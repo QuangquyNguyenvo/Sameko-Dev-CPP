@@ -81,7 +81,7 @@ A macOS beta, judge-style testing, stress tests and checkers, submitting to onli
 - **TESTS panel redesigned**: verdict, details, time and memory on each row, and a verdict bar.
 - **Crashes are named** (stack overflow, access violation, division by zero…) instead of a bare exit code.
 - **A test without an expected output** is RAN, not AC.
-- **Updates download only what changed**, keep GCC when it did not change, and show a progress window. The first update from 1.4.1 still downloads about 80 to 180 MB.
+- **Updates download only what changed**, keep GCC when it did not change, and show a progress window. The first update from 1.4.1 still downloads the whole installer, since 1.4.1 cannot fetch only the changes.
 - **Lighter on memory and disk**: clangd uses about half the memory (127 MB to 62 MB on a typical file), precompiled headers keep 3 variants and drop those unused for 14 days, and the app is about 75 MB smaller on disk.
 - **Debugger help** is shorter, grouped by what you are doing, and readable on every theme.
 - **Rounded Chinese font** (#73, suggested by @Onlyanadvisor): the Simplified Chinese interface uses WenYuan Rounded SC (SIL OFL 1.1), cut to the interface's characters (about 240 KB).
