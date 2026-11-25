@@ -78,7 +78,11 @@ function initXtermTerminal() {
     // toggle, window resize, panel show/hide). ResizeObserver coalesces these.
     const termEl = document.getElementById('terminal');
     if (termEl && typeof ResizeObserver !== 'undefined') {
+        // Not while a panel divider is dragged: a refit reflows the whole scrollback, and
+        // doing it each frame made the drag lag (#80). #terminal clips meanwhile, and
+        // trackPanelDrag (layout.js) refits once on release.
         const ro = new ResizeObserver(() => {
+            if (document.body.classList.contains('panel-resizing')) return;
             requestAnimationFrame(() => TerminalManager.fit());
         });
         ro.observe(termEl);

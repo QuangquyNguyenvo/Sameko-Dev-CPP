@@ -828,11 +828,45 @@ function initResizers() {
     });
 }
 
+/**
+ * Shared by every panel resizer (#80). While a drag runs, body gets `panel-resizing`:
+ * the terminal then refits a few times a second instead of every frame (an xterm refit
+ * reflows its whole scrollback), and the final refit happens on release. `apply` runs at
+ * most once per frame with the latest pointer position.
+ */
+function trackPanelDrag(resizer, cursor, apply, done) {
+    let latest = null;
+    let frame = 0;
+    const flush = () => { frame = 0; if (latest) apply(latest); };
+    const move = e => {
+        latest = e;
+        if (!frame) frame = requestAnimationFrame(flush);
+    };
+    const end = () => {
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', end);
+        window.removeEventListener('blur', end);
+        if (frame) cancelAnimationFrame(frame);
+        flush();
+        resizer.classList.remove('dragging');
+        document.body.classList.remove('panel-resizing');
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        done();
+        fitTerminal();
+    };
+    resizer.classList.add('dragging');
+    document.body.classList.add('panel-resizing');
+    document.body.style.cursor = cursor;
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', end);
+    window.addEventListener('blur', end);
+}
+
 function setupResizer(resizerId, targetId, min, max) {
     const resizer = document.getElementById(resizerId);
     const target = document.getElementById(targetId);
-    let dragging = false;
-    let startX, startW;
 
     const getDynamicMax = () => {
         const viewportWidth = window.innerWidth || 1280;
@@ -843,65 +877,35 @@ function setupResizer(resizerId, targetId, min, max) {
     };
 
     resizer.onmousedown = e => {
-        dragging = true;
-        startX = e.clientX;
-        startW = target.offsetWidth;
-        resizer.classList.add('dragging');
-        document.body.style.cursor = 'col-resize';
+        if (e.button !== 0) return;
         e.preventDefault();
-    };
-
-    document.addEventListener('mousemove', e => {
-        if (!dragging) return;
-        const dx = startX - e.clientX;
+        const startX = e.clientX;
+        const startW = target.offsetWidth;
         const dynamicMax = getDynamicMax();
-        const newW = Math.min(dynamicMax, Math.max(min, startW + dx));
-        target.style.width = newW + 'px';
-    });
-
-    document.addEventListener('mouseup', () => {
-        if (dragging) {
-            dragging = false;
-            resizer.classList.remove('dragging');
-            document.body.style.cursor = '';
-            persistPanelSize(targetId, target.offsetWidth);
-        }
-    });
+        trackPanelDrag(resizer, 'col-resize', ev => {
+            const newW = Math.min(dynamicMax, Math.max(min, startW + startX - ev.clientX));
+            target.style.width = newW + 'px';
+        }, () => persistPanelSize(targetId, target.offsetWidth));
+    };
 }
 
 function setupResizerH(resizerId, targetId, min) {
     const resizer = document.getElementById(resizerId);
     const target = document.getElementById(targetId);
-    let dragging = false;
-    let startY, startH;
 
     resizer.onmousedown = e => {
-        dragging = true;
-        startY = e.clientY;
-        startH = target.offsetHeight;
-        resizer.classList.add('dragging');
-        document.body.style.cursor = 'row-resize';
+        if (e.button !== 0) return;
         e.preventDefault();
-    };
-
-    document.addEventListener('mousemove', e => {
-        if (!dragging) return;
-        const dy = startY - e.clientY;
+        const startY = e.clientY;
+        const startH = target.offsetHeight;
         // Same cap applySavedPanelSizes uses (55% of the window), instead of a
         // fixed 400px that was too much on a short window and too little on a tall one.
         const dynamicMax = Math.max(min, Math.floor((window.innerHeight || 800) * 0.55));
-        const newH = Math.min(dynamicMax, Math.max(min, startH + dy));
-        target.style.height = newH + 'px';
-    });
-
-    document.addEventListener('mouseup', () => {
-        if (dragging) {
-            dragging = false;
-            resizer.classList.remove('dragging');
-            document.body.style.cursor = '';
-            persistPanelSize(targetId, target.offsetHeight);
-        }
-    });
+        trackPanelDrag(resizer, 'row-resize', ev => {
+            const newH = Math.min(dynamicMax, Math.max(min, startH + startY - ev.clientY));
+            target.style.height = newH + 'px';
+        }, () => persistPanelSize(targetId, target.offsetHeight));
+    };
 }
 
 // ============================================================================

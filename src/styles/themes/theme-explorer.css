@@ -14,7 +14,9 @@
     position: relative;
     z-index: 50;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
-    transition: width 0.2s var(--transition-timing), border-color 0.2s ease, box-shadow 0.2s ease;
+    /* No width transition: dragging the divider set a new width each frame and the sidebar
+       slid after the pointer for 0.2 s every time (#80). */
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .explorer-sidebar.visible {

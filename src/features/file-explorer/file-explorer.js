@@ -561,39 +561,21 @@ const FileExplorer = {
     setupResizer() {
         if (!this.elements.resizer) return;
 
-        let startX, startWidth;
-
-        const onMouseMove = (e) => {
-            const newWidth = startWidth + (e.clientX - startX);
-            if (newWidth >= 150 && newWidth <= 400) {
+        this.elements.resizer.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            const startX = e.clientX;
+            const startWidth = this.width;
+            // trackPanelDrag (layout.js): one width change per frame, terminal refit throttled (#80).
+            trackPanelDrag(this.elements.resizer, 'col-resize', (ev) => {
+                const newWidth = Math.min(400, Math.max(150, startWidth + (ev.clientX - startX)));
                 this.width = newWidth;
                 this.elements.sidebar.style.width = newWidth + 'px';
-            }
-        };
-
-        const onMouseUp = () => {
-            document.removeEventListener('mousemove', onMouseMove);
-            document.removeEventListener('mouseup', onMouseUp);
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
-            this.saveState();
-
-            // Trigger editor layout
-            if (window.App && window.App.editor) {
-                window.App.editor.layout();
-            }
-            if (window.App && window.App.editor2) {
-                window.App.editor2.layout();
-            }
-        };
-
-        this.elements.resizer.addEventListener('mousedown', (e) => {
-            startX = e.clientX;
-            startWidth = this.width;
-            document.addEventListener('mousemove', onMouseMove);
-            document.addEventListener('mouseup', onMouseUp);
-            document.body.style.cursor = 'col-resize';
-            document.body.style.userSelect = 'none';
+            }, () => {
+                this.saveState();
+                if (window.App && window.App.editor) window.App.editor.layout();
+                if (window.App && window.App.editor2) window.App.editor2.layout();
+            });
         });
     },
 
