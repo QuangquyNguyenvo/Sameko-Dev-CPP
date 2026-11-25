@@ -184,15 +184,49 @@ async function getCompilerVersion() {
     });
 }
 
+/**
+ * True while the app is stuck on a compiler that a later install can replace:
+ * bare 'g++' from PATH, or Apple Clang's /usr/bin/g++ on macOS (no <bits/stdc++.h>).
+ */
+function onFallbackCompiler() {
+    if (compilerInfo.bundled) return false;
+    if (detectedCompiler === 'g++') return true;
+    return IS_MAC && detectedCompiler === '/usr/bin/g++';
+}
+
+let lastRecheck = 0;
+
+/**
+ * Detection runs once at startup, but on macOS closing the window does not quit the
+ * app, so `brew install gcc` followed by "close and reopen" kept compiling with Apple
+ * Clang (issue #58). While on a fallback compiler, look again (at most every few
+ * seconds; it is a readdir of two folders) and switch as soon as a real GCC appears.
+ */
+function recheckFallbackCompiler() {
+    if (!onFallbackCompiler()) return;
+    const now = Date.now();
+    if (now - lastRecheck < 3000) return;
+    lastRecheck = now;
+    const better = systemCompilerPaths().find((c) => c !== detectedCompiler && c !== '/usr/bin/g++' && fs.existsSync(c));
+    if (better || (detectedCompiler === 'g++' && which('g++'))) {
+        const before = detectedCompiler;
+        detectCompiler();
+        if (detectedCompiler !== before) console.log(`[Compiler] Switched from ${before} to ${detectedCompiler}`);
+    }
+}
+
 function getDetectedCompiler() {
+    recheckFallbackCompiler();
     return detectedCompiler;
 }
 
 function getCompilerInfo() {
+    recheckFallbackCompiler();
     return { ...compilerInfo };
 }
 
 function getCompilerBinDir() {
+    recheckFallbackCompiler();
     if (detectedCompiler && path.isAbsolute(detectedCompiler)) {
         return path.dirname(detectedCompiler);
     }

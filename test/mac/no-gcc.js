@@ -4,8 +4,11 @@
 /*
  * First launch on a Mac without Homebrew GCC: the app must open, say what to install, and fail a
  * build with a compiler message instead of hanging. CI moves g++-* away before running this.
+ * With a second argument (the folder they were moved to and the folder to put them back in),
+ * it then installs them while the app runs, as `brew install gcc` would, and the next build
+ * must use Homebrew GCC without a restart (#58).
  *
- *   node test/mac/no-gcc.js "<...>/Sameko Dev C++.app/Contents/MacOS/Sameko Dev C++"
+ *   node test/mac/no-gcc.js "<...>/Sameko Dev C++.app/Contents/MacOS/Sameko Dev C++" [awayDir binDir]
  */
 
 const assert = require('node:assert/strict');
@@ -41,6 +44,19 @@ async function main() {
         await page.waitForFunction(() => TerminalManager.getLines().some((l) => /bits\/stdc\+\+\.h|failed|error/i.test(l.text)), null, { timeout: 30000 });
         await page.waitForFunction(() => !isBuilding, null, { timeout: 30000 });
         console.log('  PASS  a build ends with a compiler error instead of hanging');
+
+        await page.waitForFunction(() => TerminalManager.getLines().some((l) => /Apple Clang \(\/usr\/bin\/g\+\+\) has no/.test(l.text)), null, { timeout: 10000 });
+        console.log('  PASS  the error says Apple Clang has no bits/stdc++.h and to run brew install gcc');
+
+        const [awayDir, binDir] = process.argv.slice(3);
+        if (awayDir && binDir) {
+            for (const name of fs.readdirSync(awayDir)) fs.renameSync(path.join(awayDir, name), path.join(binDir, name));
+            await page.evaluate(() => { TerminalManager.clear(); ACTION_HANDLERS.compile(); });
+            await page.waitForFunction(() => TerminalManager.getLines().some((l) => /Compile OK|Compile failed/.test(l.text)), null, { timeout: 120000 });
+            const lines = await page.evaluate(() => TerminalManager.getLines().map((l) => l.text).join('\n'));
+            assert.match(lines, /Compile OK/, 'build after installing GCC:\n' + lines.slice(-2000));
+            console.log('  PASS  GCC installed while the app runs is used by the next build, no restart');
+        }
     } finally {
         await app.close().catch(() => { });
         fs.rmSync(profile, { recursive: true, force: true });

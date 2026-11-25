@@ -541,6 +541,12 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
                     fs.writeFileSync(path.join(getWritableBasePath(), 'compile_error.log'), stderr);
                 } catch (e) { }
 
+                // Apple Clang answers to "g++" on macOS but ships no <bits/stdc++.h> (#58).
+                if (IS_MAC && compilerExe === '/usr/bin/g++' && /bits\/stdc\+\+\.h'? file not found/.test(stderr)) {
+                    stderr += '\nApple Clang (/usr/bin/g++) has no <bits/stdc++.h>. Run "brew install gcc" in Terminal: '
+                        + 'Sameko switches to Homebrew GCC by itself once it is installed.\n';
+                }
+
                 resolve({
                     success: false,
                     error: stderr || `Compilation failed with code ${code}`,

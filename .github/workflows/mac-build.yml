@@ -122,9 +122,10 @@ jobs:
           for f in /opt/homebrew/bin/g++ /opt/homebrew/bin/g++-* /usr/local/bin/g++ /usr/local/bin/g++-*; do
             if [ -e "$f" ] || [ -L "$f" ]; then mv "$f" "$RUNNER_TEMP/gcc-away/"; fi
           done
-          node test/mac/no-gcc.js "$RUNNER_TEMP/Apps Test/Sameko Dev C++.app/Contents/MacOS/Sameko Dev C++" 2>&1 | tee no-gcc.log
+          # Puts GCC back itself halfway, while the app runs (a `brew install gcc` after launch).
+          node test/mac/no-gcc.js "$RUNNER_TEMP/Apps Test/Sameko Dev C++.app/Contents/MacOS/Sameko Dev C++" "$RUNNER_TEMP/gcc-away" /opt/homebrew/bin 2>&1 | tee no-gcc.log
           STATUS="${PIPESTATUS[0]}"
-          mv "$RUNNER_TEMP"/gcc-away/* /opt/homebrew/bin/
+          mv "$RUNNER_TEMP"/gcc-away/* /opt/homebrew/bin/ 2>/dev/null || true
           exit "$STATUS"
 
       - name: Upload test logs
