@@ -194,21 +194,25 @@ function onFallbackCompiler() {
     return IS_MAC && detectedCompiler === '/usr/bin/g++';
 }
 
-let lastRecheck = 0;
+let lastWhich = 0;
 
 /**
  * Detection runs once at startup, but on macOS closing the window does not quit the
  * app, so `brew install gcc` followed by "close and reopen" kept compiling with Apple
- * Clang (issue #58). While on a fallback compiler, look again (at most every few
- * seconds; it is a readdir of two folders) and switch as soon as a real GCC appears.
+ * Clang (issue #58). While on a fallback compiler, look again on every call and switch
+ * as soon as a real GCC appears. The folder scan is a readdir of two folders, so it is
+ * not throttled (a throttle made the build right after the install miss it); only the
+ * `which` fallback, which starts a shell, runs at most every 3 seconds.
  */
 function recheckFallbackCompiler() {
     if (!onFallbackCompiler()) return;
-    const now = Date.now();
-    if (now - lastRecheck < 3000) return;
-    lastRecheck = now;
     const better = systemCompilerPaths().find((c) => c !== detectedCompiler && c !== '/usr/bin/g++' && fs.existsSync(c));
-    if (better || (detectedCompiler === 'g++' && which('g++'))) {
+    let onPath = false;
+    if (!better && detectedCompiler === 'g++' && Date.now() - lastWhich >= 3000) {
+        lastWhich = Date.now();
+        onPath = !!which('g++');
+    }
+    if (better || onPath) {
         const before = detectedCompiler;
         detectCompiler();
         if (detectedCompiler !== before) console.log(`[Compiler] Switched from ${before} to ${detectedCompiler}`);
