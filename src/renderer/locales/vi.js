@@ -1504,4 +1504,11 @@
     "The program file is still being written. Run it again in a moment.": "File chương trình vẫn đang được ghi. Chạy lại sau giây lát nhé.",
     "The system could not start the program.": "Hệ thống không chạy được chương trình.",
     "Error {0}. Build folder: {1}": "Mã lỗi {0}. Thư mục build: {1}",
+    "Add Function Prototypes": "Thêm prototype cho hàm",
+    "Add function prototypes above main": "Thêm prototype cho hàm lên trên main",
+    "No main function in this file": "File này không có hàm main",
+    "Every function below main already has a prototype": "Mọi hàm dưới main đều đã có prototype",
+    "Skipped (templates, default arguments or auto): {0}": "Bỏ qua (template, tham số mặc định hoặc auto): {0}",
+    "Added {0} function prototypes": "Đã thêm {0} prototype",
+    "✓ Added prototypes for {0} - Press Ctrl+Z to undo": "✓ Đã thêm prototype cho {0} - Nhấn Ctrl+Z để hoàn tác",
 });

@@ -1211,6 +1211,17 @@ function createEditor(containerId) {
     enableNeovideCursorTrail(editor);
     applyVimMode(editor);
 
+    // Right-click menu and Command Palette (#78). Monaco shows actions for every model;
+    // addFunctionPrototypes() checks that the tab is C/C++.
+    editor.addAction({
+        id: 'sameko-add-function-prototypes',
+        label: I18n.t('Add Function Prototypes'),
+        contextMenuGroupId: '1_modification',
+        contextMenuOrder: 2,
+        precondition: 'editorLangId == cpp && !editorReadonly',
+        run: (ed) => addFunctionPrototypes(ed),
+    });
+
     return editor;
 }
 

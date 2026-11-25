@@ -73,15 +73,31 @@ const CppLanguageTools = (() => {
         };
     }
 
+    /** "'f' was not declared in this scope" on a function defined below main (#78). */
+    function prototypeFix(model, errors) {
+        if (!window.FunctionPrototypes) return [];
+        const names = errors.map(marker => /['‘](\w+)['’] was not declared in this scope|[Uu]se of undeclared identifier ['‘](\w+)['’]/
+            .exec(marker.message)).filter(Boolean).map(m => m[1] || m[2]);
+        if (!names.length) return [];
+        const result = FunctionPrototypes.analyze(model.getValue());
+        if (!names.some(name => result.names.includes(name))) return [];
+        const line = result.insertLine;
+        return [makeQuickFix(model, I18n.t('Add function prototypes above main'), [{
+            range: { startLineNumber: line, startColumn: 1, endLineNumber: line, endColumn: 1 },
+            text: FunctionPrototypes.insertionText(result, model.getEOL())
+        }], true)];
+    }
+
     function localFixes(model, range) {
         const currentLive = liveVersions.get(model) === model.getVersionId();
         const markers = monaco.editor.getModelMarkers({ resource: model.uri });
-        const lines = new Set(markers.filter(marker => marker.severity === monaco.MarkerSeverity.Error &&
+        const errors = markers.filter(marker => marker.severity === monaco.MarkerSeverity.Error &&
             (marker.source === buildSource || (currentLive && ['clangd', 'g++'].includes(marker.source))) &&
-            marker.startLineNumber >= range.startLineNumber && marker.startLineNumber <= range.endLineNumber
-        ).map(marker => marker.startLineNumber));
+            marker.startLineNumber >= range.startLineNumber && marker.startLineNumber <= range.endLineNumber);
+        const prototypes = prototypeFix(model, errors);
+        const lines = new Set(errors.map(marker => marker.startLineNumber));
         const candidates = [...lines].filter(line => hasPunctuation(model.getLineContent(line)));
-        if (!candidates.length) return [];
+        if (!candidates.length) return prototypes;
 
         // Keep comments and literals intact, including multi-line ones.
         const lastLine = Math.max(...candidates);
@@ -93,7 +109,7 @@ const CppLanguageTools = (() => {
         return candidates.flatMap(line => {
             const edits = punctuationEdits(model.getLineContent(line), tokens[line - 1] || [], line);
             return edits.length ? [makeQuickFix(model, I18n.t('Replace full-width punctuation with ASCII'), edits)] : [];
-        });
+        }).concat(prototypes);
     }
 
     function register(monaco) {

@@ -1531,4 +1531,11 @@
     "The program file is still being written. Run it again in a moment.": "程序文件仍在写入中，请稍后再运行。",
     "The system could not start the program.": "系统无法启动程序。",
     "Error {0}. Build folder: {1}": "错误码 {0}。编译输出文件夹：{1}",
+    "Add Function Prototypes": "添加函数原型声明",
+    "Add function prototypes above main": "在 main 上方添加函数原型声明",
+    "No main function in this file": "此文件没有 main 函数",
+    "Every function below main already has a prototype": "main 下方的函数都已有原型声明",
+    "Skipped (templates, default arguments or auto): {0}": "已跳过（模板、默认参数或 auto）：{0}",
+    "Added {0} function prototypes": "已添加 {0} 个函数原型声明",
+    "✓ Added prototypes for {0} - Press Ctrl+Z to undo": "✓ 已为 {0} 添加原型声明 - 按 Ctrl+Z 撤销",
 });

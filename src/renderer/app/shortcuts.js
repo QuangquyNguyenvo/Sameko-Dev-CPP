@@ -442,6 +442,41 @@ async function formatCode(editor = null, { silent = false } = {}) {
 }
 
 
+/**
+ * Add a prototype above main() for each function defined below it that has none (#78).
+ * One undoable edit. Returns the number of prototypes added.
+ */
+function addFunctionPrototypes(editor = null) {
+    editor = editor || (App.activeEditor === 2 && App.editor2 ? App.editor2 : App.editor);
+    const model = editor?.getModel();
+    if (!model || !isCppTab(getTabForModel(model)) || !window.FunctionPrototypes) return 0;
+    const result = FunctionPrototypes.analyze(model.getValue());
+    if (!result.main) {
+        setStatus('ready', 'No main function in this file');
+        return 0;
+    }
+    const skipped = [...new Set(result.skipped)].join(', ');
+    const logSkipped = () => {
+        if (skipped) log(I18n.t('Skipped (templates, default arguments or auto): {0}', skipped), 'info');
+    };
+    if (!result.prototypes.length) {
+        setStatus('ready', 'Every function below main already has a prototype');
+        logSkipped();
+        return 0;
+    }
+    editor.pushUndoStop();
+    editor.executeEdits('add-function-prototypes', [{
+        range: new monaco.Range(result.insertLine, 1, result.insertLine, 1),
+        text: FunctionPrototypes.insertionText(result, model.getEOL()),
+    }]);
+    editor.pushUndoStop();
+    setStatus('ready', I18n.t('Added {0} function prototypes', result.prototypes.length));
+    log(I18n.t('✓ Added prototypes for {0} - Press Ctrl+Z to undo', result.names.join(', ')), 'success');
+    logSkipped();
+    return result.prototypes.length;
+}
+
+
 function initTabsScroll() {
     const container = document.getElementById('tabs-container');
     container.addEventListener('wheel', e => {
