@@ -135,11 +135,12 @@ async function main() {
             if (!b) throw new Error('terminal divider not visible');
             const before = await page.evaluate(() => document.getElementById('terminal-section').offsetWidth);
             await page.mouse.move(b.x, b.y); await page.mouse.down();
-            for (let i = 1; i <= 15; i++) await page.mouse.move(b.x - i * 10, b.y);
+            // Narrower: on a small screen the panel may already be as wide as the layout allows.
+            for (let i = 1; i <= 8; i++) await page.mouse.move(b.x + i * 10, b.y);
             await page.mouse.up();
             await sleep(300);
             const after = await page.evaluate(() => ({ w: document.getElementById('terminal-section').offsetWidth, resizing: document.body.classList.contains('panel-resizing') }));
-            if (after.w <= before || after.resizing) throw new Error(JSON.stringify({ before, after }));
+            if (after.w >= before || after.resizing) throw new Error(JSON.stringify({ before, after }));
             return { before, after: after.w };
         });
 
