@@ -1,0 +1,77 @@
+# A look at the real macOS app, for when there is no Mac at hand: builds the .app, runs the
+# screenshot tour in test/mac/look.js and uploads the PNGs and logs as the "mac-look" artifact.
+#
+# Start it by pushing to the mac-check branch (git push origin HEAD:mac-check), or from the
+# Actions tab ("Run workflow"), where "ssh" also opens a terminal on the runner afterwards.
+#
+# Safety: it runs on GitHub's throwaway Mac, never on a developer's machine; it can only read
+# the repository and uses no secrets; only people with write access can start it (no
+# pull_request trigger, so forks cannot); the SSH session accepts only the SSH keys on the
+# GitHub account of whoever started the run. The artifact of a public repository is public:
+# the tour uses a temporary profile, so it holds no personal data.
+name: macOS look
+
+on:
+  push:
+    branches: [mac-check]
+  workflow_dispatch:
+    inputs:
+      ssh:
+        description: After the tour, keep the runner open for SSH (up to 45 minutes)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mac-check
+  cancel-in-progress: true
+
+jobs:
+  look:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install GCC and AStyle
+        run: |
+          brew list gcc >/dev/null 2>&1 || brew install gcc
+          brew list astyle >/dev/null 2>&1 || brew install astyle
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          npx install-electron --no
+
+      - name: Build the app
+        run: npm run build:mac -- --arm64 --dir --publish never
+
+      - name: Screenshot tour
+        shell: bash
+        run: |
+          mkdir -p mac-look
+          node test/mac/look.js "samekodevcpp/mac-arm64/Sameko Dev C++.app/Contents/MacOS/Sameko Dev C++" mac-look 2>&1 | tee mac-look/tour.log
+          exit "${PIPESTATUS[0]}"
+
+      - name: Upload screenshots and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-look
+          path: mac-look/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: SSH into the runner
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.ssh
+        uses: mxschmitt/action-tmate@v3
+        timeout-minutes: 45
+        with:
+          limit-access-to-actor: true
