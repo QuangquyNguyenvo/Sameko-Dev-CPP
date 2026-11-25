@@ -53,6 +53,22 @@ jobs:
       - name: Build the app
         run: npm run build:mac -- --arm64 --dir --publish never
 
+      # The runner's virtual screen starts at 1024x768, where the app folds into its narrow
+      # layout. Switch to the largest Retina (HiDPI) mode it offers, else the largest mode.
+      - name: Use a larger, Retina screen
+        continue-on-error: true
+        shell: bash
+        run: |
+          mkdir -p mac-look
+          brew list displayplacer >/dev/null 2>&1 || brew install displayplacer
+          displayplacer list > mac-look/display-before.txt 2>&1 || true
+          node test/mac/pick-display.js mac-look/display-before.txt > mac-look/display-command.txt
+          cat mac-look/display-command.txt
+          if [ -s mac-look/display-command.txt ]; then eval "displayplacer $(cat mac-look/display-command.txt)" || true; fi
+          sleep 3
+          displayplacer list > mac-look/display-after.txt 2>&1 || true
+          system_profiler SPDisplaysDataType >> mac-look/display-after.txt 2>&1 || true
+
       - name: Screenshot tour
         shell: bash
         run: |
