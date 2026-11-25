@@ -56,7 +56,7 @@ for (const file of binaries(root)) {
         if (/^(api|ext)-ms-/i.test(dll)) continue;
         // The Visual C++ runtime is not part of Windows; it is in System32 here only because
         // some other program installed it. Link those tools statically instead.
-        if (/^(msvcp|vcruntime|concrt|vcomp)\d/i.test(dll)) {
+        if (/^(msvcp|msvcr|vcruntime|concrt|vcomp)\d/i.test(dll)) {
             missing.push(`${path.relative(root, file)} -> ${dll} (Visual C++ runtime, not part of Windows)`);
             continue;
         }
