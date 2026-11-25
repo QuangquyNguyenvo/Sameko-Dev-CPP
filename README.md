@@ -54,7 +54,7 @@
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="185" height="24" align="absmiddle" /><img src="src/assets/vectors/icon-sameko.svg" alt="" width="51" align="absmiddle" />About Sameko Dev C++<img src="src/assets/vectors/section-line-right.svg" alt="" width="185" height="24" align="absmiddle" />
+### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/icon-sameko.svg" alt="" width="30" align="absmiddle" />About Sameko Dev C++<img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
 
 </div>
 
@@ -73,7 +73,7 @@
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="200" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/features.svg" alt="" width="49" align="absmiddle" />Features<img src="src/assets/vectors/titles/features.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="200" height="24" align="absmiddle" />
+### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/features.svg" alt="" width="30" align="absmiddle" />Features<img src="src/assets/vectors/titles/features.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
 
 </div>
 
@@ -151,7 +151,7 @@ Explore the [user guide](https://sameko.dev/wiki) for more features and instruct
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="200" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/screenshots.svg" alt="" width="49" align="absmiddle" />Screenshots<img src="src/assets/vectors/titles/screenshots.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="200" height="24" align="absmiddle" />
+### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/screenshots.svg" alt="" width="30" align="absmiddle" />Screenshots<img src="src/assets/vectors/titles/screenshots.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
 
 </div>
 
@@ -169,7 +169,7 @@ Explore the [user guide](https://sameko.dev/wiki) for more features and instruct
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="185" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/whatsnew.svg" alt="" width="49" align="absmiddle" />What's New in v1.5.0<img src="src/assets/vectors/titles/whatsnew.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="185" height="24" align="absmiddle" />
+### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/whatsnew.svg" alt="" width="30" align="absmiddle" />What's New in v1.5.0<img src="src/assets/vectors/titles/whatsnew.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
 
 </div>
 
@@ -193,7 +193,7 @@ Then turn it **OFF** and build again.
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="200" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/download.svg" alt="" width="49" align="absmiddle" />Download<img src="src/assets/vectors/titles/download.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="200" height="24" align="absmiddle" />
+### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/download.svg" alt="" width="30" align="absmiddle" />Download<img src="src/assets/vectors/titles/download.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
 
 </div>
 
@@ -303,7 +303,7 @@ xattr -cr "/Applications/Sameko Dev C++.app"
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="200" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/development.svg" alt="" width="49" align="absmiddle" />Development<img src="src/assets/vectors/titles/development.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="200" height="24" align="absmiddle" />
+### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/development.svg" alt="" width="30" align="absmiddle" />Development<img src="src/assets/vectors/titles/development.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
 
 </div>
 
@@ -364,7 +364,7 @@ npm run rebuild      # clean:dist, then a full build
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="200" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/shortcuts.svg" alt="" width="49" align="absmiddle" />Shortcuts<img src="src/assets/vectors/titles/shortcuts.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="200" height="24" align="absmiddle" />
+### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/shortcuts.svg" alt="" width="30" align="absmiddle" />Shortcuts<img src="src/assets/vectors/titles/shortcuts.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
 
 </div>
 
@@ -412,7 +412,7 @@ as long as the session is live, and go back to Run / Compile & Run once it ends.
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="200" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/contributing.svg" alt="" width="49" align="absmiddle" />Contributing<img src="src/assets/vectors/titles/contributing.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="200" height="24" align="absmiddle" />
+### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/contributing.svg" alt="" width="30" align="absmiddle" />Contributing<img src="src/assets/vectors/titles/contributing.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
 
 </div>
 
@@ -436,7 +436,7 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="185" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/story.svg" alt="" width="49" align="absmiddle" />The story behind it<img src="src/assets/vectors/titles/story.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="185" height="24" align="absmiddle" />
+### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/story.svg" alt="" width="30" align="absmiddle" />The story behind it<img src="src/assets/vectors/titles/story.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
 
 </div>
 
@@ -452,7 +452,7 @@ If you own any of the artwork above and want something changed or removed, email
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="200" height="24" align="absmiddle" /><img src="src/assets/vectors/titles/license.svg" alt="" width="49" align="absmiddle" />License<img src="src/assets/vectors/titles/license.svg" alt="" width="49" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="200" height="24" align="absmiddle" />
+### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/license.svg" alt="" width="30" align="absmiddle" />License<img src="src/assets/vectors/titles/license.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
 
 </div>
 

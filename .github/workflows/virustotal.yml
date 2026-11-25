@@ -67,21 +67,26 @@ jobs:
         run: |
           gh release view "$TAG" -R "$REPO" --json body -q .body > body.md
           node - <<'EOF'
+          // The list lives between <!-- virustotal --> and <!-- /virustotal -->, so the notes
+          // can put it under their own heading, above the footer. Notes without the markers
+          // get a plain "### VirusTotal" section at the end.
           const fs = require('fs');
-          const heading = '### VirusTotal';
+          const open = '<!-- virustotal -->', close = '<!-- /virustotal -->';
           let body = fs.readFileSync('body.md', 'utf8').replace(/\s+$/, '');
           const lines = new Map();
-          const at = body.indexOf(heading);
-          if (at >= 0) {
-              for (const m of body.slice(at).matchAll(/^- \[([^\]]+)\]\((\S+)\)$/gm)) lines.set(m[1], m[2]);
-              body = body.slice(0, at).replace(/\s+$/, '');
+          let start = body.indexOf(open), end = body.indexOf(close);
+          if (start < 0 || end < start) {
+              body += `\n\n### VirusTotal\n\n${open}\n${close}`;
+              start = body.indexOf(open); end = body.indexOf(close);
           }
+          for (const m of body.slice(start, end).matchAll(/^- \[([^\]]+)\]\((\S+)\)$/gm)) lines.set(m[1], m[2]);
           for (const pair of (process.env.ANALYSIS || '').split(',').filter(Boolean)) {
               const i = pair.indexOf('=');
               lines.set(pair.slice(0, i).split('/').pop(), pair.slice(i + 1));
           }
           const list = [...lines].sort(([a], [b]) => a.localeCompare(b)).map(([f, u]) => `- [${f}](${u})`);
-          fs.writeFileSync('body.md', `${body}\n\n${heading}\n\n${list.join('\n')}\n`);
+          body = body.slice(0, start) + `${open}\n${list.join('\n')}\n` + body.slice(end);
+          fs.writeFileSync('body.md', body + '\n');
           console.log(list.join('\n'));
           EOF
           gh release edit "$TAG" -R "$REPO" --notes-file body.md
