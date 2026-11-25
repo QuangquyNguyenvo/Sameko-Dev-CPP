@@ -65,7 +65,8 @@ async function main() {
         }
         page.on('pageerror', (e) => pageErrors.push(e.message));
         await page.waitForFunction(() => typeof App !== 'undefined' && App.ready === true, null, { timeout: 60000 });
-        await app.evaluate(({ BrowserWindow }) => { const w = BrowserWindow.getAllWindows()[0]; w.setSize(1440, 900); w.center(); w.show(); w.focus(); });
+        // Fill the screen's work area, so the full-screen shot shows the whole window.
+        await app.evaluate(({ BrowserWindow, screen }) => { const w = BrowserWindow.getAllWindows()[0]; w.setBounds(screen.getPrimaryDisplay().workArea); w.show(); w.focus(); });
         await sleep(1500);
 
         let n = 0;
@@ -149,6 +150,8 @@ async function main() {
             const variant = await page.evaluate(() => { App.settings.appearance.theme = 'kawaii-light'; applyTheme('kawaii-light'); return document.documentElement.dataset.themeVariant; });
             if (variant !== 'light') throw new Error('theme variant: ' + variant);
         });
+
+        try { await page.keyboard.press('Escape'); execFileSync('screencapture', ['-x', path.join(shotDir, '12-screen-end.png')]); note('ok    12-screen-end.png'); } catch (e) { note('skip  12-screen-end.png ' + e.message); }
 
         await step('context-menu', async () => {
             await page.evaluate(() => { applyTheme('kawaii-dark'); });
