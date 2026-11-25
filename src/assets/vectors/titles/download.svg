@@ -1,3 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="66" height="44" viewBox="-11 0 66 44" role="presentation">
+<svg xmlns="http://www.w3.org/2000/svg" width="49" height="32.7" viewBox="-11 0 66 44" role="presentation">
   <path d="M13 32Q5 32 5 24Q5 16 13 15Q16 7 25 8Q33 9 34 17Q40 18 40 25Q40 32 33 32Z" fill="#ffffff" stroke="#ffffff" stroke-width="8" stroke-linejoin="round"></path><path d="M13 32Q5 32 5 24Q5 16 13 15Q16 7 25 8Q33 9 34 17Q40 18 40 25Q40 32 33 32Z" fill="#c9ecfa" stroke="#2d6ca6" stroke-width="3.4" stroke-linejoin="round"></path><g><animateTransform attributeName="transform" type="translate" values="0 -1.6;0 1.6;0 -1.6" dur="1.8s" repeatCount="indefinite"/><path d="M22 15V26M17 22L22 27L27 22" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke="#2d6ca6" stroke-width="3.4"/></g>
 </svg>

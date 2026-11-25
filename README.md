@@ -54,7 +54,7 @@
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/icon-sameko.svg" alt="" width="30" align="absmiddle" />About Sameko Dev C++<img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
+### <picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-left-short.svg"><img src="src/assets/vectors/section-line-left.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/icon-sameko.svg 2.2x"><img src="src/assets/vectors/icon-sameko.svg" alt="" align="absmiddle" /></picture>About Sameko Dev C++<picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-right-short.svg"><img src="src/assets/vectors/section-line-right.svg" alt="" align="absmiddle" /></picture>
 
 </div>
 
@@ -73,7 +73,7 @@
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/features.svg" alt="" width="30" align="absmiddle" />Features<img src="src/assets/vectors/titles/features.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
+### <picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-left-short.svg"><img src="src/assets/vectors/section-line-left.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/titles/features.svg 1.6x"><img src="src/assets/vectors/titles/features.svg" alt="" align="absmiddle" /></picture>Features<picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/blank.svg"><img src="src/assets/vectors/titles/features.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-right-short.svg"><img src="src/assets/vectors/section-line-right.svg" alt="" align="absmiddle" /></picture>
 
 </div>
 
@@ -151,7 +151,7 @@ Explore the [user guide](https://sameko.dev/wiki) for more features and instruct
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/screenshots.svg" alt="" width="30" align="absmiddle" />Screenshots<img src="src/assets/vectors/titles/screenshots.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
+### <picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-left-short.svg"><img src="src/assets/vectors/section-line-left.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/titles/screenshots.svg 1.6x"><img src="src/assets/vectors/titles/screenshots.svg" alt="" align="absmiddle" /></picture>Screenshots<picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/blank.svg"><img src="src/assets/vectors/titles/screenshots.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-right-short.svg"><img src="src/assets/vectors/section-line-right.svg" alt="" align="absmiddle" /></picture>
 
 </div>
 
@@ -169,7 +169,7 @@ Explore the [user guide](https://sameko.dev/wiki) for more features and instruct
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/whatsnew.svg" alt="" width="30" align="absmiddle" />What's New in v1.5.0<img src="src/assets/vectors/titles/whatsnew.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
+### <picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-left-short.svg"><img src="src/assets/vectors/section-line-left.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/titles/whatsnew.svg 1.6x"><img src="src/assets/vectors/titles/whatsnew.svg" alt="" align="absmiddle" /></picture>What's New in v1.5.0<picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/blank.svg"><img src="src/assets/vectors/titles/whatsnew.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-right-short.svg"><img src="src/assets/vectors/section-line-right.svg" alt="" align="absmiddle" /></picture>
 
 </div>
 
@@ -193,7 +193,7 @@ Then turn it **OFF** and build again.
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/download.svg" alt="" width="30" align="absmiddle" />Download<img src="src/assets/vectors/titles/download.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
+### <picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-left-short.svg"><img src="src/assets/vectors/section-line-left.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/titles/download.svg 1.6x"><img src="src/assets/vectors/titles/download.svg" alt="" align="absmiddle" /></picture>Download<picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/blank.svg"><img src="src/assets/vectors/titles/download.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-right-short.svg"><img src="src/assets/vectors/section-line-right.svg" alt="" align="absmiddle" /></picture>
 
 </div>
 
@@ -303,7 +303,7 @@ xattr -cr "/Applications/Sameko Dev C++.app"
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/development.svg" alt="" width="30" align="absmiddle" />Development<img src="src/assets/vectors/titles/development.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
+### <picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-left-short.svg"><img src="src/assets/vectors/section-line-left.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/titles/development.svg 1.6x"><img src="src/assets/vectors/titles/development.svg" alt="" align="absmiddle" /></picture>Development<picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/blank.svg"><img src="src/assets/vectors/titles/development.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-right-short.svg"><img src="src/assets/vectors/section-line-right.svg" alt="" align="absmiddle" /></picture>
 
 </div>
 
@@ -364,7 +364,7 @@ npm run rebuild      # clean:dist, then a full build
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/shortcuts.svg" alt="" width="30" align="absmiddle" />Shortcuts<img src="src/assets/vectors/titles/shortcuts.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
+### <picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-left-short.svg"><img src="src/assets/vectors/section-line-left.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/titles/shortcuts.svg 1.6x"><img src="src/assets/vectors/titles/shortcuts.svg" alt="" align="absmiddle" /></picture>Shortcuts<picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/blank.svg"><img src="src/assets/vectors/titles/shortcuts.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-right-short.svg"><img src="src/assets/vectors/section-line-right.svg" alt="" align="absmiddle" /></picture>
 
 </div>
 
@@ -412,7 +412,7 @@ as long as the session is live, and go back to Run / Compile & Run once it ends.
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/contributing.svg" alt="" width="30" align="absmiddle" />Contributing<img src="src/assets/vectors/titles/contributing.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
+### <picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-left-short.svg"><img src="src/assets/vectors/section-line-left.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/titles/contributing.svg 1.6x"><img src="src/assets/vectors/titles/contributing.svg" alt="" align="absmiddle" /></picture>Contributing<picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/blank.svg"><img src="src/assets/vectors/titles/contributing.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-right-short.svg"><img src="src/assets/vectors/section-line-right.svg" alt="" align="absmiddle" /></picture>
 
 </div>
 
@@ -436,7 +436,7 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/story.svg" alt="" width="30" align="absmiddle" />The story behind it<img src="src/assets/vectors/titles/story.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
+### <picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-left-short.svg"><img src="src/assets/vectors/section-line-left.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/titles/story.svg 1.6x"><img src="src/assets/vectors/titles/story.svg" alt="" align="absmiddle" /></picture>The story behind it<picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/blank.svg"><img src="src/assets/vectors/titles/story.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-right-short.svg"><img src="src/assets/vectors/section-line-right.svg" alt="" align="absmiddle" /></picture>
 
 </div>
 
@@ -452,7 +452,7 @@ If you own any of the artwork above and want something changed or removed, email
 
 <div align="center">
 
-### <img src="src/assets/vectors/section-line-left.svg" alt="" width="12%" align="absmiddle" /><img src="src/assets/vectors/titles/license.svg" alt="" width="30" align="absmiddle" />License<img src="src/assets/vectors/titles/license.svg" alt="" width="30" align="absmiddle" /><img src="src/assets/vectors/section-line-right.svg" alt="" width="12%" align="absmiddle" />
+### <picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-left-short.svg"><img src="src/assets/vectors/section-line-left.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/titles/license.svg 1.6x"><img src="src/assets/vectors/titles/license.svg" alt="" align="absmiddle" /></picture>License<picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/blank.svg"><img src="src/assets/vectors/titles/license.svg" alt="" align="absmiddle" /></picture><picture><source media="(max-width: 600px)" srcset="https://raw.githubusercontent.com/QuangquyNguyenvo/Sameko-Dev-CPP/main/src/assets/vectors/section-line-right-short.svg"><img src="src/assets/vectors/section-line-right.svg" alt="" align="absmiddle" /></picture>
 
 </div>
 
