@@ -49,8 +49,17 @@ for (const file of binaries(root)) {
     }
     checked++;
     const dir = path.dirname(file);
+    // A 32-bit tool in the 64-bit toolchain loads whatever 64-bit DLL of the same name it
+    // finds first and dies with 0xC000007B (issue #79: a 32-bit astyle.exe).
+    if (/file format pei-i386/.test(out)) missing.push(`${path.relative(root, file)} -> is 32-bit`);
     for (const [, dll] of out.matchAll(/DLL Name: (\S+)/g)) {
         if (/^(api|ext)-ms-/i.test(dll)) continue;
+        // The Visual C++ runtime is not part of Windows; it is in System32 here only because
+        // some other program installed it. Link those tools statically instead.
+        if (/^(msvcp|vcruntime|concrt|vcomp)\d/i.test(dll)) {
+            missing.push(`${path.relative(root, file)} -> ${dll} (Visual C++ runtime, not part of Windows)`);
+            continue;
+        }
         if ([dir, binDir, system32].some((d) => fs.existsSync(path.join(d, dll)))) continue;
         missing.push(`${path.relative(root, file)} -> ${dll}`);
     }

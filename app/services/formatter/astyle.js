@@ -75,6 +75,21 @@ function checkAStyle() {
 }
 
 /**
+ * Windows reports a program that could not start through its exit code. Name the two
+ * loader failures instead of printing 3221225595 (issue #79).
+ */
+function exitMessage(exitCode, astylePath) {
+    if (IS_WIN && exitCode === 0xC000007B) {
+        return `AStyle could not start: ${astylePath} loaded a DLL built for the wrong architecture `
+            + '(32-bit vs 64-bit). Replace it with a 64-bit astyle.exe that needs no extra DLLs.';
+    }
+    if (IS_WIN && exitCode === 0xC0000135) {
+        return `AStyle could not start: a DLL that ${astylePath} needs is missing.`;
+    }
+    return `AStyle exited with code ${exitCode}`;
+}
+
+/**
  * Format code using AStyle
  * 
  * @param {string} code - Source code to format
@@ -119,7 +134,7 @@ async function formatCode(code, style = 'google') {
             } else {
                 resolve({
                     success: false,
-                    error: Buffer.concat(err).toString('utf-8') || `AStyle exited with code ${exitCode}`
+                    error: Buffer.concat(err).toString('utf-8') || exitMessage(exitCode, astylePath)
                 });
             }
         });
