@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.5.1] - 2026-11-25
+
+A hotfix for 1.5.0: Format on Windows 10, GCC on macOS, and smoother panel resizing.
+
+### Added
+
+- **Add Function Prototypes** (#78): right-click in a C/C++ file, or use the Command Palette, to declare every function defined below `main` above it, types only (`float loadArray(float[], int);`). The "was not declared in this scope" error offers it as a Quick Fix. Running it twice adds nothing; templates, default arguments and `auto` functions are skipped and named.
+
+### Fixed
+
+- **Format failed on some Windows 10 PCs** with `AStyle exited with code 3221225595` (#79). The bundled AStyle was a 32-bit build that needed the Visual C++ runtime; it is now a 64-bit build that needs no extra DLLs.
+- **macOS kept compiling with Apple Clang** after `brew install gcc`, so `<bits/stdc++.h>` was not found (#58). Closing the window does not quit a Mac app, and the compiler was only looked for at launch. Homebrew GCC is now picked up on the next build, without a restart, and the error says to install it when it is missing.
+- **Dragging panel dividers was laggy** (#80), most of all with a long terminal output: the explorer slid behind the pointer, and the terminal reflowed its whole output on every frame. The terminal now refits once, when the divider is released.
+
 ## [1.5.0] - 2026-11-24
 
 A macOS beta, judge-style testing, stress tests and checkers, submitting to online judges from the app, a debugger that watches arrays and values, tools on each test row, clangd navigation, seven more languages, and smaller, faster updates.
