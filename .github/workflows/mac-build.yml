@@ -128,6 +128,30 @@ jobs:
           mv "$RUNNER_TEMP"/gcc-away/* /opt/homebrew/bin/ 2>/dev/null || true
           exit "$STATUS"
 
+      - name: Check a Homebrew in a custom folder
+        continue-on-error: ${{ env.TAG == '' }}
+        timeout-minutes: 5
+        shell: bash
+        run: |
+          # Homebrew installed outside /opt/homebrew (issue #58): only the login shell knows where.
+          # The default prefix loses brew and GCC; the custom one gets a brew, then GCC halfway.
+          BREW="$HOME/custom-brew/bin"; STAGE="$RUNNER_TEMP/gcc-stage"; AWAY="$RUNNER_TEMP/brew-away"
+          mkdir -p "$BREW" "$STAGE" "$AWAY" "$RUNNER_TEMP/zdot"
+          printf '#!/bin/sh\nexit 0\n' > "$BREW/brew"; chmod +x "$BREW/brew"
+          for f in /opt/homebrew/bin/g++ /opt/homebrew/bin/g++-* /opt/homebrew/bin/gcc-* /opt/homebrew/bin/brew; do
+            if [ -e "$f" ]; then
+              case "$f" in */brew) ;; *) ln -s "$(realpath "$f")" "$STAGE/$(basename "$f")" ;; esac
+              mv "$f" "$AWAY/"
+            fi
+          done
+          echo "export PATH=\"$BREW:/usr/bin:/bin:/usr/sbin:/sbin\"" > "$RUNNER_TEMP/zdot/.zprofile"
+          env -u HOMEBREW_PREFIX SHELL=/bin/zsh ZDOTDIR="$RUNNER_TEMP/zdot" \
+            node test/mac/no-gcc.js "$RUNNER_TEMP/Apps Test/Sameko Dev C++.app/Contents/MacOS/Sameko Dev C++" "$STAGE" "$BREW" 2>&1 | tee brew-prefix.log
+          STATUS="${PIPESTATUS[0]}"
+          mv "$AWAY"/* /opt/homebrew/bin/ 2>/dev/null || true
+          grep -q "Homebrew found at $HOME/custom-brew" brew-prefix.log || { echo "the app did not ask the shell for Homebrew"; STATUS=1; }
+          exit "$STATUS"
+
       - name: Upload test logs
         if: always()
         uses: actions/upload-artifact@v4

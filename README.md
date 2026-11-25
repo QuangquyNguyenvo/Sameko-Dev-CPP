@@ -427,6 +427,7 @@ as long as the session is live, and go back to Run / Compile & Run once it ends.
 - **[MerlyStella](https://github.com/MerlyStella)** (Tested everything, twice. The app is better because of it :D)
 - **[JuggyBob](https://github.com/JuggyBob)** (Found and reported a lot of bugs)
 - **[wudream813](https://github.com/wudream813)** (Spotted where the architecture notes did not match the code)
+- **[Harsh596](https://github.com/Harsh596)** (Tested the macOS beta on a real Mac until it worked)
 
 **📝 Want to contribute?**
 

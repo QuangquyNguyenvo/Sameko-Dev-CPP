@@ -23,6 +23,10 @@ async function main() {
         discord: { enabled: false }, startup: { behavior: 'empty' }, editor: { liveCheck: false, autoSave: false },
     }));
     const app = await _electron.launch({ executablePath: process.argv[2], args: [`--user-data-dir=${profile}`, '--lang=en-US'], timeout: 60000 });
+    // The main process's own lines about which compiler and Homebrew it picked, for the log.
+    app.process().stdout.on('data', (chunk) => {
+        for (const line of String(chunk).split(/\r?\n/)) if (/\[(Platform|Compiler)\]/.test(line)) console.log(`  app   ${line.trim()}`);
+    });
     try {
         let page;
         const deadline = Date.now() + 60000;

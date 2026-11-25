@@ -60,7 +60,7 @@ function systemCompilerPaths() {
         // Homebrew installs GCC as g++-<major>; /usr/bin/g++ is Apple Clang, which has no
         // <bits/stdc++.h>, so it is only the last resort.
         const homebrew = [];
-        for (const dir of ['/opt/homebrew/bin', '/usr/local/bin']) {
+        for (const dir of homebrewBinDirs()) {
             let names = [];
             try { names = fs.readdirSync(dir); } catch (_) { /* no Homebrew here */ }
             const versioned = names
@@ -84,7 +84,45 @@ function systemCompilerPaths() {
  */
 function systemBinDirs() {
     if (IS_WIN) return [];
-    return ['/usr/bin', '/usr/local/bin', '/opt/homebrew/bin', '/bin'];
+    const dirs = ['/usr/bin', '/usr/local/bin', '/opt/homebrew/bin', '/bin'];
+    if (IS_MAC) for (const dir of homebrewBinDirs()) if (!dirs.includes(dir)) dirs.push(dir);
+    return dirs;
+}
+
+const DEFAULT_BREW_DIRS = ['/opt/homebrew/bin', '/usr/local/bin'];
+let customBrewDir = null;
+let lastBrewAsk = 0;
+
+/**
+ * Folders where Homebrew puts its programs: the two default prefixes, plus the one of a
+ * Homebrew installed elsewhere (issue #58). An app opened from Finder does not get the shell's
+ * PATH, so that prefix comes from $HOMEBREW_PREFIX or, failing that, from asking the user's login
+ * shell where `brew` is. The shell is asked only when no default prefix has `brew`, at most every
+ * 30 seconds until it answers, and the answer is kept and added to PATH.
+ * @returns {string[]}
+ */
+function homebrewBinDirs() {
+    if (!IS_MAC) return [];
+    if (customBrewDir) return [...DEFAULT_BREW_DIRS, customBrewDir];
+    if (DEFAULT_BREW_DIRS.some((dir) => fs.existsSync(path.join(dir, 'brew')))) return DEFAULT_BREW_DIRS;
+    let dir = process.env.HOMEBREW_PREFIX ? path.join(process.env.HOMEBREW_PREFIX, 'bin') : null;
+    if (!dir && Date.now() - lastBrewAsk >= 30000) {
+        lastBrewAsk = Date.now();
+        try {
+            const out = execFileSync(process.env.SHELL || '/bin/zsh', ['-lc', 'command -v brew'], {
+                encoding: 'utf8', timeout: 3000, stdio: ['ignore', 'pipe', 'ignore'],
+            });
+            const brew = out.split(/\r?\n/).map((l) => l.trim()).filter((l) => l.startsWith('/') && l.endsWith('/brew')).pop();
+            // Not resolved through links: g++-N sits next to the `brew` the shell runs.
+            if (brew) dir = path.dirname(brew);
+        } catch (_) { /* no shell answer: Homebrew is not installed */ }
+    }
+    if (!dir || DEFAULT_BREW_DIRS.includes(dir) || !fs.existsSync(dir)) return DEFAULT_BREW_DIRS;
+    customBrewDir = dir;
+    const parts = String(process.env.PATH || '').split(':');
+    if (!parts.includes(dir)) process.env.PATH = [dir, ...parts.filter(Boolean)].join(':');
+    console.log(`[Platform] Homebrew found at ${path.dirname(dir)}`);
+    return [...DEFAULT_BREW_DIRS, customBrewDir];
 }
 
 /**
@@ -242,6 +280,7 @@ module.exports = {
     binName,
     systemCompilerPaths,
     systemBinDirs,
+    homebrewBinDirs,
     which,
     commandExists,
     readProcMemoryKB,
