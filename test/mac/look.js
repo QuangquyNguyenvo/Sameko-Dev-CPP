@@ -146,7 +146,8 @@ async function main() {
         await step('settings-closed', async () => { await page.keyboard.press('Escape'); });
 
         await step('light-theme', async () => {
-            await page.evaluate(() => { App.settings.appearance.theme = 'sakura-light'; applyTheme('sakura-light'); });
+            const variant = await page.evaluate(() => { App.settings.appearance.theme = 'kawaii-light'; applyTheme('kawaii-light'); return document.documentElement.dataset.themeVariant; });
+            if (variant !== 'light') throw new Error('theme variant: ' + variant);
         });
 
         await step('context-menu', async () => {
