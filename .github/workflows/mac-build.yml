@@ -149,7 +149,7 @@ jobs:
             node test/mac/no-gcc.js "$RUNNER_TEMP/Apps Test/Sameko Dev C++.app/Contents/MacOS/Sameko Dev C++" "$STAGE" "$BREW" 2>&1 | tee brew-prefix.log
           STATUS="${PIPESTATUS[0]}"
           mv "$AWAY"/* /opt/homebrew/bin/ 2>/dev/null || true
-          grep -q "Homebrew found at $HOME/custom-brew" brew-prefix.log || { echo "the app did not ask the shell for Homebrew"; STATUS=1; }
+          grep -q "Switched from .* to $BREW/g++-" brew-prefix.log || { echo "the app did not use the GCC in $BREW"; STATUS=1; }
           exit "$STATUS"
 
       - name: Upload test logs
