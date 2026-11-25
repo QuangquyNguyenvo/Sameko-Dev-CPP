@@ -1,0 +1,87 @@
+# Scans each release's downloads on VirusTotal and lists the reports in the release notes.
+# Windows files are scanned when the release is published; the DMG and the AppImage when
+# mac-build.yml / linux-build.yml have attached them. Run it by hand with a tag to scan (or
+# rescan) everything a release has.
+#
+# Needs the repository secret VT_API_KEY (a free VirusTotal key: 4 requests a minute).
+name: VirusTotal
+
+on:
+  release:
+    types: [published]
+  workflow_run:
+    workflows: [macOS build, Linux build]
+    types: [completed]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to scan, for example v1.5.1
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  # One at a time, so two runs never rewrite the release notes at once.
+  group: virustotal
+  cancel-in-progress: false
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # A workflow_run only counts when it built a published release and passed.
+    if: >-
+      github.event_name != 'workflow_run' ||
+      (github.event.workflow_run.event == 'release' && github.event.workflow_run.conclusion == 'success')
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      TAG: ${{ inputs.tag || github.event.release.tag_name || github.event.workflow_run.head_branch }}
+      WHICH: ${{ github.event_name == 'workflow_dispatch' && 'all' || github.event_name == 'release' && 'windows' || github.event.workflow_run.name == 'macOS build' && 'mac' || 'linux' }}
+    steps:
+      - name: Download the files to scan
+        run: |
+          mkdir -p scan
+          case "$WHICH" in
+            windows) patterns="sameko-dev-cpp-setup-*.exe *-portable.zip" ;;
+            mac)     patterns="*.dmg" ;;
+            linux)   patterns="*.AppImage" ;;
+            *)       patterns="sameko-dev-cpp-setup-*.exe *-portable.zip *.dmg *.AppImage" ;;
+          esac
+          for p in $patterns; do gh release download "$TAG" -R "$REPO" -p "$p" -D scan || true; done
+          ls -la scan
+          test -n "$(ls -A scan)"
+
+      - name: Upload to VirusTotal
+        id: vt
+        uses: crazy-max/ghaction-virustotal@v4
+        with:
+          vt_api_key: ${{ secrets.VT_API_KEY }}
+          files: scan/*
+          request_rate: 4
+
+      - name: List the reports in the release notes
+        env:
+          ANALYSIS: ${{ steps.vt.outputs.analysis }}
+        run: |
+          gh release view "$TAG" -R "$REPO" --json body -q .body > body.md
+          node - <<'EOF'
+          const fs = require('fs');
+          const heading = '### VirusTotal';
+          let body = fs.readFileSync('body.md', 'utf8').replace(/\s+$/, '');
+          const lines = new Map();
+          const at = body.indexOf(heading);
+          if (at >= 0) {
+              for (const m of body.slice(at).matchAll(/^- \[([^\]]+)\]\((\S+)\)$/gm)) lines.set(m[1], m[2]);
+              body = body.slice(0, at).replace(/\s+$/, '');
+          }
+          for (const pair of (process.env.ANALYSIS || '').split(',').filter(Boolean)) {
+              const i = pair.indexOf('=');
+              lines.set(pair.slice(0, i).split('/').pop(), pair.slice(i + 1));
+          }
+          const list = [...lines].sort(([a], [b]) => a.localeCompare(b)).map(([f, u]) => `- [${f}](${u})`);
+          fs.writeFileSync('body.md', `${body}\n\n${heading}\n\n${list.join('\n')}\n`);
+          console.log(list.join('\n'));
+          EOF
+          gh release edit "$TAG" -R "$REPO" --notes-file body.md
