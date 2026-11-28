@@ -67,6 +67,17 @@ const closeGeneration = new Map();
 const closeGen = (uri) => closeGeneration.get(uri) || 0;
 const documentVersions = {}; // uri -> version
 const documentText = new Map(); // uri -> text clangd currently has
+// Renderer hover callers receive this stamp as an acknowledgement token. It
+// is deliberately independent from clangd's per-document LSP version so a
+// restart, close/reopen, or another renderer request can never reuse a token
+// for different text.
+let nextDocumentRevision = 0;
+const documentRevisions = new Map(); // uri -> monotonic process-local revision
+const bumpDocumentRevision = (uri) => {
+    const revision = ++nextDocumentRevision;
+    documentRevisions.set(uri, revision);
+    return revision;
+};
 
 // Diagnostics clangd publishes after each (re)parse. It computes them anyway;
 // they used to be thrown away while a separate g++ process was spawned to
@@ -513,6 +524,7 @@ async function spawnProcess() {
             parser.clear();
             openedDocuments.clear();
             documentText.clear();
+            documentRevisions.clear();
             publishedDiagnostics.clear();
             for (const waiters of diagnosticWaiters.values()) {
                 for (const w of waiters) { clearTimeout(w.timer); w.resolve(null); }
@@ -829,10 +841,13 @@ function syncDocument(fileUri, content) {
         openedDocuments.add(fileUri);
         documentVersions[fileUri] = 1;
         documentText.set(fileUri, content);
+        return bumpDocumentRevision(fileUri);
     } else {
         // Hover and repeated completions usually arrive with unchanged text;
         // re-sending it made clangd rebuild the AST for nothing.
-        if (documentText.get(fileUri) === content) return;
+        if (documentText.get(fileUri) === content) {
+            return documentRevisions.get(fileUri) || bumpDocumentRevision(fileUri);
+        }
         documentText.set(fileUri, content);
         documentVersions[fileUri] = (documentVersions[fileUri] || 1) + 1;
         const didChangeParams = {
@@ -847,6 +862,7 @@ function syncDocument(fileUri, content) {
             ]
         };
         sendNotification('textDocument/didChange', didChangeParams);
+        return bumpDocumentRevision(fileUri);
     }
 }
 
@@ -861,11 +877,13 @@ function closeDocument(filePath) {
     // Even before clangd is ready: a completion waiting in ensureReady() would
     // otherwise open the closed tab's document once initialization finishes.
     closeGeneration.set(fileUri, closeGen(fileUri) + 1);
-    if (!isEnabled || !isInitialized) return;
-    if (!openedDocuments.has(fileUri)) return;
-    sendNotification('textDocument/didClose', { textDocument: { uri: fileUri } });
+    const wasOpen = openedDocuments.has(fileUri);
+    if (isEnabled && isInitialized && wasOpen) {
+        sendNotification('textDocument/didClose', { textDocument: { uri: fileUri } });
+    }
     openedDocuments.delete(fileUri);
     documentText.delete(fileUri);
+    documentRevisions.delete(fileUri);
     publishedDiagnostics.delete(fileUri);
     delete documentVersions[fileUri];
 }
@@ -1124,22 +1142,40 @@ async function getCompletions(filePath, content, line, character) {
 }
 
 /**
- * Fetch hover information from clangd
- * @param {string} filePath 
- * @param {string} content 
- * @param {number} line 
- * @param {number} character 
- * @returns {Promise<object|null>}
+ * Fetch hover information from clangd.
+ *
+ * New callers pass a fifth argument. `null` means that `content` is included
+ * and should become the current document; any other value is the revision
+ * acknowledged by an earlier request, so the source can stay in main-process
+ * state and need not cross the preload boundary again. The four-argument form
+ * remains a raw LSP result for older callers.
+ *
+ * @param {string} filePath
+ * @param {string|undefined} content
+ * @param {number} line
+ * @param {number} character
+ * @param {number|null} [knownRevision]
+ * @returns {Promise<object|null|{hover:object|null,revision:number|null}|{miss:true}>}
  */
-async function getHover(filePath, content, line, character) {
+async function getHover(filePath, content, line, character, knownRevision) {
+    const tokenMode = knownRevision !== undefined;
     const fileUri = getFileUri(filePath);
     const gen = closeGen(fileUri);
     const ready = await ensureReady();
     if (!ready || closeGen(fileUri) !== gen) {
-        return null;
+        return tokenMode ? { hover: null, revision: null } : null;
     }
 
-    syncDocument(fileUri, content);
+    let revision;
+    if (knownRevision != null) {
+        revision = documentRevisions.get(fileUri);
+        // A token is valid only for the currently open document. A miss tells
+        // the renderer to send one fresh full-source request.
+        if (revision !== knownRevision) return { miss: true };
+    } else {
+        if (typeof content !== 'string') return tokenMode ? { miss: true } : null;
+        revision = syncDocument(fileUri, content);
+    }
 
     const hoverParams = {
         textDocument: {
@@ -1153,10 +1189,14 @@ async function getHover(filePath, content, line, character) {
 
     try {
         const result = await sendRequest('textDocument/hover', hoverParams);
-        return result;
+        // Do not let a hover computed for an older document or a closed tab
+        // escape after a newer edit/reload has replaced the clangd document.
+        const isCurrent = closeGen(fileUri) === gen && documentRevisions.get(fileUri) === revision;
+        if (!isCurrent) return tokenMode ? { miss: true } : null;
+        return tokenMode ? { hover: result, revision } : result;
     } catch (err) {
         console.error('[Clangd] getHover request failed:', err);
-        return null;
+        return tokenMode ? { hover: null, revision: null } : null;
     }
 }
 

@@ -207,7 +207,7 @@ function settingsOverride(langId) {
  * the one Settings names (java next to javac), PATH, the tool's home variable and its usual folders.
  * @returns {{file: string, prefix: string[]}|null} prefix: arguments that come first (`py -3`)
  */
-function locateTool(name, { override = '', near = '' } = {}) {
+function locateToolUncached(name, { override = '', near = '' } = {}) {
     const spec = TOOLS[name];
     if (override) {
         if (isFile(override)) return { file: override, prefix: [] };
@@ -236,6 +236,53 @@ function locateTool(name, { override = '', near = '' } = {}) {
     if (IS_WIN) for (const pattern of spec.dirs || []) candidates.push(...expandPattern(pattern));
     // The registry's PATH (a PowerShell call) only when the app's own PATH has no such tool.
     return pick(candidates) || (IS_WIN ? pick(spec.names.flatMap(n => onPath(n, pathDirs(true)))) : null);
+}
+
+// A Run All batch asks for the same interpreter once per test. Cache only the tool lookup—not
+// the run.json arguments—so settings are still read on every call and PATH/config changes take
+// effect immediately. Positive entries are short-lived so registry PATH changes are noticed;
+// every hit also verifies that the executable still exists.
+const TOOL_LOOKUP_CACHE_LIMIT = 24;
+const TOOL_LOOKUP_TTL_MS = 1000;
+const toolLookupCache = new Map();
+
+function toolLookupCacheKey(name, { override = '', near = '' } = {}) {
+    const spec = TOOLS[name] || {};
+    const home = spec.home ? String(process.env[spec.home] || '') : '';
+    return [
+        name, override, near,
+        String(process.env.PATH || ''), String(process.env.Path || ''), home,
+    ].join('\0');
+}
+
+function trimToolLookupCache() {
+    while (toolLookupCache.size > TOOL_LOOKUP_CACHE_LIMIT) {
+        toolLookupCache.delete(toolLookupCache.keys().next().value);
+    }
+}
+
+function locateTool(name, options = {}) {
+    const key = toolLookupCacheKey(name, options);
+    const now = Date.now();
+    const cached = toolLookupCache.get(key);
+    if (cached && now < cached.expiresAt) {
+        if (!cached.tool || isFile(cached.tool.file)) {
+            // Refresh LRU order while retaining the bounded cache.
+            toolLookupCache.delete(key);
+            toolLookupCache.set(key, cached);
+            return cached.tool;
+        }
+        toolLookupCache.delete(key);
+    }
+
+    const tool = locateToolUncached(name, options);
+    toolLookupCache.delete(key);
+    toolLookupCache.set(key, {
+        tool,
+        expiresAt: now + TOOL_LOOKUP_TTL_MS,
+    });
+    trimToolLookupCache();
+    return tool;
 }
 
 const INSTALL_HINT = {
@@ -645,17 +692,22 @@ function runCommand(artifact, { memoryLimit = 0, interactive = false } = {}) {
     const langOf = { python: 'python', node: 'javascript', java: 'java' };
     const langId = langOf[spec.tool];
     if (!langId) throw new Error(`Unknown program kind in ${artifact}`);
-    const tool = spec.tool === 'java'
-        ? (locateTool('java', { near: (toolsFor('java').tools || {}).javac?.file || '' }) || locateTool('java'))
-        : locateTool(spec.tool, { override: settingsOverride(langId) });
+    const override = settingsOverride(langId);
+    let tool;
+    if (spec.tool === 'java') {
+        // toolsFor already resolves both javac and java next to each other. Reuse its java
+        // result; only fall back to a runtime-only lookup when javac is unavailable.
+        const found = toolsFor('java', override);
+        tool = found.tools?.java || locateTool('java');
+    } else {
+        tool = locateTool(spec.tool, { override });
+    }
     if (!tool) throw new Error(`${spec.tool} was not found. ${INSTALL_HINT[langId]}`);
     const args = Array.isArray(spec.args) ? spec.args.map(String) : [];
     if (spec.tool === 'python') {
         return { file: tool.file, args: [...tool.prefix, ...(interactive ? ['-u'] : []), ...args], env: PY_ENV, interpreted: true };
     }
-    if (spec.tool === 'java') {
-        return { file: tool.file, args: [...jvmArgs(memoryLimit), ...args], env: {}, interpreted: true };
-    }
+    if (spec.tool === 'java') return { file: tool.file, args: [...jvmArgs(memoryLimit), ...args], env: {}, interpreted: true };
     return { file: tool.file, args: [...tool.prefix, ...args], env: {}, interpreted: true };
 }
 
@@ -685,6 +737,7 @@ function probeVersion(tool, spec) {
  */
 async function listLanguages(typed = null) {
     registryPathCache.at = 0;   // look again: the user may have just installed something
+    toolLookupCache.clear();    // do not let a short negative cache hide that newly installed tool
     return Promise.all(Object.entries(LANGUAGES).map(async ([id, lang]) => {
         const override = typed && typeof typed === 'object' ? String(typed[id] || '').trim() : settingsOverride(id);
         const found = toolsFor(id, override);

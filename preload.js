@@ -59,7 +59,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     run: (data) => ipcRenderer.invoke('run', data),
     sendInput: (input) => ipcRenderer.invoke('send-input', input),
     closeInput: () => ipcRenderer.invoke('close-input'),
-    sendInputFile: (filePath) => ipcRenderer.invoke('send-input-file', filePath),
+    sendInputFile: (filePath, runId) => ipcRenderer.invoke('send-input-file', filePath, runId),
     inputFileInfo: (filePath) => ipcRenderer.invoke('input-file-info', filePath),
     testsImport: (folder) => ipcRenderer.invoke('tests-import', folder),
     testsExport: (options) => ipcRenderer.invoke('tests-export', options),
@@ -78,13 +78,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onFileOpened: (callback) => ipcRenderer.on('file-opened', (event, data) => callback(data)),
 
     // Process events
-    onProcessStarted: (callback) => ipcRenderer.on('process-started', () => callback()),
+    onProcessStarted: (callback) => ipcRenderer.on('process-started', (event, runId) => callback(runId)),
     onProcessExternalStarted: (callback) => ipcRenderer.on('process-external-started', () => callback()),
     onProcessExternalExit: (callback) => ipcRenderer.on('process-external-exit', (event, data) => callback(data)),
-    onProcessOutput: (callback) => ipcRenderer.on('process-output', (event, data) => callback(data)),
-    onProcessError: (callback) => ipcRenderer.on('process-error', (event, data) => callback(data)),
+    onProcessOutput: (callback) => ipcRenderer.on('process-output', (event, data, runId) => callback(data, runId)),
+    onProcessError: (callback) => ipcRenderer.on('process-error', (event, data, runId) => callback(data, runId)),
     onProcessExit: (callback) => ipcRenderer.on('process-exit', (event, data) => callback(data)),
-    onProcessStopped: (callback) => ipcRenderer.on('process-stopped', () => callback()),
+    onProcessStopped: (callback) => ipcRenderer.on('process-stopped', (event, runId) => callback(runId)),
 
     // Debugger (GDB/MI)
     debugStart: (data) => ipcRenderer.invoke('debug:start', data),
@@ -179,7 +179,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Real-time syntax checking
     syntaxCheck: (content, filePath, docId) => ipcRenderer.invoke('syntax-check', { content, filePath, docId }),
     getClangdCompletions: (filePath, content, line, character) => ipcRenderer.invoke('get-clangd-completions', { filePath, content, line, character }),
-    getClangdHover: (filePath, content, line, character) => ipcRenderer.invoke('get-clangd-hover', { filePath, content, line, character }),
+    // New hover callers pass a fifth argument: null means the content is
+    // included, while a revision token means the main process already has the
+    // document and only needs the position. Keep the four-argument form raw
+    // for older callers.
+    getClangdHover: (filePath, content, line, character, knownRevision) => {
+        const payload = { filePath, line, character };
+        if (knownRevision !== undefined) payload.knownRevision = knownRevision;
+        if (knownRevision == null) payload.content = content;
+        return ipcRenderer.invoke('get-clangd-hover', payload);
+    },
     getClangdDefinition: (request) => ipcRenderer.invoke('get-clangd-definition', request),
     getClangdReferences: (request) => ipcRenderer.invoke('get-clangd-references', request),
     getClangdCodeActions: (request) => ipcRenderer.invoke('get-clangd-code-actions', request),

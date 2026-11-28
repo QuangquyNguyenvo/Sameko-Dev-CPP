@@ -25,6 +25,8 @@
  * @property {string} [compiler] - Compiler name used
  * @property {number} [time] - Compilation time in ms
  * @property {string[]} [linkedFiles] - Additional linked source files
+ * @property {boolean} [sourceSaved] - The compile IPC wrote this source snapshot before building
+ * @property {string} [saveError] - The source write failed and the build never started
  */
 
 /**

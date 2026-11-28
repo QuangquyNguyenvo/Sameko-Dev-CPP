@@ -16,9 +16,9 @@ function setMainWindow(window) {
     mainWindow = window;
 
     // Setup renderer callback
-    compiler.setSendToRendererCallback((channel, data) => {
+    compiler.setSendToRendererCallback((channel, ...args) => {
         if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.webContents.send(channel, data);
+            mainWindow.webContents.send(channel, ...args);
         }
     });
 }
@@ -32,16 +32,27 @@ function registerHandlers() {
     });
 
     // Compile
-    ipcMain.handle(IPC.COMPILER.COMPILE, async (event, { filePath, content, flags, useLLD, noBuildCache, singleFileMode, realtimeOutput, untitledId, untitledExt, variant }) => {
-        return await compiler.compile({ filePath, content, flags, useLLD, noBuildCache, singleFileMode, realtimeOutput, untitledId, untitledExt, variant });
+    ipcMain.handle(IPC.COMPILER.COMPILE, async (event, { filePath, content, flags, useLLD, noBuildCache, singleFileMode, realtimeOutput, untitledId, untitledExt, variant, saveSource }) => {
+        const request = { filePath, content, flags, useLLD, noBuildCache, singleFileMode, realtimeOutput, untitledId, untitledExt, variant };
+        if (!saveSource || !filePath) return compiler.compile(request);
+        try {
+            await require('./file-handlers').writeTextFile(filePath, content);
+        } catch (error) {
+            return { success: false, saveError: error.message };
+        }
+        try {
+            return { ...await compiler.compile(request), sourceSaved: true };
+        } catch (error) {
+            return { success: false, error: error.message, sourceSaved: true };
+        }
     });
 
     // Run
-    ipcMain.handle(IPC.COMPILER.RUN, async (event, { exePath, cwd, useExternalTerminal }) => {
+    ipcMain.handle(IPC.COMPILER.RUN, async (event, { exePath, cwd, useExternalTerminal, runId, initialInput }) => {
         if (useExternalTerminal) {
             return await compiler.runExternal({ exePath, cwd });
         }
-        return await compiler.run({ exePath, cwd });
+        return compiler.run({ exePath, cwd, runId, initialInput });
     });
 
     // Stop
@@ -61,8 +72,8 @@ function registerHandlers() {
     });
 
     // Stream a test input file into the running process (Input card › Load input from file)
-    ipcMain.handle(IPC.COMPILER.SEND_INPUT_FILE, async (event, filePath) => {
-        return compiler.sendInputFile(filePath);
+    ipcMain.handle(IPC.COMPILER.SEND_INPUT_FILE, async (event, filePath, runId) => {
+        return compiler.sendInputFile(filePath, runId);
     });
 
     // Size, line count and first lines of a test input file, for its preview

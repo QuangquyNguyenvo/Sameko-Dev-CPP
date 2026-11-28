@@ -95,8 +95,13 @@ function registerHandlers() {
     // checker: a compiled testlib checker that judges instead (competitive/checker.js).
     // inputPath / expectedPath: a test kept on disk. fileIO: a problem judged through files.
     // interactor: a compiled testlib interactor (competitive/interactor.js).
-    ipcMain.handle('run-test', async (event, { exePath, input, expectedOutput, timeLimit, memoryLimit, compare, checker, cwd, args, inputPath, expectedPath, fileIO, interactor }) => {
-        return await competitive.runTest({ exePath, input, expectedOutput, timeLimit, memoryLimit, compare, checker, cwd, args, inputPath, expectedPath, fileIO, interactor });
+    ipcMain.handle(IPC.TESTS.RUN, async (event, options = {}) => {
+        const { exePath, input, expectedOutput, timeLimit, memoryLimit, compare, checker, cwd, args,
+            inputPath, expectedPath, fileIO, interactor, debug, testMeta, profiling, outputMode } = options;
+        return await competitive.runTest({
+            exePath, input, expectedOutput, timeLimit, memoryLimit, compare, checker, cwd, args,
+            inputPath, expectedPath, fileIO, interactor, debug, testMeta, profiling, outputMode
+        });
     });
 
     ipcMain.handle(IPC.TESTS.IMPORT, (event, folder) => require('../services/competitive/test-files').importTests(folder));

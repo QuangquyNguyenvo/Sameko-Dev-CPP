@@ -22,6 +22,7 @@ const { describeExit, describeStartError, startErrorCode } = require('../../shar
 const { blockedStartMessage, EXE_SUFFIX, IS_WIN, IS_MAC, IS_LINUX, ensurePrivateDir, readProcMemoryKB, which, appTempDir, killProcessTree } = require('../../shared/platform');
 
 let runningProcess = null;
+let runningRunId;
 let activeCompilerProcess = null;
 
 let runningMemoryPollInterval = null;
@@ -50,16 +51,17 @@ function cleanupOldBuildArtifacts(buildsDir) {
         const isArtifact = (name) => (IS_WIN
             ? name.toLowerCase().endsWith('.exe')
             : path.extname(name) === '');
-        const entries = fs.readdirSync(buildsDir, { withFileTypes: true })
-            .filter((e) => e.isFile() && isArtifact(e.name))
+        const artifacts = fs.readdirSync(buildsDir, { withFileTypes: true })
+            .filter((e) => e.isFile() && isArtifact(e.name));
+        if (artifacts.length <= MAX_BUILD_ARTIFACTS) return;
+
+        const entries = artifacts
             .map((e) => {
                 const fullPath = path.join(buildsDir, e.name);
                 const stat = fs.statSync(fullPath);
                 return { fullPath, mtimeMs: stat.mtimeMs };
             })
             .sort((a, b) => b.mtimeMs - a.mtimeMs);
-
-        if (entries.length <= MAX_BUILD_ARTIFACTS) return;
 
         for (const item of entries.slice(MAX_BUILD_ARTIFACTS)) {
             try {
@@ -221,9 +223,9 @@ function killProcessesByExePath(exePath) {
  * @param {string} channel
  * @param {*} data
  */
-function sendToRenderer(channel, data) {
+function sendToRenderer(channel, ...args) {
     if (sendToRendererCallback) {
-        sendToRendererCallback(channel, data);
+        sendToRendererCallback(channel, ...args);
     }
 }
 
@@ -332,8 +334,6 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
     if (!fs.existsSync(buildsDir)) {
         ensurePrivateDir(buildsDir);
     }
-    cleanupOldBuildArtifacts(buildsDir);
-
     // Tag the artifact with a hash of the full source path: every contest has
     // an A.cpp, and two of them used to share (and overwrite) one A.exe.
     const outputTag = usingTempFile
@@ -472,6 +472,10 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
         };
     }
     buildCache.delete(outputPath);
+
+    // Prune only when a real build is needed. Cached builds should not pay the
+    // synchronous directory scan/stat cost on every compile request.
+    cleanupOldBuildArtifacts(buildsDir);
 
     // Release file lock on target output executable if it exists
     if (fs.existsSync(outputPath)) {
@@ -906,9 +910,11 @@ async function runExternalMac({ command, workingDir, env, startTime }) {
  * @param {Object} options
  * @param {string} options.exePath - Path to executable
  * @param {string} [options.cwd] - Working directory
+ * @param {string} [options.runId] - Renderer run identity for output and lifecycle events
+ * @param {string} [options.initialInput] - Text to send when stdin opens
  * @returns {Promise<import('../../shared/types').RunResult>}
  */
-async function run({ exePath, cwd }) {
+async function run({ exePath, cwd, runId, initialInput }) {
     if (!exePath || !fs.existsSync(exePath)) {
         return { success: false, error: missingExeMessage(exePath) };
     }
@@ -954,6 +960,7 @@ async function run({ exePath, cwd }) {
     }
 
     const child = runningProcess;
+    runningRunId = runId;
     const pid = child.pid;
 
     // Memory polling. Windows: `tasklist` (instantaneous working set, so we
@@ -1009,6 +1016,7 @@ async function run({ exePath, cwd }) {
     let pendingErr = '';
     let flushTimer = null;
     let paused = false;
+    let outputChunks = 0;
 
     const backlog = () => pendingOut.length + pendingErr.length;
 
@@ -1038,12 +1046,14 @@ async function run({ exePath, cwd }) {
             const part = pendingOut.length > budget ? pendingOut.slice(0, budget) : pendingOut;
             pendingOut = pendingOut.slice(part.length);
             budget -= part.length;
-            sendToRenderer('process-output', part);
+            outputChunks++;
+            sendToRenderer('process-output', part, runId);
         }
         if (pendingErr && budget > 0) {
             const part = pendingErr.length > budget ? pendingErr.slice(0, budget) : pendingErr;
             pendingErr = pendingErr.slice(part.length);
-            sendToRenderer('process-error', part);
+            outputChunks++;
+            sendToRenderer('process-error', part, runId);
         }
         if (backlog() <= LOW_WATER_CHARS) setPaused(false);
         if (backlog() > 0) scheduleFlush();
@@ -1086,6 +1096,7 @@ async function run({ exePath, cwd }) {
                 runningMemoryPollInterval = null;
             }
             runningProcess = null;
+            runningRunId = undefined;
             return true;
         }
         return false;
@@ -1100,6 +1111,8 @@ async function run({ exePath, cwd }) {
         if (stats && Number.isFinite(stats.startError)) reportStartError(stats.startError, exePath);
         const timed = stats && Number.isFinite(stats.wallMs) ? stats : null;
         sendToRenderer('process-exit', {
+            runId,
+            outputChunks,
             code,
             signal: signal || null,               // POSIX: a crash is a signal, code is null
             crash: describeExit(code, signal),    // what a crash code means (exit-codes.js)
@@ -1114,16 +1127,20 @@ async function run({ exePath, cwd }) {
         // does not stay in "Running".
         if (!finish()) return;
         readStats(statsFile);
-        sendToRenderer('process-error', `Could not start the program: ${err && err.message ? err.message : err}\n`);
+        outputChunks++;
+        sendToRenderer('process-error', `Could not start the program: ${err && err.message ? err.message : err}\n`, runId);
         // "spawn UNKNOWN" is what Node says when an antivirus blocks the file it starts.
         if (err && SPAWN_BLOCKED.has(err.code)) {
             sendToRenderer('system-message', { type: 'error', message: startFailureMessage(err, launcher || exePath) });
         }
-        sendToRenderer('process-exit', { code: -1, executionTime: Date.now() - runStartTime, cpuTime: null, peakMemoryKB: 0 });
+        sendToRenderer('process-exit', { runId, outputChunks, code: -1, executionTime: Date.now() - runStartTime, cpuTime: null, peakMemoryKB: 0 });
     });
 
     // Send initial signal
-    sendToRenderer('process-started');
+    // A fast exit may close the pipe while the initial input is still queued.
+    child.stdin.on('error', () => { });
+    sendToRenderer('process-started', runId);
+    if (typeof initialInput === 'string') sendInput(initialInput);
     return { success: true, started: true, pid };
 }
 
@@ -1159,9 +1176,9 @@ function closeInput() {
  * @param {string} filePath
  * @returns {Promise<{success: boolean, bytes?: number, error?: string}>}
  */
-function sendInputFile(filePath) {
+function sendInputFile(filePath, runId) {
     const child = runningProcess;
-    if (!child || !child.stdin || child.stdin.destroyed) {
+    if (!child || !child.stdin || child.stdin.destroyed || (runId !== undefined && runId !== runningRunId)) {
         return Promise.resolve({ success: false, error: 'No running process' });
     }
     return new Promise((resolve) => {
@@ -1224,7 +1241,9 @@ async function inputFileInfo(filePath, maxBytes = 4096) {
 function stopProcess() {
     const child = runningProcess;
     if (!child) return false;
+    const runId = runningRunId;
     runningProcess = null;
+    runningRunId = undefined;
 
     if (runningMemoryPollInterval) {
         clearInterval(runningMemoryPollInterval);
@@ -1245,7 +1264,7 @@ function stopProcess() {
     try { if (child.stderr) child.stderr.destroy(); } catch (_) { }
     try { if (!IS_WIN) killProcessTree(child); else child.kill('SIGKILL'); } catch (_) { }
 
-    sendToRenderer('process-stopped');
+    sendToRenderer('process-stopped', runId);
     return true;
 }
 

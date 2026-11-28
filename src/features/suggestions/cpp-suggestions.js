@@ -80,6 +80,23 @@ window.registerCppIntellisense = function (monaco) {
         return 'untitled';
     };
 
+    // Only the main-process acknowledgement token is retained. The model is
+    // the WeakMap key, so closing a tab releases this state without retaining
+    // its source text in the renderer or preload.
+    const hoverStates = new WeakMap();
+    const hoverDocumentVersion = (model) => {
+        if (!model || (typeof model !== 'object' && typeof model !== 'function')) return null;
+        return typeof model.getVersionId === 'function'
+            ? model.getVersionId()
+            : typeof model.getAlternativeVersionId === 'function'
+                ? model.getAlternativeVersionId() : null;
+    };
+    const hoverIsCurrent = (model, modelVersion, filePath, cancellationToken) => {
+        if (cancellationToken && cancellationToken.isCancellationRequested) return false;
+        if (typeof model.isDisposed === 'function' && model.isDisposed()) return false;
+        return hoverDocumentVersion(model) === modelVersion && clangdFileId(model) === filePath;
+    };
+
     // The Settings switches have to be honoured HERE, not only through Monaco's
     // `suggest.showX` flags. Those filter by item kind, and clangd returns kinds
     // the editor options never listed, so with "Intellisense (Code Suggestions)"
@@ -422,72 +439,92 @@ window.registerCppIntellisense = function (monaco) {
 
         // Hover (clangd only)
         monaco.languages.registerHoverProvider(lang, {
-            provideHover: async (model, position) => {
+            provideHover: async (model, position, cancellationToken) => {
                 // Quick-info tooltips are clangd's other half; a user who turned
                 // Intellisense off does not expect them either. The debugger
                 // registers its own hover provider for evaluating variables while
                 // stopped, and that one is unaffected.
                 if (!intellisenseEnabled()) return null;
+                if (!model || (typeof model.isDisposed === 'function' && model.isDisposed())) return null;
 
+                const filePath = clangdFileId(model);
+                const modelVersion = hoverDocumentVersion(model);
+                if (!hoverIsCurrent(model, modelVersion, filePath, cancellationToken)) return null;
                 const word = model.getWordAtPosition(position);
 
                 if (window.electronAPI && window.electronAPI.getClangdHover) {
-                    {
-                        const filePath = clangdFileId(model);
-                        const content = model.getValue();
-                        const line = position.lineNumber - 1;
-                        const character = position.column - 1;
+                    const line = position.lineNumber - 1;
+                    const character = position.column - 1;
+                    const cached = hoverStates.get(model);
+                    const revision = cached && cached.modelVersion === modelVersion && cached.filePath === filePath
+                        ? cached.mainRevision : null;
+                    const requestHover = (knownRevision) => window.electronAPI.getClangdHover(
+                        filePath, knownRevision === null ? model.getValue() : undefined, line, character, knownRevision
+                    );
 
-                        try {
-                            const clangdHover = await window.electronAPI.getClangdHover(filePath, content, line, character);
-                            if (clangdHover && clangdHover.contents) {
-                                let formattedContents = [];
-                                const mapLspContentToMonaco = (c) => {
-                                    if (!c) return null;
-                                    if (typeof c === 'string') {
-                                        return { value: c };
-                                    }
-                                    if (typeof c === 'object' && typeof c.value === 'string') {
-                                        if (c.kind === 'markdown' || !c.language) {
-                                            return { value: c.value };
-                                        } else {
-                                            return { value: `\`\`\`${c.language}\n${c.value}\n\`\`\`` };
-                                        }
-                                    }
-                                    return null;
-                                };
+                    try {
+                        let response = await requestHover(revision);
+                        if (!hoverIsCurrent(model, modelVersion, filePath, cancellationToken)) return null;
 
-                                if (Array.isArray(clangdHover.contents)) {
-                                    clangdHover.contents.forEach(c => {
-                                        const mapped = mapLspContentToMonaco(c);
-                                        if (mapped) formattedContents.push(mapped);
-                                    });
-                                } else {
-                                    const mapped = mapLspContentToMonaco(clangdHover.contents);
-                                    if (mapped) formattedContents.push(mapped);
-                                }
-
-                                if (formattedContents.length > 0) {
-                                    let range = undefined;
-                                    if (clangdHover.range) {
-                                        const startLine = clangdHover.range.start.line + 1;
-                                        const startCol = clangdHover.range.start.character + 1;
-                                        const endLine = clangdHover.range.end.line + 1;
-                                        const endCol = clangdHover.range.end.character + 1;
-                                        range = new monaco.Range(startLine, startCol, endLine, endCol);
-                                    } else if (word) {
-                                        range = new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn);
-                                    }
-
-                                    return {
-                                        range: range,
-                                        contents: formattedContents
-                                    };
-                                }
-                            }
-                        } catch (err) {
-                            console.error('[Clangd] hover error:', err);
+                        if (revision !== null && response?.miss) {
+                            // clangd no longer has the acknowledged document. Resend it once.
+                            response = await requestHover(null);
+                            if (!hoverIsCurrent(model, modelVersion, filePath, cancellationToken)) return null;
                         }
+
+                        if (modelVersion !== null && Number.isInteger(response?.revision)) {
+                            hoverStates.set(model, { modelVersion, filePath, mainRevision: response.revision });
+                        } else {
+                            hoverStates.delete(model);
+                        }
+                        const clangdHover = response?.hover ?? response;
+                        if (clangdHover && clangdHover.contents) {
+                            let formattedContents = [];
+                            const mapLspContentToMonaco = (c) => {
+                                if (!c) return null;
+                                if (typeof c === 'string') {
+                                    return { value: c };
+                                }
+                                if (typeof c === 'object' && typeof c.value === 'string') {
+                                    if (c.kind === 'markdown' || !c.language) {
+                                        return { value: c.value };
+                                    } else {
+                                        return { value: `\`\`\`${c.language}\n${c.value}\n\`\`\`` };
+                                    }
+                                }
+                                return null;
+                            };
+
+                            if (Array.isArray(clangdHover.contents)) {
+                                clangdHover.contents.forEach(c => {
+                                    const mapped = mapLspContentToMonaco(c);
+                                    if (mapped) formattedContents.push(mapped);
+                                });
+                            } else {
+                                const mapped = mapLspContentToMonaco(clangdHover.contents);
+                                if (mapped) formattedContents.push(mapped);
+                            }
+
+                            if (formattedContents.length > 0) {
+                                let range = undefined;
+                                if (clangdHover.range) {
+                                    const startLine = clangdHover.range.start.line + 1;
+                                    const startCol = clangdHover.range.start.character + 1;
+                                    const endLine = clangdHover.range.end.line + 1;
+                                    const endCol = clangdHover.range.end.character + 1;
+                                    range = new monaco.Range(startLine, startCol, endLine, endCol);
+                                } else if (word) {
+                                    range = new monaco.Range(position.lineNumber, word.startColumn, position.lineNumber, word.endColumn);
+                                }
+
+                                return {
+                                    range: range,
+                                    contents: formattedContents
+                                };
+                            }
+                        }
+                    } catch (err) {
+                        console.error('[Clangd] hover error:', err);
                     }
                 }
 

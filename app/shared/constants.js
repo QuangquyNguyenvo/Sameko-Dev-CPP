@@ -77,6 +77,7 @@ const IPC = {
 
     // Tests as files
     TESTS: {
+        RUN: 'run-test',
         IMPORT: 'tests-import',
         EXPORT: 'tests-export',
         DEBUG_DIR: 'tests-debug-dir',

@@ -13,6 +13,13 @@
 let batchTestResults = [];
 let isBatchTesting = false;
 
+/** Options shared by counted test runs. Debug hashes are opt-in because they
+ * require another pass over potentially large input/output strings. */
+function batchTestTransportOptions(index) {
+    if (App.settings.execution.batchDebug !== true) return {};
+    return { debug: true, testMeta: { index, name: `Test ${index + 1}` } };
+}
+
 function resetTestRunResults() {
     batchTestResults = [];
     showTestInBoxes(null);
@@ -235,7 +242,8 @@ async function runAllTests() {
                     timeLimit: timeLimit,
                     ...judgeOptions(problem),
                     ...runOptions,
-                    cwd: sourceDir
+                    cwd: sourceDir,
+                    outputMode: 'discard'
                 });
             } catch (_) {
                 // Ignore warm-up failures and continue with actual judged runs.
@@ -265,8 +273,7 @@ async function runAllTests() {
                     ...judge,
                     ...runOptions,
                     cwd: sourceDir,
-                    debug: true,
-                    testMeta: { index: i, name: `Test ${i + 1}` }
+                    ...batchTestTransportOptions(i)
                 });
                 result.testIndex = i;
                 result.testName = `Test ${i + 1}`;
@@ -296,8 +303,7 @@ async function runAllTests() {
                     ...judge,
                     ...runOptions,
                     cwd: sourceDir,
-                    debug: true,
-                    testMeta: { index: i, name: `Test ${i + 1}` }
+                    ...batchTestTransportOptions(i)
                 });
                 again.testIndex = i;
                 again.testName = `Test ${i + 1}`;
@@ -450,8 +456,7 @@ async function runSingleTestByIndex(testIndex) {
             ...judging,
             ...runOptions,
             cwd: sourceDir,
-            debug: true,
-            testMeta: { index: testIndex, name: `Test ${testIndex + 1}` }
+            ...batchTestTransportOptions(testIndex)
         });
 
         result.testIndex = testIndex;

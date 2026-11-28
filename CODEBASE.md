@@ -249,7 +249,8 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
 **Compile** (`buildActiveTab` in `renderer/app/build.js` → `compile` IPC → `executor.compile`)
 - Flags are assembled in the renderer by `buildCompileFlags()`; the default is `-O0 -g0` (tests: -O2), and
   `executor` prepends `-std=c++17` when no `-std=` is present.
-- A saved file is written to disk first; an untitled tab is compiled from
+- Build & Run sends one source snapshot. Main saves a named file before compiling it and
+  reports whether the save succeeded. An untitled tab is compiled from
   `<temp>/cpp-ide/temp_code.cpp`.
 - Output is `<temp>/cpp-ide-builds/<basename>-<hash of full path>.exe`; the path is stored on the
   tab (`tab.exePath`) and "Run only" runs the active tab's build.
@@ -279,8 +280,9 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   launcher writes `{wallMs, cpuMs, peakKB}` that `process-exit` reports. If the launcher is not
   built yet (first seconds after the first launch) or on Linux, the program is spawned directly and
   time comes from Node, memory from `tasklist` / `/proc`.
-- The INPUT panel is sent as one block 20 ms after start; the terminal input box sends its whole
-  text in one IPC (Enter on an empty box sends an empty line).
+- Initial INPUT text travels with the Run request and is written to stdin on start. The
+  terminal input box still sends its whole text in one IPC (Enter on an empty box sends an
+  empty line). A run ID and final chunk count tie the exit verdict to its complete output.
 - Judging uses only the program's stdout, captured per run in `build.js` (`beginRunCapture` /
   `captureRunOutput`, capped at 8 MiB, tied to the tab that ran). stderr is captured beside it
   (`captureRunStderr`, 1 MiB) for the Stderr card, shown when non-empty. The terminal keeps no copy of
@@ -366,7 +368,7 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   them; Settings › Keybindings edits the profile the Vim Mode switch selects.
 
 **Batch tests** (`runAllTests` → `run-test` IPC → `batch-tester.runTest`)
-- One warm-up run, then the tests run on a pool of up to 4 workers
+- One warm-up run whose stdout is discarded before IPC, then the tests run on a pool of up to 4 workers
   (`settings.execution.parallelTests`, default on); a test that timed out or used more than 60% of
   the limit is re-run alone. Each test goes through the run launcher, output is capped at 16 MB.
 - A test with a blank expected output is `RAN` (ran cleanly, not judged): not AC, not failed, and

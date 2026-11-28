@@ -90,21 +90,10 @@ async function buildActiveTab({ runAfter }) {
     let built = false;
 
     try {
-        tab.content = tab.model && !tab.model.isDisposed() ? tab.model.getValue() : editor.getValue();
-
-        if (tab.path) {
-            // Compiling the old file after a failed save would build stale code
-            // and mark the unsaved edits clean.
-            const text = tab.content;
-            const saved = await window.electronAPI.saveFile({ path: tab.path, content: text });
-            if (!saved || saved.success === false) {
-                const reason = (saved && saved.error) || 'unknown error';
-                log(`Could not save ${tab.name}: ${reason}. Nothing was compiled.`, 'error');
-                setStatus('Save failed', 'error');
-                return;
-            }
-            markTabSaved(tab, text);
-        }
+        const content = tab.model && !tab.model.isDisposed() ? tab.model.getValue() : editor.getValue();
+        tab.content = content;
+        const compiledPath = tab.path;
+        const compiledVersion = tab.model?.getVersionId();
 
         // Off: the layout stays as the user left it; a failed build still opens Problems below.
         if (App.settings.execution.showTerminalOnRun !== false) {
@@ -131,13 +120,12 @@ async function buildActiveTab({ runAfter }) {
         if (window.FileExplorer) window.FileExplorer.notifyBuildEvent(tab.path, 'compile-start');
 
         const t0 = Date.now();
-        const compiledPath = tab.path;
-        const compiledVersion = tab.model?.getVersionId();
         const r = await window.electronAPI.compile({
-            filePath: tab.path,
-            untitledId: tab.path ? '' : tab.id,
-            untitledExt: tab.path ? '' : fileExtension(tab.name),
-            content: tab.content,
+            filePath: compiledPath,
+            saveSource: !!compiledPath,
+            untitledId: compiledPath ? '' : tab.id,
+            untitledExt: compiledPath ? '' : fileExtension(tab.name),
+            content,
             flags: buildCompileFlags(),
             singleFileMode: App.settings.compiler.singleFileMode !== false,
             useLLD: App.settings.compiler.useLLD !== false,
@@ -145,6 +133,12 @@ async function buildActiveTab({ runAfter }) {
             realtimeOutput: App.settings.execution.realtimeOutput !== false
         });
         const ms = Date.now() - t0;
+        if (r.saveError !== undefined) {
+            log(`Could not save ${tab.name}: ${r.saveError}. Nothing was compiled.`, 'error');
+            setStatus('Save failed', 'error');
+            return;
+        }
+        if (r.sourceSaved && tab.path === compiledPath && App.tabs.includes(tab)) markTabSaved(tab, content);
 
         if (r.success) {
             App.exePath = r.outputPath;
@@ -253,11 +247,15 @@ async function runNow(clearTerminal) {
     const inputValue = inputFile ? '' : document.getElementById('input-area').value;
     const inputText = inputValue.replace(/\r?\n$/, '');
     const hasInput = !inputFile && inputValue.length > 0;
+    const useExternalTerminal = App.settings.execution.useExternalTerminal;
+    const autoSendInput = !useExternalTerminal && App.settings.execution.autoSendInput;
+    const initialInput = autoSendInput && hasInput ? inputText : undefined;
 
     // Run Only while a program runs: stop it first, so its "stopped" event and
     // its time limit cannot end the new run.
     if (App.isRunning) await stop();
     const runSeq = ++App.runSeq;
+    const runId = crypto.randomUUID();
 
     if (App.settings.execution.showTerminalOnRun !== false) {
         if (!App.showTerm) {
@@ -275,7 +273,7 @@ async function runNow(clearTerminal) {
 
     log('--- Running ---', 'system');
     setStatus('Running...', '');
-    beginRunCapture(tabId);
+    beginRunCapture(tabId, runId, initialInput);
     warnIfInteractiveWithoutFlush(exeTab);
     setTabOutput(tabId, { text: '', state: 'running' });
     setRunning(true);
@@ -316,7 +314,9 @@ async function runNow(clearTerminal) {
         runResult = await window.electronAPI.run({
             exePath,
             cwd: sourceDir,
-            useExternalTerminal: App.settings.execution.useExternalTerminal
+            useExternalTerminal,
+            runId,
+            initialInput
         });
     } catch (err) {
         runResult = { success: false, error: err?.message || String(err) };
@@ -325,6 +325,9 @@ async function runNow(clearTerminal) {
     // The program never started (e.g. the .exe was deleted): no exit event will
     // come, so leave the "Running" state here.
     if (runResult && runResult.success === false) {
+        if (currentRun?.id !== runId || currentRun.finished) return;
+        currentRun.initialInput = undefined;
+        currentRun.finished = true;
         if (App.runTimeout) {
             clearTimeout(App.runTimeout);
             App.runTimeout = null;
@@ -338,46 +341,14 @@ async function runNow(clearTerminal) {
         return;
     }
 
-    // Skip auto-send input if using external terminal
-    if (App.settings.execution.useExternalTerminal) {
-        return;
-    }
-
-    if (inputFile && App.settings.execution.autoSendInput) {
+    if (inputFile && autoSendInput && currentRun?.id === runId && App.isRunning) {
         // Streamed by the main process; the terminal shows one line instead of the whole file.
         log(`< ${inputFile.split(/[\\/]/).pop()}`, 'input');
-        window.electronAPI.sendInputFile(inputFile).then((r) => {
-            if (r && !r.success && App.isRunning) log(`Could not read the input file: ${r.error}`, 'error');
+        window.electronAPI.sendInputFile(inputFile, runId).then((r) => {
+            if (currentRun?.id !== runId || !App.isRunning) return;
+            if (r && !r.success) log(`Could not read the input file: ${r.error}`, 'error');
             else if (r && r.success) armInputWaitHint(runSeq);
         });
-        return;
-    }
-
-    // Send all input at once (like freopen) for maximum speed
-    if (hasInput && App.settings.execution.autoSendInput) {
-        App.autoInputTimer = setTimeout(() => {
-            App.autoInputTimer = null;
-            if (App.isRunning && App.runSeq === runSeq) {
-                // Echo the input as a single block. Splitting huge input into one
-                // log() (and one DOM node) per line froze the UI for minutes before
-                // any program output appeared. (#48)
-                const echoLineCount = (inputText.match(/\n/g) || []).length + 1;
-                const ECHO_LINE_CAP = 5000;
-                if (echoLineCount > ECHO_LINE_CAP) {
-                    const head = inputText.split('\n').slice(0, ECHO_LINE_CAP).join('\n');
-                    log(head, 'input');
-                    log(`... (${echoLineCount - ECHO_LINE_CAP} more input lines hidden)`, 'system');
-                } else {
-                    log(inputText, 'input');
-                }
-
-                // Send entire input to stdin at once (no per-line delay). stdin stays open:
-                // a program still waiting for input shows that the Input box was short, so
-                // it is said in the terminal instead of ending the input (armInputWaitHint).
-                window.electronAPI.sendInput(inputText);
-                armInputWaitHint(runSeq);
-            }
-        }, 20);
     }
 }
 
@@ -388,11 +359,6 @@ async function stop() {
         clearTimeout(App.runTimeout);
         App.runTimeout = null;
     }
-    if (App.autoInputTimer) {
-        clearTimeout(App.autoInputTimer);
-        App.autoInputTimer = null;
-    }
-
     setRunning(false);
     log('\n[System] Process terminated.', 'system');
 
@@ -968,8 +934,8 @@ const MAX_RUN_OUTPUT_CHARS = 8 * 1024 * 1024;
 const MAX_RUN_STDERR_CHARS = 1024 * 1024;
 let currentRun = null;   // { tabId, text, truncated, stderr, stderrTruncated }
 
-function beginRunCapture(tabId) {
-    currentRun = { tabId, text: '', truncated: false, stderr: '', stderrTruncated: false,
+function beginRunCapture(tabId, id, initialInput) {
+    currentRun = { tabId, id, initialInput, outputChunks: 0, text: '', truncated: false, stderr: '', stderrTruncated: false,
         replies: 0, queries: 0, atLineStart: true };
 }
 

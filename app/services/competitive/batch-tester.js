@@ -44,7 +44,7 @@ const EXPECTED_PREVIEW_CHARS = 64 * 1024;
  * @param {string} [options.interactor] - a compiled testlib interactor that plays and judges
  * @returns {Promise<import('../../shared/types').BatchTestResult>}
  */
-async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memoryLimit = 0, compare, checker = '', cwd, args = [], debug = false, testMeta = null, profiling = false, inputPath = '', expectedPath = '', fileIO = null, interactor = '' }) {
+async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memoryLimit = 0, compare, checker = '', cwd, args = [], debug = false, testMeta = null, profiling = false, inputPath = '', expectedPath = '', fileIO = null, interactor = '', outputMode = 'full' }) {
     memoryLimit = Number.isFinite(+memoryLimit) && +memoryLimit > 0 ? Math.round(+memoryLimit) : 0;
     const programArgs = programArguments(args);
     // Linux judges memory and gives Large Stack only through the launcher: wait for its first build.
@@ -109,8 +109,8 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
             exitCode: null,
             signal: null,
             timeoutKilled: false,
-            inputHash: hashText(input || ''),
-            expectedHash: expectedOutput !== undefined && expectedOutput !== null ? hashText(expectedOutput) : null,
+            inputHash: debug ? hashText(input || '') : null,
+            expectedHash: debug && expectedOutput !== undefined && expectedOutput !== null ? hashText(expectedOutput) : null,
             actualHash: null,
             expectedNormHash: null,
             actualNormHash: null,
@@ -294,7 +294,7 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
 
             debugInfo.exitCode = code;
             debugInfo.signal = signal || null;
-            debugInfo.actualHash = hashText(output || '');
+            if (debugInfo.enabled) debugInfo.actualHash = hashText(output || '');
 
             // Determine status
             let status = 'AC';
@@ -341,8 +341,8 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
                 } else {
                     // Compare output using shared judge rules
                     const compared = compareOutputs(output, expectedOutput, compare);
-                    // The renderer always asks for debug and logs it only for a test that
-                    // failed, so an AC never normalizes its whole output just to hash it.
+                    // Debug is opt-in and logged only for a failed test, so an AC never
+                    // normalizes its whole output just to hash it.
                     if (debugInfo.enabled && !compared.matched) {
                         debugInfo.expectedNormHash = hashText(compared.expectedNorm);
                         debugInfo.actualNormHash = hashText(compared.actualNorm);
@@ -432,6 +432,14 @@ async function runTest({ exePath, input, expectedOutput, timeLimit = 3000, memor
     });
     // A profiling run's folder belongs to its caller, which reads gmon.out from it.
     if (ioDir && !profiling) await fs.promises.rm(ioDir, { recursive: true, force: true }).catch(() => { });
+    // A warm-up result is intentionally not used by the renderer. Dropping
+    // stdout before crossing IPC avoids a second large structured-clone while
+    // preserving the legacy full-output shape for every normal caller.
+    if (outputMode === 'discard' && finished && typeof finished.output === 'string') {
+        const withoutOutput = { ...finished };
+        delete withoutOutput.output;
+        return withoutOutput;
+    }
     return finished;
 }
 

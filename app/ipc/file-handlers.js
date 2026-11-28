@@ -490,4 +490,5 @@ module.exports = {
     watchFile,
     unwatchFile,
     updateFileWatcherMtime,
+    writeTextFile,
 };

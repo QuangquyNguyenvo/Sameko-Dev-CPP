@@ -11,6 +11,7 @@
 // IPC HANDLERS
 // ============================================================================
 if (window.electronAPI) {
+    const matchesRun = runId => runId === undefined || (currentRun?.id === runId && !currentRun.finished);
     window.electronAPI.onFileOpened?.(data => {
         const exists = App.tabs.find(t => t.path && pathKey(t.path) === pathKey(data.path));
         if (exists) setActive(exists.id);
@@ -26,7 +27,23 @@ if (window.electronAPI) {
         log(`Opened: ${data.path}`, 'system');
     });
 
-    window.electronAPI.onProcessStarted?.(() => setRunning(true));
+    window.electronAPI.onProcessStarted?.(runId => {
+        if (!matchesRun(runId)) return;
+        setRunning(true);
+        const input = currentRun?.initialInput;
+        if (input === undefined) return;
+        currentRun.initialInput = undefined;
+        const lineLimit = 5000;
+        let lines = 1;
+        let end = input.length;
+        for (let at = input.indexOf('\n'); at !== -1; at = input.indexOf('\n', at + 1)) {
+            if (++lines === lineLimit + 1) end = at;
+        }
+        log(input.slice(0, end), 'input');
+        if (lines > lineLimit) log(`... (${lines - lineLimit} more input lines hidden)`, 'system');
+        // The main process sent the initial input, leaving stdin open for typed replies or EOF.
+        armInputWaitHint(App.runSeq);
+    });
     window.electronAPI.onProcessExternalStarted?.(() => {
         log('External CMD launched — running...', 'info');
         setStatus('External run...', 'running');
@@ -65,9 +82,18 @@ if (window.electronAPI) {
             setStatus('Done', 'success');
         }
     });
-    window.electronAPI.onProcessOutput?.(d => { captureRunOutput(d); logProgram(d, false); });
-    window.electronAPI.onProcessError?.(d => { captureRunStderr(d); logProgram(d, true); });
-    window.electronAPI.onProcessExit?.(data => {
+    const finishProcessRun = data => {
+        if (!matchesRun(data?.runId)) return;
+        const run = currentRun;
+        if (data?.runId !== undefined && data.outputChunks > run.outputChunks) {
+            run.pendingExit = data;
+            return;
+        }
+        if (run) {
+            run.initialInput = undefined;
+            run.finished = true;
+            run.pendingExit = undefined;
+        }
         if (App.runTimeout) {
             clearTimeout(App.runTimeout);
             App.runTimeout = null;
@@ -124,9 +150,7 @@ if (window.electronAPI) {
         setRunning(false);
         showRunStats(timeStr, memStr);
 
-        // Judge the run that just ended against ITS tab, even if another tab has
-        // focus now; output still in flight is picked up by the second pass.
-        const run = currentRun;
+        // Main reports the final chunk count, so judge once with all output for this tab.
         // A crash on POSIX has no code, only a signal: still not a clean exit.
         if (run) run.exitCode = code === null || code === undefined ? (signal || null) : code;
         if (document.getElementById('expected-area')) {
@@ -135,19 +159,37 @@ if (window.electronAPI) {
 
         // Time and memory have their own status bar item (showRunStats).
         setStatus(code === 0 ? 'Done' : crash ? crash.name : `Exit: ${exitLabel}`, code === 0 ? 'success' : '');
-        if (code === 0) setTimeout(() => compareOutput(run), 100);
 
         // Notify explorer: run finished
         const _exitTab = App.tabs.find(t => t.id === (run ? run.tabId : getPreferredTabId()));
         if (window.FileExplorer && _exitTab) window.FileExplorer.notifyBuildEvent(_exitTab.path, code === 0 ? 'run-exit-0' : 'run-exit-fail');
-    });
-    window.electronAPI.onProcessStopped?.(() => {
+    };
+    const receiveProcessOutput = (data, runId, isError) => {
+        if (!matchesRun(runId)) return;
+        if (isError) captureRunStderr(data);
+        else captureRunOutput(data);
+        logProgram(data, isError);
+        const run = currentRun;
+        if (runId === undefined || !run) return;
+        run.outputChunks++;
+        if (run.pendingExit && run.outputChunks >= run.pendingExit.outputChunks) finishProcessRun(run.pendingExit);
+    };
+    window.electronAPI.onProcessOutput?.((data, runId) => receiveProcessOutput(data, runId, false));
+    window.electronAPI.onProcessError?.((data, runId) => receiveProcessOutput(data, runId, true));
+    window.electronAPI.onProcessExit?.(finishProcessRun);
+    window.electronAPI.onProcessStopped?.(runId => {
+        if (!matchesRun(runId)) return;
         if (App.runTimeout) {
             clearTimeout(App.runTimeout);
             App.runTimeout = null;
         }
         log('\n--- Stopped ---', 'warning');
-        if (currentRun) setTabOutput(currentRun.tabId, { text: runOutputText(currentRun), stderr: runStderrText(currentRun), state: 'stopped' });
+        if (currentRun) {
+            currentRun.initialInput = undefined;
+            currentRun.pendingExit = undefined;
+            currentRun.finished = true;
+            setTabOutput(currentRun.tabId, { text: runOutputText(currentRun), stderr: runStderrText(currentRun), state: 'stopped' });
+        }
         setRunning(false);
         setStatus('Stopped', '');
     });

@@ -6,6 +6,9 @@
  */
 
 const assert = require('assert');
+const fs = require('node:fs');
+const path = require('node:path');
+const vm = require('node:vm');
 const { describeExit } = require('../../app/shared/exit-codes');
 const { runJudgeSelfTests } = require('./judge');
 
@@ -47,6 +50,36 @@ check('every crash has a hint unless there is nothing to do', () => {
 });
 
 check('judge rules (test/unit/judge.js)', () => { assert.equal(runJudgeSelfTests(), true); });
+
+check('run IPC waits for the last chunk, ignores older runs and judges once', () => {
+    const callbacks = {};
+    const run = { id: 'current', tabId: 'tab', outputChunks: 0, text: '', stderr: '' };
+    let compared = 0;
+    const source = fs.readFileSync(path.join(__dirname, '../../src/renderer/app/ipc-events.js'), 'utf8');
+    vm.runInNewContext(source, {
+        window: { electronAPI: new Proxy({}, { get: (_, event) => cb => { callbacks[event] = cb; } }) },
+        document: { getElementById: () => ({}) },
+        App: { tabs: [] }, currentRun: run, log() {}, logProgram() {}, setStatus() {}, setRunning() {},
+        logInteractiveSummary() {}, showRunStats() {}, getPreferredTabId: () => 'tab',
+        captureRunOutput: text => { run.text += text; },
+        captureRunStderr: text => { run.stderr += text; },
+        compareOutput: result => {
+            compared++;
+            assert.equal(result.text, '12');
+            assert.equal(result.stderr, 'warning');
+        },
+    });
+    callbacks.onProcessOutput('1', 'current');
+    callbacks.onProcessOutput('ignored', 'older');
+    callbacks.onProcessStopped('older');
+    const exit = { code: 0, runId: 'current', outputChunks: 3 };
+    callbacks.onProcessExit(exit);
+    callbacks.onProcessError('warning', 'current');
+    assert.equal(compared, 0);
+    callbacks.onProcessOutput('2', 'current');
+    callbacks.onProcessExit(exit);
+    assert.equal(compared, 1);
+});
 
 console.log(`\n${failed ? 'FAILED' : 'ok'}`);
 process.exitCode = failed ? 1 : 0;

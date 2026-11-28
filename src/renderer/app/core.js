@@ -221,7 +221,6 @@ const App = {
     problemsTabId: null,        // tab that App.problems were reported for
     runTimeout: null,
     runSeq: 0,                  // bumped by every run(); late timers check it
-    autoInputTimer: null,       // the Input box being sent to a run that just started
     ioByTab: {},
     isSettingValue: false
 };

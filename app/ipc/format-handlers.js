@@ -37,9 +37,8 @@ function registerHandlers() {
     });
 
     // Clangd hover
-    ipcMain.handle(IPC.FORMAT.CLANGD_HOVER, async (event, { filePath, content, line, character }) => {
-        return syntax.getClangdHover(filePath, content, line, character);
-    });
+    ipcMain.handle(IPC.FORMAT.CLANGD_HOVER, (event, { filePath, content, line, character, knownRevision }) =>
+        syntax.getClangdHover(filePath, content, line, character, knownRevision));
     ipcMain.handle(IPC.FORMAT.CLANGD_DEFINITION, (event, request) => syntax.getClangdDefinition(request));
     ipcMain.handle(IPC.FORMAT.CLANGD_REFERENCES, (event, request) => syntax.getClangdReferences(request));
     ipcMain.handle(IPC.FORMAT.CLANGD_CODE_ACTIONS, (event, request) => syntax.getClangdCodeActions(request));
