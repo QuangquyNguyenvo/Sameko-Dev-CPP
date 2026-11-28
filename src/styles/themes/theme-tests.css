@@ -35,6 +35,29 @@
     flex-shrink: 0;
 }
 
+.run-all-btn.graph-preview-btn {
+    display: none;
+    background: var(--bg-button);
+    color: var(--text-primary);
+}
+
+.problems-panel[data-view="tests"] .graph-preview-btn {
+    display: inline-flex;
+}
+
+.graph-preview-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+@container bottom-panel (max-width: 860px) {
+    .run-all-btn.graph-preview-btn {
+        font-size: 0;
+        gap: 0;
+        padding: 6px 9px;
+    }
+}
+
 .run-all-btn.danger {
     background: var(--error, #e74c3c);
     margin-left: 0;
@@ -529,6 +552,11 @@ button.test-tool-control:hover {
     background: var(--pop-soft-hover, color-mix(in srgb, var(--text-primary) 14%, transparent));
 }
 
+button.test-tool-control:disabled {
+    cursor: default;
+    opacity: 0.55;
+}
+
 button.test-tool-control.primary {
     padding: 0 16px;
     background: var(--btn-primary-bg, var(--accent));
@@ -536,7 +564,7 @@ button.test-tool-control.primary {
 }
 
 button.test-tool-control.primary:hover {
-    filter: brightness(1.07);
+    background: var(--btn-primary-bg-hover, var(--btn-primary-bg, var(--accent)));
 }
 
 .test-graph-options {
@@ -554,13 +582,44 @@ button.test-tool-control.primary:hover {
     font-weight: 700;
 }
 
+.test-graph-source {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 5px;
+    flex: 1 0 100%;
+    min-width: 0;
+}
+
+.test-graph-icon-btn {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    padding: 0;
+}
+
+.test-graph-source textarea {
+    height: auto;
+    min-height: 68px;
+    padding: 8px 12px;
+    resize: vertical;
+    border-radius: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 400;
+}
+
+.test-graph-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
 .test-graph-summary {
     margin-left: auto;
     align-self: center;
     padding: 4px 12px;
     border-radius: 999px;
     background: color-mix(in srgb, var(--accent) 16%, transparent);
-    color: var(--accent);
+    color: var(--text-primary);
     font-size: 12px;
     font-weight: 800;
 }
@@ -569,13 +628,8 @@ button.test-tool-control.primary:hover {
     display: none;
 }
 
-.test-graph-parent-hint {
-    color: var(--text-secondary);
-    font-size: 12px;
-}
-
 .test-graph-issue {
-    color: var(--warning);
+    color: var(--text-primary);
     font-weight: 600;
 }
 
@@ -588,7 +642,7 @@ button.test-tool-control.primary:hover {
 }
 
 .test-graph-unparsed summary {
-    color: var(--warning);
+    color: var(--text-primary);
     font-weight: 700;
     cursor: pointer;
 }
@@ -609,7 +663,7 @@ button.test-tool-control.primary:hover {
 
 .test-graph-line-no {
     min-width: 56px;
-    color: var(--text-muted);
+    color: var(--text-secondary);
 }
 
 .test-graph-unparsed code {
@@ -620,7 +674,129 @@ button.test-tool-control.primary:hover {
     position: relative;
 }
 
+/* Graph editing popover and temporary connection affordances. */
+.test-graph-wrap .test-graph-context {
+    position: absolute;
+    z-index: 3;
+    display: grid;
+    gap: 3px;
+    min-width: 150px;
+    max-width: min(260px, calc(100% - 12px));
+    padding: 5px;
+    color: var(--text-primary);
+    background: var(--pop-bg, var(--bg-panel));
+    border: 1px solid var(--border-strong, var(--border));
+    border-radius: 12px;
+    box-shadow: 4px 4px 0 var(--shadow-card, transparent);
+}
+
+.test-graph-wrap .test-graph-context[hidden] {
+    display: none;
+}
+
+.test-graph-wrap .test-graph-context-action {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 28px;
+    padding: 5px 8px;
+    color: var(--text-primary);
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+}
+
+.test-graph-wrap .test-graph-context-action:hover,
+.test-graph-wrap .test-graph-context-action:focus-visible {
+    background: var(--pop-soft-hover, color-mix(in srgb, var(--accent) 16%, transparent));
+}
+
+.test-graph-wrap .test-graph-edge-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    padding: 2px;
+}
+
+.test-graph-wrap .test-graph-edge-form label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.test-graph-wrap .test-graph-edge-form input.test-tool-control,
+.test-graph-wrap .test-graph-edge-form select.test-tool-control {
+    height: 28px;
+    min-width: 0;
+    padding: 0 8px;
+    font-size: 12px;
+}
+
+.test-graph-wrap .test-graph-edge-form input.test-tool-control {
+    width: 60px;
+}
+
+.test-graph-wrap .test-graph-edge-form select.test-tool-control {
+    flex: 1 0 100%;
+}
+
+.test-graph-wrap .test-graph-edge-form .test-graph-icon-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+}
+
+.test-graph-wrap .test-graph-context .test-graph-issue {
+    padding: 4px 6px;
+    font-size: 11px;
+}
+
+.test-graph-wrap .test-graph-edge-hit {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 12px;
+    pointer-events: stroke;
+    vector-effect: non-scaling-stroke;
+}
+
+.test-graph-wrap .test-graph-connection {
+    fill: none;
+    stroke: var(--graph-highlight);
+    stroke-width: 2.5px;
+    stroke-dasharray: 6 5;
+    stroke-linecap: round;
+    pointer-events: none;
+    vector-effect: non-scaling-stroke;
+    opacity: 0.9;
+}
+
+.test-graph-wrap .test-graph.connecting {
+    cursor: crosshair;
+}
+
+.test-graph-wrap .test-graph.connecting .test-graph-node,
+.test-graph-wrap .test-graph-node.connecting {
+    cursor: crosshair;
+}
+
+.test-graph-wrap .test-graph-node.connecting circle {
+    fill: color-mix(in srgb, var(--accent) 35%, var(--graph-surface));
+    stroke-width: 4px;
+}
+
 .test-graph {
+    /* The app panels and editor can use different light/dark palettes. */
+    --graph-surface: var(--bg-input, var(--bg-panel));
+    --graph-highlight: color-mix(in srgb, var(--accent) 45%, var(--text-primary));
     display: block;
     width: 100%;
     height: min(54vh, 520px);
@@ -679,14 +855,9 @@ button.test-tool-control.primary:hover {
     color: var(--text-muted);
 }
 
-.test-graph-note::before {
+.test-graph-note + .test-graph-note::before {
     content: '·';
     margin-right: 14px;
-}
-
-.test-graph-multi-hint {
-    color: var(--text-secondary);
-    font-size: 12px;
 }
 
 /* Case picker next to Test N under the title: Test 2 › Case ‹ 3 / 12 › */
@@ -728,7 +899,6 @@ button.test-tool-control.primary:hover {
 
 .test-graph-step:hover:not(:disabled) {
     background: color-mix(in srgb, var(--accent) 22%, transparent);
-    color: var(--accent);
 }
 
 .test-graph-step:disabled {
@@ -742,7 +912,7 @@ button.test-tool-control.primary:hover {
     border: none;
     border-radius: 999px;
     background: color-mix(in srgb, var(--accent) 16%, transparent);
-    color: var(--accent);
+    color: var(--text-primary);
     font-family: inherit;
     font-size: 12px;
     font-weight: 800;
@@ -751,7 +921,7 @@ button.test-tool-control.primary:hover {
 
 .test-graph-edge {
     fill: none;
-    stroke: color-mix(in srgb, var(--text-primary) 45%, transparent);
+    stroke: color-mix(in srgb, var(--text-primary) 70%, transparent);
     stroke-width: 2px;
     transition: opacity 0.12s ease;
 }
@@ -775,8 +945,8 @@ button.test-tool-control.primary:hover {
 }
 
 .test-graph-node circle {
-    fill: color-mix(in srgb, var(--accent) 22%, var(--editor-bg, #fff));
-    stroke: var(--accent);
+    fill: color-mix(in srgb, var(--accent) 22%, var(--graph-surface));
+    stroke: var(--graph-highlight);
     stroke-width: 2.5px;
 }
 
@@ -796,10 +966,10 @@ button.test-tool-control.primary:hover {
     font-weight: 700;
     text-anchor: middle;
     paint-order: stroke fill;
-    stroke: var(--editor-bg, var(--bg-panel));
+    stroke: var(--graph-surface);
     stroke-width: 6px;
     stroke-linejoin: round;
-    pointer-events: none;
+    pointer-events: visible;
 }
 
 /* Hovering a node: it, its edges and its neighbours stay; everything else fades. */
@@ -809,19 +979,18 @@ button.test-tool-control.primary:hover {
     opacity: 0.32;
 }
 
-/* The node under the pointer: a thicker ring and a full accent fill (no filter: a glow
-   repaints the whole canvas while dragging). */
+/* Strengthen the ring without making the label harder to read. */
 .test-graph .test-graph-node.hover circle {
     stroke-width: 4px;
-    fill: color-mix(in srgb, var(--accent) 60%, var(--editor-bg, #fff));
+    fill: color-mix(in srgb, var(--accent) 35%, var(--graph-surface));
 }
 
 .test-graph .test-graph-edge.hl {
-    stroke: var(--accent);
+    stroke: var(--graph-highlight);
 }
 
 .test-graph .test-graph-node.hl circle {
-    fill: color-mix(in srgb, var(--accent) 40%, var(--editor-bg, #fff));
+    fill: color-mix(in srgb, var(--accent) 30%, var(--graph-surface));
 }
 
 .test-result-status {

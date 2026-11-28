@@ -321,6 +321,17 @@
     flex-shrink: 0;
 }
 
+#docked-input-header {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+#docked-input-header .io-file-btn {
+    width: 22px;
+    height: 16px;
+}
+
 .docked-io-textarea {
     flex: 1;
     padding: 10px 12px;

@@ -699,17 +699,7 @@ function renderTestResults() {
     });
 
     const addBtn = container.querySelector('#btn-list-add-test');
-    if (addBtn) {
-        addBtn.addEventListener('click', () => {
-            addTestCase();
-            // Switch to IO
-            if (DockingState.ioDocked) {
-                switchDockedPanel('io');
-            } else {
-                if (!App.showIO) toggleIO();
-            }
-        });
-    }
+    addBtn?.addEventListener('click', () => addTestCaseForEditing());
 }
 
 function switchProblemsTab(tabName) {

@@ -84,20 +84,11 @@ function initCompetitiveCompanion() {
 
     document.getElementById('btn-prev-test')?.addEventListener('click', prevTestCase);
     document.getElementById('btn-next-test')?.addEventListener('click', nextTestCase);
-    document.getElementById('btn-add-test')?.addEventListener('click', addTestCase);
+    document.getElementById('btn-add-test')?.addEventListener('click', () => addTestCase());
     document.getElementById('btn-delete-test')?.addEventListener('click', deleteTestCase);
 
-    // Bind panel add button
-    document.getElementById('btn-add-test-panel')?.addEventListener('click', () => {
-        addTestCase();
-        // If docked, switch to IO tab to edit
-        if (DockingState.ioDocked) {
-            switchDockedPanel('io');
-        } else {
-            // If floating, ensure visible
-            if (!App.showIO) toggleIO();
-        }
-    });
+    document.getElementById('btn-add-test-panel')?.addEventListener('click', () => addTestCaseForEditing());
+    TestRowTools.init();
 
     // Save changes to current test case
     const inputArea = document.getElementById('input-area');
@@ -156,7 +147,7 @@ function initCompetitiveCompanion() {
     window.electronAPI?.onProblemReceived?.(handleProblemReceived);
 }
 
-function addTestCase() {
+function addTestCase(input = '') {
     if (!ccProblem) {
         ccProblem = { name: 'Manual Problem', tests: [] };
     }
@@ -176,13 +167,21 @@ function addTestCase() {
         });
     }
 
-    ccProblem.tests.push({ input: '', output: '' });
+    ccProblem.tests.push({ input, output: '' });
     resetTestRunResults();
     ccTestIndex = ccProblem.tests.length - 1;
     switchTestCase(ccTestIndex);
     updateTestNavUI();
     renderTestResults(); // Refresh list
+    touchProblem();
     log(`Test Case ${ccTestIndex + 1} added`, 'info');
+}
+
+function addTestCaseForEditing(input = '') {
+    addTestCase(input);
+    if (input && getTabInputFile(getPreferredTabId())) setInputFile(null);
+    if (DockingState.ioDocked) showBottomPanel('io');
+    else if (!App.showIO) toggleIO();
 }
 
 async function deleteTestCase() {

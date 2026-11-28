@@ -209,6 +209,7 @@ function initPanels() {
     // Input from a file (#49): the button, its clear button, or a file dropped on the Input card.
     document.getElementById('btn-input-file').onclick = () => chooseInputFile();
     document.getElementById('btn-input-file-clear').onclick = () => setInputFile(null);
+    bindInputGraphButton(document.getElementById('btn-input-graph'));
     const inputCard = document.querySelector('.io-panel-input');
     if (inputCard) {
         inputCard.addEventListener('dragover', (e) => {
@@ -547,6 +548,11 @@ function undockTerminal() {
 // I/O DOCKING FUNCTIONS
 // ============================================================================
 
+function bindInputGraphButton(button) {
+    if (!button || !window.TestRowTools?.bindGraphButton) return;
+    TestRowTools.bindGraphButton(button, () => TestRowTools.showInputGraph());
+}
+
 // Where each moved I/O element came from: a comment node holds its place until it goes back.
 const dockedIOPlaces = new Map();
 
@@ -666,7 +672,12 @@ function createDockedIOView(container) {
             </div>
             <div class="docked-io-split">
                 <div class="docked-io-panel">
-                    <div class="docked-io-header">INPUT</div>
+                    <div class="docked-io-header" id="docked-input-header">
+                        <span>INPUT</span>
+                        <button class="io-file-btn" id="btn-docked-input-graph" title="Graph Preview" aria-label="Graph Preview">
+                            <svg class="ico" width="14" height="14" viewBox="0 0 256 256" aria-hidden="true"></svg>
+                        </button>
+                    </div>
                     <div class="docked-io-slot" id="docked-input-slot"></div>
                 </div>
                 <div class="docked-io-divider"></div>
@@ -677,6 +688,14 @@ function createDockedIOView(container) {
             </div>
         `;
         container.appendChild(dockedIOView);
+
+        // Reuse the existing file picker in the docked header, next to the graph preview entry point.
+        const inputHeader = document.getElementById('docked-input-header');
+        const inputFileButton = document.getElementById('btn-input-file');
+        if (inputHeader && inputFileButton) moveIntoDock(inputFileButton, inputHeader);
+        const inputGraphButton = document.getElementById('btn-docked-input-graph');
+        if (inputHeader && inputGraphButton) inputHeader.appendChild(inputGraphButton);
+        bindInputGraphButton(inputGraphButton);
 
         updateDockedTestNavUI();
 

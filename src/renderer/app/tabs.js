@@ -468,6 +468,7 @@ function doAction(action) {
         new: newFile, open: openFile, save, saveas: () => saveAs(), run, buildrun: buildRun, stop,
         compile: compileOnly,
         mdpreview: () => window.MarkdownPreview?.toggle(getActiveEditor()),
+        graphpreview: () => TestRowTools.showGraph(),
         // Same as the toolbar button, which narrow windows hide.
         gettests: () => document.getElementById('btn-cc')?.click(),
         submittooj: () => submitToOJ(),

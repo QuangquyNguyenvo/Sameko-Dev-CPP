@@ -32,6 +32,7 @@ const TESTS = [
     { input: '4 3\n0 1 7\n1 2\nbad edge\n', output: '' },
     { input: '', output: '0\n' },
     { input: '3\n3 2\n1 2\n2 3\n2 1\n1 2\n4 3\n1 2\n1 3\n1 4\n', output: '' },
+    { input: '3\n0 1 0\n1 0 4\n0 4 0', output: '' },
 ];
 
 async function main() {
@@ -69,6 +70,7 @@ async function main() {
             await row(2).hover();
             await shot('rows');
             await tool(2, 'graph').click();
+            assert.equal(await dialog.getByRole('textbox', { name: 'Graph input' }).inputValue(), TESTS[2].input);
             await dialog.locator('select[name=direction]').selectOption('directed');
             await dialog.locator('select[name=base]').selectOption('0');
             // The format is guessed and drawn at once; changing an option redraws.
@@ -110,6 +112,95 @@ async function main() {
             assert.equal(await picker.getByRole('button', { name: 'Next case' }).isDisabled(), true);
             await page.keyboard.press('Escape');
             await dialog.waitFor({ state: 'detached' });
+        });
+
+        await closeDialog();
+        await t.check('Graph Preview accepts pasted input without altering the current tests or I/O', async () => {
+            await page.locator('.menu-btn[data-menu=view]').click();
+            await page.locator('#menu-view [data-action=graphpreview]').click();
+            await dialog.getByRole('heading', { name: 'Graph Preview' }).waitFor();
+            const source = dialog.getByRole('textbox', { name: 'Graph input' });
+            assert.equal(await source.evaluate(el => el === document.activeElement), true);
+            await source.fill('3 2\n0 1\n1 2');
+            await dialog.getByRole('button', { name: 'Draw graph' }).click();
+            assert.equal(await dialog.locator('select[name=base]').inputValue(), '0');
+            assert.equal(await dialog.locator('.test-graph circle').count(), 3);
+            assert.equal(await dialog.locator('.test-graph-edge').count(), 2);
+            await source.fill('0 0\n1 0');
+            await dialog.locator('select[name=format]').selectOption('matrix');
+            await dialog.locator('select[name=direction]').selectOption('directed');
+            await dialog.getByRole('button', { name: 'Draw graph' }).click();
+            assert.equal(await dialog.locator('.test-graph circle').count(), 2);
+            assert.equal(await dialog.locator('.test-graph-edge[marker-end]').count(), 1);
+            await shot('standalone-graph');
+            await closeDialog();
+            assert.equal(await page.locator('#input-area').inputValue(), '99\n');
+            assert.deepEqual(await page.evaluate(() => ccProblem.tests), TESTS);
+        });
+
+        await closeDialog();
+        await t.check('a test row can be drawn as an adjacency matrix', async () => {
+            await tool(5, 'graph').click();
+            await dialog.locator('select[name=format]').selectOption('matrix');
+            assert.equal(await dialog.locator('.test-graph-summary').textContent(), '3 nodes · 2 edges');
+            assert.deepEqual(await dialog.locator('.test-graph-weight').allTextContents(), ['1', '4']);
+            await dialog.locator('select[name=direction]').selectOption('directed');
+            assert.equal(await dialog.locator('.test-graph-edge[marker-end]').count(), 4);
+            const labels = await dialog.locator('.test-graph-weight').evaluateAll(elements => elements.map(el => [el.getAttribute('x'), el.getAttribute('y')]));
+            assert.notDeepEqual(labels[0], labels[1], 'weights on opposite edges stay readable');
+            await closeDialog();
+        });
+
+        await closeDialog();
+        await t.check('right-click graph editing connects nodes and updates an existing test only on demand', async () => {
+            await tool(5, 'graph').click();
+            const source = dialog.getByRole('textbox', { name: 'Graph input' });
+            const original = await page.evaluate(() => JSON.parse(JSON.stringify(ccProblem.tests[5])));
+            const nodes = dialog.locator('.test-graph-node');
+
+            await nodes.nth(0).click({ button: 'right' });
+            await dialog.getByRole('button', { name: 'Connect edge', exact: true }).click();
+            await nodes.nth(2).click();
+            await page.waitForFunction(() => {
+                const source = document.querySelector('.test-tool-dialog [name="source"]');
+                const graph = TestRowTools.parseGraph(source.value, { format: 'matrix', base: 1 });
+                return graph.edges.some(edge => edge.from === 0 && edge.to === 2);
+            });
+            assert.deepEqual(await page.evaluate(() => ccProblem.tests[5]), original,
+                'connecting a preview does not mutate the test yet');
+
+            const openFirstEdge = async () => {
+                const edgeHit = dialog.locator('.test-graph-edge-hit').first();
+                const point = await edgeHit.evaluate(edge => {
+                    const midpoint = edge.getPointAtLength(edge.getTotalLength() / 2).matrixTransform(edge.getScreenCTM());
+                    return { x: midpoint.x, y: midpoint.y };
+                });
+                await page.mouse.click(point.x, point.y, { button: 'right' });
+            };
+            await openFirstEdge();
+            const weight = dialog.getByRole('textbox', { name: 'Weight', exact: true });
+            await weight.fill('9');
+            await shot('graph-context-edit');
+            await dialog.getByRole('button', { name: 'Apply weight', exact: true }).click();
+            await page.waitForFunction(() => {
+                const source = document.querySelector('.test-tool-dialog [name="source"]');
+                const graph = TestRowTools.parseGraph(source.value, { format: 'matrix', base: 1 });
+                return graph.edges.some(edge => edge.weight === '9');
+            });
+            assert.deepEqual(await page.evaluate(() => ccProblem.tests[5]), original,
+                'editing a preview does not mutate the test yet');
+
+            await openFirstEdge();
+            await dialog.getByRole('button', { name: 'Delete edge', exact: true }).click();
+            assert.equal(await dialog.locator('.test-graph-edge').count(), 2);
+            await dialog.getByRole('button', { name: 'Undo graph edit', exact: true }).click();
+            assert.equal(await dialog.locator('.test-graph-edge').count(), 3);
+
+            await dialog.getByRole('button', { name: 'Update test', exact: true }).click();
+            await page.waitForFunction(() => ccProblem.tests[5].input.includes('9'));
+            assert.equal(await page.evaluate(() => ccProblem.tests[5].output), original.output,
+                'updating the graph preserves the expected output');
+            await closeDialog();
         });
 
         await closeDialog();
@@ -223,6 +314,57 @@ async function main() {
             await waitBody();
             await page.evaluate(() => Debugger.continue());
             await page.waitForFunction(() => !Debugger.isActive());
+        });
+
+        await t.check('the Tests header opens Graph Preview and adds its input as the selected test', async () => {
+            await page.evaluate(path => {
+                dockIOToProblems({ open: false });
+                showTestsTab();
+                switchTestCase(0);
+                setInputFile(path);
+            }, file);
+            const existingTests = await page.evaluate(() => ccProblem.tests);
+            await page.locator('#btn-test-graph').click();
+            const add = dialog.getByRole('button', { name: 'Add to tests' });
+            assert.equal(await add.isDisabled(), true);
+            const source = dialog.getByRole('textbox', { name: 'Graph input' });
+            const plus = dialog.getByRole('button', { name: 'Add node' });
+            await plus.click();
+            assert.equal(await source.inputValue(), '1 0\n');
+            assert.equal(await dialog.locator('.test-graph circle').count(), 1);
+            const draft = '0100\n1010\n0101\n0010\n';
+            await source.fill(draft);
+            await dialog.locator('select[name=format]').selectOption('auto');
+            assert.equal(await dialog.locator('select[name=format]').inputValue(), 'matrix');
+            await plus.click();
+            const expanded = '01000\n10100\n01010\n00100\n00000\n';
+            assert.equal(await source.inputValue(), expanded);
+            assert.equal(await dialog.locator('.test-graph-summary').textContent(), '5 nodes · 3 edges');
+            await shot('graph-add-to-tests');
+            await add.click();
+            await dialog.waitFor({ state: 'detached' });
+            assert.deepEqual(await page.evaluate(() => ccProblem.tests), [...existingTests, { input: expanded, output: '' }]);
+            assert.equal(await page.evaluate(() => ccTestIndex), existingTests.length);
+            await page.locator('#problems-panel[data-view=io] #input-area').waitFor();
+            assert.equal(await page.locator('#input-area').inputValue(), expanded);
+            assert.equal(await page.locator('#expected-area').inputValue(), '');
+            assert.equal(await page.evaluate(() => getTabInputFile(getPreferredTabId())), null);
+        });
+
+        await t.check('Graph Preview in floating and docked I/O starts with its current input', async () => {
+            const data = '3 1\n1 3\n';
+            await page.locator('#input-area').fill(data);
+            await page.locator('#btn-docked-input-graph').click();
+            assert.equal(await dialog.getByRole('textbox', { name: 'Graph input' }).inputValue(), data);
+            await closeDialog();
+
+            await page.evaluate(() => {
+                undockIO();
+                if (!App.showIO) toggleIO();
+            });
+            await page.locator('#btn-input-graph').click();
+            assert.equal(await dialog.getByRole('textbox', { name: 'Graph input' }).inputValue(), data);
+            await closeDialog();
         });
 
         await t.check('test tools have no renderer errors', () => assert.deepEqual(pageErrors, []));

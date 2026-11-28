@@ -180,6 +180,7 @@
             <div class="dropdown-item" data-action="swapsplit"><span>Swap</span><span class="key">Ctrl+⇧+\</span></div>
             <div class="dropdown-item" data-action="closesplit"><span>Close Split</span></div>
             <div class="dropdown-item" data-action="mdpreview"><span>Markdown Preview</span><span class="key">Ctrl+⇧+V</span></div>
+            <div class="dropdown-item" data-action="graphpreview"><span>Graph Preview</span></div>
             <div class="dropdown-sep"></div>
             <div class="dropdown-item" data-action="settings"><span>Settings</span><span class="key">Ctrl+,</span></div>
         </div>
@@ -1260,6 +1261,10 @@
                                 title="Stress test: compare your solution with a brute force on random tests">STRESS</span>
                             <!-- Everything after this is right-aligned (oj-submit.css). -->
                             <span class="panel-actions-spacer"></span>
+                            <button type="button" class="run-all-btn graph-preview-btn" id="btn-test-graph" title="Graph Preview">
+                                <svg class="ico" width="14" height="14" viewBox="0 0 256 256" aria-hidden="true"></svg>
+                                <span>Graph Preview</span>
+                            </button>
                             <!-- How each test's output is judged; only on the TESTS tab (renderer/app/checker.js). -->
                             <span class="checker-pick" id="checker-pick">
                                 <!-- Only once it has been started (Problem options). -->
@@ -1347,6 +1352,9 @@
                             <span class="panel-title input">Input</span>
                             <button class="io-file-btn" id="btn-input-file" title="Load input from a file">
                                 <svg class="ico" data-icon="file-text-duo" width="14" height="14"><use href="#i-file-text-duo"/></svg>
+                            </button>
+                            <button class="io-file-btn" id="btn-input-graph" title="Graph Preview" aria-label="Graph Preview">
+                                <svg class="ico" width="14" height="14" viewBox="0 0 256 256" aria-hidden="true"></svg>
                             </button>
                             <!-- Test case navigation (hidden by default, shown when problem loaded) -->
                             <div class="test-nav" id="test-nav" style="display:none">
