@@ -223,6 +223,46 @@ function writeLine(line) {
 }
 
 /**
+ * Copy the text currently selected in xterm. Returns true when a selection was
+ * handled, so the caller can suppress the browser's default key action.
+ *
+ * xterm keeps its selection in the terminal buffer rather than the DOM, so a
+ * normal Ctrl+C event does not reach the browser clipboard in display-only
+ * mode (`disableStdin: true`).
+ * @returns {boolean}
+ */
+function copySelection() {
+    if (!terminal || !terminal.hasSelection?.()) return false;
+    const text = terminal.getSelection?.();
+    if (!text) return false;
+
+    const fallback = () => {
+        try {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            document.execCommand('copy');
+            textarea.remove();
+        } catch (_) { }
+    };
+
+    try {
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(text).catch(fallback);
+        } else {
+            fallback();
+        }
+    } catch (_) {
+        fallback();
+    }
+    return true;
+}
+
+/**
  * Clear the terminal
  */
 function clear() {
@@ -316,7 +356,8 @@ function getLines() {
 
 const api = {
     initTerminal, write, writeLine, writeProgram, writeMessage,
-    clear, fit, applyTheme, setFontSize, dispose, setProcessRunning, isRunning, getLines
+    clear, fit, applyTheme, setFontSize, dispose, setProcessRunning, isRunning, getLines,
+    copySelection
 };
 
 if (typeof module !== 'undefined' && module.exports) {

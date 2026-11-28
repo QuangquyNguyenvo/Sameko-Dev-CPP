@@ -74,6 +74,20 @@ function initXtermTerminal() {
     TerminalManager.initTerminal('terminal', { fontSize });
     syncTerminalTheme();
 
+    // xterm keeps selection in its own buffer. Handle the usual copy shortcut
+    // before xterm's hidden helper textarea sees it, while leaving Ctrl+Shift+C
+    // and an unselected Ctrl+C untouched.
+    if (!document.body.dataset.termCopyInitialized) {
+        document.body.dataset.termCopyInitialized = 'true';
+        document.addEventListener('keydown', (e) => {
+            if (!(e.ctrlKey || e.metaKey) || e.shiftKey || e.altKey || e.key.toLowerCase() !== 'c') return;
+            if (!e.target?.closest?.('#terminal')) return;
+            if (!window.TerminalManager?.copySelection?.()) return;
+            e.preventDefault();
+            e.stopPropagation();
+        }, true);
+    }
+
     // Re-fit whenever the terminal container changes size (resizer drag, dock
     // toggle, window resize, panel show/hide). ResizeObserver coalesces these.
     const termEl = document.getElementById('terminal');
@@ -149,7 +163,12 @@ function initTerminalUX() {
         termInput.addEventListener('keydown', (e) => {
 
             if (e.ctrlKey && e.key === 'c') {
-                if (termInput.selectionStart === termInput.selectionEnd) {
+                // Keep Ctrl+C available for text selected in the output panels. The
+                // input box can retain focus after a selection is made in a <pre>,
+                // so stopping the process here would also cancel the browser's
+                // copy command before it reached that selection.
+                const selectedPageText = window.getSelection?.()?.toString() || '';
+                if (termInput.selectionStart === termInput.selectionEnd && !selectedPageText) {
                     e.preventDefault();
                     if (App.isRunning) {
                         stop();
