@@ -350,6 +350,16 @@
     background: var(--welcome-box-bg, transparent) !important;
 }
 
+/* The theme's authored alpha is the default (40 in the customizer). */
+@container not style(--welcome-box-opacity: 0.4) {
+    :root .welcome-box {
+        background: rgb(from var(--welcome-box-bg) r g b / calc(
+            alpha * min(var(--welcome-box-opacity), 0.4) / 0.4
+            + (1 - alpha) * max(0, var(--welcome-box-opacity) - 0.4) / 0.6
+        )) !important;
+    }
+}
+
 /* The dark title is gradient-filled text (transparent fill), so a text-shadow would show
  * through it: drop-shadow follows the glyphs instead. */
 [data-theme-variant="dark"] .welcome-box h1 {
@@ -1080,6 +1090,22 @@ body.performance-mode .main .editor-section {
  * syncTerminalTheme); dark themes painted it --bg-secondary, a black frame round the output. */
 .editor-section > .problems-panel .terminal-body {
     background: var(--terminal-bg);
+}
+
+/* Fade the panel surfaces independently of their text and controls. */
+@container not style(--panel-opacity: 1) {
+    :root .problems-panel,
+    :root .terminal-section {
+        background: color-mix(in srgb, var(--dock-surface) calc(var(--panel-opacity) * 100%), transparent);
+    }
+
+    :root .docked-io-view {
+        background: color-mix(in srgb, var(--bg-panel) calc(var(--panel-opacity) * 100%), transparent);
+    }
+
+    :root .io-section > .io-panel {
+        background: color-mix(in srgb, var(--editor-bg) calc(var(--panel-opacity) * 100%), transparent) !important;
+    }
 }
 
 /* Debug panel: a column of the layout like the explorer (built by debugger-ui.js). */

@@ -121,7 +121,8 @@
     gap: 12px;
     overflow-x: auto;
     scroll-behavior: auto;
-    padding: 8px 0;
+    /* Room for the hover lift and the active ring, which the scroller would clip. */
+    padding: 8px 5px 10px;
     scrollbar-width: none;
     -ms-overflow-style: none;
     cursor: default;
@@ -134,54 +135,88 @@
 
 .theme-carousel-card {
     flex-shrink: 0;
-    width: 140px;
-    border-radius: 8px;
-    border: 2px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    width: 188px;
+    padding: 5px;
+    border-radius: 16px;
+    border: 1.5px solid var(--border);
     background: var(--bg-panel);
-    overflow: hidden;
     cursor: pointer;
-    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+    text-align: left;
+    transition: border-color 0.2s, transform 0.25s ease, box-shadow 0.25s ease;
     user-select: none;
 }
 
 .theme-carousel-card:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--accent) 70%, var(--border));
+    transform: translateY(-3px);
     box-shadow: var(--shadow-card);
 }
 
 .theme-carousel-card.active {
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 .theme-carousel-preview {
-    height: 80px;
-    padding: 8px;
-    position: relative;
-    overflow: hidden;
+    border-radius: 11px;
 }
 
 .theme-carousel-info {
-    padding: 8px;
-    text-align: center;
-    background: var(--bg-input);
-    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 5px 3px;
+}
+
+.theme-carousel-text {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+.theme-carousel-title {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
 }
 
 .theme-carousel-name {
-    font-size: 11px;
-    font-weight: 600;
+    display: block;
+    min-width: 0;
+    font: 600 13px/1.25 'Fredoka', 'Nunito', sans-serif;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.theme-carousel-type {
-    font-size: 9px;
-    color: var(--text-muted);
-    text-transform: uppercase;
+.theme-active-mark {
+    display: none;
+    flex: none;
+    place-items: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--accent);
+}
+
+.theme-carousel-card.active .theme-active-mark {
+    display: grid;
+}
+
+.theme-active-mark svg {
+    width: 11px;
+    height: 11px;
+    fill: none;
+    stroke: var(--button-text-on-accent, #fff);
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 
 .appearance-section {
@@ -228,19 +263,19 @@
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(8px);
 }
 
 .fullscreen-popup-container {
     position: relative;
     background: var(--bg-panel);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 22px;
     width: 95%;
     height: 90%;
     max-width: 1400px;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
@@ -251,7 +286,6 @@
     padding: 16px 24px;
     border-bottom: 1px solid var(--border);
     background: var(--bg-header);
-    border-radius: 12px 12px 0 0;
 }
 
 .fullscreen-popup-header h2 {
@@ -259,12 +293,13 @@
     align-items: center;
     gap: 12px;
     margin: 0;
-    font-size: 18px;
+    font: 700 20px 'Fredoka', 'Nunito', sans-serif;
     color: var(--text-primary);
 }
 
 .fullscreen-popup-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     margin-left: auto;
 }
@@ -272,7 +307,7 @@
 .fullscreen-popup-close {
     width: 36px;
     height: 36px;
-    border-radius: 8px;
+    border-radius: 50%;
     border: none;
     background: transparent;
     color: var(--text-secondary);
@@ -291,7 +326,10 @@
 
 .fullscreen-popup-body {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
+    scrollbar-gutter: stable;
+    background: var(--bg-panel);
     padding: 24px;
 }
 
@@ -309,521 +347,564 @@
    THEME MARKETPLACE v3.0
    ============================================================================ */
 
-/* Marketplace Popup */
-.mp-section {
-    margin-bottom: 32px;
+/* Marketplace cards */
+.mp-section + .mp-section {
+    margin-top: 24px;
 }
 
 .mp-section-title {
-    font-size: 15px;
-    font-weight: 700;
-    font-family: 'Nunito', sans-serif;
-    color: var(--text-primary);
-    margin-bottom: 16px;
+    margin: 0 0 14px;
     padding-bottom: 8px;
-    border-bottom: 2px solid var(--border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+    font: 700 16px 'Fredoka', 'Nunito', sans-serif;
 }
 
 .mp-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
+    gap: 14px;
 }
 
 .mp-card {
-    background: var(--bg-input);
-    border: 2px solid var(--border);
-    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
     overflow: hidden;
-    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    background: var(--bg-panel);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    content-visibility: auto;
+    contain-intrinsic-height: auto 250px;
+    transition: border-color 0.2s, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.mp-card:hover,
+.mp-card:focus-within {
+    border-color: color-mix(in srgb, var(--accent) 70%, var(--border));
 }
 
 .mp-card:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-card);
 }
 
 .mp-card.active {
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+/* The picture and the name: one button that applies the theme. */
+.mp-card-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 6px 0;
+    border: none;
+    background: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.mp-card-main:focus-visible {
+    outline: none;
+}
+
+.mp-card:has(.mp-card-main:focus-visible) {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 .mp-card-preview {
-    height: 100px;
+    flex: none;
+    margin-bottom: 6px;
+    border-radius: 11px;
+}
+
+/* Theme card picture (Settings carousel and Marketplace): the theme's wallpaper with the main
+   window drawn small on it, laid out like islands.css at a narrow window (header islands,
+   editor, I/O column, status bar), from the --tp-* values theme-marketplace.js sets on .tp.
+   Sizes are in cqw so the same picture scales to either card. Hovering the card dims the window
+   so the wallpaper shows through. */
+.tp {
     position: relative;
+    display: block;
+    aspect-ratio: 16 / 10;
     overflow: hidden;
-    border-bottom: 1px solid var(--border);
+    container-type: inline-size;
+    isolation: isolate;
+    background: linear-gradient(135deg, var(--tp-base, #1a2530), var(--tp-base-2, #101820));
 }
 
-.mp-card-preview .mini-code {
-    font-family: 'JetBrains Mono', 'Consolas', monospace;
-}
-
-.mp-active-badge {
+.tp-wall {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    background: var(--accent);
-    color: #fff;
-    font-size: 10px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 10px;
-}
-
-.mp-card-info {
-    padding: 12px;
-}
-
-.mp-card-name {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin-bottom: 4px;
-}
-
-.mp-card-desc {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-bottom: 8px;
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-.mp-card-meta {
-    font-size: 10px;
-    color: var(--text-muted);
-    display: flex;
-    gap: 8px;
-    margin-bottom: 10px;
-}
-
-.mp-card-actions {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-}
-
-.mp-btn {
-    flex: 1;
-    min-width: 50px;
-    padding: 6px 10px;
-    font-size: 11px;
-    font-weight: 500;
-    border: 1px solid var(--border);
-    background: var(--bg-panel);
-    color: var(--text-primary);
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s, border-color 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-}
-
-.mp-btn svg {
-    flex-shrink: 0;
-}
-
-.mp-btn:hover {
-    background: var(--accent);
-    color: var(--button-text-on-accent, #fff);
-    border-color: var(--accent);
-}
-
-.mp-btn:disabled,
-.mp-btn.disabled {
-    opacity: 0.5;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: var(--tp-wall-position, center);
+    opacity: var(--tp-wall-opacity, 1);
+    filter: brightness(var(--tp-wall-brightness, 1));
     pointer-events: none;
-    cursor: not-allowed;
+    transition: transform 0.5s ease;
 }
 
-.mp-btn.danger:hover {
-    background: var(--error);
-    border-color: var(--error);
-}
-
-/* Carousel badge */
-.theme-carousel-badge {
-    font-size: 8px;
-    background: var(--accent);
-    color: #fff;
-    padding: 1px 4px;
-    border-radius: 3px;
-    margin-left: 4px;
-}
-
-.theme-carousel-meta {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-}
-
-@media (max-width: 768px) {
-    .marketplace-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .fullscreen-popup-actions {
-        display: none;
-    }
-
-    .theme-carousel-card {
-        width: 120px;
-    }
-
-    .theme-carousel-preview {
-        height: 60px;
-    }
-}
-
-/* ============================================================================
-   MARKETPLACE STYLING FIXES - Bold Cute Style
-   ============================================================================ */
-
-/* Marketplace section title - bolder, cuter */
-.mp-section-title {
-    font-size: 16px;
-    font-weight: 700;
-    font-family: 'Fredoka', 'Nunito', sans-serif;
-    color: var(--text-primary);
-    margin-bottom: 16px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid var(--border);
-    position: relative;
-    z-index: 1;
-    background: var(--bg-panel);
-}
-
-/* Section spacing fix - prevent overlay */
-.mp-section {
-    margin-bottom: 28px;
-    position: relative;
-    padding-top: 4px;
-}
-
-/* Card styling - cuter, bolder */
-.mp-card {
-    background: var(--bg-input);
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    overflow: hidden;
-    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.mp-card:hover {
-    border-color: var(--accent);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-}
-
-.mp-card.active {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent);
-}
-
-/* Card name - bold cute font */
-.mp-card-name {
-    font-size: 14px;
-    font-weight: 700;
-    font-family: 'Fredoka', 'Nunito', sans-serif;
-    color: var(--text-primary);
-    margin-bottom: 4px;
-}
-
-/* Card info padding */
-.mp-card-info {
-    padding: 14px;
-    background: var(--bg-panel);
-}
-
-/* Button styling - match bold cute style */
-.mp-btn {
-    flex: 1;
-    min-width: 55px;
-    padding: 7px 10px;
-    font-size: 11px;
-    font-weight: 600;
-    font-family: 'Nunito', sans-serif;
-    border: 1px solid var(--border);
-    background: var(--bg-input);
-    color: var(--text-primary);
-    border-radius: 6px;
-    cursor: pointer;
-    transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-}
-
-.mp-btn:hover {
-    background: var(--accent);
-    color: var(--button-text-on-accent, #fff);
-    border-color: var(--accent);
-    transform: translateY(-1px);
-}
-
-.mp-btn-apply {
-    background: var(--accent);
-    color: var(--button-text-on-accent, #fff);
-    border-color: var(--accent);
-}
-
-.mp-btn-apply:hover {
-    background: var(--accent-hover);
-    border-color: var(--accent-hover);
-}
-
-/* Active badge */
-.mp-active-badge {
+.tp-ui {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    background: var(--accent);
-    color: var(--button-text-on-accent, #fff);
-    font-size: 10px;
-    font-weight: 700;
-    font-family: 'Nunito', sans-serif;
-    padding: 3px 10px;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-}
-
-/* Marketplace popup header actions - cleaner */
-.fullscreen-popup-actions {
+    inset: 0;
     display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 1.6cqw;
+    padding: 2.6cqw;
+    color: var(--tp-text-2);
+    font-family: 'Nunito', sans-serif;
+    transition: opacity 0.35s ease, transform 0.35s ease;
 }
 
-.fullscreen-popup-actions .btn-secondary,
-.fullscreen-popup-actions .btn-primary {
-    font-size: 12px;
-    font-weight: 600;
-    font-family: 'Nunito', sans-serif;
-    padding: 8px 14px;
-    border-radius: 8px;
+/* Dimmed, not hidden: the wallpaper comes through while the window stays readable. */
+.theme-carousel-card:hover .tp-ui,
+.mp-card:hover .tp-ui {
+    opacity: 0.35;
+    transform: scale(0.97);
+}
+
+.theme-carousel-card:hover .tp-wall,
+.mp-card:hover .tp-wall {
+    transform: scale(1.04);
+}
+
+/* --island-bg: the panel colour laid over the editor colour. */
+.tp-island {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    background: linear-gradient(var(--tp-panel), var(--tp-panel)), var(--tp-editor);
+}
+
+.tp-ico {
+    flex: none;
+    width: 2.9cqw;
+    height: 2.9cqw;
+    fill: currentColor;
+}
+
+/* ---- Header ---- */
+.tp-head {
+    display: flex;
+    flex: none;
+    gap: 1.6cqw;
+    height: 7.6cqw;
+}
+
+.tp-head .tp-island {
+    gap: 0.5cqw;
+    padding: 0 1cqw;
+    border-radius: 3.5cqw;
+}
+
+.tp-logo {
+    padding: 0.5cqw 1.7cqw;
+    border-radius: 99px;
+    background: var(--tp-logo);
+    color: var(--tp-btn-text);
+    font: 700 3cqw/1.2 'Fredoka', 'Nunito', sans-serif;
+}
+
+.tp-btn {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 5cqw;
+    height: 5cqw;
+    border-radius: 1.6cqw;
+}
+
+.tp-btn.tp-on {
+    background: color-mix(in srgb, var(--tp-accent) 18%, transparent);
+    color: var(--tp-accent);
+}
+
+.tp-tabs {
+    flex: 1;
+    overflow: hidden;
+}
+
+/* The open file is a solid button-coloured pill, like .tabs-container .tab.active. */
+.tp-tab {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 0.9cqw;
+    height: 5cqw;
+    padding: 0 1.1cqw 0 2cqw;
+    border-radius: 99px;
+    background: var(--tp-btn);
+    color: var(--tp-btn-text);
+    font: 800 2.6cqw/1 'Nunito', sans-serif;
+    white-space: nowrap;
+}
+
+.tp-x {
+    width: 1.7cqw;
+    height: 1.7cqw;
+    opacity: 0.75;
+}
+
+.tp-plus {
+    width: 2.5cqw;
+    height: 2.5cqw;
+    margin-left: 0.8cqw;
+}
+
+.tp-run {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 0.7cqw;
+    height: 5cqw;
+    padding: 0 1.3cqw 0 2cqw;
+    border-radius: 99px;
+    background: var(--tp-btn);
+    color: var(--tp-btn-text);
+}
+
+.tp-run .tp-ico {
+    width: 2.5cqw;
+    height: 2.5cqw;
+}
+
+.tp-run .tp-run-caret {
+    width: 1.9cqw;
+    height: 1.9cqw;
+}
+
+.tp-head .tp-win {
+    gap: 1.6cqw;
+    padding: 0 1.9cqw;
+}
+
+.tp-win .tp-ico {
+    width: 2.1cqw;
+    height: 2.1cqw;
+}
+
+/* ---- Editor and I/O column ---- */
+.tp-main {
+    display: flex;
+    flex: 1;
+    gap: 1.6cqw;
+    min-height: 0;
+}
+
+.tp-editor,
+.tp-io {
+    border: 1px solid var(--tp-border);
+    border-radius: 3cqw;
+}
+
+.tp-editor {
+    flex: 1;
+    align-items: stretch;
+    overflow: hidden;
+    background: var(--tp-code-bg);
+}
+
+.tp-code {
+    flex: 1;
+    min-width: 0;
+    padding: 1.8cqw 0;
+    color: var(--tp-fg);
+    font: 3.1cqw/1.6 'JetBrains Mono', Consolas, monospace;
+    white-space: pre;
+    text-align: left;
+}
+
+.tp-ln {
+    display: block;
+}
+
+.tp-ln-active {
+    background: var(--tp-line);
+}
+
+.tp-ln > b {
+    display: inline-block;
+    width: 4.6cqw;
+    margin-right: 2.4cqw;
+    color: var(--tp-gutter);
+    font-weight: 400;
+    text-align: right;
+}
+
+.tp-ln-active > b {
+    color: var(--tp-gutter-active);
+}
+
+.tp-caret {
+    display: inline-block;
+    width: 0.45cqw;
+    height: 1.2em;
+    margin-left: 0.3cqw;
+    vertical-align: -0.25em;
+    background: var(--tp-cursor);
+}
+
+.tp-side {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    gap: 1.6cqw;
+    width: 21cqw;
+}
+
+/* Input / Output / Expected, each with its coloured dot (islands.css .io-dot). */
+.tp-io {
+    flex: 1;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0.9cqw;
+    padding: 0 1.8cqw;
+    background: var(--tp-editor);
+}
+
+.tp-io-head {
+    display: flex;
+    align-items: center;
+    gap: 1cqw;
+    color: var(--tp-text);
+    font: 800 1.9cqw/1 'Nunito', sans-serif;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.tp-io-head > b {
+    flex: none;
+    width: 1.4cqw;
+    height: 1.4cqw;
+    border-radius: 50%;
+    background: var(--tp-dot);
+    box-shadow: 0 0 0 0.45cqw color-mix(in srgb, var(--tp-dot) 22%, transparent);
+}
+
+.tp-ac {
+    margin-left: auto;
+    padding: 0.3cqw 0.9cqw;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--tp-ok) 22%, transparent);
+    color: var(--tp-ok);
+    font-size: 1.7cqw;
+    letter-spacing: 0;
+}
+
+.tp-io-text {
+    color: var(--tp-text);
+    font: 2.6cqw/1.2 'JetBrains Mono', Consolas, monospace;
+    white-space: nowrap;
+}
+
+/* ---- Status bar ---- */
+.tp-status {
+    flex: none;
+    gap: 1cqw;
+    height: 4.2cqw;
+    padding: 0 2cqw;
+    border-radius: 99px;
+    font: 800 2.1cqw/1 'Nunito', sans-serif;
+    white-space: nowrap;
+}
+
+.tp-status > b {
+    width: 1.2cqw;
+    height: 1.2cqw;
+    border-radius: 50%;
+    background: var(--tp-ok);
+}
+
+.tp-status-right {
+    display: flex;
+    align-items: center;
+    gap: 1.6cqw;
+    margin-left: auto;
+}
+
+.tp-chip {
+    padding: 0.35cqw 1.4cqw;
+    border-radius: 99px;
+    background: var(--tp-btn);
+    color: var(--tp-btn-text);
+}
+
+/* The theme's main colours as a row of overlapping dots next to its name. */
+.theme-swatches {
+    display: flex;
+    flex: none;
+    padding-left: 4px;
+}
+
+.theme-swatches i {
+    width: 13px;
+    height: 13px;
+    margin-left: -4px;
+    border: 2px solid var(--bg-panel);
+    border-radius: 50%;
+}
+
+.mp-card-title {
     display: flex;
     align-items: center;
     gap: 6px;
+    padding: 0 6px;
 }
 
-/* Theme action buttons in Appearance - removed duplicate, see above */
-
-/* Theme carousel card - match style */
-.theme-carousel-card {
-    flex-shrink: 0;
-    width: 140px;
-    background: var(--bg-input);
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.theme-carousel-card:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-}
-
-.theme-carousel-card.active {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px var(--accent);
-}
-
-.theme-carousel-name {
-    font-size: 11px;
-    font-weight: 700;
-    font-family: 'Nunito', sans-serif;
+.mp-card-name {
+    min-width: 0;
     color: var(--text-primary);
+    font: 600 15px 'Fredoka', 'Nunito', sans-serif;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-.theme-carousel-info {
-    padding: 8px;
-    text-align: center;
-    background: var(--bg-panel);
+.mp-card-title .theme-swatches {
+    margin-left: auto;
 }
 
-/* Marketplace list background fix */
-.marketplace-themes-list {
-    padding: 24px;
-    background: transparent;
-    min-height: 100%;
-}
-
-/* Grid layout improvement */
-.mp-grid {
+.mp-card.active .theme-active-mark {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 16px;
-}
-
-/* Fullscreen popup body fix */
-.fullscreen-popup-body {
-    flex: 1;
-    overflow-y: auto;
-    background: var(--bg-panel);
-}
-
-/* Marketplace Section Title */
-.mp-section-title {
-    font-size: 14px;
-    font-weight: 700;
-    font-family: 'Nunito', sans-serif;
-    color: var(--text-primary);
-    margin: 0 0 16px 0;
-    padding-bottom: 8px;
-    border-bottom: 2px solid var(--border);
-}
-
-/* MP Card improvements */
-.mp-card {
-    background: var(--bg-input);
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-}
-
-.mp-card:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-}
-
-.mp-card.active {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px var(--accent);
-}
-
-.mp-card-preview {
-    height: 80px;
-    position: relative;
-}
-
-.mp-active-badge {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    padding: 2px 8px;
-    background: var(--accent);
-    color: var(--button-text-on-accent, #fff);
-    font-size: 9px;
-    font-weight: 700;
-    border-radius: 4px;
-}
-
-.mp-card-info {
-    padding: 10px;
-    background: var(--bg-panel);
-}
-
-.mp-card-name {
-    font-size: 13px;
-    font-weight: 700;
-    font-family: 'Nunito', sans-serif;
-    color: var(--text-primary);
-    margin-bottom: 4px;
 }
 
 .mp-card-desc {
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-bottom: 6px;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    -webkit-box-orient: vertical;
+    padding: 0 6px;
     overflow: hidden;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 1.4;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+.mp-card-foot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    padding: 2px 8px 8px 12px;
 }
 
 .mp-card-meta {
     display: flex;
-    gap: 8px;
-    font-size: 10px;
-    color: var(--text-muted);
-    margin-bottom: 10px;
-}
-
-.mp-card-actions {
-    display: flex;
-    gap: 6px;
+    flex: 1;
     flex-wrap: wrap;
+    gap: 2px 8px;
+    min-width: 0;
+    color: var(--text-muted);
+    font-size: 11.5px;
+    overflow-wrap: anywhere;
 }
 
-.mp-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 6px 12px;
-    font-size: 11px;
-    font-weight: 700;
-    font-family: 'Nunito', sans-serif;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg-button);
-    color: var(--text-primary);
+.mp-card-meta > :first-child {
+    text-transform: capitalize;
+}
+
+/* Edit / Export / Delete: quiet round icon buttons. */
+.mp-card-tools {
+    display: flex;
+    flex: none;
+    gap: 2px;
+}
+
+.mp-tool {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--text-secondary);
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background-color 0.15s, color 0.15s;
 }
 
-.mp-btn:hover {
-    background: var(--bg-button-hover);
+.mp-tool .ico {
+    width: 16px;
+    height: 16px;
 }
 
-.mp-btn.mp-btn-apply {
-    background: var(--accent);
-    color: var(--button-text-on-accent, #fff);
-    border-color: var(--accent);
+.mp-tool:hover,
+.mp-tool:focus-visible {
+    background: color-mix(in srgb, var(--text-primary) 10%, transparent);
+    color: var(--text-primary);
+    outline: none;
 }
 
-.mp-btn.mp-btn-apply:hover:not(.disabled) {
-    background: var(--accent-hover);
+.mp-tool.danger:hover,
+.mp-tool.danger:focus-visible {
+    background: color-mix(in srgb, var(--error) 18%, transparent);
+    color: var(--error);
 }
 
-.mp-btn.mp-btn-apply.disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+.fullscreen-popup-actions .btn-secondary,
+.fullscreen-popup-actions .btn-primary {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 12px;
 }
 
-.mp-btn.danger:hover {
-    background: var(--error);
-    color: #fff;
-    border-color: var(--error);
+@media (max-width: 1000px) {
+    .fullscreen-popup-header {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        padding: 12px 16px;
+    }
+
+    .fullscreen-popup-actions {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        margin-left: 0;
+    }
+
+    .fullscreen-popup-close {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .fullscreen-popup-body {
+        padding: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .theme-carousel-card {
+        width: 152px;
+    }
 }
 
 /* Theme Carousel Meta */
 .theme-carousel-meta {
     display: flex;
-    gap: 4px;
-    justify-content: center;
-    margin-top: 2px;
+    align-items: center;
+    gap: 5px;
 }
 
 .theme-carousel-type {
-    font-size: 9px;
+    font-size: 10.5px;
     color: var(--text-muted);
     text-transform: capitalize;
 }
 
 .theme-carousel-badge {
-    font-size: 8px;
-    padding: 1px 4px;
+    font-size: 8.5px;
+    padding: 1px 5px;
     background: var(--accent);
     color: var(--button-text-on-accent, #fff);
     border-radius: 3px;
@@ -840,58 +921,6 @@
     background: rgba(0, 0, 0, 0.2);
     border-radius: 6px;
     font-size: 11px;
-    color: var(--text-muted);
-}
-
-/* Theme pills - fix font */
-.theme-pill {
-    flex-shrink: 0;
-    width: 140px;
-    background: var(--bg-input);
-    border: 2px solid var(--border);
-    border-radius: 10px;
-    overflow: hidden;
-    cursor: pointer;
-    transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-    display: flex;
-    flex-direction: column;
-}
-
-.theme-pill:hover {
-    border-color: var(--accent);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-}
-
-.theme-pill.active {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 2px var(--accent);
-}
-
-.theme-pill-swatch {
-    height: 60px;
-    border-bottom: 1px solid var(--border);
-}
-
-.theme-pill-title {
-    padding: 8px;
-    text-align: center;
-    background: var(--bg-panel);
-}
-
-.theme-pill-name {
-    font-size: 11px;
-    font-weight: 700;
-    font-family: 'Nunito', sans-serif;
-    color: var(--text-primary);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 2px;
-}
-
-.theme-pill-meta {
-    font-size: 9px;
     color: var(--text-muted);
 }
 

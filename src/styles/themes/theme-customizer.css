@@ -5,10 +5,12 @@
  * .settings-popup, .settings-header, .settings-sidebar/.settings-tab,
  * .settings-content, .setting-row, .settings-footer, .btn-save, .btn-reset,
  * .btn-theme-action), so it picks up their look and the per-theme overrides in
- * themes.css.  This file only adds the three-column layout and the controls
+ * themes.css.  This file adds the two-column layout and the controls
  * Settings does not have.  Colours come from theme tokens only.
  */
 .theme-customizer-view.settings-overlay {
+    --tcf-support-text: color-mix(in srgb, var(--text-primary) 60%, var(--text-secondary));
+    --tcf-danger-text: color-mix(in srgb, var(--text-primary) 80%, var(--error));
     z-index: var(--z-panel-raised);
     /* No backdrop blur: it re-renders the background video under the window. */
     backdrop-filter: none;
@@ -34,10 +36,8 @@
 }
 
 /* ---- Frame ---- */
-/* A notch smaller than Settings throughout: the customizer holds three
- * columns and a long list of rows in about the same window. */
 .tcf-dialog.settings-popup {
-    width: min(1220px, 95vw);
+    width: min(1360px, 95vw);
     height: min(780px, 92vh);
     border-width: 3px;
 }
@@ -64,22 +64,16 @@
     font-family: 'Fredoka', sans-serif;
 }
 
-/* Section headings: the Settings section title (accent, bold, uppercase). */
+/* Keep the section tint on light panels where the accent alone can be too pale. */
 .theme-customizer-view .tcf-panel h3.tcf-token-group-title,
 .tcf-panel-name,
 .tcf-preview-heading h3 {
-    color: var(--settings-section-color, var(--accent)) !important;
+    color: color-mix(in srgb, var(--text-primary) 80%, var(--settings-section-color, var(--accent))) !important;
     font-family: 'Fredoka', sans-serif;
     font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-}
-
-[data-theme-variant="dark"] .theme-customizer-view .tcf-panel h3.tcf-token-group-title,
-[data-theme-variant="dark"] .tcf-panel-name,
-[data-theme-variant="dark"] .tcf-preview-heading h3 {
-    color: var(--bg-ocean-deep) !important;
 }
 
 .tcf-header .settings-close {
@@ -107,14 +101,14 @@
 }
 
 .tcf-dirty {
-    color: var(--text-muted);
+    color: var(--tcf-support-text);
     font-size: 13px;
     font-weight: 600;
     white-space: nowrap;
 }
 
 .tcf-dirty[data-state="dirty"] {
-    color: var(--warning);
+    color: color-mix(in srgb, var(--text-primary) 80%, var(--warning));
 }
 
 .tcf-header-fields {
@@ -147,35 +141,52 @@
 
 .tcf-body.settings-container {
     display: grid;
-    grid-template-columns: 178px minmax(320px, 470px) minmax(0, 1fr);
+    grid-template-columns: clamp(320px, 34%, 416px) minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-areas: "tabs preview" "controls preview";
     gap: 16px;
     min-height: 0;
     padding: 18px;
 }
 
-/* ---- Sidebar ---- */
-/* The Settings card and tabs (theme.css, themes.css), fitted to the grid. */
-.theme-customizer-view .tcf-sidebar.settings-sidebar {
+/* ---- Section tabs ---- */
+.theme-customizer-view .tcf-tabs.settings-sidebar {
+    grid-area: tabs;
+    container-type: inline-size;
+    flex-direction: row;
+    flex-wrap: wrap;
     width: auto;
     max-height: none;
-    min-height: 0;
-    gap: 6px;
-    padding: 12px 10px;
+    gap: 4px;
+    padding: 4px;
+    border-width: 2px;
+    border-radius: 24px;
 }
 
-.theme-customizer-view .tcf-sidebar .settings-tab {
-    padding: 11px 14px;
+.theme-customizer-view .tcf-tabs .settings-tab {
+    flex: 1 0 auto;
+    justify-content: center;
+    gap: 5px;
+    width: auto;
+    padding: 9px 6px;
     font-size: 14px;
 }
 
-.theme-customizer-view .tcf-sidebar .settings-tab svg {
-    width: 20px;
-    height: 20px;
+.theme-customizer-view .tcf-tabs .settings-tab svg {
+    width: 16px;
+    height: 16px;
+}
+
+@container (max-width: 390px) {
+    .theme-customizer-view .tcf-tabs .settings-tab svg {
+        display: none;
+    }
 }
 
 /* ---- Controls column ---- */
 /* The Settings content card; the list scrolls inside it. */
 .theme-customizer-view .tcf-main.settings-content {
+    grid-area: controls;
     display: flex;
     flex-direction: column;
     min-width: 0;
@@ -202,14 +213,13 @@
     padding: 0 6px 0 14px;
     border-radius: 999px;
     background: color-mix(in srgb, var(--text-primary) 7%, transparent);
-    color: var(--text-muted);
+    color: var(--tcf-support-text);
     cursor: text;
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
 .tcf-search:focus-within {
     background: color-mix(in srgb, var(--accent) 16%, transparent);
-    color: var(--accent);
 }
 
 .tcf-search input {
@@ -228,7 +238,7 @@
 }
 
 .tcf-search input::placeholder {
-    color: var(--text-muted);
+    color: var(--tcf-support-text);
     font-weight: 600;
 }
 
@@ -480,19 +490,28 @@
 
 /* ---- Backgrounds ---- */
 /* Flat sections split by a hairline, like the colour lists. */
+[data-tcf-background-list] {
+    padding-inline: 6px;
+}
+
 .theme-customizer-view .tcf-background-card.setting-row {
-    display: block;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
     margin: 0;
-    padding: 6px 6px 16px;
+    padding: 12px 0;
     border: none;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
 }
 
+.theme-customizer-view .tcf-background-card.setting-row:first-child {
+    padding-top: 4px;
+}
+
 .theme-customizer-view .tcf-background-card.setting-row + .tcf-background-card {
-    padding-top: 14px;
-    border-top: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+    border-top: 1px solid color-mix(in srgb, var(--text-primary) 16%, transparent);
 }
 
 .tcf-card-heading {
@@ -500,18 +519,13 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 10px;
 }
 
 .tcf-card-title {
-    margin: 0 0 10px;
+    margin: 0;
     color: var(--settings-label-color, var(--text-primary));
     font-size: 16px;
     font-weight: 700;
-}
-
-.tcf-card-heading .tcf-card-title {
-    margin: 0;
 }
 
 [data-theme-variant="dark"] .tcf-card-title {
@@ -527,7 +541,7 @@
 .theme-customizer-view input[type="text"].tcf-background-url {
     flex: 1 1 auto;
     min-width: 0;
-    height: 30px;
+    height: 36px;
     padding: 0 12px;
     overflow: hidden;
     border-width: 1px;
@@ -576,25 +590,71 @@
     color: var(--text-primary) !important;
 }
 
-.tcf-file-button input {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
+.theme-customizer-view .btn-theme-action.tcf-file-button {
+    width: 36px;
+    height: 36px;
+    padding: 0 !important;
+    justify-content: center;
+    color: var(--text-primary) !important;
+}
+
+.theme-customizer-view .tcf-file-button .ico {
+    width: 22px !important;
+    height: 22px !important;
+}
+
+.tcf-background-details > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 30px;
+    padding: 4px 10px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'Fredoka', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.tcf-background-details > summary::-webkit-details-marker {
+    display: none;
+}
+
+.tcf-background-details > summary:hover {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-input));
+    color: var(--text-primary);
+}
+
+.tcf-background-details > summary:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+.tcf-background-details > summary .ico {
+    width: 12px;
+    height: 12px;
+}
+
+.tcf-background-details[open] > summary .ico {
+    transform: rotate(180deg);
 }
 
 .tcf-range-grid {
     display: grid;
-    gap: 8px;
-    margin-top: 12px;
+    gap: 6px;
+    margin-top: 10px;
 }
 
 .tcf-range-row {
     display: grid;
-    grid-template-columns: 112px minmax(0, 1fr) 48px;
+    grid-template-columns: clamp(112px, 40%, 144px) minmax(0, 1fr) 44px;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     min-height: 32px;
     font-size: 14px;
     font-weight: 700;
@@ -730,6 +790,7 @@
 
 /* ---- Preview ---- */
 .tcf-preview-pane {
+    grid-area: preview;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -750,7 +811,7 @@
 }
 
 .tcf-preview-help {
-    color: var(--text-muted);
+    color: var(--tcf-support-text);
     font-size: 13px;
     font-weight: 600;
 }
@@ -758,12 +819,18 @@
 /* A small window: the same frame as the Settings content card. */
 .tcf-preview-host {
     position: relative;
-    flex: 1 1 auto;
+    flex: 0 1 auto;
+    width: 100%;
+    aspect-ratio: 4 / 3;
     min-height: 0;
     overflow: hidden;
     border: 2px solid var(--border);
     border-radius: 22px;
     background: var(--bg-input);
+}
+
+.theme-customizer-view:has([data-tcf-range][data-key="welcomeBoxOpacity"]:focus) .tcf-preview-host {
+    --tcf-welcome-display: block;
 }
 
 /* ---- Footer ---- */
@@ -827,7 +894,7 @@
 
 .tcf-status {
     overflow: hidden;
-    color: var(--text-muted);
+    color: var(--tcf-support-text);
     font-size: 13px;
     font-weight: 600;
     text-overflow: ellipsis;
@@ -835,14 +902,14 @@
 }
 
 .tcf-status[data-tone="error"] {
-    color: var(--error);
+    color: var(--tcf-danger-text);
 }
 
 .tcf-danger-link {
     padding: 4px 0;
     border: none;
     background: none;
-    color: var(--error);
+    color: var(--tcf-danger-text);
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
@@ -877,32 +944,32 @@
 }
 
 .tcf-footer .btn-save {
-    border-width: 2px;
     box-shadow: 2px 2px 0 var(--shadow-card);
+}
+
+.theme-customizer-view .tcf-footer .btn-reset {
+    color: var(--tcf-support-text);
 }
 
 .tcf-footer .btn-reset.tcf-secondary {
     border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-    color: var(--accent);
 }
 
 /* Reset all is rarely wanted: text only until hovered. */
 .theme-customizer-view .tcf-footer .btn-reset.tcf-ghost {
     border-color: transparent;
     background: transparent;
-    color: var(--text-secondary);
 }
 
 .theme-customizer-view .tcf-footer .btn-reset.tcf-ghost:hover {
     border-color: transparent;
     background: color-mix(in srgb, var(--error) 12%, transparent);
-    color: var(--error);
+    color: var(--tcf-danger-text);
 }
 
 /* ---- Narrow windows ---- */
 @media (max-width: 1150px) {
     .tcf-body.settings-container {
-        grid-template-columns: 160px minmax(300px, 380px) minmax(0, 1fr);
         gap: 12px;
         padding: 12px;
     }
@@ -922,18 +989,34 @@
     }
 }
 
-@media (max-width: 920px) {
+@media (max-width: 820px) {
     .tcf-body.settings-container {
-        grid-template-columns: 150px minmax(0, 1fr);
-        grid-template-rows: minmax(0, 1fr) minmax(200px, 38%);
-    }
-
-    .tcf-preview-pane {
-        grid-column: 1 / -1;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto minmax(0, 1fr) clamp(120px, 33vh, 280px);
+        grid-template-areas: "tabs" "controls" "preview";
     }
 
     .tcf-header.settings-header {
         flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px 14px;
+    }
+
+    .tcf-header-fields {
+        gap: 10px;
+    }
+
+    .tcf-panel-toolbar {
+        padding-top: 10px;
+        padding-bottom: 8px;
+    }
+}
+
+@media (max-width: 740px) {
+    .tcf-header-fields {
+        order: 3;
+        width: 100%;
+        margin-left: 0;
     }
 }
 
@@ -944,24 +1027,8 @@
         border-radius: 0;
     }
 
-    .tcf-header-fields {
-        order: 3;
-        width: 100%;
-        margin-left: 0;
-    }
-
     .tcf-field input {
         width: 100%;
-    }
-
-    .tcf-body.settings-container {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto minmax(0, 1fr) 200px;
-    }
-
-    .tcf-sidebar.settings-sidebar {
-        flex-direction: row;
-        overflow-x: auto;
     }
 
     .tcf-footer.settings-footer {

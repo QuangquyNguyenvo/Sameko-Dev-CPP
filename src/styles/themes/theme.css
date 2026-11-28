@@ -70,7 +70,7 @@
 
     /* Welcome Box */
     --welcome-box-opacity: 0.4;
-    --welcome-box-bg: rgba(245, 250, 255, var(--welcome-box-opacity, 0.4));
+    --welcome-box-bg: rgba(245, 250, 255, 0.4);
     --welcome-btn-border: var(--border-strong, #b3e2fa);
     --welcome-btn-primary-border: var(--accent, #88c9ea);
 
@@ -155,14 +155,15 @@ body.performance-mode #resizer-split {
     border-right: 1px solid var(--border);
 }
 
-/* Ensure editor and panels have background in performance mode (not transparent) */
-body.performance-mode .editor-section,
+/* Keep the editor and dock surfaces simple in performance mode. */
+body.performance-mode .editor-section {
+    background: var(--bg-glass-heavy) !important;
+    backdrop-filter: none !important;
+}
+
 body.performance-mode .terminal-section,
 body.performance-mode .problems-panel {
-    background-color: var(--editor-bg) !important;
-    /* Or a slightly tinted background if preferred, but user suggested editor-bg/theme bg */
-    background: var(--bg-glass-heavy) !important;
-    /* Use the solid approximate color */
+    --dock-surface: var(--bg-glass-heavy);
     backdrop-filter: none !important;
 }
 

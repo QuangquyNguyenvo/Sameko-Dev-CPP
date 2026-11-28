@@ -64,7 +64,6 @@
 
 /* Panels (Problems, Terminal) */
 .problems-panel {
-    background: var(--bg-glass-heavy);
     border-top: 2px solid var(--border);
     display: flex;
     flex-direction: column;
@@ -105,7 +104,8 @@
 }
 
 .terminal-section {
-    background: var(--bg-glass-heavy);
+    --dock-surface: var(--bg-panel, var(--bg-glass-heavy));
+    background: var(--dock-surface);
     border: 2px solid var(--border, white);
     border-radius: var(--radius-sm);
     box-shadow: var(--shadow-card);
@@ -124,9 +124,14 @@
     overflow: visible;
 }
 
+.terminal-view {
+    backdrop-filter: blur(var(--terminal-bg-blur));
+}
+
 .terminal-body {
     background: var(--terminal-bg, #1e2933);
     color: var(--text-primary, #e0f0ff);
+    opacity: var(--terminal-opacity, 1);
     flex: 1;
     padding: 12px;
     font-family: 'JetBrains Mono', monospace;

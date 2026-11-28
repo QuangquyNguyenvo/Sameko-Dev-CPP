@@ -51,41 +51,37 @@ function saveSplashPalette() {
     window.electronAPI?.stateWrite?.('splash', palette)?.catch?.(() => { });
 }
 
+function themeBackgroundOverlay(theme, background = theme?.colors?.appBackground) {
+    const colors = theme?.colors || {};
+    if (!background || background === 'none' || colors.appOverlay === 'none') return 'transparent';
+
+    const light = (theme?.type || theme?.meta?.type) === 'light';
+    // appOverlay is not a token. Only accept RGB channels from imported themes.
+    const rgb = typeof colors.appOverlay === 'string' && /^\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*$/.test(colors.appOverlay)
+        ? colors.appOverlay : light ? '255, 255, 255' : '26, 37, 48';
+    const legacyOpacity = Number(App.settings.appearance.bgOpacity ?? 50) / 100;
+    const baseAlpha = light ? legacyOpacity * 0.15 : 0.3 + legacyOpacity * 0.5;
+    const defaultOpacity = ThemeTokens.isVideoBackground(background) ? 100 : 50;
+    const opacity = Number(colors.bgOpacity ?? defaultOpacity);
+    // Keep the theme's normal tint, but fade it out with the background layer.
+    const scale = Math.max(0, Math.min(1, opacity / defaultOpacity));
+    return scale ? `rgba(${rgb}, ${baseAlpha * scale})` : 'transparent';
+}
+
 function applyBackgroundSettings() {
     const theme = App.settings.appearance.theme || 'kawaii-dark';
-    const opacity = (App.settings.appearance.bgOpacity ?? 50) / 100;
-
-    // Derive the fallback gradient + container overlay from the theme definition
-    // (SSOT in ThemeManager) instead of a hardcoded per-theme table.
     const themeObj = ThemeManager.themes.get(theme);
     const tc = themeObj?.colors || {};
-    const isLight = themeObj?.type === 'light';
-
-    // overlay: tints .app-container when a bg image/video is present. Dark themes
-    // use a stronger tint, light themes a very subtle one (matching the original
-    // hand-tuned values). Base color is stored per-theme as `appOverlay`; 'none' shows the
-    // background undimmed (Kawaii Dark/Light).
-    // appOverlay is not a token, so importing a theme does not check it: accept only "r, g, b",
-    // or a theme file could put url(https://...) layers into the background below.
-    const noOverlay = tc.appOverlay === 'none';
-    const overlayRgb = typeof tc.appOverlay === 'string' && /^\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*$/.test(tc.appOverlay);
-    const overlayBase = (overlayRgb && tc.appOverlay) || (isLight ? '255, 255, 255' : '26, 37, 48');
-    const overlayAlpha = isLight ? (opacity * 0.15) : (0.3 + opacity * 0.5);
 
     // default: fallback gradient, shown only when a theme has no bg image/video
     // (i.e. custom themes). Derived from the theme's own base tones.
     const gradTop = tc.editorBg || tc.bgOceanMedium || '#1a2530';
     const gradBottom = tc.bgOceanDark || tc.bgOceanMedium || '#152535';
 
-    const themeConfig = {
-        default: `linear-gradient(135deg, ${gradTop} 0%, ${gradBottom} 100%)`,
-        overlay: `rgba(${overlayBase}, ${overlayAlpha})`
-    };
-
     const normalizeBgUrl = (url) => {
         if (!url) return '';
         const cleaned = String(url).trim();
-        if (!cleaned) return '';
+        if (!cleaned || cleaned.toLowerCase() === 'none') return '';
         const invalidSingletons = ['\\', '/', '.', './', '..'];
         if (invalidSingletons.includes(cleaned)) return '';
         if (cleaned.toLowerCase() === 'file://' || cleaned.toLowerCase() === 'file:') return '';
@@ -101,27 +97,15 @@ function applyBackgroundSettings() {
     const bgKnown = !ThemeManager.isLoading?.();
     const userThemeBg = hasCanonical || !bgKnown ? '' : normalizeBgUrl(perTheme[theme]?.bgUrl || App.settings.appearance.bgUrl);
 
-    // Get theme-specific background from THEME definition (default)
-    const themeDefaultBg = bgKnown ? themeObj?.colors?.appBackground : ''; // e.g. 'assets/backgrounds/pink.gif'
+    const themeDefaultBg = bgKnown ? normalizeBgUrl(themeObj?.colors?.appBackground) : '';
 
-
-    // Single background owner (Phase 07 §4). The still image — theme default OR a
-    // user override — is rendered through --app-bg-image on body::before, which is
-    // the layer that applies the opacity / blur / brightness / position controls.
-    // Video is rendered by ThemeManager (#app-bg-video). app.js no longer paints a
-    // duplicate full-opacity image onto document.body, so the two systems can no
-    // longer fight and the bg controls actually take effect.
-    // VISUAL NOTE: image themes (kawaii-light, sakura) now honour the bg-opacity
-    // setting (default 50%) instead of always showing at full opacity. If you want
-    // the old always-full look, revert this commit.
+    // body::before draws the still image and ThemeManager manages #app-bg-video.
     const root = document.documentElement;
     const bgVideo = document.getElementById('app-bg-video');
     // Relative paths are made absolute: in a custom property they would resolve
     // against styles/base.css, not the page.
     const absolute = (u) => (/^([a-z][a-z0-9+.-]*:|[\\/])/i.test(u) ? u : new URL(u, document.baseURI).href);
     const toBgUrl = (u) => u.startsWith('data:') ? `url("${u}")` : `url('${localUrl(absolute(u)).replace(/'/g, "\\'")}')`;
-    document.body.style.backgroundImage = '';
-
     if (userThemeBg) {
         // A user override wins over the theme's own background, including a video.
         root.style.setProperty('--app-bg-image', toBgUrl(userThemeBg));
@@ -133,17 +117,13 @@ function applyBackgroundSettings() {
     } else {
         // No image/video for this theme → fallback gradient behind the empty layer.
         root.style.setProperty('--app-bg-image', 'none');
-        document.body.style.background = themeConfig.default;
+        document.body.style.background = `linear-gradient(135deg, ${gradTop} 0%, ${gradBottom} 100%)`;
     }
 
 
     const appContainer = document.querySelector('.app-container');
     if (appContainer) {
-        if ((userThemeBg || themeDefaultBg) && !noOverlay) {
-            appContainer.style.background = themeConfig.overlay;
-        } else {
-            appContainer.style.background = 'transparent';
-        }
+        appContainer.style.background = themeBackgroundOverlay(themeObj, userThemeBg || themeDefaultBg || '');
     }
 
     // A video hidden behind a user image would otherwise keep decoding.

@@ -236,20 +236,10 @@ function initSettings() {
 
             // Initialize marketplace carousel when opening appearance tab
             if (tab.dataset.tab === 'appearance' && typeof ThemeMarketplace !== 'undefined') {
-                ThemeMarketplace.renderCarousel();
+                ThemeMarketplace.renderCarousel({ revealActive: true });
             }
         };
     });
-
-    // Appearance: open marketplace fullscreen
-    const openMarketplaceBtn = document.getElementById('btn-theme-marketplace');
-    if (openMarketplaceBtn) {
-        openMarketplaceBtn.onclick = () => {
-            if (typeof ThemeMarketplace !== 'undefined') {
-                ThemeMarketplace.openModal();
-            }
-        };
-    }
 
     // Appearance: open customizer for current theme
     const customizeBtn = document.getElementById('btn-open-customizer');
@@ -483,6 +473,7 @@ function applySettingsSearch(raw) {
         tab?.classList.toggle('search-empty', !hit);
         if (hit) any = true;
         if (hit && panel.id === 'panel-template') showTemplateEditor();
+        if (hit && panel.id === 'panel-appearance' && typeof ThemeMarketplace !== 'undefined') ThemeMarketplace.renderCarousel();
     });
 
     if (!any) {
@@ -656,10 +647,10 @@ function showTemplateEditor() {
 /**
  * Populate theme dropdown from ThemeManager
  */
-function populateThemeDropdowns() {
+function populateThemeDropdowns(themeList) {
     if (typeof ThemeManager === 'undefined') return;
 
-    const themeList = ThemeManager.getThemeList();
+    themeList ||= ThemeManager.getThemeList();
     const themeSelect = document.getElementById('set-theme');
     const editorColorSelect = document.getElementById('set-editorColorScheme');
 
@@ -701,96 +692,6 @@ function populateThemeDropdowns() {
         if ([...editorColorSelect.options].some(o => o.value === currentValue)) {
             editorColorSelect.value = currentValue;
         }
-    }
-
-    // Also render horizontal theme carousel
-    populateThemeCarousel(themeList);
-}
-
-let _themeCarouselBound = false;
-function populateThemeCarousel(themeList) {
-    const carousel = document.getElementById('theme-carousel');
-    if (!carousel) return;
-
-    const selected = document.getElementById('set-theme')?.value || App.settings?.appearance?.theme || '';
-
-    carousel.innerHTML = '';
-    themeList.forEach(t => {
-        const themeObj = ThemeManager.themes.get(t.id);
-        const bg = themeObj?.editor?.background || themeObj?.colors?.editorBg || '#1a2530';
-        const accent = themeObj?.colors?.accent || '#88c9ea';
-
-        const pill = document.createElement('div');
-        pill.className = 'theme-pill' + (t.id === selected ? ' active' : '');
-        pill.dataset.themeId = t.id;
-        pill.innerHTML = `
-            <div class="theme-pill-swatch" style="background:${escHtml(bg)}; border-color:${escHtml(accent)}"></div>
-            <div class="theme-pill-title">
-                <div class="theme-pill-name">${escHtml(t.name)}</div>
-                <div class="theme-pill-meta">${t.isBuiltin ? 'Built-in' : 'Custom'} • ${escHtml(t.type || '')}</div>
-            </div>
-        `;
-
-        // Note: Click handling is done in bindThemeCarouselInteractions via pointerup
-        // to properly distinguish between drag and click
-
-        carousel.appendChild(pill);
-    });
-
-    if (!_themeCarouselBound) {
-        _themeCarouselBound = true;
-        bindThemeCarouselInteractions();
-    }
-}
-
-function selectThemeFromCarousel(themeId, scrollIntoView = false) {
-    const select = document.getElementById('set-theme');
-    if (!select) return;
-    select.value = themeId;
-
-    // Update carousel active state
-    const carousel = document.getElementById('theme-carousel');
-    if (carousel) {
-        carousel.querySelectorAll('.theme-pill').forEach(el => {
-            el.classList.toggle('active', el.dataset.themeId === themeId);
-        });
-        if (scrollIntoView) {
-            const active = carousel.querySelector(`.theme-pill[data-theme-id="${themeId}"]`);
-            active?.scrollIntoView({ behavior: 'instant', inline: 'center', block: 'nearest' });
-        }
-    }
-
-    // Trigger existing flow
-    select.dispatchEvent(new Event('change'));
-}
-
-function bindThemeCarouselInteractions() {
-    const carousel = document.getElementById('theme-carousel');
-    const leftBtn = document.getElementById('theme-carousel-left');
-    const rightBtn = document.getElementById('theme-carousel-right');
-    if (!carousel) return;
-
-    // Wheel: vertical scroll => horizontal browse
-    carousel.addEventListener('wheel', (e) => {
-        // Allow normal scrolling if user is using trackpad horizontal (deltaX)
-        const delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-        carousel.scrollLeft += delta;
-        e.preventDefault();
-    }, { passive: false });
-
-    // Simple click to select theme - no drag functionality
-    carousel.addEventListener('click', (e) => {
-        const pill = e.target.closest('.theme-pill');
-        if (pill && pill.dataset.themeId) {
-            selectThemeFromCarousel(pill.dataset.themeId, false);
-        }
-    });
-
-    if (leftBtn) {
-        leftBtn.addEventListener('click', () => carousel.scrollBy({ left: -320, behavior: 'instant' }));
-    }
-    if (rightBtn) {
-        rightBtn.addEventListener('click', () => carousel.scrollBy({ left: 320, behavior: 'instant' }));
     }
 }
 
@@ -979,11 +880,6 @@ function openSettings() {
     // Populate theme dropdowns dynamically from ThemeManager first
     populateThemeDropdowns();
 
-    // Render theme carousel if marketplace is available
-    if (typeof ThemeMarketplace !== 'undefined') {
-        ThemeMarketplace.renderCarousel();
-    }
-
     clearSettingsSearch();
     document.getElementById('set-fontSize').value = App.settings.editor.fontSize;
     document.getElementById('val-fontSize').textContent = App.settings.editor.fontSize + 'px';
@@ -1053,8 +949,6 @@ function openSettings() {
 
     // Set theme values after dropdown is populated
     document.getElementById('set-theme').value = App.settings.appearance.theme;
-    // Sync carousel selection to saved theme
-    selectThemeFromCarousel(App.settings.appearance.theme, true);
     document.getElementById('set-editorColorScheme').value = App.settings.editor.colorScheme || 'auto';
     document.getElementById('set-performanceMode').checked = App.settings.appearance.performanceMode || false;
     syncMinimapSwitch();
@@ -1116,6 +1010,9 @@ function openSettings() {
 
     const overlay = document.getElementById('settings-overlay');
     overlay.classList.add('show');
+    if (document.getElementById('panel-appearance').classList.contains('active') && typeof ThemeMarketplace !== 'undefined') {
+        ThemeMarketplace.renderCarousel({ revealActive: true });
+    }
     if (document.getElementById('panel-template').classList.contains('active')) showTemplateEditor();
 }
 
@@ -1133,6 +1030,13 @@ function closeSettings() {
  * @param {KeyboardEvent} e
  */
 function handleSettingsEscape(e) {
+    if (typeof ThemeMarketplace !== 'undefined' && ThemeMarketplace.isOpen()) {
+        if (e.target.closest?.('#marketplace-popup')) {
+            e.preventDefault();
+            ThemeMarketplace.closeMarketplace();
+        }
+        return;
+    }
     const overlay = document.getElementById('settings-overlay');
     if (!overlay || !overlay.classList.contains('show')) return;
     const editor = e.target instanceof Element ? e.target.closest('.monaco-editor') : null;

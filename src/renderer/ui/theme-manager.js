@@ -33,6 +33,7 @@ const ThemeManager = {
     _themeStateAvailable: false,
     _themeStateDocument: null,
     _legacyThemesFound: false,
+    _editorBackgroundObserver: null,
 
     // Current active theme ID
     activeThemeId: null,
@@ -273,7 +274,8 @@ const ThemeManager = {
     BACKGROUND_OVERRIDE_KEYS: [
         'appBackground', 'bgOpacity', 'bgBrightness', 'bgBlur', 'bgPosition',
         'editorBackground', 'editorBgOpacity', 'editorBgBrightness',
-        'editorBgBlur', 'editorBgPosition'
+        'editorBgBlur', 'editorBgPosition',
+        'terminalOpacity', 'panelOpacity', 'terminalBgBlur', 'welcomeBoxOpacity'
     ],
 
     /**
@@ -1019,55 +1021,140 @@ const ThemeManager = {
         }
     },
 
+    _isEditorAreaVisible(area) {
+        if (!area || area.hidden) return false;
+        const style = typeof getComputedStyle === 'function' ? getComputedStyle(area) : null;
+        if (style && (style.display === 'none' || style.visibility === 'hidden')) return false;
+        return typeof area.getClientRects !== 'function' || area.getClientRects().length > 0;
+    },
+
+    _removeEditorBackgroundVideo(area) {
+        const video = area?.querySelector?.('.editor-bg-video');
+        if (video) {
+            video.pause();
+            video.removeAttribute('src');
+            video.load();
+            video.remove();
+        }
+        area?.classList?.remove('editor-bg-video-active');
+    },
+
+    _ensureEditorBackgroundVideo(area, src) {
+        let video = area.querySelector('.editor-bg-video');
+        if (!video) {
+            video = document.createElement('video');
+            video.className = 'editor-bg-video';
+            video.muted = true;
+            video.loop = true;
+            video.playsInline = true;
+            video.preload = 'none';
+            video.setAttribute('muted', '');
+            video.setAttribute('playsinline', '');
+            video.setAttribute('aria-hidden', 'true');
+            area.insertBefore(video, area.firstChild);
+        }
+        if (video.getAttribute('src') !== src) {
+            video.pause();
+            video.src = src;
+            video.load();
+        }
+        area.classList.add('editor-bg-video-active');
+        return video;
+    },
+
+    _syncEditorBackgroundObserver(areas) {
+        if (typeof IntersectionObserver === 'undefined') return;
+        if (!areas.length) {
+            this._editorBackgroundObserver?.disconnect();
+            this._editorBackgroundObserver = null;
+            return;
+        }
+        if (!this._editorBackgroundObserver) {
+            this._editorBackgroundObserver = new IntersectionObserver(() => this.syncBackgroundVideo());
+        }
+        this._editorBackgroundObserver.disconnect();
+        areas.forEach(area => this._editorBackgroundObserver.observe(area));
+    },
+
+    _updateEditorBackground(theme) {
+        if (typeof document.querySelectorAll !== 'function') {
+            this._syncEditorBackgroundObserver([]);
+            return;
+        }
+        const areas = Array.from(document.querySelectorAll('.editor-area'));
+        const bgPath = this.isLoading() ? '' : theme.colors?.editorBackground;
+        if (typeof ThemeTokens === 'undefined' || !ThemeTokens.isVideoBackground(bgPath)) {
+            areas.forEach(area => this._removeEditorBackgroundVideo(area));
+            this._syncEditorBackgroundObserver([]);
+            return;
+        }
+
+        const src = typeof localUrl === 'function' ? localUrl(bgPath) : bgPath;
+        areas.forEach(area => this._ensureEditorBackgroundVideo(area, src));
+        this._syncEditorBackgroundObserver(areas);
+    },
+
     /**
-     * Update background video element if theme has a video background
-     * @param {Object} theme 
+     * Update the app and editor background videos if their theme has a video background.
+     * @param {Object} theme
      */
     _updateBackground(theme) {
         const bgVideo = document.getElementById('app-bg-video');
-        if (!bgVideo) return;
 
         // Before init() the user's background is unknown: show none rather than the default.
         const bgPath = this.isLoading() ? '' : theme.colors?.appBackground;
 
-        // Supported video extensions or data URI
-        if (bgPath && (
-            bgPath.endsWith('.webm') ||
-            bgPath.endsWith('.mp4') ||
-            bgPath.startsWith('data:video/')
-        )) {
+        if (bgVideo && typeof ThemeTokens !== 'undefined' && ThemeTokens.isVideoBackground(bgPath)) {
             // Re-assigning the same src restarts the video and shows a blank frame; the theme
             // is applied twice at startup (settings, then once Monaco has loaded).
             const src = typeof localUrl === 'function' ? localUrl(bgPath) : bgPath;
             if (bgVideo.getAttribute('src') !== src) bgVideo.src = src;
             bgVideo.style.display = 'block';
             document.documentElement.style.setProperty('--app-bg-image', 'none');
-            this.syncBackgroundVideo();
-        } else {
+        } else if (bgVideo) {
             bgVideo.style.display = 'none';
             bgVideo.src = '';
             bgVideo.removeAttribute('src');
             bgVideo.load();
         }
+
+        this._updateEditorBackground(theme);
+        this.syncBackgroundVideo();
     },
 
     /**
-     * Play the background video only while it can be seen (not hidden behind a user image,
-     * not minimised) and the window has focus. Each video frame repaints the whole window
-     * (~6% GPU), and a window behind other apps is not `document.hidden`, so an IDE in the
-     * background kept a screen share or recording busy. Paused, the video keeps showing its
-     * current frame. Off with Settings > Animated Background or the system's reduced-motion
-     * setting; Performance Mode does not pause it.
+     * Play background videos only while they can be seen and the window has focus.
+     * Each video frame repaints the whole window (~6% GPU), and a window behind other
+     * apps is not `document.hidden`, so an IDE in the background kept a screen share or
+     * recording busy. Paused videos keep showing their current frame. Off with Settings
+     * > Animated Background or the system's reduced-motion setting; Performance Mode does
+     * not pause them.
      */
     syncBackgroundVideo() {
         const bgVideo = document.getElementById('app-bg-video');
-        if (!bgVideo || !bgVideo.getAttribute('src')) return;
+        const editorVideos = typeof document.querySelectorAll === 'function'
+            ? Array.from(document.querySelectorAll('.editor-bg-video')) : [];
+        const hasAppVideo = !!bgVideo?.getAttribute('src');
+        if (!hasAppVideo && !editorVideos.length) return;
+
         const animated = (typeof App === 'undefined' || App.settings?.appearance?.animatedBackground !== false)
             && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-        const play = animated && bgVideo.style.display !== 'none' && !document.hidden && document.hasFocus();
-        bgVideo.autoplay = play;
-        if (play) bgVideo.play().catch(() => { });
-        else bgVideo.pause();
+        const windowVisible = animated && !document.hidden && document.hasFocus();
+
+        if (hasAppVideo) {
+            const play = windowVisible && bgVideo.style.display !== 'none';
+            bgVideo.autoplay = play;
+            if (play) bgVideo.play().catch(() => { });
+            else bgVideo.pause();
+        }
+
+        editorVideos.forEach(video => {
+            const area = video.closest('.editor-area');
+            const play = windowVisible && this._isEditorAreaVisible(area);
+            video.autoplay = play;
+            if (play) video.play().catch(() => { });
+            else video.pause();
+        });
     },
 
     /**

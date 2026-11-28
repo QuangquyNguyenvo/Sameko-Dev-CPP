@@ -9,7 +9,7 @@
 (function () {
     'use strict';
 
-    var PANEL_ORDER = ['colors', 'syntax', 'backgrounds', 'advanced'];
+    var PANEL_ORDER = ['backgrounds', 'colors', 'syntax', 'advanced'];
     var PANEL_HELP = {
         colors: 'Colors of surfaces, text and states. Click a part of the preview to jump to its color. ↺ on a row puts that color back; Ctrl+Z / Ctrl+Y undo and redo. Edits show in the preview only until you save.',
         syntax: 'Colors of the C++ code in the editor. ↺ on a row puts that color back.',
@@ -319,13 +319,15 @@
 
     function isVideoAsset(value) {
         var url = previewAssetUrl(value);
-        return !!url && (/^data:video\//i.test(url) || /\.(?:webm|mp4)(?:[?#].*)?$/i.test(url));
+        return !!url && (typeof window !== 'undefined' && window.ThemeTokens
+            ? window.ThemeTokens.isVideoBackground(url)
+            : /(?:\.(?:webm|mp4)(?:[?#].*)?$|^data:video\/)/i.test(url));
     }
 
     function normalizePanel(panel) {
         if (panel === 'ui') return 'colors';
         if (panel === 'json') return 'advanced';
-        return PANEL_ORDER.includes(panel) ? panel : 'colors';
+        return PANEL_ORDER.includes(panel) ? panel : PANEL_ORDER[0];
     }
 
     function findValue(target, selector) {
@@ -341,23 +343,30 @@
      * The app stylesheets are not linked: their selectors assume the live
      * document, so the rules the preview needs are restated here. */
     var PREVIEW_WIDTH = 1000;
+    /* The copy is laid out at the real window's width (within these bounds), so the
+     * header islands share the width the way they do in the IDE. */
+    var PREVIEW_MAX_WIDTH = 1600;
     var PREVIEW_MIN_HEIGHT = 560;
+    /* Window widths at which the real header changes (theme-dock.css, islands.css,
+     * toolbar.css); the copy gets a tcf-max-<width> class for each one the window is under. */
+    var PREVIEW_BREAKPOINTS = [1400, 1100, 850];
     var PREVIEW_ICONS = ['i-folder-simple-duo', 'i-folder-simple-fill', 'i-notepad-duo', 'i-notepad-fill',
         'i-terminal-window-duo', 'i-terminal-window-fill', 'i-warning-circle-duo', 'i-warning-circle-fill',
         'i-cloud-arrow-down-duo', 'i-play-fill', 'i-caret-down', 'i-caret-right', 'i-gear-six-duo', 'i-plus',
-        'i-minus', 'i-square', 'i-x', 'i-file-text-duo', 'i-folder-open-duo', 'i-magnifying-glass'];
+        'i-minus', 'i-square', 'i-x', 'i-file-text-duo', 'i-folder-open-duo', 'i-magnifying-glass', 'i-list'];
 
     function previewStyles() {
         return [
-            ':host{display:block;position:relative;min-height:0;height:100%;overflow:hidden;}',
             '*{box-sizing:border-box;}',
             '.tcf-stage{position:absolute;left:0;top:0;width:' + PREVIEW_WIDTH + 'px;height:' + PREVIEW_MIN_HEIGHT + 'px;transform-origin:0 0;}',
             '.ico{width:20px;height:20px;fill:currentColor;flex-shrink:0;overflow:visible;}.ico .ico-alt{display:none;}.active>.ico>use:not(.ico-alt){display:none;}.active>.ico>.ico-alt{display:inline;}',
-            '.app-container{--tcf-island-bg:linear-gradient(var(--bg-panel),var(--bg-panel)),var(--editor-bg);--tcf-line:1.5px solid var(--border);position:relative;display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;background:var(--tcf-app-base,#1a2530);color:var(--text-primary);font:14px Nunito,"Segoe UI",sans-serif;cursor:default;user-select:none;}',
+            '.app-container{--app-bg-image:none;--editor-bg-image:none;--app-bg-position:center;--editor-bg-position:center;--terminal-bg-blur:initial;--bg-panel-problems:initial;--tcf-island-bg:var(--bg-panel,var(--editor-bg));--tcf-panel-bg:var(--bg-panel-problems,var(--bg-panel,var(--bg-glass-heavy)));--tcf-line:1.5px solid var(--border);position:relative;isolation:isolate;display:flex;flex-direction:column;width:100%;height:100%;overflow:hidden;background:var(--tcf-app-base,#1a2530);color:var(--text-primary);font:14px Nunito,"Segoe UI",sans-serif;cursor:default;user-select:none;}',
+            '.app-container[data-theme-variant="dark"],.app-container[data-component-style="sakura"]{--tcf-panel-bg:var(--bg-panel);}',
+            '.app-container[data-performance-mode]{--tcf-panel-bg:var(--bg-glass-heavy);}',
             '.tcf-app-background{position:absolute;inset:calc(-1 * var(--app-bg-blur,0px));z-index:0;background-image:var(--app-bg-image,none);background-position:var(--app-bg-position,center center);background-size:cover;background-repeat:no-repeat;opacity:var(--app-bg-opacity,.5);filter:blur(var(--app-bg-blur,0px)) brightness(var(--app-bg-brightness,1));pointer-events:none;}',
-            '.tcf-app-background.has-video{opacity:1;}',
             '.tcf-app-background>.tcf-preview-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:var(--app-bg-position,center center);pointer-events:none;}',
             '.tcf-app-overlay{position:absolute;inset:0;z-index:0;background:var(--tcf-app-overlay,transparent);pointer-events:none;}',
+            '.tcf-app-background.has-video + .tcf-app-overlay{z-index:-1;}',
             '.header-bar,.content-wrapper,.status-bar{position:relative;z-index:1;}',
             /* Header: three islands */
             '.header-bar{display:flex;align-items:center;flex:0 0 60px;height:60px;padding:0 8px 0 12px;gap:10px;}',
@@ -376,7 +385,16 @@
             '.run-split{display:flex;align-items:stretch;height:34px;border-radius:999px;overflow:hidden;background:var(--btn-primary-bg,var(--accent));color:var(--btn-primary-text,#fff);}',
             '.run-main{display:flex;align-items:center;gap:6px;padding:0 12px 0 16px;font-size:15px;font-weight:800;}.run-main .ico{width:18px;height:18px;}',
             '.run-caret{display:flex;align-items:center;justify-content:center;width:32px;box-shadow:inset 1px 0 0 color-mix(in srgb,var(--btn-primary-text,#000) 22%,transparent);}.run-caret .ico{width:14px;height:14px;}',
-            '.win-btns{display:flex;gap:2px;margin-left:auto;}.win-btn{display:flex;align-items:center;justify-content:center;width:40px;height:32px;color:var(--text-secondary);}.win-btn .ico{width:16px;height:16px;}',
+            '.hamburger-btn{display:none;align-items:center;justify-content:center;width:40px;height:40px;flex-shrink:0;border:2px solid var(--border);border-radius:12px;background:var(--btn-bg,#fff);color:var(--btn-text,var(--bg-ocean-deep));}',
+            '.app-container[data-theme-variant="dark"] .hamburger-btn{background:var(--bg-button);color:var(--bg-ocean-deep);}',
+            '.menu-group{display:flex;align-items:center;}',
+            '.win-btns{gap:2px;}.win-btn{display:flex;align-items:center;justify-content:center;width:38px;height:34px;border-radius:12px;color:var(--text-secondary);}.win-btn .ico{width:16px;height:16px;}',
+            /* The real header at narrower windows (see PREVIEW_BREAKPOINTS) */
+            '.tcf-max-1400 .run-label{display:none;}',
+            '.tcf-max-1100 .header-bar{padding:0 6px 0 8px;gap:6px;}.tcf-max-1100 .header-island{height:42px;padding:0 4px;}.tcf-max-1100 .tabs-wrap{padding:0 6px;}',
+            '.tcf-max-1100 .hamburger-btn{display:flex;}.tcf-max-1100 .menu-group{display:none;}',
+            '.tcf-max-1100 .tool-group .toggle-btn{width:32px;height:32px;}.tcf-max-1100 .toggle-btn .ico{width:18px;height:18px;}',
+            '.tcf-max-850 .tool-group .toggle-btn:not(.tcf-keep){display:none;}.tcf-max-850 .tool-group::after{display:none;}.tcf-max-850 .win-btn{width:34px;}',
             /* Explorer, editor, bottom panel, I/O column */
             '.content-wrapper{display:flex;flex:1 1 auto;min-height:0;}',
             '.explorer-sidebar{display:flex;flex-direction:column;flex:0 0 196px;margin:2px 0 12px 12px;border:var(--tcf-line);border-radius:22px;background:var(--tcf-island-bg);overflow:hidden;}',
@@ -394,20 +412,22 @@
             '.editors-container{position:relative;flex:1 1 auto;min-height:0;border:var(--tcf-line);border-radius:22px;background:var(--editor-bg);overflow:hidden;}',
             '.editor-bg-layer{position:absolute;inset:calc(-1 * var(--editor-bg-blur,0px));z-index:0;background-image:var(--editor-bg-image,none);background-size:cover;background-position:var(--editor-bg-position,center center);background-repeat:no-repeat;opacity:var(--editor-bg-opacity,.15);filter:blur(var(--editor-bg-blur,0px)) brightness(var(--editor-bg-brightness,1));pointer-events:none;}',
             '.editor-bg-layer.has-video{background-image:none;}.editor-bg-layer>.tcf-preview-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:var(--editor-bg-position,center center);}',
+            '.welcome-box-sample{display:var(--tcf-welcome-display,none);position:absolute;right:18px;bottom:18px;z-index:2;width:172px;padding:12px 14px;border:2px solid var(--welcome-btn-border,var(--border));border-radius:16px;background:rgb(from var(--welcome-box-bg,rgba(0,0,0,0)) r g b / calc(alpha * min(var(--welcome-box-opacity,0.4),0.4) / 0.4 + (1 - alpha) * max(0, var(--welcome-box-opacity,0.4) - 0.4) / 0.6));box-shadow:0 8px 20px color-mix(in srgb,var(--bg-ocean-dark,#0d1a25) 25%,transparent);color:var(--text-primary);font:600 18px/1.1 Fredoka,"Segoe UI",sans-serif;text-align:center;pointer-events:none;}',
             '.code{position:relative;z-index:1;padding-top:10px;font:14px/19px "JetBrains Mono",Consolas,monospace;color:var(--tcf-editor-fg,var(--text-primary));}',
             '.code-line{display:flex;height:19px;white-space:pre;}.code-line.current{background:var(--tcf-line-highlight,transparent);}',
             '.ln{flex:0 0 64px;padding-right:26px;text-align:right;color:var(--tcf-line-number,var(--text-muted));}.code-line.current .ln{color:var(--tcf-line-number-active,var(--text-primary));}',
             '.syntax-keyword{color:var(--syntax-keyword);}.syntax-string{color:var(--syntax-string);}.syntax-number{color:var(--syntax-number);}.syntax-type{color:var(--syntax-type);}.syntax-function{color:var(--syntax-function);}.syntax-variable{color:var(--syntax-variable);}.syntax-comment{color:var(--syntax-comment);font-style:italic;}.syntax-operator{color:var(--syntax-operator);}.syntax-bracket{color:var(--syntax-bracket);}',
             '.resizer{position:relative;flex:0 0 10px;}.resizer::before{content:"";position:absolute;left:50%;top:50%;width:40px;height:5px;margin:-2px 0 0 -20px;border-radius:999px;background:color-mix(in srgb,var(--text-primary) 28%,transparent);}',
-            '.problems-panel{display:flex;flex-direction:column;flex:0 0 34%;min-height:0;border:var(--tcf-line);border-radius:22px;background:var(--bg-glass-heavy);overflow:hidden;}',
+            '.problems-panel{display:flex;flex-direction:column;flex:0 0 34%;min-height:0;border:var(--tcf-line);border-radius:22px;background:color-mix(in srgb,var(--tcf-panel-bg) calc(var(--panel-opacity,1) * 100%),transparent);overflow:hidden;}',
             '.problems-panel>.panel-head{display:flex;align-items:center;gap:2px;padding:4px 10px 0;border-bottom:1.5px solid color-mix(in srgb,var(--border) 70%,transparent);}',
             '.panel-tab{position:relative;padding:7px 12px 9px;color:var(--text-muted);font-size:12px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;}',
             '.panel-tab.active{color:var(--text-primary);}.panel-tab.active::after{content:"";position:absolute;left:10px;right:10px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--accent);}',
             '.panel-actions{display:flex;gap:4px;margin-left:auto;color:var(--text-secondary);}.panel-actions .ico{width:14px;height:14px;}',
-            '.terminal-body{flex:1 1 auto;min-height:0;padding:10px 14px;background:var(--terminal-bg);color:var(--terminal-text,var(--text-secondary));font:13px/1.6 "JetBrains Mono",Consolas,monospace;white-space:pre;}',
+            '.terminal-view{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;backdrop-filter:blur(var(--terminal-bg-blur));}',
+            '.terminal-body{flex:1 1 auto;min-height:0;padding:10px 14px;background:var(--terminal-bg);color:var(--terminal-text,var(--text-secondary));opacity:var(--terminal-opacity,1);font:13px/1.6 "JetBrains Mono",Consolas,monospace;white-space:pre;}',
             '.term-system{color:var(--term-line-system,var(--text-muted));}.term-success{color:var(--term-line-success,var(--success));}.term-info{color:var(--term-line-info,var(--accent));}.term-warning{color:var(--term-line-warning,var(--warning));}.term-input{color:var(--term-line-input,var(--text-primary));}',
             '.io-section{display:flex;flex-direction:column;flex:0 0 200px;gap:10px;min-height:0;}',
-            '.io-panel{display:flex;flex-direction:column;flex:1 1 0;min-height:0;border:var(--tcf-line);border-radius:22px;background:var(--editor-bg);overflow:hidden;}',
+            '.io-panel{display:flex;flex-direction:column;flex:1 1 0;min-height:0;border:var(--tcf-line);border-radius:22px;background:color-mix(in srgb,var(--editor-bg) calc(var(--panel-opacity,1) * 100%),transparent);overflow:hidden;}',
             '.io-panel-input{--io-dot:var(--accent);}.io-panel-output{--io-dot:var(--warning,#f5a23a);}.io-panel-expected{--io-dot:var(--success,#4cc38a);}',
             '.io-panel>.panel-head{display:flex;align-items:center;gap:7px;padding:11px 10px 4px 14px;}',
             '.io-title{color:var(--text-primary);font-size:12px;font-weight:800;letter-spacing:.7px;text-transform:uppercase;}',
@@ -418,7 +438,9 @@
             '.status-item,.status-right{display:flex;align-items:center;gap:6px;}.status-right{gap:14px;}',
             '.status-dot{width:7px;height:7px;border-radius:50%;background:var(--success);}',
             '.status-zero{color:var(--text-muted);opacity:.75;}',
-            '.status-std{padding:1px 10px;border-radius:999px;background:var(--btn-primary-bg,var(--accent));color:var(--btn-primary-text,#fff);}',
+            '.status-std,.accent-text-sample{padding:1px 10px;border-radius:999px;}',
+            '.status-std{background:var(--btn-primary-bg,var(--accent));color:var(--btn-primary-text,#fff);}',
+            '.accent-text-sample{background:var(--accent);color:var(--button-text-on-accent,#fff);}',
             /* Click-to-edit targets */
             '[data-preview-token]{cursor:pointer;}',
             '[data-preview-token]:hover{outline:2px dashed color-mix(in srgb,var(--accent) 70%,transparent);outline-offset:-2px;}',
@@ -456,20 +478,21 @@
             '<div class="tcf-app-background" aria-hidden="true"></div><div class="tcf-app-overlay" aria-hidden="true"></div>',
             '<div class="header-bar">',
             '<div class="header-island island-nav"' + target('bgPanel', 'Edit header island color') + '>',
-            '<div class="logo"' + target('accent', 'Edit accent color') + '>C++</div>',
+            '<div class="logo"' + target('btnPrimaryBg', 'Edit primary button color') + '>C++</div>',
             '<span class="toggle-btn active">' + icon('i-folder-simple-duo', 'i-folder-simple-fill') + '</span>',
-            '<span class="menu-btn"' + target('textSecondary', 'Edit secondary text color') + '>File</span><span class="menu-btn">Edit</span><span class="menu-btn">View</span><span class="menu-btn">Run</span>',
+            '<span class="hamburger-btn">' + icon('i-list') + '</span>',
+            '<span class="menu-group"><span class="menu-btn"' + target('textSecondary', 'Edit secondary text color') + '>File</span><span class="menu-btn">Edit</span><span class="menu-btn">View</span><span class="menu-btn">Run</span></span>',
             '</div>',
             '<div class="header-island tabs-wrap"' + target('bgPanel', 'Edit tab island color') + '>',
             '<span class="tab active"' + target('btnPrimaryBg', 'Edit active tab color') + '>main.cpp<span class="tab-x">' + icon('i-x') + '</span></span>',
             '<span class="tab-add">' + icon('i-plus') + '</span>',
             '</div>',
             '<div class="header-island header-actions">',
-            '<div class="tool-group"><span class="toggle-btn active">' + icon('i-notepad-duo', 'i-notepad-fill') + '</span><span class="toggle-btn active">' + icon('i-terminal-window-duo', 'i-terminal-window-fill') + '</span><span class="toggle-btn">' + icon('i-warning-circle-duo', 'i-warning-circle-fill') + '</span><span class="toggle-btn">' + icon('i-cloud-arrow-down-duo') + '</span></div>',
-            '<div class="run-split"' + target('btnPrimaryBg', 'Edit primary button color') + '><span class="run-main">' + icon('i-play-fill') + 'Run</span><span class="run-caret">' + icon('i-caret-down') + '</span></div>',
+            '<div class="tool-group"><span class="toggle-btn active">' + icon('i-notepad-duo', 'i-notepad-fill') + '</span><span class="toggle-btn active tcf-keep">' + icon('i-terminal-window-duo', 'i-terminal-window-fill') + '</span><span class="toggle-btn">' + icon('i-warning-circle-duo', 'i-warning-circle-fill') + '</span><span class="toggle-btn">' + icon('i-cloud-arrow-down-duo') + '</span></div>',
+            '<div class="run-split"' + target('btnPrimaryBg', 'Edit primary button color') + '><span class="run-main">' + icon('i-play-fill') + '<span class="run-label">Run</span></span><span class="run-caret">' + icon('i-caret-down') + '</span></div>',
             '<span class="toggle-btn">' + icon('i-gear-six-duo') + '</span>',
             '</div>',
-            '<div class="win-btns"><span class="win-btn">' + icon('i-minus') + '</span><span class="win-btn">' + icon('i-square') + '</span><span class="win-btn">' + icon('i-x') + '</span></div>',
+            '<div class="header-island win-btns"' + target('bgPanel', 'Edit window buttons island color') + '><span class="win-btn">' + icon('i-minus') + '</span><span class="win-btn">' + icon('i-square') + '</span><span class="win-btn">' + icon('i-x') + '</span></div>',
             '</div>',
             '<div class="content-wrapper">',
             '<div class="explorer-sidebar"' + target('bgPanel', 'Edit explorer color') + '>',
@@ -484,11 +507,11 @@
             '</div>',
             '<div class="main">',
             '<div class="editor-section">',
-            '<div class="editors-container"' + target('editorBg', 'Edit editor background color') + '><div class="editor-bg-layer" aria-hidden="true"></div><div class="code">' + code + '</div></div>',
+            '<div class="editors-container"' + target('editorBg', 'Edit editor background color') + '><div class="editor-bg-layer" aria-hidden="true"></div><div class="welcome-box-sample" aria-hidden="true">Welcome</div><div class="code">' + code + '</div></div>',
             '<div class="resizer"></div>',
             '<div class="problems-panel"' + target('bgGlassHeavy', 'Edit bottom panel color') + '>',
-            '<div class="panel-head"><span class="panel-tab">Problems</span><span class="panel-tab active">Terminal</span><span class="panel-tab">Tests</span><span class="panel-actions">' + icon('i-caret-down') + icon('i-x') + '</span></div>',
-            '<div class="terminal-body" translate="no"' + target('terminalBg', 'Edit terminal color') + '><div class="term-system">&gt; g++ -std=c++20 -O2 main.cpp -o main</div><div class="term-success">✓ Build succeeded in 1.2s</div><div class="term-input">5</div><div>Sum: 15</div><div class="term-info">Process exited with code 0</div></div>',
+            '<div class="panel-head"><span class="panel-tab">Problems</span><span class="panel-tab active"' + target('accent', 'Edit accent color') + '>Terminal</span><span class="panel-tab">Tests</span><span class="panel-actions">' + icon('i-caret-down') + icon('i-x') + '</span></div>',
+            '<div class="terminal-view"><div class="terminal-body" translate="no"' + target('terminalBg', 'Edit terminal color') + '><div class="term-system">&gt; g++ -std=c++20 -O2 main.cpp -o main</div><div class="term-success">✓ Build succeeded in 1.2s</div><div class="term-input">5</div><div>Sum: 15</div><div class="term-info">Process exited with code 0</div></div></div>',
             '</div>',
             '</div>',
             '<div class="io-section">',
@@ -498,7 +521,7 @@
             '</div>',
             '</div>',
             '</div>',
-            '<div class="status-bar"' + target('bgPanel', 'Edit status bar color') + '><span class="status-item"><span class="status-dot"></span>Ready</span><span class="status-right"><span class="status-zero">0 errors</span><span class="status-zero">0 warnings</span><span>Ln 1, Col 1</span><span class="status-std">C++20</span></span></div>',
+            '<div class="status-bar"' + target('bgPanel', 'Edit status bar color') + '><span class="status-item"><span class="status-dot"></span>Ready</span><span class="status-right"><span class="status-zero">0 errors</span><span class="status-zero">0 warnings</span><span>Ln 1, Col 1</span><span class="accent-text-sample"' + target('buttonTextOnAccent', 'Edit text on accent buttons') + '>Aa</span><span class="status-std">C++20</span></span></div>',
             '</div>'
         ].join('');
     }
@@ -520,10 +543,7 @@
         this._previewHost = null;
         this._previewRoot = null;
         this._previewApp = null;
-        this._previewVideo = null;
-        this._previewVideoParent = null;
-        this._previewVideoUrl = '';
-        this._previewVideoKey = '';
+        this._previewVideos = Object.create(null);
         this._unsubscribe = null;
         this._statusMessage = '';
         this._statusTone = '';
@@ -550,18 +570,18 @@
             '<button type="button" class="settings-close" data-tcf-action="close" aria-label="Close theme customizer">×</button>',
             '</div>',
             '<div class="settings-container tcf-body">',
-            '<div class="settings-sidebar tcf-sidebar" role="tablist" aria-label="Customizer sections">',
+            '<div class="settings-sidebar tcf-tabs" role="tablist" aria-label="Customizer sections">',
+            '<button type="button" class="settings-tab" role="tab" data-tcf-panel="backgrounds" aria-controls="tcf-panel-backgrounds"><svg class="ico" width="16" height="16" aria-hidden="true"><use href="#i-drop-duo"/><use class="ico-alt" href="#i-drop-duo"/></svg>Backgrounds</button>',
             '<button type="button" class="settings-tab" role="tab" data-tcf-panel="colors" aria-controls="tcf-panel-colors"><svg class="ico" width="16" height="16" aria-hidden="true"><use href="#i-palette-duo"/><use class="ico-alt" href="#i-palette-fill"/></svg>UI Colors</button>',
             '<button type="button" class="settings-tab" role="tab" data-tcf-panel="syntax" aria-controls="tcf-panel-syntax"><svg class="ico" width="16" height="16" aria-hidden="true"><use href="#i-code-duo"/><use class="ico-alt" href="#i-code-fill"/></svg>Syntax</button>',
-            '<button type="button" class="settings-tab" role="tab" data-tcf-panel="backgrounds" aria-controls="tcf-panel-backgrounds"><svg class="ico" width="16" height="16" aria-hidden="true"><use href="#i-drop-duo"/><use class="ico-alt" href="#i-drop-duo"/></svg>Backgrounds</button>',
             '<button type="button" class="settings-tab" role="tab" data-tcf-panel="advanced" aria-controls="tcf-panel-advanced"><svg class="ico" width="16" height="16" aria-hidden="true"><use href="#i-wrench-duo"/><use class="ico-alt" href="#i-wrench-fill"/></svg>Advanced</button>',
             '</div>',
             '<div class="settings-content tcf-main">',
             '<div class="tcf-panel-toolbar"><label class="tcf-search" data-tcf-search-wrap><svg class="ico" width="15" height="15" aria-hidden="true"><use href="#i-magnifying-glass"/></svg><input type="search" data-tcf-search placeholder="Search colors" autocomplete="off"><button type="button" data-tcf-action="clear-search" aria-label="Clear search">×</button></label><span class="tcf-panel-hint"><span class="tcf-panel-name" data-tcf-panel-name></span><span class="tooltip" data-tcf-panel-hint>?</span></span></div>',
             '<div class="tcf-scroll">',
+            '<section class="settings-panel active tcf-panel" id="tcf-panel-backgrounds" data-tcf-panel-view="backgrounds" role="tabpanel"><div data-tcf-background-list></div></section>',
             '<section class="settings-panel active tcf-panel" id="tcf-panel-colors" data-tcf-panel-view="colors" role="tabpanel"><div class="tcf-token-list" data-tcf-color-list></div></section>',
             '<section class="settings-panel active tcf-panel" id="tcf-panel-syntax" data-tcf-panel-view="syntax" role="tabpanel"><div class="tcf-token-list" data-tcf-syntax-list></div></section>',
-            '<section class="settings-panel active tcf-panel" id="tcf-panel-backgrounds" data-tcf-panel-view="backgrounds" role="tabpanel"><div data-tcf-background-list></div></section>',
             '<section class="settings-panel active tcf-panel" id="tcf-panel-advanced" data-tcf-panel-view="advanced" role="tabpanel"><div data-tcf-advanced-content></div></section>',
             '</div>',
             '</div>',
@@ -589,8 +609,9 @@
             var panel = event.target.closest ? event.target.closest('[data-tcf-panel]') : null;
             if (panel && self.element.contains(panel)) {
                 var selectedPanel = panel.getAttribute('data-tcf-panel');
-                self._invoke('selectPanel', self._controllerPanel(selectedPanel));
-                self._setPanelImmediately(selectedPanel);
+                if (self._invoke('selectPanel', self._controllerPanel(selectedPanel)) !== false) {
+                    self._setPanelImmediately(selectedPanel);
+                }
             }
         };
         this._bound.input = function (event) { self._handleInput(event, false); };
@@ -600,6 +621,17 @@
             if (event.key === 'Escape') {
                 event.preventDefault();
                 self._invoke('close');
+                return;
+            }
+            if (event.target.matches?.('[data-tcf-panel]') && !event.altKey && !event.ctrlKey && !event.metaKey
+                && ['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) {
+                var index = PANEL_ORDER.indexOf(event.target.dataset.tcfPanel);
+                var lastIndex = PANEL_ORDER.length - 1;
+                var next = event.key === 'Home' ? 0 : event.key === 'End' ? lastIndex
+                    : (index + (event.key === 'ArrowLeft' ? lastIndex : 1)) % PANEL_ORDER.length;
+                event.preventDefault();
+                self.element.querySelector('[data-tcf-panel="' + PANEL_ORDER[next] + '"]').click();
+                self.element.querySelector('[data-tcf-panel][aria-selected="true"]')?.focus();
                 return;
             }
             if (event.key === 'Tab' && self._dialog) {
@@ -652,7 +684,7 @@
         var getter = typeof this.controller.getState === 'function' ? this.controller.getState() || {} : {};
         return {
             theme: this.controller.workingTheme || state.workingTheme || getter.workingTheme || this._theme || {},
-            panel: normalizePanel(this.controller.activePanel || state.activePanel || getter.activePanel || 'colors'),
+            panel: normalizePanel(this.controller.activePanel || state.activePanel || getter.activePanel),
             dirty: this.controller.dirty !== undefined ? this.controller.dirty : (state.dirty !== undefined ? state.dirty : !!getter.dirty),
             busy: this.controller.busy !== undefined ? this.controller.busy : (state.busy !== undefined ? state.busy : !!getter.busy),
             canUndo: this.controller.canUndo !== undefined ? this.controller.canUndo : (state.canUndo !== undefined ? state.canUndo : getter.canUndo),
@@ -710,6 +742,7 @@
         if (action === 'reset') return this._invoke('reset');
         if (action === 'revert') return this._invoke('revertToken', node.getAttribute('data-key'));
         if (action === 'clear-background') return this._invoke('clearBackground', node.getAttribute('data-key'));
+        if (action === 'choose-background') return node.parentElement.querySelector('[data-tcf-bg-file]')?.click();
         if (action === 'delete') return this._invoke('deleteTheme');
         if (action === 'save') return this._invoke('save', { asNew: false, backgroundOnly: false });
         if (action === 'save-as') return this._invoke('save', { asNew: true, backgroundOnly: false });
@@ -1091,11 +1124,8 @@
         list.appendChild(this._createBackgroundCard('editor', 'Editor background', 'editorBackground', EDITOR_BACKGROUND_FIELDS));
         var effects = document.createElement('section');
         effects.className = 'setting-row tcf-background-card';
-        var heading = document.createElement('h4');
-        heading.className = 'tcf-card-title';
-        heading.textContent = 'Shared effects';
-        effects.appendChild(heading);
-        effects.appendChild(this._createRangeGrid(EFFECT_FIELDS));
+        effects.setAttribute('data-background-card', 'shared');
+        effects.appendChild(this._createBackgroundDetails('Shared effects', EFFECT_FIELDS));
         list.appendChild(effects);
         this._backgroundBuilt = true;
     };
@@ -1129,19 +1159,33 @@
         var source = document.createElement('div');
         source.className = 'tcf-source-row';
         source.appendChild(url);
-        card.appendChild(source);
-        var fileLabel = document.createElement('label');
-        fileLabel.className = 'btn-theme-action tcf-file-button';
-        fileLabel.textContent = 'Choose file…';
+        var chooseFile = document.createElement('button');
+        chooseFile.type = 'button';
+        chooseFile.className = 'btn-theme-action tcf-file-button';
+        chooseFile.setAttribute('data-tcf-action', 'choose-background');
+        chooseFile.setAttribute('data-key', imageKey);
+        chooseFile.setAttribute('aria-label', 'Choose file…');
+        chooseFile.title = 'Choose file…';
+        chooseFile.innerHTML = icon('i-upload-simple');
         var file = document.createElement('input');
         file.type = 'file';
+        file.hidden = true;
         file.accept = 'image/*,video/*';
         file.setAttribute('data-tcf-bg-file', 'true');
         file.setAttribute('data-key', imageKey);
-        fileLabel.appendChild(file);
-        source.appendChild(fileLabel);
-        card.appendChild(this._createRangeGrid(fields));
+        source.append(chooseFile, file);
+        card.append(source, this._createBackgroundDetails('Effects', fields));
         return card;
+    };
+
+    CustomizerView.prototype._createBackgroundDetails = function (label, fields) {
+        var details = document.createElement('details');
+        details.className = 'tcf-background-details';
+        var summary = document.createElement('summary');
+        summary.innerHTML = icon('i-caret-down');
+        summary.prepend(document.createTextNode(label));
+        details.append(summary, this._createRangeGrid(fields));
+        return details;
     };
 
     CustomizerView.prototype._createRangeGrid = function (fields) {
@@ -1195,7 +1239,7 @@
         Array.prototype.forEach.call(this.element.querySelectorAll('[data-tcf-range]'), function (range) {
             var active = self.element.ownerDocument && self.element.ownerDocument.activeElement;
             var key = range.getAttribute('data-key');
-            var fallback = key.indexOf('Brightness') >= 0 ? 100 : key === 'bgOpacity' ? (isVideoAsset(asString(tokenValue(self._theme, 'appBackground'), '')) ? 100 : 50) : key === 'editorBgOpacity' ? 15 : key === 'terminalOpacity' || key === 'panelOpacity' || key === 'welcomeBoxOpacity' ? 100 : 0;
+            var fallback = key.indexOf('Brightness') >= 0 ? 100 : key === 'bgOpacity' ? (isVideoAsset(asString(tokenValue(self._theme, 'appBackground'), '')) ? 100 : 50) : key === 'editorBgOpacity' ? 15 : key === 'welcomeBoxOpacity' ? 40 : key === 'terminalOpacity' || key === 'panelOpacity' ? 100 : 0;
             if (range !== active || self._options.force) range.value = String(numericValue(self._theme, key, fallback));
             var output = range.parentElement && range.parentElement.querySelector('[data-tcf-range-value]');
             if (output) output.textContent = self._formatRange(key, range.value);
@@ -1366,6 +1410,8 @@
             this._previewObserver = new ResizeObserver(this._bound.previewResize);
             this._previewObserver.observe(this._previewHost);
         }
+        // The window can cross a header breakpoint without the preview host changing size.
+        window.addEventListener('resize', this._bound.previewResize);
         this._bound.previewClick = function (event) {
             var target = event.target && event.target.closest ? event.target.closest('[data-preview-token]') : null;
             if (!target || !self._previewApp || !self._previewApp.contains(target)) return;
@@ -1385,14 +1431,21 @@
         this._previewRoot.addEventListener('keydown', this._bound.previewKeydown);
     };
 
-    /* Lay the copy out at desktop width and scale it to the host.  When the
-     * host is short and wide, the height wins and the copy gets wider. */
+    /* Lay the copy out at the window's width and scale it to the host.  When the
+     * host is short and wide, the height wins and the copy gets wider.  The
+     * header follows the window's own breakpoints, so it looks like the real one. */
     CustomizerView.prototype._fitPreview = function () {
         if (!this._previewHost || !this._previewStage) return;
         var width = this._previewHost.clientWidth;
         var height = this._previewHost.clientHeight;
         if (!width || !height) return;
-        var scale = width / PREVIEW_WIDTH;
+        var viewport = window.innerWidth || PREVIEW_WIDTH;
+        if (this._previewApp) {
+            for (var i = 0; i < PREVIEW_BREAKPOINTS.length; i++) {
+                this._previewApp.classList.toggle('tcf-max-' + PREVIEW_BREAKPOINTS[i], viewport <= PREVIEW_BREAKPOINTS[i]);
+            }
+        }
+        var scale = width / Math.min(PREVIEW_MAX_WIDTH, Math.max(PREVIEW_WIDTH, viewport));
         if (height / scale < PREVIEW_MIN_HEIGHT) scale = height / PREVIEW_MIN_HEIGHT;
         this._previewStage.style.width = (width / scale) + 'px';
         this._previewStage.style.height = (height / scale) + 'px';
@@ -1401,19 +1454,24 @@
 
     CustomizerView.prototype._selectPreviewToken = function (key, target) {
         if (!key || !this.element) return;
-        this._invoke('selectPanel', this._controllerPanel('colors'));
-        this._setPanelImmediately('colors');
+        var backgroundKeys = ['bgOpacity', 'bgBrightness', 'bgBlur', 'bgPosition',
+            'editorBgOpacity', 'editorBgBrightness', 'editorBgBlur', 'editorBgPosition',
+            'terminalOpacity', 'panelOpacity', 'terminalBgBlur', 'welcomeBoxOpacity'];
+        var panel = backgroundKeys.indexOf(key) >= 0 ? 'backgrounds' : 'colors';
+        if (this._invoke('selectPanel', this._controllerPanel(panel)) === false) return;
+        this._setPanelImmediately(panel);
         var search = this.element.querySelector('[data-tcf-search]');
         if (search) {
             search.value = '';
             this._searchQuery = '';
         }
-        this._renderColors();
         var rows = this.element.querySelectorAll('[data-tcf-token-row]');
         Array.prototype.forEach.call(rows, function (row) {
-            row.classList.toggle('tcf-preview-row-selected', row.getAttribute('data-key') === key);
+            row.classList.toggle('tcf-preview-row-selected', panel === 'colors' && row.getAttribute('data-key') === key);
         });
-        var fields = this.element.querySelectorAll('[data-tcf-token-input]');
+        var fields = panel === 'colors'
+            ? this.element.querySelectorAll('[data-tcf-token-input]')
+            : this.element.querySelectorAll('[data-tcf-range],[data-tcf-position],[data-tcf-bg-url]');
         var field = null;
         Array.prototype.some.call(fields, function (node) {
             if (node.getAttribute('data-key') === key) {
@@ -1423,6 +1481,8 @@
             return false;
         });
         if (field) {
+            var details = field.closest('.tcf-background-details');
+            if (details) details.open = true;
             field.focus();
             if (typeof field.select === 'function') field.select();
             try { field.scrollIntoView({ block: 'nearest' }); } catch (_) { }
@@ -1435,15 +1495,40 @@
         }
     };
 
-    CustomizerView.prototype._releasePreviewVideo = function () {
-        if (!this._previewVideo) return;
-        try { this._previewVideo.pause(); } catch (_) { }
-        this._previewVideo.removeAttribute('src');
-        try { this._previewVideo.load(); } catch (_) { }
-        if (this._previewVideo.parentNode) this._previewVideo.parentNode.removeChild(this._previewVideo);
-        this._previewVideoParent = null;
-        this._previewVideoUrl = '';
-        this._previewVideoKey = '';
+    CustomizerView.prototype._releasePreviewVideo = function (key) {
+        var videos = this._previewVideos;
+        if (!videos) return;
+        var keys = key ? [key] : Object.keys(videos);
+        keys.forEach(function (name) {
+            var entry = videos[name];
+            if (!entry) return;
+            var video = entry.video;
+            try { video.pause(); } catch (_) { }
+            video.removeAttribute('src');
+            try { video.load(); } catch (_) { }
+            if (video.parentNode) video.parentNode.removeChild(video);
+            delete videos[name];
+        });
+    };
+
+    CustomizerView.prototype._createPreviewVideo = function (key) {
+        this._previewVideos = this._previewVideos || Object.create(null);
+        var entry = this._previewVideos[key];
+        if (entry) return entry;
+        var video = document.createElement('video');
+        video.className = 'tcf-preview-video';
+        video.muted = true;
+        video.defaultMuted = true;
+        video.loop = true;
+        video.autoplay = false;
+        video.controls = false;
+        video.preload = 'metadata';
+        video.playsInline = true;
+        video.setAttribute('playsinline', '');
+        video.setAttribute('aria-hidden', 'true');
+        entry = { video: video, parent: null, url: '' };
+        this._previewVideos[key] = entry;
+        return entry;
     };
 
     CustomizerView.prototype._syncPreviewVideo = function (theme) {
@@ -1455,40 +1540,43 @@
             { key: 'appBackground', cssVar: '--app-bg-image', parent: appParent, url: previewAssetUrl(colors.appBackground) },
             { key: 'editorBackground', cssVar: '--editor-bg-image', parent: editorParent, url: previewAssetUrl(colors.editorBackground) }
         ];
-        var selected = candidates.find(function (candidate) {
-            return candidate.parent && isVideoAsset(candidate.url);
-        });
+        var self = this;
         candidates.forEach(function (candidate) {
-            if (candidate.parent) candidate.parent.classList.toggle('has-video', !!selected && selected.parent === candidate.parent);
+            var videoUrl = candidate.parent && isVideoAsset(candidate.url) ? candidate.url : '';
+            if (!videoUrl) {
+                if (candidate.parent) candidate.parent.classList.remove('has-video');
+                self._releasePreviewVideo(candidate.key);
+                return;
+            }
+            candidate.parent.classList.add('has-video');
+            self._previewApp.style.setProperty(candidate.cssVar, 'none');
+            var entry = self._createPreviewVideo(candidate.key);
+            if (entry.parent !== candidate.parent) {
+                candidate.parent.appendChild(entry.video);
+                entry.parent = candidate.parent;
+            }
+            if (entry.url !== videoUrl) {
+                try { entry.video.pause(); } catch (_) { }
+                entry.video.src = localUrl(videoUrl);
+                entry.url = videoUrl;
+                try { entry.video.load(); } catch (_) { }
+            }
         });
-        if (!selected) {
-            this._releasePreviewVideo();
-            return;
-        }
-        if (!this._previewVideo) {
-            this._previewVideo = document.createElement('video');
-            this._previewVideo.className = 'tcf-preview-video';
-            this._previewVideo.muted = true;
-            this._previewVideo.defaultMuted = true;
-            this._previewVideo.loop = true;
-            this._previewVideo.autoplay = false;
-            this._previewVideo.controls = false;
-            this._previewVideo.preload = 'metadata';
-            this._previewVideo.playsInline = true;
-            this._previewVideo.setAttribute('playsinline', '');
-            this._previewVideo.setAttribute('aria-hidden', 'true');
-        }
-        if (this._previewVideoParent !== selected.parent) {
-            selected.parent.appendChild(this._previewVideo);
-            this._previewVideoParent = selected.parent;
-        }
-        this._previewApp.style.setProperty(selected.cssVar, 'none');
-        if (this._previewVideoKey !== selected.key || this._previewVideoUrl !== selected.url) {
-            try { this._previewVideo.pause(); } catch (_) { }
-            this._previewVideo.src = localUrl(selected.url);
-            this._previewVideoUrl = selected.url;
-            this._previewVideoKey = selected.key;
-            try { this._previewVideo.load(); } catch (_) { }
+    };
+
+    CustomizerView.prototype._renderPreviewOverlay = function (theme, hasBackground) {
+        var overlay = hasBackground && typeof themeBackgroundOverlay === 'function'
+            ? themeBackgroundOverlay(theme) : 'transparent';
+        this._previewApp.style.setProperty('--tcf-app-overlay', overlay);
+    };
+
+    CustomizerView.prototype.previewRange = function (theme, key, dirty) {
+        if (!this._previewApp) return;
+        window.ThemeTokens.applyValue(this._previewApp, key, theme.colors[key]);
+        if (key === 'bgOpacity') this._renderPreviewOverlay(theme, !!previewAssetUrl(theme.colors.appBackground));
+        if (this._options.dirty !== dirty) {
+            this._options.dirty = dirty;
+            this._renderDirty();
         }
     };
 
@@ -1507,6 +1595,8 @@
         }
         var variant = asString(theme.meta && theme.meta.type || theme.type, 'dark').toLowerCase() === 'light' ? 'light' : 'dark';
         this._previewApp.setAttribute('data-theme-variant', variant);
+        this._previewApp.dataset.componentStyle = colors.componentStyle || '';
+        this._previewApp.toggleAttribute('data-performance-mode', document.body.classList.contains('performance-mode'));
         this._previewApp.setAttribute('aria-label', asString(theme.meta && theme.meta.name || theme.name, 'Theme') + ' live preview');
         var style = this._previewApp.style;
         var editor = theme.editor || {};
@@ -1519,20 +1609,10 @@
          * image or video, then a tint over the app.  Without a background
          * the page shows the theme's fallback gradient and no tint. */
         var hasBackground = !!previewAssetUrl(colors.appBackground);
-        var percent = Number(colors.bgOpacity);
-        if (!Number.isFinite(percent)) {
-            var settings = typeof App !== 'undefined' && App.settings && App.settings.appearance;
-            percent = settings && Number.isFinite(Number(settings.bgOpacity)) ? Number(settings.bgOpacity) : 50;
-        } else if (percent < 1) {
-            percent *= 100;
-        }
-        var opacity = Math.min(Math.max(percent, 0), 100) / 100;
-        var overlayBase = /^\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*$/.test(asString(colors.appOverlay, '')) ? colors.appOverlay : (variant === 'light' ? '255, 255, 255' : '26, 37, 48');
-        var overlayAlpha = variant === 'light' ? opacity * 0.15 : 0.3 + opacity * 0.5;
         var gradientTop = isSafeCssValue(colors.editorBg) ? colors.editorBg : isSafeCssValue(colors.bgOceanMedium) ? colors.bgOceanMedium : '#1a2530';
         var gradientBottom = isSafeCssValue(colors.bgOceanDark) ? colors.bgOceanDark : isSafeCssValue(colors.bgOceanMedium) ? colors.bgOceanMedium : '#152535';
         style.setProperty('--tcf-app-base', hasBackground ? (variant === 'light' ? 'var(--bg-ocean-light)' : '#1a2530') : 'linear-gradient(135deg, ' + gradientTop + ' 0%, ' + gradientBottom + ' 100%)');
-        style.setProperty('--tcf-app-overlay', hasBackground && colors.appOverlay !== 'none' ? 'rgba(' + overlayBase + ', ' + overlayAlpha + ')' : 'transparent');
+        this._renderPreviewOverlay(theme, hasBackground);
         this._syncPreviewVideo(theme);
         this._fitPreview();
         return this._previewHost;
@@ -1580,11 +1660,7 @@
         }
         if (saveBackground) saveBackground.hidden = !options.isBuiltin;
         if (deleteButton) deleteButton.hidden = !!options.isBuiltin;
-        var dirty = this.element.querySelector('[data-tcf-dirty]');
-        if (dirty) {
-            dirty.textContent = options.dirty ? '● Unsaved changes' : 'Saved';
-            dirty.dataset.state = options.dirty ? 'dirty' : 'saved';
-        }
+        this._renderDirty();
         var status = this.element.querySelector('[data-tcf-status]');
         if (status && !options.busy) {
             /* Idle is silent: the header already says Saved / Unsaved changes. */
@@ -1602,6 +1678,13 @@
         if (redo) redo.disabled = !!options.busy || !canRedo;
         if (reset) reset.disabled = !!options.busy;
         if (saveAs) saveAs.disabled = !!options.busy;
+    };
+
+    CustomizerView.prototype._renderDirty = function () {
+        var dirty = this.element.querySelector('[data-tcf-dirty]');
+        if (!dirty) return;
+        dirty.textContent = this._options.dirty ? '● Unsaved changes' : 'Saved';
+        dirty.dataset.state = this._options.dirty ? 'dirty' : 'saved';
     };
 
     CustomizerView.prototype.getJsonText = function () {
@@ -1661,12 +1744,13 @@
         }
         if (this._previewObserver) this._previewObserver.disconnect();
         this._previewObserver = null;
+        if (this._bound.previewResize) window.removeEventListener('resize', this._bound.previewResize);
         this._releasePreviewVideo();
         if (this.element && this.element.parentNode) this.element.parentNode.removeChild(this.element);
         this._previewRoot = null;
         this._previewApp = null;
         this._previewHost = null;
-        this._previewVideo = null;
+        this._previewVideos = null;
     };
 
     var ThemeCustomizerView = {
@@ -1676,6 +1760,7 @@
                 element: view.element,
                 render: view.render.bind(view),
                 renderPreview: view.renderPreview.bind(view),
+                previewRange: view.previewRange.bind(view),
                 getJsonText: view.getJsonText.bind(view),
                 setJsonText: view.setJsonText.bind(view),
                 focus: view.focus.bind(view),

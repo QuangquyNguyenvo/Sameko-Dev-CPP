@@ -4,7 +4,7 @@ const ThemeCustomizer = {
     workingTheme: null,
     popup: null,
     view: null,
-    activePanel: 'colors',
+    activePanel: 'backgrounds',
     historyStack: [],
     historyIndex: -1,
     dirty: false,
@@ -48,7 +48,7 @@ const ThemeCustomizer = {
         this._baseline = this._clone(this.workingTheme);
         this.historyStack = [this._clone(this.workingTheme)];
         this.historyIndex = 0;
-        this.activePanel = 'colors';
+        this.activePanel = 'backgrounds';
         this.dirty = false;
         this._lastFocus = document.activeElement;
         this.view = ThemeCustomizerView.create(this);
@@ -183,9 +183,9 @@ const ThemeCustomizer = {
         return this._change(theme => { theme.type = value; theme.editor.base = value === 'light' ? 'vs' : 'vs-dark'; });
     },
     selectPanel(panel) {
-        if (!['colors', 'syntax', 'backgrounds', 'advanced'].includes(panel)) return;
+        if (!['backgrounds', 'colors', 'syntax', 'advanced'].includes(panel)) return false;
         const wasJson = this.activePanel === 'advanced';
-        if (wasJson && panel !== 'advanced' && this._hasJsonEdits() && !this.applyJson()) return;
+        if (wasJson && panel !== 'advanced' && this._hasJsonEdits() && !this.applyJson()) return false;
         this.activePanel = panel;
         this._render({ force: true, syncJson: panel === 'advanced' && !wasJson });
     },
@@ -196,7 +196,20 @@ const ThemeCustomizer = {
         }
     },
     setToken(key, value, options = {}) {
-        if (!ThemeTokens.definitions[key]) return false;
+        const definition = ThemeTokens.definitions[key];
+        if (!definition) return false;
+        // The draft is already valid. A slider can preview one numeric token until change commits it.
+        if (options.commit === false && !options.force && this.activePanel === 'backgrounds'
+            && this.workingTheme && !this.busy && this.view?.previewRange
+            && ['opacity', 'brightness', 'blur'].includes(definition.type)
+            && Number.isFinite(value) && value >= 0 && value <= (definition.type === 'brightness' ? 200 : 100)) {
+            if (this.workingTheme.colors[key] === value) return true;
+            this.workingTheme.colors[key] = value;
+            this.dirty = value !== this._baseline.colors[key]
+                || (this.dirty && JSON.stringify(this.workingTheme) !== JSON.stringify(this._baseline));
+            this.view.previewRange(this.workingTheme, key, this.dirty);
+            return true;
+        }
         if (!options.fromUpload && ThemeManager.ASSET_KEYS.includes(key)) this._invalidateAssetRequests(key);
         if (key.startsWith('syntax')) return this.setSyntax(key.slice(6).toLowerCase(), value, options);
         return this._change(theme => {
@@ -505,8 +518,8 @@ const ThemeCustomizer = {
 
     _refreshMarketplace() {
         if (typeof ThemeMarketplace !== 'undefined') {
-            ThemeMarketplace.renderCarousel();
-            if (document.querySelector('#marketplace-popup.open, #marketplace-popup.visible')) ThemeMarketplace._renderMarketplaceContent();
+            ThemeMarketplace.refreshCatalog();
+            return;
         }
         const select = document.getElementById('set-theme');
         if (select) {

@@ -141,6 +141,54 @@ for (const [id, theme] of Object.entries(ThemeManager._getHardcodedThemes())) {
     assertValid(ThemeManager._normalizeTheme(theme), `normalized builtin ${id}`);
 }
 
+// Primary buttons carry normal text in both their resting and hover states. Keep
+// the check local and dependency-free so a new builtin cannot silently ship
+// unreadable button labels.
+const parseOpaqueSrgb = (value, label) => {
+    const text = String(value || '').trim();
+    const hex = /^#([\da-f]{3}|[\da-f]{6})$/i.exec(text);
+    if (hex) {
+        const digits = hex[1].length === 3
+            ? hex[1].split('').map(digit => digit + digit).join('')
+            : hex[1];
+        return [0, 2, 4].map(offset => parseInt(digits.slice(offset, offset + 2), 16) / 255);
+    }
+    const rgb = /^rgb\(\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*,\s*(\d+(?:\.\d+)?)\s*\)$/i.exec(text);
+    assert(rgb, `${label} should be an opaque sRGB color, got ${text}`);
+    return rgb.slice(1).map(channel => Number(channel) / 255);
+};
+
+const relativeLuminance = (value, label) => {
+    const linear = parseOpaqueSrgb(value, label).map(channel => (
+        channel <= 0.04045
+            ? channel / 12.92
+            : ((channel + 0.055) / 1.055) ** 2.4
+    ));
+    return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+};
+
+const contrastRatio = (background, foreground, label) => {
+    const backgroundLuminance = relativeLuminance(background, `${label} background`);
+    const foregroundLuminance = relativeLuminance(foreground, `${label} text`);
+    const lighter = Math.max(backgroundLuminance, foregroundLuminance);
+    const darker = Math.min(backgroundLuminance, foregroundLuminance);
+    return (lighter + 0.05) / (darker + 0.05);
+};
+
+const contrastFailures = [];
+for (const [id, theme] of Object.entries(ThemeManager._getHardcodedThemes())) {
+    const colors = ThemeTokens.fillDefaults(ThemeManager._normalizeTheme(theme).colors);
+    for (const backgroundKey of ['btnPrimaryBg', 'btnPrimaryBgHover']) {
+        const ratio = contrastRatio(colors[backgroundKey], colors.btnPrimaryText,
+            `${id} ${backgroundKey}`);
+        if (ratio < 4.5) {
+            contrastFailures.push(`${id} ${backgroundKey}: ${ratio.toFixed(2)}:1`);
+        }
+    }
+}
+assert.deepStrictEqual(contrastFailures, [],
+    `builtin primary button contrast below WCAG AA 4.5:1 (${contrastFailures.join(', ')})`);
+
 // Renderer application keeps percentage values consistent with the validator.
 const style = {
     values: new Map(),

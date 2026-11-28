@@ -6,7 +6,8 @@
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    background: var(--bg-panel-problems, var(--bg-panel, var(--bg-glass-heavy)));
+    --dock-surface: var(--bg-panel-problems, var(--bg-panel, var(--bg-glass-heavy)));
+    background: var(--dock-surface);
     border-top: 2px solid var(--border);
     border-radius: 0 0 var(--radius) var(--radius);
     /* Geometry follows the resize handle immediately instead of chasing it. */
@@ -551,10 +552,10 @@
     content: none !important;
 }
 
-/* ===== EDITOR BACKGROUND IMAGE SUPPORT ===== */
-/* 
- * Monaco Editor overrides CSS backgrounds, so we use a pseudo-element
- * to display the background image behind the editor content.
+/* ===== EDITOR BACKGROUND IMAGE / VIDEO SUPPORT ===== */
+/*
+ * Monaco Editor overrides CSS backgrounds, so still images use a pseudo-element
+ * and videos use a lazily-created element behind the editor content.
  */
 .editor-area {
     position: relative;
@@ -569,6 +570,28 @@
     background-size: cover;
     background-position: var(--editor-bg-position, center center);
     background-repeat: no-repeat;
+    opacity: var(--editor-bg-opacity, 0.15);
+    filter: blur(var(--editor-bg-blur, 0px)) brightness(var(--editor-bg-brightness, 1));
+    pointer-events: none;
+    z-index: 0;
+    border-radius: inherit;
+}
+
+/* An editor video owns the background while active; do not paint the still layer too. */
+.editor-area.editor-bg-video-active::before {
+    content: none;
+    background-image: none;
+}
+
+.editor-area .editor-bg-video {
+    position: absolute;
+    --editor-video-bleed: var(--editor-bg-blur, 0px);
+    inset: calc(-1 * var(--editor-video-bleed));
+    display: block;
+    width: calc(100% + 2 * var(--editor-video-bleed));
+    height: calc(100% + 2 * var(--editor-video-bleed));
+    object-fit: cover;
+    object-position: var(--editor-bg-position, center center);
     opacity: var(--editor-bg-opacity, 0.15);
     filter: blur(var(--editor-bg-blur, 0px)) brightness(var(--editor-bg-brightness, 1));
     pointer-events: none;

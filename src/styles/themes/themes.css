@@ -190,10 +190,6 @@
 
 [data-theme-variant="dark"] .editor-area {
     background-color: var(--editor-bg);
-    background-image: var(--editor-bg-image, none);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
 }
 
 /* Editor section - Light themes */
@@ -208,35 +204,32 @@
 
 [data-theme-variant="light"] .editor-area {
     background-color: var(--editor-bg);
-    background-image: var(--editor-bg-image, none);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
 }
 
 /* Terminal section - kawaii-light (needs light text on dark terminal bg) */
 [data-theme-variant="light"] .terminal-section {
-    background: var(--bg-panel);
     border: 2px solid var(--border);
 }
 
 [data-theme-variant="light"] .terminal-body {
     background: var(--terminal-bg);
     color: var(--terminal-text, #e0f0ff);
-    opacity: var(--terminal-opacity, 1);
 }
 
 @container style(--component-style: kawaii-light) {
-    :root .terminal-body {
-        backdrop-filter: blur(var(--terminal-bg-blur, 0px));
-        -webkit-backdrop-filter: blur(var(--terminal-bg-blur, 0px));
-    }
-
     /* The picture shows through the editor and the panels: each gets ONE see-through layer
      * (--editor-bg / --bg-panel are translucent in this theme). Elsewhere these colours are
      * stacked (pane over card, panel over editor colour) and would add up to near-opaque. */
     :root body {
         --island-bg: var(--bg-panel);
+        /* Over a bright picture the borders alone left the cards lost in the snow: a light
+         * theme needs elevation. The shadow is the theme's own shadowCard token. */
+        --island-shadow: var(--shadow-card);
+    }
+
+    :root .header-bar .header-island,
+    :root .app-container > .status-bar {
+        box-shadow: var(--island-shadow);
     }
 
     :root .editor-pane,
@@ -269,17 +262,12 @@
 
 /* Terminal section */
 [data-theme-variant="dark"] .terminal-section {
-    background: var(--bg-panel);
     border: 2px solid var(--border);
 }
 
 [data-theme-variant="dark"] .terminal-body {
     background: var(--terminal-bg);
     color: var(--text-primary);
-    opacity: var(--terminal-opacity, 1);
-    /* Acrylic blur effect */
-    backdrop-filter: blur(var(--terminal-bg-blur, 0px));
-    -webkit-backdrop-filter: blur(var(--terminal-bg-blur, 0px));
 }
 
 [data-theme-variant="dark"] .terminal-input {
@@ -328,7 +316,7 @@
 
 /* Problems panel */
 [data-theme-variant="dark"] .problems-panel {
-    background: var(--bg-panel);
+    --dock-surface: var(--bg-panel);
     border-top: 2px solid var(--border);
 }
 
