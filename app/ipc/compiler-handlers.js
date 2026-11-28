@@ -28,7 +28,7 @@ function setMainWindow(window) {
  */
 function registerHandlers() {
     ipcMain.handle(IPC.COMPILER.RUN_INSTRUMENTED_TEST, async (event, options) => {
-        return require('../services/compiler/test-instrumentation').runInstrumentedTest(options);
+        return require('../services/compiler/run/test-instrumentation').runInstrumentedTest(options);
     });
 
     // Compile
@@ -83,7 +83,7 @@ function registerHandlers() {
 
     // Python, Java, Rust... and the compiler or interpreter found for each (Settings › Compiler)
     ipcMain.handle(IPC.COMPILER.LANGUAGES, async (event, typed) => {
-        return require('../services/compiler/languages').listLanguages(typed);
+        return require('../services/compiler/toolchain/languages').listLanguages(typed);
     });
 
     // Get compiler status (for startup check)

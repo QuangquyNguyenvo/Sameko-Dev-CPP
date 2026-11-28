@@ -10,7 +10,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
-const { appTempDir, ensurePrivateDir } = require('../../shared/platform');
+const { appTempDir, ensurePrivateDir } = require('../../../shared/platform');
 
 const SOURCE = `#include <cstdio>
 #include <iostream>

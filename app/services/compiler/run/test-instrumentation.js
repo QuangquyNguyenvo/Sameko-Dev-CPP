@@ -4,8 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
-const { IS_WIN, IS_LINUX, appTempDir, binName, ensurePrivateDir, which } = require('../../shared/platform');
-const { splitFlags, joinFlags } = require('../../shared/validators');
+const { IS_WIN, IS_LINUX, appTempDir, binName, ensurePrivateDir, which } = require('../../../shared/platform');
+const { splitFlags, joinFlags } = require('../../../shared/validators');
 
 const exec = promisify(execFile);
 const LINUX_CHECKS = ['-fsanitize=address,undefined', '-fno-sanitize-recover=all', '-fno-omit-frame-pointer'];
@@ -19,7 +19,7 @@ function findGprof(binDir) {
 }
 
 async function canLinkSanitizers(cwd) {
-    const { getDetectedCompiler, getCompilerEnv } = require('./detector');
+    const { getDetectedCompiler, getCompilerEnv } = require('../toolchain/detector');
     const src = path.join(cwd, 'probe.cpp');
     await fs.promises.writeFile(src, 'int main() {}\n');
     try {
@@ -64,7 +64,7 @@ async function runInstrumentedTest({ mode, filePath, content, flags, untitledId,
     let sanitizers = false;
     let stage = 'Instrumented build failed.';
     try {
-        const { getCompilerBinDir, getCompilerEnv } = require('./detector');
+        const { getCompilerBinDir, getCompilerEnv } = require('../toolchain/detector');
         const gprof = profiling ? findGprof(getCompilerBinDir()) : null;
         if (profiling && !gprof) return { issue: 'gprof is unavailable for this toolchain.' };
         if (profiling || IS_LINUX) {
@@ -73,7 +73,7 @@ async function runInstrumentedTest({ mode, filePath, content, flags, untitledId,
             tempDir = await fs.promises.mkdtemp(path.join(root, 'run-'));
         }
         sanitizers = !profiling && IS_LINUX && await canLinkSanitizers(tempDir);
-        const built = await require('./executor').compile({
+        const built = await require('../executor').compile({
             filePath, content, untitledId, singleFileMode,
             flags: instrumentationFlags(flags, mode, { windows: IS_WIN, sanitizers }),
             useLLD: false, realtimeOutput: false, noBuildCache: true, variant: mode,
@@ -81,7 +81,7 @@ async function runInstrumentedTest({ mode, filePath, content, flags, untitledId,
         if (!built.success) return { issue: stage, detail: built.error, sanitizers };
         stage = 'Could not run the test.';
         const limit = Number(timeLimit);
-        const run = await require('../competitive/batch-tester').runTest({
+        const run = await require('../../competitive/batch-tester').runTest({
             exePath: built.outputPath, input, inputPath, fileIO, expectedOutput: '',
             timeLimit: Math.max(5000, Number.isFinite(limit) ? limit : 0),
             cwd: profiling ? tempDir : (filePath ? path.dirname(filePath) : undefined),

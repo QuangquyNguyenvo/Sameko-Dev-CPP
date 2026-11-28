@@ -12,9 +12,9 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
-const { getCompilerEnv } = require('../compiler/detector');
-const languages = require('../compiler/languages');
-const { getLauncherIfReady, launcherEnv, newStatsFile, readStats } = require('../compiler/run-launcher');
+const { getCompilerEnv } = require('../compiler/toolchain/detector');
+const languages = require('../compiler/toolchain/languages');
+const { getLauncherIfReady, launcherEnv, newStatsFile, readStats } = require('../compiler/run/run-launcher');
 const { describeExit, describeStartError } = require('../../shared/exit-codes');
 const { IS_WIN, appTempDir, ensurePrivateDir, killProcessTree } = require('../../shared/platform');
 const { verdictOf } = require('./checker');

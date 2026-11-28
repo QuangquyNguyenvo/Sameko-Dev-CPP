@@ -12,10 +12,10 @@ const os = require('os');
 const crypto = require('crypto');
 const { spawn, exec, execFile } = require('child_process');
 const { StringDecoder } = require('string_decoder');
-const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getWritableBasePath, getUnbufferObjectPath } = require('./detector');
-const { ensurePCH } = require('./pch-manager');
-const { ensureLauncher, getLauncherIfReady, launcherEnv, newStatsFile, readStats } = require('./run-launcher');
-const languages = require('./languages');
+const { getDetectedCompiler, getCompilerInfo, getCompilerEnv, getWritableBasePath, getUnbufferObjectPath } = require('./toolchain/detector');
+const { ensurePCH } = require('./build-support/pch-manager');
+const { ensureLauncher, getLauncherIfReady, launcherEnv, newStatsFile, readStats } = require('./run/run-launcher');
+const languages = require('./toolchain/languages');
 const { testlibIncludeDir } = require('../competitive/checker');
 const { validateCompilerFlags, splitFlags, joinFlags } = require('../../shared/validators');
 const { describeExit, describeStartError, startErrorCode } = require('../../shared/exit-codes');
@@ -407,7 +407,7 @@ async function compile({ filePath, content, flags, useLLD, noBuildCache = false,
 
     let unbufferObj = getUnbufferObjectPath();
     if (!unbufferObj && !IS_WIN && realtimeOutput !== false) {
-        unbufferObj = await require('./unbuffer-shim').ensureUnbufferObject(getDetectedCompiler() || 'g++');
+        unbufferObj = await require('./build-support/unbuffer-shim').ensureUnbufferObject(getDetectedCompiler() || 'g++');
     }
 
     // `#include "testlib.h"` (checkers, generators): the bundled copy, after every other

@@ -9,8 +9,8 @@
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
-const { getDetectedCompiler } = require('../compiler/detector');
-const { ensurePCH } = require('../compiler/pch-manager');
+const { getDetectedCompiler } = require('../compiler/toolchain/detector');
+const { ensurePCH } = require('../compiler/build-support/pch-manager');
 const { getCompilerSettings } = require('../../shared/settings-reader');
 const { validateCompilerFlags, splitFlags } = require('../../shared/validators');
 const { ensurePrivateDir, appTempDir } = require('../../shared/platform');

@@ -10,15 +10,15 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { spawn, exec } = require('child_process');
-const { getCompilerEnv } = require('../compiler/detector');
+const { getCompilerEnv } = require('../compiler/toolchain/detector');
 const { normalizeOutput, compareOutputs } = require('../../shared/judge');
 const { runChecker } = require('./checker');
 const { describeExit, describeStartError, startErrorCode } = require('../../shared/exit-codes');
 const { wasBuiltThisSession } = require('../compiler/executor');
 const { blockedStartMessage, IS_WIN, IS_LINUX, readProcMemoryKB, killProcessTree, appTempDir, ensurePrivateDir } = require('../../shared/platform');
 const { normalizeFileIO } = require('./test-files');
-const { ensureLauncher, getLauncherIfReady, launcherEnv, newStatsFile, readStats } = require('../compiler/run-launcher');
-const languages = require('../compiler/languages');
+const { ensureLauncher, getLauncherIfReady, launcherEnv, newStatsFile, readStats } = require('../compiler/run/run-launcher');
+const languages = require('../compiler/toolchain/languages');
 
 const EXPECTED_PREVIEW_CHARS = 64 * 1024;
 

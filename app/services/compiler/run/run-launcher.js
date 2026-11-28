@@ -27,7 +27,7 @@
  * Everything here is best-effort — if the helper cannot be built, callers fall
  * back to running the program directly.
  *
- * @module app/services/compiler/run-launcher
+ * @module app/services/compiler/run/run-launcher
  */
 
 'use strict';
@@ -36,9 +36,9 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
-const { getDetectedCompiler, getCompilerEnv } = require('./detector');
-const { readSettings } = require('../../shared/settings-store');
-const { IS_WIN, IS_MAC, IS_LINUX, EXE_SUFFIX, ensurePrivateDir, appTempDir } = require('../../shared/platform');
+const { getDetectedCompiler, getCompilerEnv } = require('../toolchain/detector');
+const { readSettings } = require('../../../shared/settings-store');
+const { IS_WIN, IS_MAC, IS_LINUX, EXE_SUFFIX, ensurePrivateDir, appTempDir } = require('../../../shared/platform');
 
 const HAS_LAUNCHER = IS_WIN || IS_MAC || IS_LINUX;
 

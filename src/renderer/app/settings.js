@@ -130,7 +130,7 @@ let languageListSeq = 0;
 /**
  * Settings › Compiler › Other Languages: per language, what was found on this computer and a
  * path to use instead. The paths are saved as settings.languages.<id>.path, which the main
- * process reads at each build (app/services/compiler/languages.js).
+ * process reads at each build (app/services/compiler/toolchain/languages.js).
  * @param {Object<string,string>} [typed] - the paths in the boxes now, to check before saving
  */
 async function renderLanguageSettings(typed) {

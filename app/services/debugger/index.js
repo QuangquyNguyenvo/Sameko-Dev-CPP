@@ -20,7 +20,7 @@ const {
     getDebuggerPath,
     getPrinterPythonDir,
     getCompilerEnv,
-} = require('../compiler/detector');
+} = require('../compiler/toolchain/detector');
 
 /** @type {GdbSession|null} */
 let session = null;

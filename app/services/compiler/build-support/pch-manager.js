@@ -1,7 +1,7 @@
 /**
  * Sameko Dev C++ IDE - Precompiled Header Manager
  * Manages PCH for faster compilation with bits/stdc++.h
- * @module app/services/compiler/pch-manager
+ * @module app/services/compiler/build-support/pch-manager
  */
 
 'use strict';
@@ -10,9 +10,9 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
-const { getDetectedCompiler, getCompilerEnv } = require('./detector');
-const { ensurePrivateDir, appTempDir } = require('../../shared/platform');
-const { splitFlags } = require('../../shared/validators');
+const { getDetectedCompiler, getCompilerEnv } = require('../toolchain/detector');
+const { ensurePrivateDir, appTempDir } = require('../../../shared/platform');
+const { splitFlags } = require('../../../shared/validators');
 
 const pchDir = appTempDir('cpp-ide-pch');
 

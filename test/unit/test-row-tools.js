@@ -3,7 +3,7 @@
 const assert = require('node:assert/strict');
 const { checker } = require('../helpers/app');
 const { parseGraph, addGraphNode, editGraphInput, layoutGraph, treeLayout, guessGraphFormat, mergeEdges } = require('../../src/renderer/app/test-row-tools');
-const { instrumentationFlags, summarizeFlatProfile } = require('../../app/services/compiler/test-instrumentation');
+const { instrumentationFlags, summarizeFlatProfile } = require('../../app/services/compiler/run/test-instrumentation');
 const { splitFlags } = require('../../app/shared/validators');
 
 async function main() {

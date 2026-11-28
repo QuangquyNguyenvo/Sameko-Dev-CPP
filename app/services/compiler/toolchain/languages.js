@@ -18,7 +18,7 @@
  * commits 1/64 of the RAM at start, which a 256 MB memory limit would refuse) and, under a
  * memory limit, that limit as -Xmx, as Codeforces runs Java.
  *
- * @module app/services/compiler/languages
+ * @module app/services/compiler/toolchain/languages
  */
 
 'use strict';
@@ -27,7 +27,7 @@ const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const { spawn, execFileSync } = require('child_process');
-const { IS_WIN, EXE_SUFFIX, appTempDir, ensurePrivateDir, killProcessTree } = require('../../shared/platform');
+const { IS_WIN, EXE_SUFFIX, appTempDir, ensurePrivateDir, killProcessTree } = require('../../../shared/platform');
 
 /** id -> name, file extensions and the tools a build needs (the first one is the one Settings can set). */
 const LANGUAGES = {
@@ -196,7 +196,7 @@ function runsAsPython3(file, prefix) {
 
 function settingsOverride(langId) {
     try {
-        const { readSettings } = require('../../shared/settings-store');
+        const { readSettings } = require('../../../shared/settings-store');
         const p = readSettings()?.languages?.[langId]?.path;
         return typeof p === 'string' && p.trim() ? p.trim().replace(/^"(.*)"$/, '$1') : '';
     } catch (_) { return ''; }

@@ -19,7 +19,7 @@ let mainWindow = null;
 const MAX_OPEN_BYTES = 16 * 1024 * 1024;
 
 const SOURCE_EXTENSIONS = ['cpp', 'c', 'h', 'hpp', 'cc', 'cxx', 'hh', 'hxx'];
-// Built with a compiler found on the machine (app/services/compiler/languages.js).
+// Built with a compiler found on the machine (app/services/compiler/toolchain/languages.js).
 const OTHER_LANGUAGE_FILTERS = [
     { name: 'Python', extensions: ['py'] },
     { name: 'Java', extensions: ['java'] },

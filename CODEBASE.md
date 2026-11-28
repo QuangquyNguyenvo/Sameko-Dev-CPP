@@ -67,11 +67,11 @@ and `window.open` are denied in `app/windows/main-window.js`.
 
 | Path | Responsibility |
 |---|---|
-| `compiler/detector.js` | Finds the bundled and system compilers; resolves app/writable base paths. |
+| `compiler/toolchain/detector.js` | Finds the bundled and system compilers; resolves app/writable base paths. |
 | `compiler/executor.js` | Spawns g++, runs the program, streams output. |
-| `compiler/pch-manager.js`, `compiler/warmup.js` | Precompiled-header cache; startup warm-up. |
-| `compiler/languages.js` | Python, Java, Kotlin, Rust, Go, Pascal, JavaScript: finds the machine's compiler/interpreter (PATH, the registry's PATH, usual folders, `settings.languages.<id>.path`), builds into `<temp>/cpp-ide-builds/lang/`, and `runCommand()` turns a build into the command that starts it. |
-| `compiler/run-launcher.js` | Builds (once per toolchain) and locates `sameko_run.exe`, the Windows helper that runs a program and reports its wall time, CPU time and peak memory. |
+| `compiler/build-support/pch-manager.js`, `compiler/build-support/warmup.js`, `compiler/build-support/unbuffer-shim.js` | Precompiled-header cache, startup warm-up, and the output-unbuffer shim. |
+| `compiler/toolchain/languages.js` | Python, Java, Kotlin, Rust, Go, Pascal, JavaScript: finds the machine's compiler/interpreter (PATH, the registry's PATH, usual folders, `settings.languages.<id>.path`), builds into `<temp>/cpp-ide-builds/lang/`, and `runCommand()` turns a build into the command that starts it. |
+| `compiler/run/run-launcher.js`, `compiler/run/test-instrumentation.js` | Native run helper build/metrics and run-test instrumentation. |
 | `debugger/gdb-session.js` | Drives GDB over the MI protocol. |
 | `debugger/mi-parser.js` | Pure GDB/MI output parser (unit-tested by `test/e2e/debugger.js --unit`). |
 | `syntax/clangd-service.js` | clangd child process, JSON-RPC over stdio. |
@@ -387,7 +387,7 @@ The page has a Content-Security-Policy: no inline `<script>` and no inline event
   output: exit 0 AC, 1/2 WA, 7 partial (WA), anything else `FAIL` (the checker's fault). Its stderr
   line is the test's detail. A problem with only a checker and no tests is still saved in the session.
 
-**Other languages** (`app/services/compiler/languages.js`)
+**Other languages** (`app/services/compiler/toolchain/languages.js`)
 - `executor.compile` hands a file whose extension is not C/C++ (`languageOfFile`) to
   `languages.build`. An untitled tab sends its name's extension (`untitledExt`) and is written to
   `<temp>/cpp-ide/untitled-<tab id>/Main.<ext>` (Java: named after the public class); other
@@ -483,7 +483,7 @@ meanwhile cannot mix two files.
 | To change... | Go to |
 |---|---|
 | Compile / run | `app/services/compiler/executor.js`, `app/ipc/compiler-handlers.js` |
-| Compiler detection | `app/services/compiler/detector.js`, `app/shared/platform.js` |
+| Compiler detection | `app/services/compiler/toolchain/detector.js`, `app/shared/platform.js` |
 | Debugger | `app/services/debugger/`, `app/ipc/debug-handlers.js`, `src/features/debugger/debugger-ui.js` |
 | IntelliSense | `app/services/syntax/clangd-service.js`, `src/features/suggestions/cpp-suggestions.js` |
 | An IPC channel | `app/shared/constants.js` → `app/ipc/*-handlers.js` → `preload.js` |

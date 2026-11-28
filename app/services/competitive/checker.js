@@ -20,7 +20,7 @@ const fs = require('fs');
 const crypto = require('crypto');
 const { spawn } = require('child_process');
 const { IS_WIN, appTempDir, ensurePrivateDir, killProcessTree } = require('../../shared/platform');
-const { getCompilerEnv } = require('../compiler/detector');
+const { getCompilerEnv } = require('../compiler/toolchain/detector');
 
 const TESTLIB_SOURCE = path.join(__dirname, '..', '..', 'assets', 'testlib', 'testlib.h');
 const CHECKER_TIME_LIMIT = 10000;   // a checker reads three files; longer than this is stuck

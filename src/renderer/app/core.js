@@ -427,7 +427,7 @@ function fileExtension(name) {
 
 /**
  * Languages other than C/C++ the app builds and runs, with a compiler or interpreter found on
- * the machine (app/services/compiler/languages.js): extension -> [Monaco language id, name].
+ * the machine (app/services/compiler/toolchain/languages.js): extension -> [Monaco language id, name].
  * They get Build & Run, Run All Tests and the stress test; clangd, live check, Format and the
  * debugger stay C/C++ only (isCppTab).
  */

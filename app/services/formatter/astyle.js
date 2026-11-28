@@ -9,7 +9,7 @@
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
-const { getBasePath, getResourcesPath } = require('../compiler/detector');
+const { getBasePath, getResourcesPath } = require('../compiler/toolchain/detector');
 const { binName, systemBinDirs, which, IS_WIN, IS_MAC } = require('../../shared/platform');
 
 let detectedAStyle = null;

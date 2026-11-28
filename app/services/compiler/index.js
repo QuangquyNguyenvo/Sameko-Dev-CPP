@@ -6,12 +6,12 @@
 
 'use strict';
 
-const detector = require('./detector');
-const warmup = require('./warmup');
-const pchManager = require('./pch-manager');
+const detector = require('./toolchain/detector');
+const warmup = require('./build-support/warmup');
+const pchManager = require('./build-support/pch-manager');
 const executor = require('./executor');
 
-const runLauncher = require('./run-launcher');
+const runLauncher = require('./run/run-launcher');
 
 module.exports = {
     ensureRunLauncher: runLauncher.ensureLauncher,

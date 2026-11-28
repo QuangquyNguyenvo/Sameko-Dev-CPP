@@ -1,7 +1,7 @@
 /**
  * Sameko Dev C++ IDE - Compiler Detector
  * Detects and manages C++ compiler (g++) installations
- * @module app/services/compiler/detector
+ * @module app/services/compiler/toolchain/detector
  */
 
 'use strict';
@@ -10,7 +10,7 @@ const { app } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { exec } = require('child_process');
-const { binName, systemCompilerPaths, which, IS_MAC } = require('../../shared/platform');
+const { binName, systemCompilerPaths, which, IS_MAC } = require('../../../shared/platform');
 
 let detectedCompiler = null;
 
@@ -27,10 +27,12 @@ function getPortableDir() {
 }
 
 function getBasePath() {
-    if (__dirname.includes('app.asar')) {
-        return __dirname.replace('app.asar', 'app.asar.unpacked');
+    // Keep existing app-owned paths rooted at the compiler directory.
+    const compilerDir = path.dirname(__dirname);
+    if (compilerDir.includes('app.asar')) {
+        return compilerDir.replace('app.asar', 'app.asar.unpacked');
     }
-    return path.join(__dirname, '..', '..', '..');
+    return path.join(compilerDir, '..', '..', '..');
 }
 
 let writableBasePath = null;

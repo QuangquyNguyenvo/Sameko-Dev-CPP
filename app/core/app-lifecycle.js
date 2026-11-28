@@ -30,7 +30,7 @@ function ensureDirectories() {
 
 function validateCompiler() {
     try {
-        const { getDetectedCompiler, getCompilerInfo } = require('../services/compiler/detector');
+        const { getDetectedCompiler, getCompilerInfo } = require('../services/compiler/toolchain/detector');
         const compiler = getDetectedCompiler();
         const info = getCompilerInfo();
 

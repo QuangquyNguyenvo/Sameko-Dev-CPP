@@ -1,7 +1,7 @@
 /**
  * Sameko Dev C++ IDE - Compiler Warmup
  * Pre-caches compiler binaries in RAM for faster first compilation
- * @module app/services/compiler/warmup
+ * @module app/services/compiler/build-support/warmup
  */
 
 'use strict';
@@ -9,8 +9,8 @@
 const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
-const { getDetectedCompiler, getCompilerInfo, getCompilerEnv } = require('./detector');
-const { binName } = require('../../shared/platform');
+const { getDetectedCompiler, getCompilerInfo, getCompilerEnv } = require('../toolchain/detector');
+const { binName } = require('../../../shared/platform');
 
 /**
  * Perform compiler warmup
